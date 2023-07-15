@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class DeimosConfig(AppConfig):
+class PhobosConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'Deimos'
+    name = 'phobos'

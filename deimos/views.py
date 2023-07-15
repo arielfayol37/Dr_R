@@ -17,6 +17,8 @@ from django.utils.timesince import timesince
 
 
 # Create your views here.
+def index(request):
+    pass
 
 def login_view(request):
     if request.method == "POST":
@@ -29,18 +31,18 @@ def login_view(request):
         # Check if authentication successful
         if user is not None:
             login(request, user)
-            return HttpResponseRedirect(reverse("network:index"))
+            return HttpResponseRedirect(reverse("deimos:index"))
         else:
-            return render(request, "network/login.html", {
+            return render(request, "astros/login.html", {
                 "message": "Invalid username and/or password."
             })
     else:
-        return render(request, "network/login.html")
+        return render(request, "astros/login.html")
 
 
 def logout_view(request):
     logout(request)
-    return HttpResponseRedirect(reverse("network:index"))
+    return HttpResponseRedirect(reverse("astros:index"))
 
 
 def register(request):

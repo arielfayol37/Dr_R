@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+#from django.contrib.postgres.fields import ArrayField
 
 class Course(models.Model):
     """
@@ -41,8 +42,6 @@ class Professor(User):
     """
     Class to store professors on the platform.
     """
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
     department = models.CharField(max_length=50)
 
 class Assignment(models.Model):
@@ -51,8 +50,8 @@ class Assignment(models.Model):
     professors and may be comprised of one or multiple questions. 
     """
     name = models.CharField(max_length=100)
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    questions = models.ManyToManyField('Question')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="assignments")
+    #questions = models.ManyToManyField('Question')
     timestamp = models.DateTimeField(auto_now_add=True)
     due_date = models.DateTimeField()
 
@@ -88,7 +87,7 @@ class Question(models.Model):
 
     """
     text = models.TextField(null=False, blank=False)
-    assignment = models.ForeignKey(Assignment, null=True)
+    assignment = models.ForeignKey(Assignment, null=True, on_delete=models.CASCADE, related_name="questions")
     category = models.CharField(max_length=50, null=True, blank=True)
     topic = models.CharField(max_length=50, null=True, blank=True)
     unit = models.CharField(max_length=50, null=True, blank=True)
@@ -98,6 +97,8 @@ class Question(models.Model):
 
     def __str__(self):
         return f"Question {self.number} for {self.assigment}"
+    
+
 
 class QuestionImage(models.Model):
     """
@@ -119,3 +120,71 @@ class Hint(models.Model):
     def __str__(self):
         return f"Hint {self.id} for {self.question}"
 
+class McqAnswer(models.Model):
+    """
+    The answer(s) to a multiple choice question may be an image or a text or both. 
+    # TODO: Make sure user inputs either or both. So during testing, make sure the
+    # the view as well as the front end takes care of that.
+
+    # TODO: (maybe) Change the related names to 'answers'.
+    """
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='mcq_answers')
+    image = models.ImageField(upload_to='phobos/images/question_images/', \
+                              blank=True, null=True)
+    content = models.CharField(blank=True, null=True, max_length=200)
+    is_answer = models.BooleanField(default=False)
+
+    def __str__(self):
+        if self.is_answer:
+            return f"Correct MCQ Answer for {self.question}: {self.content[:50]}"
+        else:
+            return f"Incorrect MCQ Answer for {self.question}: {self.content[:50]}"
+        
+class FloatAnswer(models.Model):
+    """
+    Answer to a structural question may be an algebraic expression, a vector, or a float.
+    # TODO: (maybe) Change related name to 'answers'S.
+    """
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="float_answers")
+    content = models.FloatField(blank=False, null=False)
+    is_answer = models.BooleanField(default=False)
+
+    def __str__(self):
+        if self.is_answer:
+            return f"Correct Float Answer for {self.question}: {self.content}"
+        else:
+            return f"Incorrect Float Answer for {self.question}: {self.content}"
+
+class ExpressionAnswer(models.Model):
+    """
+    An expression for a structural question may just be interpreted as text. The math.js library
+    will parse the expression given by the teacher and the resulting text will be stored.
+    When a user will input an answer, it will be compared to that text.
+    """
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="expression_answers")
+    content = models.CharField(max_length=100) 
+    is_answer = models.BooleanField(default=False)
+
+    def __str__(self):
+        if self.is_answer:
+            return f"Correct Expression Answer for {self.question}: {self.content}"
+        else:
+            return f"Incorrect Expression Answer for {self.question}: {self.content}"
+    
+
+class VectorAnswer(models.Model):
+    """
+    A vector answer for a structural question can be n-dimensional. n >= 2  
+    """
+    # TODO: !Important This is GPT 3.5 Implementation:
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='vector_answers')
+    content = models.FloatField(blank=False, null=False)  # Store the vector as an array of floats
+    is_answer = models.BooleanField(default=False)
+
+    def __str__(self):
+        if self.is_answer:
+            return f"Correct Vector Answer for {self.question}: {self.content}"
+        else:
+            return f"Incorrect Vector Answer for {self.question}: {self.content}"
+
+    

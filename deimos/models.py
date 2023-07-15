@@ -1,5 +1,5 @@
 from django.db import models
-from ..phobos.models import *
+from phobos.models import *
 
 class Student(User):
     """
@@ -8,8 +8,6 @@ class Student(User):
     # TODO: Can add profile pictures if deemed fit. 
     # TODO: May add school name if platform scales.
     """
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
     courses = models.ManyToManyField(Course, through='Enrollment')
     notes = models.ManyToManyField(Question, through='Note')
 
