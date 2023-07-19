@@ -1,0 +1,22 @@
+A) Design the template `phobos: create_course.html` to be nearly-identical to the one provided
+by the designer. Django view `create_course` has already been implemented for you.
+You just need to modify the css and possibly JS.
+        1) Should be nearly-identical to the template provided by the deisgner(Wilder)
+        2) When the user add's a cover image, the page should not reload, but display that
+           cover image. The text description in that area should also change from "Add cover image"
+           to "Change cover image"
+        3) When the x-icon is clicked, the user should be redirected to `phobos:index.html`
+            You may use window.href in JS, or embed the x-icon in a link tag with href={% url 'phobos:index.html'%}
+
+
+B) Create the necessary animations for the templates `astros: register.html` and `astros: login.html`
+    1) Both the left side and right side of both pages should originally be dimmed. 
+        (perhaps use the opacity attribute in css)
+    2) Then when the user clicks/types on one side, its brightness should be restored(opacity:1),
+        but the other side should be automatically in a dimmed state. MUST: the transition must be smooth, so 
+        use an animation.
+    3) When either `astros: register.html` or `astros: login.html` loads, there should originally appear to be
+        nothing on the page. Then one block should rise up from the bottom and separate into two to display
+        the left side and right side. i.e. the instructor login/register section and the student login/register section
+
+
