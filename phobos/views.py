@@ -17,8 +17,13 @@ from django.utils.timesince import timesince
 
 
 # Create your views here.
+@login_required(login_url='astros:login') 
 def index(request):
-    pass
+    courses = Course.objects.filter(professors__in=[request.user]) # TODO: add filter to display only the professor's courses.
+    context = {
+        "courses": courses
+    }
+    return render(request, "phobos/index.html", context)
 
 def login_view(request):
     if request.method == "POST":
@@ -26,15 +31,21 @@ def login_view(request):
         # Attempt to sign user in
         email = request.POST["email"]
         password = request.POST["password"]
-        user = authenticate(request, email=email, password=password)
+                # Check if a user with the provided email exists
+        try:
+            user = Professor.objects.get(email=email)
+        except Professor.DoesNotExist:
+            user = None
 
-        # Check if authentication successful
-        if user is not None:
+        # Authenticate the user based on the provided email and password
+        if user is not None and user.check_password(password):
+            # If authentication successful, log in the user
             login(request, user)
             return HttpResponseRedirect(reverse("phobos:index"))
+        
         else:
             return render(request, "astros/login.html", {
-                "message": "Invalid username and/or password."
+                "message_phobos": "Invalid username and/or password."
             })
     else:
         return render(request, "astros/login.html")
@@ -58,7 +69,7 @@ def register(request):
         department = request.POST["department"]
         if password != confirmation:
             return render(request, "astros/register.html", {
-                "message": "Passwords must match."
+                "message_phobos": "Passwords must match."
             })
 
         # Attempt to create new professor
@@ -69,9 +80,20 @@ def register(request):
             professor.save()
         except IntegrityError:
             return render(request, "astros/register.html", {
-                "message": "Username already taken."
+                "message_phobos": "Username already taken."
             })
         login(request, professor)
         return HttpResponseRedirect(reverse("phobos:index"))
     else:
         return render(request, "astros/register.html")
+    
+@login_required(login_url='astros:login')    
+def create_course(request):
+    if request.method == 'POST':
+        form = CourseForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('phobos:index')  
+    else:
+        form = CourseForm()
+    return render(request, 'phobos/create_course.html', {'form': form})

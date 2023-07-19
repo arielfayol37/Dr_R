@@ -1,0 +1,114 @@
+body.body {
+    background-color: black !important; 
+    color:white;
+    padding:1%;
+}
+.logout-link {
+  position: absolute;
+  right: 1%;
+}
+.page-container {
+    background-color: black;
+    color:white;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    margin-top:5%;
+}
+.navbar {
+    position: relative;
+    padding-left: 10%;
+    width: 100%;
+}
+#r-btn {
+    position:absolute;
+    right: 3%;
+    top:4%;
+}
+@font-face {
+    font-family: 'Nebula Regular';
+    src: url('../fonts/nebula-regular.otf') format('opentype');
+    /* Add additional src lines for other font formats if necessary */
+  }
+@font-face {
+    font-family: 'Aileron';
+    src: url('../fonts/aileron-regular.otf') format('truetype');
+    /* Add additional src lines for other font formats if necessary */
+  }
+h2#dr-r.bs-overrides{
+    position: absolute;
+    left: 3%;
+    top:3%;
+    font-family: 'Nebula';
+}
+
+  
+  .brand-name {
+    color: rgba(249, 105, 0, 1);
+    font-family: 'Nebula', sans-serif;
+    display: inline-block;
+  }
+  
+  .sub-heading {
+    font-size: 0.8em;
+    margin-top: 10px;
+  }
+  
+
+  textarea {
+    width: 100%;
+    resize: none;
+    overflow-y: hidden;
+    /* Additional styles to improve appearance */
+    border: 1px solid #ccc;
+    padding: 5px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+}
+  
+
+
+
+  /* Registration Page CSS */
+ div#registration-container.bs-overrides {
+    background-color: black;
+    color:white;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-evenly;
+    width: 100%;
+    height: 100%;
+    margin-top:7%;
+}
+
+.course-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 60%;
+}
+form {
+    width: 100%;
+}
+input.form-control {
+    background-color: rgba(0,0,0,0.5);
+}
+
+.vertical-line {
+    position: absolute;
+    top: 10%;
+    left: 49.5%;
+    width: 0.5%;
+    height: 80%;
+    border-radius: 10px;
+    background-color: rgba(249, 105, 0, 1);
+  }
+
+  .btn.btn-primary.r {
+    margin-left: 45%;
+  }
