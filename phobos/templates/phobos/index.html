@@ -1,0 +1,15 @@
+<!-- phobos: index.html-->
+{% extends 'phobos/layout.html' %}
+
+{% block body%}
+    <!-- Course creation/management menu -->
+    <a href="{% url 'phobos:create_course' %}"> Create a new course</a>
+
+    <!-- Display professor's courses -->
+    <ul>
+        {% for course in courses%}
+            {% include 'phobos/course_display.html' with course=course%}
+        {% endfor %}
+    </ul>
+
+{% endblock %}

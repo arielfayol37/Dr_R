@@ -34,7 +34,7 @@ def login_view(request):
             return HttpResponseRedirect(reverse("deimos:index"))
         else:
             return render(request, "astros/login.html", {
-                "message": "Invalid username and/or password."
+                "message_deimos": "Invalid username and/or password."
             })
     else:
         return render(request, "astros/login.html")

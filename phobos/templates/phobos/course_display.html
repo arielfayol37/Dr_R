@@ -1,0 +1,19 @@
+<!-- phobos: course_display.html -->
+<li class="course-li" data-course-id="{{ course.id }}">
+    <div class="course-section">
+    <p class="c-description">{{ course.description }}</p>
+    <div class="image-container">
+        {% if course.image %}
+            <img src="{{ course.image.url }}" alt="Course Image" class="course-image">
+        {% endif %}
+    </div>
+    <p class="timestamp">Created on {{ course.timestamp }}</p>
+    </div>
+    <!--TODO: this is based on the assumption that only the prof will see his or her own courses, but may be subject to 
+        url attacks. So add a condition to check that the user logged in is part of the professors of the course.-->
+    <div class="edit-section il">{% csrf_token %}
+        <div><a href="#"><button class="btn btn-primary edit-btn co" data-course-id="{{ course.id}}">Edit</button></div></a>
+       
+    </div>
+
+</li>

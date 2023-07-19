@@ -20,20 +20,32 @@ class Course(models.Model):
             Same applies to difficulty level.
     
     """
-    EASY = 'EASY'
-    MEDIUM = 'MEDIUM'
-    DIFFICULT = 'DIFFICULT'
-    DIFFICULTY_CHOICES = [
-        (EASY, 'Easy'),
-        (MEDIUM, 'Medium'),
-        (DIFFICULT, 'Difficult'),
-    ]
-    name = models.CharField(max_length=100)
-    subject = models.CharField(max_length=100)
-    number_of_students = models.IntegerField()
-    difficulty_level = models.CharField(max_length=10, choices=DIFFICULTY_CHOICES, default='Medium')
-    professors = models.ManyToManyField('Professor')
+    class DifficultyChoices(models.TextChoices):
+        EASY = 'EASY', 'Easy'
+        MEDIUM = 'MEDIUM', 'Medium'
+        DIFFICULT = 'DIFFICULT', 'Difficult'
+
+    class SubjectChoices(models.TextChoices):    
+
+        COMPUTER_SCIENCE = 'COMPUTER_SCIENCE', 'Computer Science'
+        MATHS = 'MATHS', 'Maths'
+        PHYSICS = 'PHYSICS', 'Physics'
+        # TODO: Add more subject choices as needed.
+
+    name = models.CharField(max_length=100, blank=False, null=False)
+    description = models.CharField(max_length=400, default="No description")
+    subject = models.CharField(max_length=100,
+                                choices=SubjectChoices.choices,
+                                default=SubjectChoices.PHYSICS)
+    number_of_students = models.IntegerField(blank=True, null=True)
+    difficulty_level = models.CharField(
+        max_length=10,
+        choices=DifficultyChoices.choices,
+        default=DifficultyChoices.MEDIUM,
+    )
+    professors = models.ManyToManyField('Professor', related_name='courses')
     timestamp = models.DateTimeField(auto_now_add=True)
+    image = models.ImageField(upload_to='phobos/images/course_images/', blank=True, null=True)
 
     def __str__(self):
         return f" Course {self.name}, difficulty level - {self.difficulty_level}"

@@ -10,6 +10,9 @@
     <div class="vertical-line"></div>
     <div class="register-phobos registration-form">
         <p>Register as an <strong><em>instructor</em></strong> on the <strong><em>Phobos</em></strong> version</p>
+        {% if message_phobos %}
+            <div>{{ message_phobos }}</div>
+        {% endif %}
         <form action="{% url 'phobos:register' %}" method="post" >
             {% csrf_token %}
             <div class="form-group">
@@ -20,6 +23,9 @@
             </div>
             <div class="form-group">
                 <input class="form-control" autofocus type="text" name="username" placeholder="Username">
+            </div>
+            <div class="form-group">
+                <input class="form-control" autofocus type="text" name="department" placeholder="Department">
             </div>
             <div class="form-group">
                 <input class="form-control" type="email" name="email" placeholder="Email Address">
@@ -36,6 +42,9 @@
 
     <div class="register-deimos registration-form">
         <p>Register as a <strong><em>student</em></strong> on the <strong><em>Deimos</em></strong> version</p>
+        {% if message_deimos %}
+            <div>{{ message_deimos }}</div>
+        {% endif %}
         <form action="{% url 'deimos:register' %}" method="post" >
             {% csrf_token %}
             <div class="form-group">
