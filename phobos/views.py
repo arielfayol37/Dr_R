@@ -97,3 +97,45 @@ def create_course(request):
     else:
         form = CourseForm()
     return render(request, 'phobos/create_course.html', {'form': form})
+
+@login_required(login_url='astros:login')
+def create_question(request):
+    if request.method == 'POST':
+        question_form = QuestionForm(request.POST)
+        mcq_answer_form = McqAnswerForm(request.POST, request.FILES)
+        float_answer_form = FloatAnswerForm(request.POST)
+        expression_answer_form = ExpressionAnswerForm(request.POST)
+
+        if question_form.is_valid() and mcq_answer_form.is_valid():
+            question = question_form.save()
+            mcq_answer_form.instance.question = question
+            mcq_answer_form.save()
+
+            # If it's a multiple-choice question, save the MCQ answer
+            if question.is_mcq():
+                mcq_answer_form.save()
+
+            # If it's a float question, save the float answer
+            if question.is_float():
+                float_answer_form.instance.question = question
+                float_answer_form.save()
+
+            # If it's an expression question, save the expression answer
+            if question.is_expression():
+                expression_answer_form.instance.question = question
+                expression_answer_form.save()
+
+            return redirect('question_list')  # Redirect to a list view of all questions or a success page
+    else:
+        question_form = QuestionForm()
+        mcq_answer_form = McqAnswerForm()
+        float_answer_form = FloatAnswerForm()
+        expression_answer_form = ExpressionAnswerForm()
+
+    return render(request, 'phobos/create_question.html', {
+        'question_form': question_form,
+        'mcq_answer_form': mcq_answer_form,
+        'float_answer_form': float_answer_form,
+        'expression_answer_form': expression_answer_form,
+    })
+

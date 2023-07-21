@@ -1,0 +1,25 @@
+<!-- phobos: create_question.html -->
+{% extends 'phobos/layout.html' %}
+{% block title%} Create question {% endblock %}
+
+{% block body %}
+    <!-- TODO: Include buttons and invent listeners to create subquestions.-->
+    <br/><br/><br/>
+    <h1>Create a Question</h1>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      {{ question_form.as_p }}
+      
+      <!-- Render the McqAnswerForm, FloatAnswerForm, ExpressionAnswerForm here based on the question type -->
+        <p> MCQAnswer</p>
+        {{ mcq_answer_form.as_p}}
+        <p> Expression Answer</p>
+        {{ expression_answer_form.as_p}}
+        <p> Float Answer</p>
+        {{ float_answer_form.as_p}}
+
+      
+      <input type="submit" value="Create Question">
+    </form>
+
+{% endblock %}

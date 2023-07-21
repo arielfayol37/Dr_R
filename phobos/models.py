@@ -44,6 +44,7 @@ class Course(models.Model):
         default=DifficultyChoices.MEDIUM,
     )
     professors = models.ManyToManyField('Professor', related_name='courses')
+    topics = models.ManyToManyField('Topic', related_name='courses')
     timestamp = models.DateTimeField(auto_now_add=True)
     image = models.ImageField(upload_to='phobos/images/course_images/', blank=True, null=True)
 
@@ -55,6 +56,43 @@ class Professor(User):
     Class to store professors on the platform.
     """
     department = models.CharField(max_length=50)
+
+class Topic(models.Model):
+    """
+    A course may cover various topics. For example Mechanics and Fields in Physics, but should likely cover at most 3.
+    # TODO: Predefine common topics and implement the select field in the `create_course` template such that the instructor
+            may add a new topic if it doesn't already exist.
+            MECHANICS = 'Mechanics'
+            THERMODYNAMICS = 'Thermodynamics'
+            ELECTRICITY_MAGNETISM = 'Electricity and Magnetism'
+            WAVES_OPTICS = 'Waves and Optics'
+            MODERN_PHYSICS = 'Modern Physics'
+            FLUID_MECHANICS = 'Fluid Mechanics'
+            OSCILLATIONS_WAVES = 'Oscillations and Waves'
+            OPTICS_LIGHT = 'Optics and Light'
+
+            TOPIC_CHOICES = [
+                (MECHANICS, 'Mechanics'),
+                (THERMODYNAMICS, 'Thermodynamics'),
+                (ELECTRICITY_MAGNETISM, 'Electricity and Magnetism'),
+                (WAVES_OPTICS, 'Waves and Optics'),
+                (MODERN_PHYSICS, 'Modern Physics'),
+                (FLUID_MECHANICS, 'Fluid Mechanics'),
+                (OSCILLATIONS_WAVES, 'Oscillations and Waves'),
+                (OPTICS_LIGHT, 'Optics and Light'),
+]
+    # TODO: A question will most likely be part of an `Assignment` which will be part of a `Course`
+            As such, it will be very redudant for the instructor to specify the topic each time, because
+            the topic will likely be correlated to the `Course`. For example, Ampere's Law will be a sub topic
+            of `ELECTRICITY_MAGNETISM` topic which will likely be the main topic of the course Electromagnetism.
+            So we want the professor to specify the subtopic, not the topic most of the time. In that regard,
+            the topic should by default have the same name or similar to that of the course, and the instructor
+            may choose another topic name from the dropdown list. 
+    """
+    name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
 
 class Assignment(models.Model):
     """
@@ -72,7 +110,7 @@ class Assignment(models.Model):
 
 class Question(models.Model):
     """
-    A question may be standalone or attributed to a Assigment. 
+    A question may be standalone or attributed to a `Assigment`. 
     
     A question may be comprised of a sub question like a, b, c, or d.
     (Optional: the sub questions themselves may have i, ii, iii, iv, like Twitter threads).
@@ -97,14 +135,23 @@ class Question(models.Model):
         That will be used for category assignment described above, and most importantly for
         the search engine.
 
+    # Define choices for the topic 
+
     """
+
+ 
+
     text = models.TextField(null=False, blank=False)
-    assignment = models.ForeignKey(Assignment, null=True, on_delete=models.CASCADE, related_name="questions")
+    assignment = models.ForeignKey(Assignment, null=True, on_delete=models.CASCADE, \
+                                   related_name="questions")
     category = models.CharField(max_length=50, null=True, blank=True)
-    topic = models.CharField(max_length=50, null=True, blank=True)
-    unit = models.CharField(max_length=50, null=True, blank=True)
-    weight = models.FloatField()
-    sub_questions = models.ManyToManyField('self', blank=True)
+    # TODO: The topic will most likely be the same as that as one of the topics of the `Course`
+    topic = models.ForeignKey(Topic, on_delete=models.SET_NULL, null=True, blank=True)
+    # TODO: The sub_topic is what we want the instructor to enter
+    sub_topic = models.CharField(max_length=50, null=True, blank=True)
+    num_points = models.IntegerField(default=10) # Add lower and upper bound.
+    parent_question = models.ForeignKey('self', on_delete=models.CASCADE, null=True, \
+                                        blank=True, related_name='sub_questions')
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -155,17 +202,17 @@ class McqAnswer(models.Model):
 class FloatAnswer(models.Model):
     """
     Answer to a structural question may be an algebraic expression, a vector, or a float.
-    # TODO: (maybe) Change related name to 'answers'S.
+    # TODO: (maybe) Change related name to 'answers'.
     """
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="float_answers")
     content = models.FloatField(blank=False, null=False)
     is_answer = models.BooleanField(default=False)
 
     def __str__(self):
-        if self.is_answer:
-            return f"Correct Float Answer for {self.question}: {self.content}"
-        else:
-            return f"Incorrect Float Answer for {self.question}: {self.content}"
+            
+        return f"Float Answer for {self.question}: {self.content}"
+        
+            
 
 class ExpressionAnswer(models.Model):
     """
@@ -175,28 +222,25 @@ class ExpressionAnswer(models.Model):
     """
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="expression_answers")
     content = models.CharField(max_length=100) 
-    is_answer = models.BooleanField(default=False)
+    
 
     def __str__(self):
-        if self.is_answer:
-            return f"Correct Expression Answer for {self.question}: {self.content}"
-        else:
-            return f"Incorrect Expression Answer for {self.question}: {self.content}"
+        
+        return f"Expression Answer for {self.question}: {self.content}"
+
     
 
 class VectorAnswer(models.Model):
     """
     A vector answer for a structural question can be n-dimensional. n >= 2  
+    # TODO: !Important: the content should be an array of floats.
+            We may not have to do this, since the vectors are usually going to 2D or 3D.
+            As such, we can use one input field for each dimension.
     """
-    # TODO: !Important This is GPT 3.5 Implementation:
+    
+
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='vector_answers')
     content = models.FloatField(blank=False, null=False)  # Store the vector as an array of floats
-    is_answer = models.BooleanField(default=False)
 
     def __str__(self):
-        if self.is_answer:
-            return f"Correct Vector Answer for {self.question}: {self.content}"
-        else:
-            return f"Incorrect Vector Answer for {self.question}: {self.content}"
-
-    
+        return f"Correct Vector Answer for {self.question}: {self.content}"
