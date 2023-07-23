@@ -2,11 +2,40 @@
 {% extends 'phobos/layout.html' %}
 
 {% block body%}
+
+    <!--Top of the page. -->
+    <div class="glass-container">
+        <div class="top-page-image">
+        </div>
+    </div>
+    <div id="brand-section">
+        <div id="orange-line"></div>
+        <div id="brand-version-text">
+            <div id="bvt1">Dr. r</div>
+            <div id="bvt2">phobos</div>
+        </div>
+
+        <div id="double-orange-lines">
+            <div class="dol"></div>
+            <div class="dol"></div>
+        </div>
+        <div class="message">
+            <span id="m1">And Man created AI</span> <br/> 
+            <span id="m2">in his image.</span>  
+        </div>
+    </div>
     <!-- Course creation/management menu -->
+    <div id="options">
+        <div id="triple-orange-lines">
+            <div class="tol"></div>
+            <div class="tol"></div>
+            <div class="tol"></div>
+        </div>
+    </div>
     <a href="{% url 'phobos:create_course' %}"> Create a new course</a>
 
     <!-- Display professor's courses -->
-    <ul>
+    <ul class="courses course-list">
         {% for course in courses%}
             {% include 'phobos/course_display.html' with course=course%}
         {% endfor %}

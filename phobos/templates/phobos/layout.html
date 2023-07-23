@@ -10,16 +10,16 @@
           crossorigin="anonymous">
     </head>
     <body class="body">
-        <h2 style="color:white" id="dr-r" class="bs-overrides">Dr. R </h2>
         <ul class="navbar-nav mr-auto">
             {% if user.is_authenticated %}
                 <li class="nav-item" style="display:none">
                     <strong>@{{ user.username }}</strong>
                 </li>
                 <li class="nav-item logout-link">
-                    <a class="nav-link" href="{% url 'phobos:logout' %}">Log Out</a>
+                    <a id="logout-link" class="nav-link" href="{% url 'phobos:logout' %}">Logout</a>
                 </li>  
             {% endif %}
+        </ul>
         {% block body %} {% endblock %}
     </body>
 </html>
