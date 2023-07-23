@@ -3,23 +3,25 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <title>{% block title %} Dr R {% endblock %}</title>
+        <title>{% block title %} Phobos {% endblock %}</title>
         {% block style %}<link rel="stylesheet" href="{% static 'phobos/css/style.css' %}"/> {% endblock %}
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
           integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
           crossorigin="anonymous">
+        <link rel="icon" href="{% static 'phobos/images/mars.ico' %}" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
     <body class="body">
-        <h2 style="color:white" id="dr-r" class="bs-overrides">Dr. R </h2>
         <ul class="navbar-nav mr-auto">
             {% if user.is_authenticated %}
                 <li class="nav-item" style="display:none">
                     <strong>@{{ user.username }}</strong>
                 </li>
                 <li class="nav-item logout-link">
-                    <a class="nav-link" href="{% url 'phobos:logout' %}">Log Out</a>
+                    <a id="logout-link" class="nav-link" href="{% url 'phobos:logout' %}">Logout</a>
                 </li>  
             {% endif %}
+        </ul>
         {% block body %} {% endblock %}
     </body>
 </html>
