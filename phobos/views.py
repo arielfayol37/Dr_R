@@ -45,7 +45,7 @@ def login_view(request):
         
         else:
             return render(request, "astros/login.html", {
-                "message_phobos": "Invalid username and/or password."
+                "message_phobos": "Invalid email and/or password."
             })
     else:
         return render(request, "astros/login.html")
@@ -90,7 +90,7 @@ def register(request):
 @login_required(login_url='astros:login')    
 def create_course(request):
     if request.method == 'POST':
-        form = CourseForm(request.POST)
+        form = CourseForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
             return redirect('phobos:index')  

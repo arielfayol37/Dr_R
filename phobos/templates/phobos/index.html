@@ -32,8 +32,8 @@
             <div class="tol"></div>
         </div>
     </div>
-    <a href="{% url 'phobos:create_course' %}"> Create a new course</a>
-
+    <a href="{% url 'phobos:create_course' %}" style="display: inline;">  Create a new course</a>
+    <h4>My courses</h4>
     <!-- Display professor's courses -->
     <ul class="courses course-list">
         {% for course in courses%}

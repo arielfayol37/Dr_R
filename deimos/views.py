@@ -24,21 +24,25 @@ def login_view(request):
     if request.method == "POST":
 
         # Attempt to sign user in
-        username = request.POST["username"]
+        email = request.POST["email"]
         password = request.POST["password"]
-        user = authenticate(request, username=username, password=password)
+        try:
+            user = Professor.objects.get(email=email)
+        except Professor.DoesNotExist:
+            user = None
 
-        # Check if authentication successful
-        if user is not None:
+        # Authenticate the user based on the provided email and password
+        if user is not None and user.check_password(password):
+            # If authentication successful, log in the user
             login(request, user)
             return HttpResponseRedirect(reverse("deimos:index"))
+        
         else:
             return render(request, "astros/login.html", {
-                "message_deimos": "Invalid username and/or password."
+                "message_deimos": "Invalid email and/or password."
             })
     else:
         return render(request, "astros/login.html")
-
 
 def logout_view(request):
     logout(request)

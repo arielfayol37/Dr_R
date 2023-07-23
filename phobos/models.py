@@ -46,7 +46,7 @@ class Course(models.Model):
     professors = models.ManyToManyField('Professor', related_name='courses')
     topics = models.ManyToManyField('Topic', related_name='courses')
     timestamp = models.DateTimeField(auto_now_add=True)
-    image = models.ImageField(upload_to='phobos/images/course_images/', blank=True, null=True)
+    image = models.ImageField(upload_to='phobos/images/course_covers', blank=True, null=True)
 
     def __str__(self):
         return f" Course {self.name}, difficulty level - {self.difficulty_level}"

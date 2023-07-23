@@ -6,7 +6,7 @@ from .models import Course, Question, McqAnswer, FloatAnswer, ExpressionAnswer
 class CourseForm(forms.ModelForm):
     class Meta:
         model = Course
-        # TODO: Implement image upload. Make sure the image is uploaded to static/phobos/images/course_images
+        # TODO: Implement image upload. Make sure the image is uploaded to media/phobos/images/course_images
         fields = ['image', 'name', 'subject', 'difficulty_level','description','topics','professors']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'id': 'course-name'}),
