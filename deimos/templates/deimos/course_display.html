@@ -8,7 +8,7 @@
         </div>
         <div class="c-text">
             <p class="c-name"><strong>{{course.name}}</strong></p>
-            <p class="c-description">{{ course.description }}</p>
+            <p class="c-description">{{ course.description| slice:":100" }}</p>
         
             <p class="timestamp" style="display: none;">Created on {{ course.timestamp|date:"m/d/Y" }}</p>
         </div>
