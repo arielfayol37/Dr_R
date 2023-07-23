@@ -230,7 +230,21 @@ input.form-control {
     width: 4vw;
     cursor: pointer;
   }
-
+  #search-field {
+    position: absolute !important;
+    margin-top: 3vh !important;
+    right: 3vw !important;
+    border-radius: 20px !important;
+    border: 1px solid #ccc !important;
+    padding-left: 40px !important;
+    transition: box-shadow 0.3s ease !important;
+    background-color: transparent !important;
+    outline: none !important;
+    font-weight: 100 !important;
+  }
+  #search-field:hover {
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3) !important;
+  }
   h4{
     margin-left: 5%;
   }
@@ -337,6 +351,19 @@ div.c-text {
   @media screen and (max-width: 768px) {
     .course-li {
       flex-basis: 100%; /* Set the width to 100% (one item per row) */
+    }
+    #sf-container {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      width: 100vw;
+      position: relative;
+    }
+    #search-field {
+      position: relative;
+      width: 80%;
+
     }
   }
   @media screen and (max-width: 450px){
