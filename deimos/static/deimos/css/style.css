@@ -57,7 +57,7 @@ h2#dr-r.bs-overrides{
 
   
   .brand-name {
-    color: rgba(249, 105, 0, 1);
+    color: rgba(23, 137, 252, 1);
     font-family: 'Nebula', sans-serif;
     display: inline-block;
   }
@@ -116,7 +116,7 @@ input.form-control {
     width: 0.5%;
     height: 80%;
     border-radius: 10px;
-    background-color: rgba(249, 105, 0, 1);
+    background-color: rgba(23, 137, 252, 1);
   }
 
   .btn.btn-primary.r {
@@ -154,7 +154,7 @@ input.form-control {
     left: 3%;
     width: 0.5%;
     height: 6%;
-    background-color: rgba(249, 105, 0, 1);
+    background-color: rgba(23, 137, 252, 1);
   }
 
   #brand-version-text {
@@ -178,7 +178,7 @@ input.form-control {
     width: 1%;
     height: 6%;
     transform: rotate(19deg); 
-    background-color: rgba(249, 105, 0, 1);
+    background-color: rgba(23, 137, 252, 1);
     z-index: 1;
   }
   div.dol + div.dol {
@@ -223,7 +223,7 @@ input.form-control {
     width: 100%;
     height: 20%;
     border-radius: 20px;
-    background-color: rgba(249, 105, 0, 1);
+    background-color: rgba(23, 137, 252, 1);
   }
 
   #triple-orange-lines:hover {
@@ -293,7 +293,7 @@ div.c-text {
   position: absolute;
 }
 .edit-btn {
-  background-color: rgba(249, 105, 0, 1) !important;
+  background-color: rgba(23, 137, 252, 1) !important;
   transition: background-color 0.2s !important;
   color: rgba(0,0,0,0.95) !important;
   font-weight:400 !important;

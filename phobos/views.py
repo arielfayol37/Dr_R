@@ -19,7 +19,7 @@ from django.utils.timesince import timesince
 # Create your views here.
 @login_required(login_url='astros:login') 
 def index(request):
-    courses = Course.objects.filter(professors__in=[request.user]).order_by('-timestamp') # TODO: add filter to display only the professor's courses.
+    courses = Course.objects.filter(professors__in=[request.user]).order_by('-timestamp')
     context = {
         "courses": courses
     }
