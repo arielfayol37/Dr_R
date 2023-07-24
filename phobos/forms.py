@@ -1,7 +1,7 @@
 # forms.py
 
 from django import forms
-from .models import Course, Question, McqAnswer, FloatAnswer, ExpressionAnswer
+from .models import Course, Assignment, Question, McqAnswer, FloatAnswer, ExpressionAnswer
 
 class CourseForm(forms.ModelForm):
     class Meta:
@@ -19,6 +19,16 @@ class CourseForm(forms.ModelForm):
                                                     'oninput':"resizeTextarea(this)"}),
             'topics': forms.SelectMultiple(attrs={'class': 'form-control', 'id':'course-topics'}),
             'professors': forms.SelectMultiple(attrs={'class': 'form-control', 'id': 'course-professors'}),
+        }
+
+class AssignmentForm(forms.ModelForm):
+    class Meta:
+        model = Assignment
+        fields = ['name', 'course', 'difficulty_level', 'due_date']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'id':'assignment-name'}),
+            'course': forms.Select(attrs={'class': 'form-control', 'id':'assignment-course'}),
+            'difficulty_level': forms.Select(attrs={'class': 'form-control', 'id': 'difficulty-level'})
         }
 
 class QuestionForm(forms.ModelForm):

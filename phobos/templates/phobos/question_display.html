@@ -1,0 +1,16 @@
+<!-- phobos: question_display.html -->
+<li class="assignment-li course-li" data-question-id="{{ question.id }}">
+    <div class="course-section assigment-section">
+        <div class="image-container">
+        </div>
+        <div class="c-text a-text">
+            <span class="c-name"><strong>{{question.name | safe}}</strong></span>
+            <p class="timestamp" style="display: none;">Created on {{ question.timestamp|date:"m/d/Y" }}</p>
+        </div>
+    </div>
+    <div class="edit-section il">{% csrf_token %}
+        <div><a href="#"><button class="btn edit-btn co" data-question-id="{{ question.id}}">Manage</button></div></a>
+       
+    </div>
+
+</li>

@@ -2,6 +2,11 @@ from django.db import models
 from django.contrib.auth.models import User
 #from django.contrib.postgres.fields import ArrayField
 
+class DifficultyChoices(models.TextChoices):
+    EASY = 'EASY', 'Easy'
+    MEDIUM = 'MEDIUM', 'Medium'
+    DIFFICULT = 'DIFFICULT', 'Difficult'
+
 class Course(models.Model):
     """
     Course class to store course on the platform.
@@ -20,10 +25,7 @@ class Course(models.Model):
             Same applies to difficulty level.
     
     """
-    class DifficultyChoices(models.TextChoices):
-        EASY = 'EASY', 'Easy'
-        MEDIUM = 'MEDIUM', 'Medium'
-        DIFFICULT = 'DIFFICULT', 'Difficult'
+
 
     class SubjectChoices(models.TextChoices):    
 
@@ -99,14 +101,19 @@ class Assignment(models.Model):
     Assignments in the form of quizzes/homeworks will be created by
     professors and may be comprised of one or multiple questions. 
     """
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=30)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="assignments")
-    #questions = models.ManyToManyField('Question')
     timestamp = models.DateTimeField(auto_now_add=True)
-    due_date = models.DateTimeField()
+    due_date = models.DateTimeField(blank=True, null=True)
+    assigned_date = models.DateTimeField(blank=True, null=True)
+    difficulty_level = models.CharField(
+        max_length=10,
+        choices=DifficultyChoices.choices,
+        default=DifficultyChoices.MEDIUM,
+    )
 
     def __str__(self):
-        return f"Assigment {self.name} for '{self.course.name.title()}'"
+        return f"Assigment {self.name} ranked {self.difficulty_level} for '{self.course.name.title()}'"
 
 class Question(models.Model):
     """
@@ -141,7 +148,7 @@ class Question(models.Model):
 
  
 
-    text = models.TextField(null=False, blank=False)
+    text = models.TextField(max_length= 2000, null=False, blank=False)
     assignment = models.ForeignKey(Assignment, null=True, on_delete=models.CASCADE, \
                                    related_name="questions")
     category = models.CharField(max_length=50, null=True, blank=True)
@@ -153,9 +160,14 @@ class Question(models.Model):
     parent_question = models.ForeignKey('self', on_delete=models.CASCADE, null=True, \
                                         blank=True, related_name='sub_questions')
     timestamp = models.DateTimeField(auto_now_add=True)
+    difficulty_level = models.CharField(
+        max_length=10,
+        choices=DifficultyChoices.choices,
+        default=DifficultyChoices.MEDIUM,
+    )
 
     def __str__(self):
-        return f"Question {self.number} for {self.assigment}"
+        return f"Question {self.number} ranked {self.difficulty_level} for {self.assigment}"
     
 
 
@@ -200,6 +212,7 @@ class McqAnswer(models.Model):
             return f"Incorrect MCQ Answer for {self.question}: {self.content[:50]}"
         
 class FloatAnswer(models.Model):
+    # !Important: Deprecated.
     """
     Answer to a structural question may be an algebraic expression, a vector, or a float.
     # TODO: (maybe) Change related name to 'answers'.

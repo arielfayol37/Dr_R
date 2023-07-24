@@ -25,6 +25,18 @@ def index(request):
     }
     return render(request, "phobos/index.html", context)
 
+@login_required(login_url='astros:login') 
+def course_management(request, course_id):
+    course = get_object_or_404(Course, pk = course_id)
+    if not course.professors.filter(pk=request.user.pk).exists():
+        return HttpResponseForbidden('You are not authorized to manage this course.')
+    assignments = Assignment.objects.filter(course=course)
+    context = {
+        "assignments": assignments,
+        "course": course
+    }
+    return render(request, "phobos/course_management.html", context)
+
 def login_view(request):
     if request.method == "POST":
 
@@ -97,6 +109,21 @@ def create_course(request):
     else:
         form = CourseForm()
     return render(request, 'phobos/create_course.html', {'form': form})
+
+@login_required(login_url='astros:login')    
+def create_assignment(request, course_id=None):
+    if request.method == 'POST':
+        form = AssignmentForm(request.POST)
+        if form.is_valid():
+            assignment = form.save()
+            return redirect('phobos:course_management', course_id=assignment.course.id)  
+    else:
+        if course_id is not None:
+            course = Course.objects.get(pk = course_id)
+            form = AssignmentForm({'course': course})
+        else:
+            form = AssignmentForm()
+    return render(request, 'phobos/create_assignment.html', {'form': form})
 
 @login_required(login_url='astros:login')
 def create_question(request):

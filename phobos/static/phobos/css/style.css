@@ -261,18 +261,22 @@ li{
 .course-li {
   /*font-family: 'Courier New', Courier, monospace;*/
   font-family:'Nebula', 'Times New Roman', Times, serif;
-  background-color: #f1f1f1;
-  /*color:white;
-  background-color: rgba(0, 0, 0, 1);*/
   flex: 1 0 calc(33.33% - 20px); /* Distribute the items equally in three columns */
   height: 60vh;
   padding: 20px;
   border-radius: 5px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  /*box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);*/
+  background-color: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   
   position:relative;
 
 }
+/* Assignment displays need less height */
+.assignment-li {
+  height: 25vh;
+}
+
 
 div.course-section {
   position: relative;
@@ -283,7 +287,7 @@ div.image-container {
   position: absolute;
   top: 0;
   left: 0;
-  height: 60%;
+  height: 85%;
   width: 100%; /* Make the image container full-width within .course-li */
   overflow: hidden; /* Ensure the image doesn't overflow the container */
 }
@@ -299,9 +303,14 @@ div.image-container img.course-image {
 }
 div.c-text {
   position: absolute;
-  top: 60%;
+  top: 87%;
   height: 30%;
 }
+
+.a-text.c-text {
+  top: 25%;
+}
+
 .edit-section {
   bottom: 5%;
   position: absolute;
@@ -318,7 +327,8 @@ div.c-text {
   background-color: rgba(249, 105, 0, .7) !important;
 }
 
-  
+
+
   /* Mobile styling*/
 
   @media screen and (max-width: 1200px){
@@ -352,6 +362,12 @@ div.c-text {
   @media screen and (max-width: 768px) {
     .course-li {
       flex-basis: 100%; /* Set the width to 100% (one item per row) */
+    }
+    .assignment-li {
+      height: 18vh;
+    }
+    .a-text.c-text {
+      top: 15%;
     }
     #sf-container {
       display: flex;

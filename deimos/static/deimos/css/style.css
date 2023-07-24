@@ -231,9 +231,9 @@ input.form-control {
     cursor: pointer;
   }
   #search-field {
-    position: absolute !important;
+    position: absolute;
     margin-top: 3vh !important;
-    right: 3vw !important;
+    right: 3vw ;
     border-radius: 20px !important;
     border: 1px solid #ccc !important;
     padding-left: 40px !important;
@@ -261,16 +261,18 @@ li{
 .course-li {
   /*font-family: 'Courier New', Courier, monospace;*/
   font-family:'Nebula', 'Times New Roman', Times, serif;
-  background-color: #f1f1f1;
+  /*background-color: #f1f1f1;
   /*color:white;
   background-color: rgba(0, 0, 0, 1);*/
   flex: 1 0 calc(33.33% - 20px); /* Distribute the items equally in three columns */
   height: 60vh;
   padding: 20px;
   border-radius: 5px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+ /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);*/
   
   position:relative;
+  background-color: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 
 }
 
@@ -283,7 +285,7 @@ div.image-container {
   position: absolute;
   top: 0;
   left: 0;
-  height: 60%;
+  height: 85%;
   width: 100%; /* Make the image container full-width within .course-li */
   overflow: hidden; /* Ensure the image doesn't overflow the container */
 }
@@ -299,7 +301,7 @@ div.image-container img.course-image {
 }
 div.c-text {
   position: absolute;
-  top: 60%;
+  top: 87%;
   height: 30%;
 }
 .edit-section {
@@ -357,13 +359,12 @@ div.c-text {
       flex-direction: row;
       justify-content: center;
       align-items: center;
-      width: 100vw;
+      width:100vw;
       position: relative;
     }
     #search-field {
       position: relative;
-      width: 80%;
-
+      width:80%;
     }
   }
   @media screen and (max-width: 450px){
