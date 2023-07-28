@@ -13,7 +13,7 @@
     <!-- Display course's assignments -->
     <ul class="courses course-list">
         {% for assignment in assignments %}
-            {% include 'phobos/assignment_display.html' with assignment=assignment %}
+            {% include 'phobos/assignment_display.html' with assignment=assignment course=course %}
         {% endfor %}
     </ul>
 

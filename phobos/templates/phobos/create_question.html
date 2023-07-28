@@ -1,16 +1,82 @@
 <!-- phobos: create_question.html -->
 {% extends 'phobos/layout.html' %}
+{% load static %}
 {% block title%} Create question {% endblock %}
-
 {% block body %}
     <!-- TODO: Include buttons and invent listeners to create subquestions.-->
-    <br/><br/><br/>
-    <h1>Create a Question</h1>
-    <form method="post" enctype="multipart/form-data">
+    
+    <div class="page-container create-question">
+      <h3>Create a Question</h3>
+    <br/>
+    
+    <form method="post" enctype="multipart/form-data" id="question-form">
       {% csrf_token %}
+      <div class="question">
+        <div id="topics-subtopics">
+            <div class="topics_dropdown option-section">
+              <label for="topic" class="option-label">Topic: </label>
+              
+              <select title="select topic" name="topic" id="topicSelect" class="option-field">
+                  <option value selected disabled>Choose topic</option>
+                  {% for topic in topics%}
+                      <option value="{{topic}}">
+                        {{topic}}
+                      </option>
+                  {% endfor %}
+              </select>
+            </div>
+          
+            <div class="sub_topics_dropdown option-section">
+              <label for="sub topic" class="option-label">Subtopic: </label>
+              <select title="select subtopic" name="sub_topic" id="subTopicSelect" class="option-field">
+                <option value selected disabled>Choose subtopic</option>
+            </select>
+
+            </div>
+
+        </div>
+          
+          <div class="question-content form-group">
+            
+            <br/>
+              <label>Enter the content of the question.</label><br/>
+              <!--!Important: this question must be here!-->
+              <textarea id="question-textarea" class="w-75" name="question_text"></textarea>
+          </div>
+          <div class="answer-options">
+            <!--TODO: Change the colors here to fit the overall design-->
+            <label>Select answer type</label><br/>
+            <button id="expression-btn" class="btn btn-primary">Expression</button>
+            <button id="mcq-btn" class="btn btn-info">Float</button>
+          </div>
+          <div class="answer-fields">
+            <label>Asnswer:</label>
+            <div class="e-answer"><br/>
+              <input type="text" id="expression-answer-input" name="answer"/>
+            </div>
+            <div class="f-answer"><br/>
+              <input type="text" id="float-answer-input" name="answer"/>
+            </div>
+          </div>
+          
+      </div>
+
+    <input type="submit" value="Create Question">
+    </form>
+  </div>
+
+{% endblock %}
+{% block scripts%}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.5.0/math.min.js"></script>
+<script src="{% static 'phobos/js/subtopics.js' %}"></script>
+<script src="{% static 'phobos/js/answer_input.js' %}"></script>
+
+
+{% endblock %}
+<!--
       {{ question_form.as_p }}
       
-      <!-- Render the McqAnswerForm, FloatAnswerForm, ExpressionAnswerForm here based on the question type -->
+       Render the McqAnswerForm, FloatAnswerForm, ExpressionAnswerForm here based on the question type 
         <p> MCQAnswer</p>
         {{ mcq_answer_form.as_p}}
         <p> Expression Answer</p>
@@ -20,6 +86,4 @@
 
       
       <input type="submit" value="Create Question">
-    </form>
-
-{% endblock %}
+    -->

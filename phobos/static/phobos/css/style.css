@@ -329,6 +329,17 @@ div.c-text {
 
 
 
+
+
+
+/* Style for phobos:create_question.html */
+div.create-question {
+  margin-left: 5%;
+}
+textarea#question-textarea.w-75 {
+margin-left: 25% !important;
+}
+
   /* Mobile styling*/
 
   @media screen and (max-width: 1200px){

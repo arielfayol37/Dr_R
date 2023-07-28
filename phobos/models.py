@@ -7,6 +7,13 @@ class DifficultyChoices(models.TextChoices):
     MEDIUM = 'MEDIUM', 'Medium'
     DIFFICULT = 'DIFFICULT', 'Difficult'
 
+class SubjectChoices(models.TextChoices):    
+
+    COMPUTER_SCIENCE = 'COMPUTER_SCIENCE', 'Computer Science'
+    MATHS = 'MATHS', 'Maths'
+    PHYSICS = 'PHYSICS', 'Physics'
+    # TODO: Add more subject choices as needed.
+
 class Course(models.Model):
     """
     Course class to store course on the platform.
@@ -25,14 +32,6 @@ class Course(models.Model):
             Same applies to difficulty level.
     
     """
-
-
-    class SubjectChoices(models.TextChoices):    
-
-        COMPUTER_SCIENCE = 'COMPUTER_SCIENCE', 'Computer Science'
-        MATHS = 'MATHS', 'Maths'
-        PHYSICS = 'PHYSICS', 'Physics'
-        # TODO: Add more subject choices as needed.
 
     name = models.CharField(max_length=100, blank=False, null=False)
     description = models.CharField(max_length=400, default="No description")
@@ -60,6 +59,7 @@ class Professor(User):
     department = models.CharField(max_length=50)
 
 class Topic(models.Model):
+
     """
     A course may cover various topics. For example Mechanics and Fields in Physics, but should likely cover at most 3.
     # TODO: Predefine common topics and implement the select field in the `create_course` template such that the instructor
@@ -93,6 +93,17 @@ class Topic(models.Model):
     """
     name = models.CharField(max_length=50)
 
+    def __str__(self):
+        return self.name
+
+class SubTopic(models.Model):
+    """
+    A topic may be comprised of various topics.
+    For example, Faraday's law is a subtopic of electromagnetism.
+    """
+    topic = models.ForeignKey(Topic, on_delete = models.CASCADE, related_name='sub_topics')
+    name = models.CharField(max_length=50)
+    
     def __str__(self):
         return self.name
 

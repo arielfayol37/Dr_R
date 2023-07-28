@@ -1,4 +1,5 @@
 import json
+from urllib.parse import unquote  # Import unquote for URL decoding
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth import authenticate, login, logout
@@ -36,6 +37,19 @@ def course_management(request, course_id):
         "course": course
     }
     return render(request, "phobos/course_management.html", context)
+
+@login_required(login_url='astros:login') 
+def assignment_management(request, course_id, assignment_id):
+    course = get_object_or_404(Course, pk = course_id)
+    if not course.professors.filter(pk=request.user.pk).exists():
+        return HttpResponseForbidden('You are not authorized to manage this course.')
+    assignment = get_object_or_404(Assignment, pk = assignment_id)
+    questions = Question.objects.filter(assignment = assignment)
+    context = {
+        "questions": questions,
+        "assignment": assignment
+    }
+    return render(request, "phobos/assignment_management.html", context)
 
 def login_view(request):
     if request.method == "POST":
@@ -126,7 +140,28 @@ def create_assignment(request, course_id=None):
     return render(request, 'phobos/create_assignment.html', {'form': form})
 
 @login_required(login_url='astros:login')
-def create_question(request):
+def create_question(request, assignment_id=None):
+
+    if assignment_id is not None:
+        assignment = Assignment.objects.get(pk = assignment_id)
+        topics = assignment.course.topics.all()
+        sub_topics = SubTopic.objects.filter(topic__in=topics)
+        question_form = QuestionForm({'assignment': assignment})
+    else:
+        question_form = QuestionForm()
+    mcq_answer_form = McqAnswerForm()
+    float_answer_form = FloatAnswerForm()
+    expression_answer_form = ExpressionAnswerForm()
+
+    return render(request, 'phobos/create_question.html', {
+        'question_form': question_form,
+        'mcq_answer_form': mcq_answer_form,
+        'float_answer_form': float_answer_form,
+        'expression_answer_form': expression_answer_form,
+        'topics': topics,
+        'sub_topics': sub_topics
+    })
+    """
     if request.method == 'POST':
         question_form = QuestionForm(request.POST)
         mcq_answer_form = McqAnswerForm(request.POST, request.FILES)
@@ -153,16 +188,19 @@ def create_question(request):
                 expression_answer_form.save()
 
             return redirect('question_list')  # Redirect to a list view of all questions or a success page
-    else:
-        question_form = QuestionForm()
-        mcq_answer_form = McqAnswerForm()
-        float_answer_form = FloatAnswerForm()
-        expression_answer_form = ExpressionAnswerForm()
+    
+    """
+def get_subtopics(request, selected_topic):
+    decoded_topic = unquote(selected_topic)
+    try:
+        topic = Topic.objects.get(name=decoded_topic)
+        subtopics = list(topic.sub_topics.values_list('name', flat=True))
+    #except Topic.DoesNotExist:
+    except:
+        subtopics = []
 
-    return render(request, 'phobos/create_question.html', {
-        'question_form': question_form,
-        'mcq_answer_form': mcq_answer_form,
-        'float_answer_form': float_answer_form,
-        'expression_answer_form': expression_answer_form,
-    })
+    return JsonResponse({'subtopics': subtopics})
+
+
+
 
