@@ -342,6 +342,12 @@ textarea {
   height: 100px;
 }
 
+/* Question displays need less height than course but
+more than assignment display */
+.question-li {
+  height: 30vh;
+}
+
   /* Mobile styling*/
 
   @media screen and (max-width: 1200px){

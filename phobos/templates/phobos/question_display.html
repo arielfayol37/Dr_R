@@ -1,15 +1,22 @@
 <!-- phobos: question_display.html -->
-<li class="assignment-li course-li" data-question-id="{{ question.id }}">
+<li class="question-li course-li" data-question-id="{{ question.id }}">
     <div class="course-section assigment-section">
         <div class="image-container">
         </div>
         <div class="c-text a-text">
-            <span class="c-name"><strong>{{question.name | safe}}</strong></span>
+            
+            <span class="c-name"><strong>Question {{question.number}}</strong>
+                
+            <p class="c-description">{% if question.text|length > 163 %}
+                {{ question.text|slice:":163" }}...
+            {% else %}
+                {{ question.text }}
+            {% endif %}</p><br/>
             <p class="timestamp" style="display: none;">Created on {{ question.timestamp|date:"m/d/Y" }}</p>
         </div>
     </div>
     <div class="edit-section il">{% csrf_token %}
-        <div><a href="#"><button class="btn edit-btn co" data-question-id="{{ question.id}}">Manage</button></div></a>
+        <div><a href="#"><button class="btn edit-btn co" data-question-id="{{ question.id}}">View</button></div></a>
        
     </div>
 

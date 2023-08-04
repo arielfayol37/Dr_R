@@ -158,14 +158,12 @@ class Question(models.Model):
     """
 
  
-
+    number = models.IntegerField(blank=False, null=False)
     text = models.TextField(max_length= 2000, null=False, blank=False)
     assignment = models.ForeignKey(Assignment, null=True, on_delete=models.CASCADE, \
                                    related_name="questions")
     category = models.CharField(max_length=50, null=True, blank=True)
-    # TODO: The topic will most likely be the same as that as one of the topics of the `Course`
     topic = models.ForeignKey(Topic, on_delete=models.SET_NULL, null=True, blank=True)
-    # TODO: The sub_topic is what we want the instructor to enter
     sub_topic = models.CharField(max_length=50, null=True, blank=True)
     num_points = models.IntegerField(default=10) # Add lower and upper bound.
     parent_question = models.ForeignKey('self', on_delete=models.CASCADE, null=True, \
@@ -176,6 +174,7 @@ class Question(models.Model):
         choices=DifficultyChoices.choices,
         default=DifficultyChoices.MEDIUM,
     )
+    answer = models.CharField(max_length=50, null=True, blank=True)
 
     def __str__(self):
         return f"Question {self.number} ranked {self.difficulty_level} for {self.assigment}"
@@ -223,14 +222,11 @@ class McqAnswer(models.Model):
             return f"Incorrect MCQ Answer for {self.question}: {self.content[:50]}"
         
 class FloatAnswer(models.Model):
-    # !Important: Deprecated.
     """
-    Answer to a structural question may be an algebraic expression, a vector, or a float.
-    # TODO: (maybe) Change related name to 'answers'.
+    Answer to a `structural Question` may be an algebraic expression, a vector, or a float.
     """
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="float_answers")
     content = models.FloatField(blank=False, null=False)
-    is_answer = models.BooleanField(default=False)
 
     def __str__(self):
             
@@ -238,16 +234,15 @@ class FloatAnswer(models.Model):
         
             
 
-class ExpressionAnswer(models.Model):
+class McqExpressionAnswer(models.Model):
     """
-    An expression for a structural question may just be interpreted as text. The math.js library
+    An expression for a `structural Question` may just be interpreted as text. The math.js library
     will parse the expression given by the teacher and the resulting text will be stored.
     When a user will input an answer, it will be compared to that text.
     """
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="expression_answers")
     content = models.CharField(max_length=100) 
     
-
     def __str__(self):
         
         return f"Expression Answer for {self.question}: {self.content}"
@@ -255,6 +250,7 @@ class ExpressionAnswer(models.Model):
     
 
 class VectorAnswer(models.Model):
+    # !Important: Deprecated
     """
     A vector answer for a structural question can be n-dimensional. n >= 2  
     # TODO: !Important: the content should be an array of floats.

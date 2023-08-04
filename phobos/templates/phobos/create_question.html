@@ -9,7 +9,7 @@
       
     <br/>
     
-    <form method="post" enctype="multipart/form-data" id="question-form" action="{% url %}">
+    <form method="post" enctype="multipart/form-data" id="question-form" action="{% url 'phobos:create_question' assignment_id=assignment_id %}">
       {% csrf_token %}
       <div class="question">
         <div id="topics-subtopics">

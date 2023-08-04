@@ -1,13 +1,13 @@
 <!-- phobos: assignment_management.html-->
 {% extends 'phobos/layout.html' %}
-
+{% block title %} Assignment {% endblock %}
 {% block body%}
 
     <div id="sf-container">
         <input  id="search-field" type="text" name="search" placeholder="search question"/>
     </div>
     <br/>
-    <h4>{{assignment.course.name}}: {{assigment.name}}</h4>
+    <h4>{{assignment.course.name}}: {{assignment.name}}</h4>
     <a href="{% url 'phobos:create_question' assignment_id=assignment.id %}" style="display: inline;">  Create a new question</a>
     
     <!-- Display assignment's questions -->

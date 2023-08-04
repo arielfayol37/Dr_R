@@ -1,9 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     const expressionBtn = document.querySelector('#expression-btn');
-    const expressionAnswerInput = document.querySelector("#expression-answer-input");
     const answerFieldsDiv = document.querySelector('.answer-fields');
     const form = document.querySelector('#question-form');
+    let currentAction = form.getAttribute('action');
     const floatBtn = document.querySelector('#mcq-btn');
     const floatAnswerDiv = `
     
@@ -23,17 +23,26 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
         answerFieldsDiv.innerHTML = expressionAnswerDiv;
         answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
+    
+        // Append '/0' at the end of the URL
+        const newAction = currentAction + '/0';
+        // Update the form's action attribute
+        form.setAttribute('action', newAction);
+
     });
 
     floatBtn.addEventListener('click', function(event) { 
         event.preventDefault();
         answerFieldsDiv.innerHTML = floatAnswerDiv;
-        answerFieldsDiv.scrollIntoView({ behavior: 'smooth' })
+        answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
+        // Append '/1' at the end of the URL
+        const newAction = currentAction + '/1';
+        // Update the form's action attribute
+        form.setAttribute('action', newAction);
     });
 
 
     form.addEventListener('submit', (event) => {
-        event.preventDefault();
         var answerFieldDiv = answerFieldsDiv.querySelector('div');
         // TODO: make sure the user always enter the correct type of answer.
 
@@ -43,7 +52,6 @@ document.addEventListener('DOMContentLoaded', () => {
             var userInputString = userInputNode.toString();
             var userInputLatex = userInputNode.toTex();
             expressionInputField.value = userInputString;
-            console.log(userInputLatex);
         }
         else if(
             answerFieldDiv.classList.contains('f-answer')
@@ -53,11 +61,11 @@ document.addEventListener('DOMContentLoaded', () => {
             var userInputString = userInputNode.evaluate();
             var userInputLatex = userInputNode.toTex();
             floatInputField.value = userInputString;
-            console.log(userInputLatex);
+            
         }
         
-        // Now submit the form
-        //form.submit();
+        // Now the form will be submited
+
     });
 
 });

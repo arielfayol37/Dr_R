@@ -39,11 +39,11 @@ def course_management(request, course_id):
     return render(request, "phobos/course_management.html", context)
 
 @login_required(login_url='astros:login') 
-def assignment_management(request, course_id, assignment_id):
-    course = get_object_or_404(Course, pk = course_id)
+def assignment_management(request, assignment_id, course_id=None):
+    assignment = get_object_or_404(Assignment, pk = assignment_id)
+    course = assignment.course
     if not course.professors.filter(pk=request.user.pk).exists():
         return HttpResponseForbidden('You are not authorized to manage this course.')
-    assignment = get_object_or_404(Assignment, pk = assignment_id)
     questions = Question.objects.filter(assignment = assignment)
     context = {
         "questions": questions,
@@ -140,30 +140,38 @@ def create_assignment(request, course_id=None):
     return render(request, 'phobos/create_assignment.html', {'form': form})
 
 @login_required(login_url='astros:login')
-def create_question(request, assignment_id=None):
+def create_question(request, assignment_id=None, type_int=None):
     """
     creates a question object.
     Will usually require the assignment id, and sometimes
     not (in case the questions are stand-alone e.g. in the question bank)
     """
+    if request.method == 'POST':
+        assignment = Assignment.objects.get(pk = assignment_id)
+        quest_num = assignment.questions.count() + 1
+        topic = Topic.objects.get(name=request.POST.get('topic'))
+        sub_topic = SubTopic.objects.get(name=request.POST.get('sub_topic'))
+        new_question = Question(
+            number = quest_num,
+            text = request.POST.get('question_text'),
+            topic = topic,
+            sub_topic = sub_topic,
+            answer = request.POST.get('answer'),
+            assignment = assignment
+        )
+        new_question.save()
+        return HttpResponseRedirect(reverse("phobos:assignment_management",\
+                                            kwargs={'course_id':assignment.course.id,\
+                                                    'assignment_id':assignment_id}))
+
     if assignment_id is not None:
         assignment = Assignment.objects.get(pk = assignment_id)
         topics = assignment.course.topics.all()
-        sub_topics = SubTopic.objects.filter(topic__in=topics)
-        question_form = QuestionForm({'assignment': assignment})
-    else:
-        question_form = QuestionForm()
-    mcq_answer_form = McqAnswerForm()
-    float_answer_form = FloatAnswerForm()
-    expression_answer_form = ExpressionAnswerForm()
 
     return render(request, 'phobos/create_question.html', {
-        'question_form': question_form,
-        'mcq_answer_form': mcq_answer_form,
-        'float_answer_form': float_answer_form,
-        'expression_answer_form': expression_answer_form,
-        'topics': topics,
-        'sub_topics': sub_topics
+ 
+        'topics': topics if topics else '',
+        'assignment_id': assignment_id,
     })
     """
     if request.method == 'POST':
