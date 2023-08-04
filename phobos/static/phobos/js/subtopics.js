@@ -1,5 +1,7 @@
 document.getElementById('topicSelect').addEventListener('change', function() {
-
+  //TODO: Some webbrowsers(e.g firefox) remember the topic that was submitted
+  // previously, which is a good thing. So the subtopics should also be loaded when
+  // the page loads, and not only when the topic option is changed.
     var selectedTopic = this.value;
     var subTopicSelect = document.getElementById('subTopicSelect');
     

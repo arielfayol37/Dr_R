@@ -4,12 +4,12 @@
 {% block title%} Create question {% endblock %}
 {% block body %}
     <!-- TODO: Include buttons and invent listeners to create subquestions.-->
-    
+    <h3>Create a Question</h3>
     <div class="page-container create-question">
-      <h3>Create a Question</h3>
+      
     <br/>
     
-    <form method="post" enctype="multipart/form-data" id="question-form">
+    <form method="post" enctype="multipart/form-data" id="question-form" action="{% url %}">
       {% csrf_token %}
       <div class="question">
         <div id="topics-subtopics">
@@ -39,28 +39,23 @@
           <div class="question-content form-group">
             
             <br/>
-              <label>Enter the content of the question.</label><br/>
+              <label>Question:</label><br/>
               <!--!Important: this question must be here!-->
-              <textarea id="question-textarea" class="w-75" name="question_text"></textarea>
+              <textarea placeholder="Enter the content of the question" id="question-textarea" class="w-50" name="question_text"></textarea>
           </div>
           <div class="answer-options">
             <!--TODO: Change the colors here to fit the overall design-->
+            
             <label>Select answer type</label><br/>
             <button id="expression-btn" class="btn btn-primary">Expression</button>
             <button id="mcq-btn" class="btn btn-info">Float</button>
           </div>
           <div class="answer-fields">
-            <label>Asnswer:</label>
-            <div class="e-answer"><br/>
-              <input type="text" id="expression-answer-input" name="answer"/>
-            </div>
-            <div class="f-answer"><br/>
-              <input type="text" id="float-answer-input" name="answer"/>
-            </div>
+            
           </div>
           
       </div>
-
+    <br/>
     <input type="submit" value="Create Question">
     </form>
   </div>
@@ -70,6 +65,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.5.0/math.min.js"></script>
 <script src="{% static 'phobos/js/subtopics.js' %}"></script>
 <script src="{% static 'phobos/js/answer_input.js' %}"></script>
+<script src="{% static 'phobos/js/question.js' %}"></script>
 
 
 {% endblock %}

@@ -141,7 +141,11 @@ def create_assignment(request, course_id=None):
 
 @login_required(login_url='astros:login')
 def create_question(request, assignment_id=None):
-
+    """
+    creates a question object.
+    Will usually require the assignment id, and sometimes
+    not (in case the questions are stand-alone e.g. in the question bank)
+    """
     if assignment_id is not None:
         assignment = Assignment.objects.get(pk = assignment_id)
         topics = assignment.course.topics.all()

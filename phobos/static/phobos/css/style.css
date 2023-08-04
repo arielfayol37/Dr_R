@@ -335,9 +335,11 @@ div.c-text {
 /* Style for phobos:create_question.html */
 div.create-question {
   margin-left: 5%;
+  width: 80%;
 }
-textarea#question-textarea.w-75 {
-margin-left: 25% !important;
+textarea {
+  overflow: hidden;
+  height: 100px;
 }
 
   /* Mobile styling*/
