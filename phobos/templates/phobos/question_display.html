@@ -7,8 +7,8 @@
             
             <span class="c-name"><strong>Question {{question.number}}</strong>
                 
-            <p class="c-description">{% if question.text|length > 163 %}
-                {{ question.text|slice:":163" }}...
+            <p class="c-description">{% if question.text|length > 147 %}
+                {{ question.text|slice:":147" }}...
             {% else %}
                 {{ question.text }}
             {% endif %}</p><br/>

@@ -158,7 +158,7 @@ class Question(models.Model):
     """
 
  
-    number = models.IntegerField(blank=False, null=False)
+    number = models.CharField(blank=False, null=False, max_length=5)
     text = models.TextField(max_length= 2000, null=False, blank=False)
     assignment = models.ForeignKey(Assignment, null=True, on_delete=models.CASCADE, \
                                    related_name="questions")
