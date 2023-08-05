@@ -1,0 +1,13 @@
+<!--phobos: question_view.html-->
+{% extends 'phobos/layout.html' %}
+{% load static %}
+{% block body %}
+<div class="embed">
+<p class="question-number"><strong>Question {{question.number}}</strong></p>
+<hr/>
+<p class="question-content">{{question.text}}</p>
+{% if show_answer %}
+<p class="question-answer"><strong>Answer: </strong>{{question.answer}}</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -345,9 +345,16 @@ textarea {
 /* Question displays need less height than course but
 more than assignment display */
 .question-li {
-  height: 30vh;
+  height: 35vh;
 }
-
+.q-text.c-text {
+  top: 10%;
+}
+/*style for question_view.html*/
+.embed {
+  padding: 4%;
+  margin: 1%;
+}
   /* Mobile styling*/
 
   @media screen and (max-width: 1200px){
@@ -378,6 +385,7 @@ more than assignment display */
     }
 
   } 
+
   @media screen and (max-width: 768px) {
     .course-li {
       flex-basis: 100%; /* Set the width to 100% (one item per row) */
@@ -385,9 +393,13 @@ more than assignment display */
     .assignment-li {
       height: 18vh;
     }
+    .question-li {
+      height: 30vh;
+    }
     .a-text.c-text {
       top: 15%;
     }
+
     #sf-container {
       display: flex;
       flex-direction: row;

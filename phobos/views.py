@@ -119,6 +119,7 @@ def create_course(request):
         form = CourseForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
+            messages.info(request=request, message='Course created successfully!')
             return redirect('phobos:index')  
     else:
         form = CourseForm()
@@ -130,6 +131,7 @@ def create_assignment(request, course_id=None):
         form = AssignmentForm(request.POST)
         if form.is_valid():
             assignment = form.save()
+            messages.info(request=request, message='Assignment created successfully!')
             return redirect('phobos:course_management', course_id=assignment.course.id)  
     else:
         if course_id is not None:
@@ -160,6 +162,7 @@ def create_question(request, assignment_id=None, type_int=None):
             assignment = assignment
         )
         new_question.save()
+        messages.info(request=request, message="Question created successfully!")
         return HttpResponseRedirect(reverse("phobos:assignment_management",\
                                             kwargs={'course_id':assignment.course.id,\
                                                     'assignment_id':assignment_id}))
@@ -173,35 +176,7 @@ def create_question(request, assignment_id=None, type_int=None):
         'topics': topics if topics else '',
         'assignment_id': assignment_id,
     })
-    """
-    if request.method == 'POST':
-        question_form = QuestionForm(request.POST)
-        mcq_answer_form = McqAnswerForm(request.POST, request.FILES)
-        float_answer_form = FloatAnswerForm(request.POST)
-        expression_answer_form = ExpressionAnswerForm(request.POST)
 
-        if question_form.is_valid() and mcq_answer_form.is_valid():
-            question = question_form.save()
-            mcq_answer_form.instance.question = question
-            mcq_answer_form.save()
-
-            # If it's a multiple-choice question, save the MCQ answer
-            if question.is_mcq():
-                mcq_answer_form.save()
-
-            # If it's a float question, save the float answer
-            if question.is_float():
-                float_answer_form.instance.question = question
-                float_answer_form.save()
-
-            # If it's an expression question, save the expression answer
-            if question.is_expression():
-                expression_answer_form.instance.question = question
-                expression_answer_form.save()
-
-            return redirect('question_list')  # Redirect to a list view of all questions or a success page
-    
-    """
 def get_subtopics(request, selected_topic):
     decoded_topic = unquote(selected_topic)
     try:
@@ -213,6 +188,19 @@ def get_subtopics(request, selected_topic):
 
     return JsonResponse({'subtopics': subtopics})
 
+def question_view(request, question_id, assignment_id=None, course_id=None):
+    question = Question.objects.get(pk=question_id)
+    course = Course.objects.get(pk = course_id)
+    if course.professors.filter(pk=request.user.pk).exists():
+       show_answer = True
+    else:
+        show_answer = False
+    return render(request, 'phobos/question_view.html',
+                  {'question':question,\
+                      'show_answer':show_answer})
+       
 
+def calci(request):
+    return render(request, 'phobos/calci.html')
 
 

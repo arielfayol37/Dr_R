@@ -48,8 +48,12 @@
             
             <label>Select answer type</label><br/>
             <button id="expression-btn" class="btn btn-primary">Expression</button>
-            <button id="mcq-btn" class="btn btn-info">Float</button>
+            <button id="float-btn" class="btn btn-info">Float</button>
+            <button id="latex-btn" class="btn btn-secondary">Latex</button>
+            
           </div>
+          
+          <div id="formatted-answer"></div>
           <div class="answer-fields">
             
           </div>
@@ -58,14 +62,19 @@
     <br/>
     <input type="submit" value="Create Question">
     </form>
+    {% include 'phobos/calci.html' %}
   </div>
 
 {% endblock %}
 {% block scripts%}
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.5.0/math.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml-full.min.js" crossorigin="anonymous"></script>
 <script src="{% static 'phobos/js/subtopics.js' %}"></script>
 <script src="{% static 'phobos/js/answer_input.js' %}"></script>
 <script src="{% static 'phobos/js/question.js' %}"></script>
+<script src="{% static 'phobos/js/calci.js' %}"></script>
+
 
 
 {% endblock %}

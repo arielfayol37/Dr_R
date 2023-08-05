@@ -7,7 +7,7 @@
         <input  id="search-field" type="text" name="search" placeholder="search assignment"/>
     </div>
     <br/>
-    <h4>{{course.name}}</h4>
+    <h4>{{course.name}}</h4><hr/>
     <a href="{% url 'phobos:create_assignment' course_id=course.id %}" style="display: inline;">  Create a new assigment</a>
     
     <!-- Display course's assignments -->
