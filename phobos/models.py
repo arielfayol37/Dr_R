@@ -2,6 +2,18 @@ from django.db import models
 from django.contrib.auth.models import User
 #from django.contrib.postgres.fields import ArrayField
 
+class DifficultyChoices(models.TextChoices):
+    EASY = 'EASY', 'Easy'
+    MEDIUM = 'MEDIUM', 'Medium'
+    DIFFICULT = 'DIFFICULT', 'Difficult'
+
+class SubjectChoices(models.TextChoices):    
+
+    COMPUTER_SCIENCE = 'COMPUTER_SCIENCE', 'Computer Science'
+    MATHS = 'MATHS', 'Maths'
+    PHYSICS = 'PHYSICS', 'Physics'
+    # TODO: Add more subject choices as needed.
+
 class Course(models.Model):
     """
     Course class to store course on the platform.
@@ -20,17 +32,6 @@ class Course(models.Model):
             Same applies to difficulty level.
     
     """
-    class DifficultyChoices(models.TextChoices):
-        EASY = 'EASY', 'Easy'
-        MEDIUM = 'MEDIUM', 'Medium'
-        DIFFICULT = 'DIFFICULT', 'Difficult'
-
-    class SubjectChoices(models.TextChoices):    
-
-        COMPUTER_SCIENCE = 'COMPUTER_SCIENCE', 'Computer Science'
-        MATHS = 'MATHS', 'Maths'
-        PHYSICS = 'PHYSICS', 'Physics'
-        # TODO: Add more subject choices as needed.
 
     name = models.CharField(max_length=100, blank=False, null=False)
     description = models.CharField(max_length=400, default="No description")
@@ -58,6 +59,7 @@ class Professor(User):
     department = models.CharField(max_length=50)
 
 class Topic(models.Model):
+
     """
     A course may cover various topics. For example Mechanics and Fields in Physics, but should likely cover at most 3.
     # TODO: Predefine common topics and implement the select field in the `create_course` template such that the instructor
@@ -94,19 +96,35 @@ class Topic(models.Model):
     def __str__(self):
         return self.name
 
+class SubTopic(models.Model):
+    """
+    A topic may be comprised of various topics.
+    For example, Faraday's law is a subtopic of electromagnetism.
+    """
+    topic = models.ForeignKey(Topic, on_delete = models.CASCADE, related_name='sub_topics')
+    name = models.CharField(max_length=50)
+    
+    def __str__(self):
+        return self.name
+
 class Assignment(models.Model):
     """
     Assignments in the form of quizzes/homeworks will be created by
     professors and may be comprised of one or multiple questions. 
     """
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=30)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="assignments")
-    #questions = models.ManyToManyField('Question')
     timestamp = models.DateTimeField(auto_now_add=True)
-    due_date = models.DateTimeField()
+    due_date = models.DateTimeField(blank=True, null=True)
+    assigned_date = models.DateTimeField(blank=True, null=True)
+    difficulty_level = models.CharField(
+        max_length=10,
+        choices=DifficultyChoices.choices,
+        default=DifficultyChoices.MEDIUM,
+    )
 
     def __str__(self):
-        return f"Assigment {self.name} for '{self.course.name.title()}'"
+        return f"Assigment {self.name} ranked {self.difficulty_level} for '{self.course.name.title()}'"
 
 class Question(models.Model):
     """
@@ -140,22 +158,26 @@ class Question(models.Model):
     """
 
  
-
-    text = models.TextField(null=False, blank=False)
+    number = models.CharField(blank=False, null=False, max_length=5)
+    text = models.TextField(max_length= 2000, null=False, blank=False)
     assignment = models.ForeignKey(Assignment, null=True, on_delete=models.CASCADE, \
                                    related_name="questions")
     category = models.CharField(max_length=50, null=True, blank=True)
-    # TODO: The topic will most likely be the same as that as one of the topics of the `Course`
     topic = models.ForeignKey(Topic, on_delete=models.SET_NULL, null=True, blank=True)
-    # TODO: The sub_topic is what we want the instructor to enter
     sub_topic = models.CharField(max_length=50, null=True, blank=True)
     num_points = models.IntegerField(default=10) # Add lower and upper bound.
     parent_question = models.ForeignKey('self', on_delete=models.CASCADE, null=True, \
                                         blank=True, related_name='sub_questions')
     timestamp = models.DateTimeField(auto_now_add=True)
+    difficulty_level = models.CharField(
+        max_length=10,
+        choices=DifficultyChoices.choices,
+        default=DifficultyChoices.MEDIUM,
+    )
+    answer = models.CharField(max_length=50, null=True, blank=True)
 
     def __str__(self):
-        return f"Question {self.number} for {self.assigment}"
+        return f"Question {self.number} ranked {self.difficulty_level} for {self.assigment}"
     
 
 
@@ -201,12 +223,10 @@ class McqAnswer(models.Model):
         
 class FloatAnswer(models.Model):
     """
-    Answer to a structural question may be an algebraic expression, a vector, or a float.
-    # TODO: (maybe) Change related name to 'answers'.
+    Answer to a `structural Question` may be an algebraic expression, a vector, or a float.
     """
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="float_answers")
     content = models.FloatField(blank=False, null=False)
-    is_answer = models.BooleanField(default=False)
 
     def __str__(self):
             
@@ -214,16 +234,15 @@ class FloatAnswer(models.Model):
         
             
 
-class ExpressionAnswer(models.Model):
+class McqExpressionAnswer(models.Model):
     """
-    An expression for a structural question may just be interpreted as text. The math.js library
+    An expression for a `structural Question` may just be interpreted as text. The math.js library
     will parse the expression given by the teacher and the resulting text will be stored.
     When a user will input an answer, it will be compared to that text.
     """
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="expression_answers")
     content = models.CharField(max_length=100) 
     
-
     def __str__(self):
         
         return f"Expression Answer for {self.question}: {self.content}"
@@ -231,6 +250,7 @@ class ExpressionAnswer(models.Model):
     
 
 class VectorAnswer(models.Model):
+    # !Important: Deprecated
     """
     A vector answer for a structural question can be n-dimensional. n >= 2  
     # TODO: !Important: the content should be an array of floats.

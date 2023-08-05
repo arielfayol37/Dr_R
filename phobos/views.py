@@ -1,4 +1,5 @@
 import json
+from urllib.parse import unquote  # Import unquote for URL decoding
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth import authenticate, login, logout
@@ -19,11 +20,36 @@ from django.utils.timesince import timesince
 # Create your views here.
 @login_required(login_url='astros:login') 
 def index(request):
-    courses = Course.objects.filter(professors__in=[request.user]).order_by('-timestamp') # TODO: add filter to display only the professor's courses.
+    courses = Course.objects.filter(professors__in=[request.user]).order_by('-timestamp')
     context = {
         "courses": courses
     }
     return render(request, "phobos/index.html", context)
+
+@login_required(login_url='astros:login') 
+def course_management(request, course_id):
+    course = get_object_or_404(Course, pk = course_id)
+    if not course.professors.filter(pk=request.user.pk).exists():
+        return HttpResponseForbidden('You are not authorized to manage this course.')
+    assignments = Assignment.objects.filter(course=course)
+    context = {
+        "assignments": assignments,
+        "course": course
+    }
+    return render(request, "phobos/course_management.html", context)
+
+@login_required(login_url='astros:login') 
+def assignment_management(request, assignment_id, course_id=None):
+    assignment = get_object_or_404(Assignment, pk = assignment_id)
+    course = assignment.course
+    if not course.professors.filter(pk=request.user.pk).exists():
+        return HttpResponseForbidden('You are not authorized to manage this course.')
+    questions = Question.objects.filter(assignment = assignment)
+    context = {
+        "questions": questions,
+        "assignment": assignment
+    }
+    return render(request, "phobos/assignment_management.html", context)
 
 def login_view(request):
     if request.method == "POST":
@@ -93,49 +119,88 @@ def create_course(request):
         form = CourseForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
+            messages.info(request=request, message='Course created successfully!')
             return redirect('phobos:index')  
     else:
         form = CourseForm()
     return render(request, 'phobos/create_course.html', {'form': form})
 
-@login_required(login_url='astros:login')
-def create_question(request):
+@login_required(login_url='astros:login')    
+def create_assignment(request, course_id=None):
     if request.method == 'POST':
-        question_form = QuestionForm(request.POST)
-        mcq_answer_form = McqAnswerForm(request.POST, request.FILES)
-        float_answer_form = FloatAnswerForm(request.POST)
-        expression_answer_form = ExpressionAnswerForm(request.POST)
-
-        if question_form.is_valid() and mcq_answer_form.is_valid():
-            question = question_form.save()
-            mcq_answer_form.instance.question = question
-            mcq_answer_form.save()
-
-            # If it's a multiple-choice question, save the MCQ answer
-            if question.is_mcq():
-                mcq_answer_form.save()
-
-            # If it's a float question, save the float answer
-            if question.is_float():
-                float_answer_form.instance.question = question
-                float_answer_form.save()
-
-            # If it's an expression question, save the expression answer
-            if question.is_expression():
-                expression_answer_form.instance.question = question
-                expression_answer_form.save()
-
-            return redirect('question_list')  # Redirect to a list view of all questions or a success page
+        form = AssignmentForm(request.POST)
+        if form.is_valid():
+            assignment = form.save()
+            messages.info(request=request, message='Assignment created successfully!')
+            return redirect('phobos:course_management', course_id=assignment.course.id)  
     else:
-        question_form = QuestionForm()
-        mcq_answer_form = McqAnswerForm()
-        float_answer_form = FloatAnswerForm()
-        expression_answer_form = ExpressionAnswerForm()
+        if course_id is not None:
+            course = Course.objects.get(pk = course_id)
+            form = AssignmentForm({'course': course})
+        else:
+            form = AssignmentForm()
+    return render(request, 'phobos/create_assignment.html', {'form': form})
+
+@login_required(login_url='astros:login')
+def create_question(request, assignment_id=None, type_int=None):
+    """
+    creates a question object.
+    Will usually require the assignment id, and sometimes
+    not (in case the questions are stand-alone e.g. in the question bank)
+    """
+    if request.method == 'POST':
+        assignment = Assignment.objects.get(pk = assignment_id)
+        quest_num = assignment.questions.count() + 1
+        topic = Topic.objects.get(name=request.POST.get('topic'))
+        sub_topic = SubTopic.objects.get(name=request.POST.get('sub_topic'))
+        new_question = Question(
+            number = quest_num,
+            text = request.POST.get('question_text'),
+            topic = topic,
+            sub_topic = sub_topic,
+            answer = request.POST.get('answer'),
+            assignment = assignment
+        )
+        new_question.save()
+        messages.info(request=request, message="Question created successfully!")
+        return HttpResponseRedirect(reverse("phobos:assignment_management",\
+                                            kwargs={'course_id':assignment.course.id,\
+                                                    'assignment_id':assignment_id}))
+
+    if assignment_id is not None:
+        assignment = Assignment.objects.get(pk = assignment_id)
+        topics = assignment.course.topics.all()
 
     return render(request, 'phobos/create_question.html', {
-        'question_form': question_form,
-        'mcq_answer_form': mcq_answer_form,
-        'float_answer_form': float_answer_form,
-        'expression_answer_form': expression_answer_form,
+ 
+        'topics': topics if topics else '',
+        'assignment_id': assignment_id,
     })
+
+def get_subtopics(request, selected_topic):
+    decoded_topic = unquote(selected_topic)
+    try:
+        topic = Topic.objects.get(name=decoded_topic)
+        subtopics = list(topic.sub_topics.values_list('name', flat=True))
+    #except Topic.DoesNotExist:
+    except:
+        subtopics = []
+
+    return JsonResponse({'subtopics': subtopics})
+
+def question_view(request, question_id, assignment_id=None, course_id=None):
+    question = Question.objects.get(pk=question_id)
+    course = Course.objects.get(pk = course_id)
+    if course.professors.filter(pk=request.user.pk).exists():
+       show_answer = True
+    else:
+        show_answer = False
+    return render(request, 'phobos/question_view.html',
+                  {'question':question,\
+                      'show_answer':show_answer})
+       
+
+def calci(request):
+    return render(request, 'phobos/calci.html')
+
 

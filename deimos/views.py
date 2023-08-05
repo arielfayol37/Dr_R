@@ -17,8 +17,14 @@ from django.utils.timesince import timesince
 
 
 # Create your views here.
+@login_required(login_url='astros:login') 
 def index(request):
-    pass
+    student = get_object_or_404(Student, username=request.user.username)
+    courses = student.courses.order_by('-timestamp')
+    context = {
+        "courses": courses
+    }
+    return render(request, "deimos/index.html", context)
 
 def login_view(request):
     if request.method == "POST":
@@ -27,8 +33,8 @@ def login_view(request):
         email = request.POST["email"]
         password = request.POST["password"]
         try:
-            user = Professor.objects.get(email=email)
-        except Professor.DoesNotExist:
+            user = Student.objects.get(email=email)
+        except Student.DoesNotExist:
             user = None
 
         # Authenticate the user based on the provided email and password
@@ -68,7 +74,7 @@ def register(request):
         # Attempt to create new student
         try:
             student = Student.objects.create_user(username, email, password,\
-                                                 first_name = first_name, department = department,\
+                                                 first_name = first_name,\
                                                     last_name = last_name)
             student.save()
         except IntegrityError:

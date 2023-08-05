@@ -1,5 +1,5 @@
 from django.db import models
-from phobos.models import *
+from phobos.models import Course, Question, User
 
 class Student(User):
     """

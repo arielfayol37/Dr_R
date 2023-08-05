@@ -1,4 +1,4 @@
-<!-- phobos: course_display.html -->
+<!-- deimos: course_display.html -->
 <li class="course-li" data-course-id="{{ course.id }}">
     <div class="course-section">
         <div class="image-container">
@@ -8,17 +8,13 @@
         </div>
         <div class="c-text">
             <span class="c-name"><strong>{{course.name}}</strong></span>
-            <p class="c-description">{% if course.description|length > 90 %}
-                {{ course.description|slice:":90" }}...
-            {% else %}
-                {{ course.description }}
-            {% endif %}</p>
+            <p class="c-description">{{ course.description|slice:":100" }}</p>
         
             <p class="timestamp" style="display: none;">Created on {{ course.timestamp|date:"m/d/Y" }}</p>
         </div>
     </div>
     <div class="edit-section il">{% csrf_token %}
-        <div><a href="{% url 'phobos:course_management' course_id=course.id %}"><button class="btn edit-btn co" data-course-id="{{ course.id}}">Manage</button></div></a>
+        <div><a href="#"><button class="btn edit-btn co" data-course-id="{{ course.id}}">View</button></div></a>
        
     </div>
 
