@@ -8,10 +8,26 @@ degModeBtn.classList.add('active');
 const radModeBtn = document.querySelector('#rad-mode');
 var cursorPosition = screen.selectionStart;
 
+const invBtn = document.querySelector('#inv-mode');
+const trigBtns = document.querySelectorAll('.trig');
+const specialBtns = document.querySelectorAll('.special');
 
 const replacementDict = {
     'π':'pi',
     '√':'sqrt'
+}
+
+const specialBtnsTextDict ={
+      'x y':'^',
+      '√':  '√',
+      'log': 'log',
+      'sin':'sin',
+      'asin':'asin',
+      'cos':'cos',
+      'acos':'acos',
+      'tan':'tan',
+      'atan':'atan'
+        
 }
 document.addEventListener('DOMContentLoaded', ()=>{
 
@@ -34,6 +50,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
                 {
                     btntext='/';
                 }
+                if(btntext=='x!')
+                {
+                    btntext='!';
+                }
+                
                 if (previousActiveElement === screen) {
                     // If the screen has focus, add text at the cursor position
                     
@@ -71,86 +92,38 @@ document.addEventListener('DOMContentLoaded', ()=>{
       {
         previousActiveElement = screen;
       })
-      
+
+
+
+      /* Special BUTTONS */
+      specialBtns.forEach((item)=>{
+        item.addEventListener('click',()=>{
+            screen.value += `${specialBtnsTextDict[item.textContent.trim()]}()`
+            screen.focus();
+            cursorPosition = screen.value.length - 1;
+            screen.setSelectionRange(cursorPosition, cursorPosition); 
+        })
+      }
+      )
+
+
+
+      invBtn.addEventListener('click', ()=>{
+        for(item of trigBtns){
+
+           if(item.textContent.startsWith('a')){
+            item.textContent = item.textContent.slice(1);
+           } else{
+            item.textContent = `a${item.textContent}`
+           }
+          }
+      })
+
       
     
 
 });
-    
-function sin()
-{
-    screen.value += 'sin()'
-    screen.focus();
-    cursorPosition = screen.value.length - 1;
-    screen.setSelectionRange(cursorPosition, cursorPosition);
-    //screen.value=Math.sin(screen.value);
-}
 
-function cos()
-{   screen.value += 'cos()'
-    screen.focus();
-    cursorPosition = screen.value.length - 1;
-    screen.setSelectionRange(cursorPosition, cursorPosition);
-    //screen.value=Math.cos(screen.value);
-}
-
-function tan()
-{   screen.value += 'tan()'
-    screen.focus();
-    cursorPosition = screen.value.length - 1;
-    screen.setSelectionRange(cursorPosition, cursorPosition);
-    //screen.value=Math.tan(screen.value);
-}
-
-function pow()
-{   screen.value += '^()'
-    screen.focus();
-    cursorPosition = screen.value.length - 1;
-    screen.setSelectionRange(cursorPosition, cursorPosition);
-    //screen.value=Math.pow(screen.value,2);
-}
-
-function sqrt()
-{   screen.value += '√()'
-    screen.focus();
-    cursorPosition = screen.value.length - 1;
-    screen.setSelectionRange(cursorPosition, cursorPosition);
-    //screen.value=Math.sqrt(screen.value,2);
-}
-
-function log()
-{   screen.value += 'log()'
-    screen.focus();
-    cursorPosition = screen.value.length - 1;
-    screen.setSelectionRange(cursorPosition, cursorPosition);
-    //screen.value=Math.log(screen.value);
-}
-
-function pi()
-{
-    screen.value += 'π'
-    screen.focus();
-    cursorPosition = screen.value.length;
-    screen.setSelectionRange(cursorPosition, cursorPosition);
-    //screen.value= 3.14159265359;
-}
-
-function e()
-{
-    screen.value += 'e'
-    screen.focus();
-    cursorPosition = screen.value.length;
-    screen.setSelectionRange(cursorPosition, cursorPosition);
-    //screen.value=2.71828182846;
-}
-
-function fact()
-{
-    screen.value += '!'
-    screen.focus();
-    cursorPosition = screen.value.length;
-    screen.setSelectionRange(cursorPosition, cursorPosition);
-}
 
 function backspc()
 {

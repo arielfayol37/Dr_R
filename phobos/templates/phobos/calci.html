@@ -16,10 +16,14 @@
                 <div class="row">
                     <button class="btn exempt" id="deg-mode">deg</button>
                     <button class="btn exempt" id="rad-mode">rad</button>
+                    <button> </button>
+                    <button id="ce" onclick="backspc()">CE</button>
+                    
                 </div>
                 <div class="row">
-                    <button id="ce" onclick="backspc()">CE</button>
-                    <button onclick="fact()">x!</button>
+                    
+                    <button class="btn exempt inv" id="inv-mode">inv</button>
+                    <button class="btn">x!</button>
                     <button class="btn">(</button>
                     <button class="btn">)</button>
                     <button class="btn">%</button>
@@ -27,8 +31,8 @@
                 </div>
 
                 <div class="row">
-                    <button onclick="sin()">sin</button>
-                    <button onclick="pi()">π</button>
+                    <button class="trig special">sin</button>
+                    <button class="btn">π</button>
                     <button class="btn">7</button>
                     <button class="btn">8</button>
                     <button class="btn">9</button>
@@ -36,8 +40,8 @@
                 </div>
 
                 <div class="row">
-                    <button onclick="cos()">cos</button>
-                    <button onclick="log()">log</button>
+                    <button class="trig special">cos</button>
+                    <button class="special">log</button>
                     <button class="btn">4</button>
                     <button class="btn">5</button>
                     <button class="btn">6</button>
@@ -45,8 +49,8 @@
                 </div>
 
                 <div class="row">
-                    <button onclick="tan()">tan</button>
-                    <button onclick="sqrt()">√</button>
+                    <button class="trig special">tan</button>
+                    <button class="special">√</button>
                     <button class="btn">1</button>
                     <button class="btn">2</button>
                     <button class="btn">3</button>
@@ -54,8 +58,8 @@
                 </div>
 
                 <div class="row">
-                    <button onclick="e()">e</button>
-                    <button onclick="pow()">x <span style="position: relative; bottom: .4em; right: .1em;">y</span> </button>
+                    <button class="btn">e</button>
+                    <button class="special">x <span style="position: relative; bottom: .4em; right: .1em;">y</span> </button>
                     <button class="btn">0</button>
                     <button class="btn">.</button>
                     <button id="eval" onclick="mathjsEval()">=</button>
