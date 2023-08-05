@@ -7,6 +7,12 @@ degModeBtn.classList.add('active');
 
 const radModeBtn = document.querySelector('#rad-mode');
 var cursorPosition = screen.selectionStart;
+
+
+const replacementDict = {
+    'π':'pi',
+    '√':'sqrt'
+}
 document.addEventListener('DOMContentLoaded', ()=>{
 
 
@@ -140,20 +146,38 @@ function e()
 
 function fact()
 {
-    var i, num, f;
-    f=1
-    num=screen.value;
-    for(i=1; i<=num; i++)
-    {
-        f=f*i;
-    }
-
-    i=i-1;
-
-    screen.value=f;
+    screen.value += '!'
+    screen.focus();
+    cursorPosition = screen.value.length;
+    screen.setSelectionRange(cursorPosition, cursorPosition);
 }
 
 function backspc()
 {
     screen.value=screen.value.substr(0,screen.value.length-1);
 }
+function mathjsEval(){
+    const output = math.parse(processString(screen.value)).evaluate();
+    screen.value = `${output}`;
+    screen.focus();
+    cursorPosition = screen.value.length;
+    screen.setSelectionRange(cursorPosition, cursorPosition);
+}
+
+function replaceChars(str, charA, charB) {
+    const regex = new RegExp(charA, 'g'); // 'g' flag for global replacement
+    return str.replace(regex, charB);
+  }
+
+
+  function processString(str) {
+    let result = str;
+  
+    for (const charA in replacementDict) {
+      const charB = replacementDict[charA];
+      const regex = new RegExp(charA, 'g');
+      result = result.replace(regex, charB);
+    }
+  
+    return result;
+  }
