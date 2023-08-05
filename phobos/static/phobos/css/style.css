@@ -333,15 +333,27 @@ div.c-text {
 
 
 /* Style for phobos:create_question.html */
-div.create-question {
+#create-question {
   margin-left: 5%;
   width: 80%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-items: center;
+}
+#question-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-items: center;
 }
 textarea {
   overflow: hidden;
   height: 100px;
 }
-
+.question {
+  width: 100%;
+}
 /* Question displays need less height than course but
 more than assignment display */
 .question-li {

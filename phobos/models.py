@@ -241,7 +241,7 @@ class McqExpressionAnswer(models.Model):
     When a user will input an answer, it will be compared to that text.
     """
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="expression_answers")
-    content = models.CharField(max_length=100) 
+    content = models.CharField(max_length=200) 
     
     def __str__(self):
         

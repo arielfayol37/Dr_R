@@ -17,12 +17,13 @@ body
     border-radius: 8px;
     box-shadow: 13px 13px 20px #cbced1,
               -13px -13px 20px #ffffff; 
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
  
 }
-#calc-container {
-    width:50vw;/*TODO: Make this 100% of parent when you embed it within
-                the container of create_question.html  */
-}
+
 .content 
 {
     width: 100%;

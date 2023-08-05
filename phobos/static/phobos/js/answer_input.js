@@ -7,30 +7,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const floatBtn = document.querySelector('#float-btn');
     const latexBtn = document.querySelector('#latex-btn');
     const formattedAnswerDiv = document.querySelector('#formatted-answer');
-    const floatAnswerDiv = `
-    
-    <div class="f-answer"><br/>
-    <label>Float Asnswer:</label>
-              <input placeholder="Enter a real number" type="text" id="float-answer-input" name="answer"/>
-            </div>
-    `
-    const expressionAnswerDiv = `
-    
-    <div class="e-answer"><br/>
-    <label>Expression Asnswer:</label>
-              <input placeholder="Enter algebraic expression" type="text" id="expression-answer-input" name="answer"/>
-            </div>
-    `
+    const screen = document.querySelector('#screen'); 
+    const calculatorDiv = document.querySelector('.calculator')
+    let mode = ''
+
     const latexAnswerDiv = `
     <div class="l-answer"><br/>
     <label>Latex Answer:</label>
-        <input placeholder="Enter LaTex" type="text" id="latex-answer-input" name="answer"/>
+        <input style="width: 100%; box-sizing: border-box;" placeholder="Enter LaTex" type="text" id="latex-answer-input" name="answer"/>
         </div>
     `
     expressionBtn.addEventListener('click', (event)=> {
         event.preventDefault();
+        calculatorDiv.style.display = 'block';
+        answerFieldsDiv.innerHTML = '';
+        mode = 'e-answer';
+        screen.value = ''
+        screen.placeholder = 'Enter algebraic expression';
         formattedAnswerDiv.innerHTML = ''
-        answerFieldsDiv.innerHTML = expressionAnswerDiv;
+
         answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
     
         // Append '/0' at the end of the URL
@@ -38,60 +33,28 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update the form's action attribute
         form.setAttribute('action', newAction);
 
-
-        // Adding event listener to the input field.
-        const expressionInput = answerFieldsDiv.querySelector('input');
-        expressionInput.addEventListener('input', ()=>{
-            MathJax.typesetPromise().then(() => {
-                try {
-                    const userInputNode = math.parse(expressionInput.value);
-                    var userInputLatex = userInputNode.toTex();
-                    const formattedAnswer = MathJax.tex2chtml(userInputLatex);
-                    formattedAnswerDiv.innerHTML = '<p>User\'s view: </p>';
-                    formattedAnswerDiv.appendChild(formattedAnswer);
-
-                } catch (error){
-                    console.log(error);
-                }
-
-              });
-
-        })
-
     });
 
     floatBtn.addEventListener('click', function(event) { 
         event.preventDefault();
+        calculatorDiv.style.display = 'block';
+        answerFieldsDiv.innerHTML = '';
+        mode = 'f-answer';
+        screen.value = ''
+        screen.placeholder = 'Enter real number';
         formattedAnswerDiv.innerHTML = ''
-        answerFieldsDiv.innerHTML = floatAnswerDiv;
+
         answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
         // Append '/1' at the end of the URL
         const newAction = currentAction + '/1';
         // Update the form's action attribute
         form.setAttribute('action', newAction);
-
-        // Adding event listener to the input field.
-        const floatInput = answerFieldsDiv.querySelector('input');
-        floatInput.addEventListener('input', ()=>{
-            MathJax.typesetPromise().then(() => {
-                try {
-
-                const userInputNode = math.parse(floatInput.value);
-                var userInputLatex = userInputNode.toTex();
-                const formattedAnswer = MathJax.tex2chtml(userInputLatex);
-                formattedAnswerDiv.innerHTML = '<p>User\'s view: </p>';
-                formattedAnswerDiv.appendChild(formattedAnswer);
-                } catch (error) {
-                    // console.log(error);
-                }
-                
-              });
-
-        })
     });
 
     latexBtn.addEventListener('click', (event)=> {
         event.preventDefault();
+        calculatorDiv.style.display = 'none';
+        screen.value = ''
         formattedAnswerDiv.innerHTML = ''
         answerFieldsDiv.innerHTML = latexAnswerDiv;
         answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
@@ -113,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
             MathJax.typesetPromise().then(() => {
                 try{
                     const formattedAnswer = MathJax.tex2chtml(userInputLatex);
-                    formattedAnswerDiv.innerHTML = '<p>User\'s view: </p>';
+                    formattedAnswerDiv.innerHTML = '';
                     formattedAnswerDiv.appendChild(formattedAnswer);
                 } catch(error){
                     //console.log(error);
@@ -124,24 +87,53 @@ document.addEventListener('DOMContentLoaded', () => {
         })
     });
 
+    screen.addEventListener('input', ()=> {
 
+        if(mode==='f-answer'){
+            MathJax.typesetPromise().then(() => {
+            try {
+
+            const userInputNode = math.parse(processString(screen.value));
+            var userInputLatex = userInputNode.toTex();
+            const formattedAnswer = MathJax.tex2chtml(userInputLatex);
+            formattedAnswerDiv.innerHTML = '';
+            formattedAnswerDiv.appendChild(formattedAnswer);
+            } catch (error) {
+               // console.log(error);
+            }
+            
+            });            
+        }
+        else if(mode==='e-answer'){
+            MathJax.typesetPromise().then(() => {
+                try {
+                    const userInputNode = math.parse(processString(screen.value));
+                    var userInputLatex = userInputNode.toTex();
+                    const formattedAnswer = MathJax.tex2chtml(userInputLatex);
+                    formattedAnswerDiv.innerHTML = '';
+                    formattedAnswerDiv.appendChild(formattedAnswer);
+
+                } catch (error){
+                   // console.log(error);
+                }
+
+              });            
+        }
+
+    })
     form.addEventListener('submit', (event) => {
-        var answerFieldDiv = answerFieldsDiv.querySelector('div');
-        // TODO: make sure the user always enter the correct type of answer.
 
-        if (answerFieldDiv.classList.contains('e-answer')){
-            var expressionInputField = answerFieldDiv.querySelector('input');
-            const userInputNode = math.parse(expressionInputField.value);
+        if (mode==='e-answer'){
+            const userInputNode = math.parse(screen.value);
             var userInputString = userInputNode.toString();
-            expressionInputField.value = userInputString;
+            screen.value = userInputString;
         }
         else if(
-            answerFieldDiv.classList.contains('f-answer')
+            mode==='f-answer'
         ) {
-            var floatInputField = answerFieldDiv.querySelector('input');
-            const userInputNode = math.parse(floatInputField.value);
+            const userInputNode = math.parse(screen.value);
             var userInputString = userInputNode.evaluate();
-            floatInputField.value = userInputString;
+            screen.value = userInputString;
             
         }
         /*
