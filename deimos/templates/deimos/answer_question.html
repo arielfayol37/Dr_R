@@ -1,0 +1,35 @@
+<!-- deimos: answer_question.html -->
+{% extends 'deimos/layout.html' %}
+{% load static %}
+{% block title%} Answer Question {% endblock %}
+{% block body %}
+    <!-- TODO: Include buttons and invent listeners to create subquestions.-->
+    <h3>Question {{question.number}}</h3>
+      
+    <br/>
+    
+    <form method="post" enctype="multipart/form-data" id="question-form" action="{% url 'deimos:answer_question' assignment_id=assignment_id %}">
+      {% csrf_token %}
+      <p class="question-content">{{question.text}}</p>
+    <br/>
+    <div id="formatted-answer"></div>
+    {% include 'deimos/calci.html' %}
+    <br/>
+    <input type="submit" value="Submit Answer">
+    <br/>
+    </form>
+  
+  </div>
+
+{% endblock %}
+{% block scripts%}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.5.0/math.min.js"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script src="{% static 'deimos/js/question.js' %}"></script>
+<script src="{% static 'deimos/js/calci.js' %}"></script>
+
+
+
+{% endblock %}

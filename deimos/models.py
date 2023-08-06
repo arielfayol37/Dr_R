@@ -1,6 +1,6 @@
 from django.db import models
-from phobos.models import Course, Question, User
-
+from phobos.models import Course, Question, User, Assignment
+from django.core.validators import MaxValueValidator, MinValueValidator
 class Student(User):
     """
     Student class to handle students in the platform.
@@ -9,6 +9,8 @@ class Student(User):
     # TODO: May add school name if platform scales.
     """
     courses = models.ManyToManyField(Course, through='Enrollment')
+    assignments = models.ManyToManyField(Assignment, through='AssignmentStudent')
+    questions = models.ManyToManyField(Question, through='QuestionStudent')
     notes = models.ManyToManyField(Question, through='Note')
 
 class Note(models.Model):
@@ -74,8 +76,68 @@ class BonusPoint(models.Model):
 
 class Enrollment(models.Model):
     """
-    Used to handle a student's enrollment for a particular course.
+    Used to handle a `Student`'s enrollment for a particular course.
     """
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    grade = models.FloatField()
+    grade = models.FloatField(validators=[MaxValueValidator(100)])
+    registration_date = models.DateTimeField(auto_now_add=True)
+
+class AssignmentStudent(models.Model):
+    """
+    Used to manage `Assigment` - `Student` relationship.
+    """
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
+    grade = models.FloatField(validators=[MaxValueValidator(100)])
+
+    def get_grade(self):
+        """
+        Computes and returns the grade of a student on an Assignment
+        """
+        num_points = 0
+        total = 0
+        for question in self.assignment.questions:
+            question_student = QuestionStudent.objects.filter(\
+                question=question, student=self.student)
+            total += question.num_points
+            num_points += question_student.get_num_points()
+        self.grade = (num_points/total) * 100
+        return self.grade
+class QuestionStudent(models.Model):
+    """
+    Used to manage `Question` - `Student` relationship.
+    """
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    num_points = models.FloatField(default=0)
+
+    def get_num_points(self):
+        """
+        Calculates adn returns the number of points a student gets from a question
+        """
+        total = 0
+        for attempt in self.attempts:
+            # The idea here is that at some point
+            # the student may get points even if attempts
+            # are not successful. Maybe due to a new functionality
+            # or the teacher manually giving points for that attempt
+            total += attempt.num_points
+        self.num_points = total
+        return total 
+    
+    def get_num_attempts(self):
+        """
+        Calculates and returns the number of attempts on a question by a user.
+        """
+        return self.attempts.count()
+    
+    
+class QuestionAttempt(models.Model):
+    """
+    Used to manage `Student` attempts on `Question`s
+    """
+    content = models.CharField(max_length=200, blank=False, null=False)
+    question_student = models.ForeignKey(QuestionStudent, on_delete=models.CASCADE, related_name='attempts')
+    is_successful = models.BooleanField(default=False)
+    num_points = models.FloatField(default=0)

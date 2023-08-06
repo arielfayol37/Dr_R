@@ -15,7 +15,6 @@ from django.shortcuts import get_object_or_404
 from django.middleware import csrf
 from django.utils.timesince import timesince
 
-
 # Create your views here.
 @login_required(login_url='astros:login') 
 def index(request):
@@ -25,6 +24,36 @@ def index(request):
         "courses": courses
     }
     return render(request, "deimos/index.html", context)
+
+@login_required(login_url='astros:login') 
+def course_management(request, course_id):
+    course = get_object_or_404(Course, pk=course_id)
+
+    # Check if there is any Enrollment entry that matches the given student and course
+    is_enrolled = Enrollment.objects.filter(student=request.user, course=course).exists()
+
+    if not is_enrolled:
+        return HttpResponseForbidden('You are not enrolled in this course.')
+    assignments = Assignment.objects.filter(course=course)
+    context = {
+        "assignments": assignments,
+        "course": course
+    }
+    return render(request, "deimos/course_management.html", context)
+
+@login_required(login_url='astros:login') 
+def assignment_management(request, assignment_id, course_id=None):
+    assignment = get_object_or_404(Assignment, pk = assignment_id)
+    is_assigned = AssignmentStudent.objects.filter(student=request.user, assignment=assignment).exists()
+    if not is_assigned:
+        return HttpResponseForbidden('You have not be assigned this assignment.')
+    questions = Question.objects.filter(assignment = assignment)
+    context = {
+        "questions": questions,
+        "assignment": assignment
+    }
+    return render(request, "deimos/assignment_management.html", context)
+
 
 def login_view(request):
     if request.method == "POST":
@@ -85,3 +114,15 @@ def register(request):
         return HttpResponseRedirect(reverse("deimos:index"))
     else:
         return render(request, "astros/register.html")
+
+
+#---------HELPER FUNCTIONS--------
+def is_student_enrolled(student_id, course_id):
+    # Retrieve the Student and Course instances based on their IDs
+    student = get_object_or_404(Student, pk=student_id)
+    course = get_object_or_404(Course, pk=course_id)
+
+    # Check if there is any Enrollment entry that matches the given student and course
+    is_enrolled = Enrollment.objects.filter(student=student, course=course).exists()
+
+    return is_enrolled

@@ -43,7 +43,7 @@ def assignment_management(request, assignment_id, course_id=None):
     assignment = get_object_or_404(Assignment, pk = assignment_id)
     course = assignment.course
     if not course.professors.filter(pk=request.user.pk).exists():
-        return HttpResponseForbidden('You are not authorized to manage this course.')
+        return HttpResponseForbidden('You are not authorized to manage this Assignment.')
     questions = Question.objects.filter(assignment = assignment)
     context = {
         "questions": questions,

@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 #from django.contrib.postgres.fields import ArrayField
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 class DifficultyChoices(models.TextChoices):
     EASY = 'EASY', 'Easy'
@@ -165,7 +166,7 @@ class Question(models.Model):
     category = models.CharField(max_length=50, null=True, blank=True)
     topic = models.ForeignKey(Topic, on_delete=models.SET_NULL, null=True, blank=True)
     sub_topic = models.CharField(max_length=50, null=True, blank=True)
-    num_points = models.IntegerField(default=10) # Add lower and upper bound.
+    num_points = models.IntegerField(default=10, validators=[MinValueValidator(0), MaxValueValidator(15)]) # Add lower and upper bound.
     parent_question = models.ForeignKey('self', on_delete=models.CASCADE, null=True, \
                                         blank=True, related_name='sub_questions')
     timestamp = models.DateTimeField(auto_now_add=True)
