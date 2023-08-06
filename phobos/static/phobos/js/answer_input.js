@@ -8,7 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const latexBtn = document.querySelector('#latex-btn');
     const formattedAnswerDiv = document.querySelector('#formatted-answer');
     const screen = document.querySelector('#screen'); 
-    const calculatorDiv = document.querySelector('.calculator')
+    const calculatorDiv = document.querySelector('.calculator');
+    calculatorDiv.style.display = 'none';
     let mode = ''
 
     const latexAnswerDiv = `
@@ -23,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
         answerFieldsDiv.innerHTML = '';
         mode = 'e-answer';
         screen.value = ''
-        screen.placeholder = 'Enter algebraic expression';
+        screen.placeholder = 'Algebraic expression';
         formattedAnswerDiv.innerHTML = ''
 
         answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
@@ -75,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
            
             MathJax.typesetPromise().then(() => {
                 try{
-                    const formattedAnswer = MathJax.tex2chtml(userInputLatex);
+                    const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
                     formattedAnswerDiv.innerHTML = '';
                     formattedAnswerDiv.appendChild(formattedAnswer);
                 } catch(error){
@@ -83,6 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
               });
+
 
         })
     });
@@ -95,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const userInputNode = math.parse(processString(screen.value));
             var userInputLatex = userInputNode.toTex();
-            const formattedAnswer = MathJax.tex2chtml(userInputLatex);
+            const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
             formattedAnswerDiv.innerHTML = '';
             formattedAnswerDiv.appendChild(formattedAnswer);
             } catch (error) {
@@ -109,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     const userInputNode = math.parse(processString(screen.value));
                     var userInputLatex = userInputNode.toTex();
-                    const formattedAnswer = MathJax.tex2chtml(userInputLatex);
+                    const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
                     formattedAnswerDiv.innerHTML = '';
                     formattedAnswerDiv.appendChild(formattedAnswer);
 
@@ -154,3 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 });
+
+  
+  

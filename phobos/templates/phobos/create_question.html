@@ -59,6 +59,7 @@
              
       </div>
     <br/>
+    <div id="formatted-answer"></div>
     {% include 'phobos/calci.html' %}
     <br/>
     <input type="submit" value="Create Question">
@@ -71,7 +72,8 @@
 {% block scripts%}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.5.0/math.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml-full.min.js" crossorigin="anonymous"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <script src="{% static 'phobos/js/subtopics.js' %}"></script>
 <script src="{% static 'phobos/js/answer_input.js' %}"></script>
 <script src="{% static 'phobos/js/question.js' %}"></script>

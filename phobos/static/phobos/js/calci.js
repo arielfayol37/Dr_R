@@ -1,4 +1,4 @@
-var screen=document.querySelector('#screen');
+const screen=document.querySelector('#screen');
 var btn=document.querySelectorAll('.btn');
 var previousActiveElement = document.activeElement;
 var trigMode = 'deg'; //deg by default
@@ -11,6 +11,7 @@ var cursorPosition = screen.selectionStart;
 const invBtn = document.querySelector('#inv-mode');
 const trigBtns = document.querySelectorAll('.trig');
 const specialBtns = document.querySelectorAll('.special');
+
 
 const replacementDict = {
     'π':'pi',
@@ -35,9 +36,16 @@ document.addEventListener('DOMContentLoaded', ()=>{
     
     /*============ For getting the value of btn, Here we use for loop ============*/
     for(item of btn)
-    {
-        if(!item.classList.contains('exempt')){
+    {   
+      if(!item.classList.contains('exempt')){
             item.addEventListener('click',(e)=>{
+              const inputEvent = new Event('input', {
+            bubbles: true,
+            cancelable: true,
+        });
+        screen.dispatchEvent(inputEvent);
+
+              
                 btntext=e.target.innerText;
                 screen.focus();
                 cursorPosition = screen.selectionStart;
@@ -70,9 +78,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
                   cursorPosition += btntext.length;
                   screen.setSelectionRange(cursorPosition, cursorPosition); // Move the cursor after the added text
 
-                });
+                }
+                );
     
-        }
+              } 
         
     }
 
