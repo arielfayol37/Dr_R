@@ -30,7 +30,8 @@ def course_management(request, course_id):
     course = get_object_or_404(Course, pk=course_id)
 
     # Check if there is any Enrollment entry that matches the given student and course
-    is_enrolled = Enrollment.objects.filter(student=request.user, course=course).exists()
+    student = get_object_or_404(Student, pk = request.user.pk)
+    is_enrolled = Enrollment.objects.filter(student=student, course=course).exists()
 
     if not is_enrolled:
         return HttpResponseForbidden('You are not enrolled in this course.')
@@ -44,7 +45,8 @@ def course_management(request, course_id):
 @login_required(login_url='astros:login') 
 def assignment_management(request, assignment_id, course_id=None):
     assignment = get_object_or_404(Assignment, pk = assignment_id)
-    is_assigned = AssignmentStudent.objects.filter(student=request.user, assignment=assignment).exists()
+    student = get_object_or_404(Student, pk = request.user.pk)
+    is_assigned = AssignmentStudent.objects.filter(student=student, assignment=assignment).exists()
     if not is_assigned:
         return HttpResponseForbidden('You have not be assigned this assignment.')
     questions = Question.objects.filter(assignment = assignment)
@@ -54,7 +56,37 @@ def assignment_management(request, assignment_id, course_id=None):
     }
     return render(request, "deimos/assignment_management.html", context)
 
+@login_required(login_url='astros:login')
+def course_enroll(request, course_id):
+    # assert isinstance(request.user, Student)
+    course = get_object_or_404(Course, pk = course_id)
+    student = Student.objects.get(pk = request.user.pk)
+    if not Enrollment.objects.filter(student=student, course=course).exists():
+        # If not enrolled, create a new Enrollment instance
+        enrollment = Enrollment.objects.create(student=student, course=course)
+        messages.info(request, message="You were successfully enrolled")
+        # Redirect to a success page or course details page
+        
+        # Now assign all the courses assignments to the student. 
+        for assignment in course.assignments.all():
+            assign = AssignmentStudent.objects.create(assignment=assignment, student=student)
+            for question in assignment.questions.all():
+                quest = QuestionStudent.objects.create(question=question, student=student)
+            
+        return redirect('deimos:course_management', course_id=course_id)
+    else:
+        # Student is already enrolled in the course
+        return redirect('deimos:course_management', course_id=course_id)
+    
+# TODO: Add the action link in answer_question.html
+# TODO: Implement question_view as well.
+@login_required(login_url='astros:login')
+def answer_question(request, question_id, assignment_id=None, course_id=None):
+    question = Question.objects.get(pk=question_id)
 
+    return render(request, 'deimos/answer_question.html',
+                  {'question':question})
+           
 def login_view(request):
     if request.method == "POST":
 

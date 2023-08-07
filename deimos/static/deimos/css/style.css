@@ -275,6 +275,11 @@ li{
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 
 }
+/* Assignment displays need less height */
+.assignment-li {
+  height: 25vh;
+}
+
 
 div.course-section {
   position: relative;
@@ -317,10 +322,46 @@ div.c-text {
 
 }
 .edit-btn:hover {
-  background-color: rgba(249, 105, 0, .7) !important;
+  background-color: rgba(23, 137, 252, 0.7) !important;
 }
 
-  
+
+
+/* ------------------------------Style for answer_question.html-------------*/
+#answer-question {
+  margin-left: 5%;
+  width: 80%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-items: center;
+}
+#formatted-answer 
+{  
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 13px 13px 20px #cbced1,
+              -13px -13px 20px #ffffff; 
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+ 
+}
+
+/* Question displays need less height than course but
+more than assignment display */
+.question-li {
+  height: 35vh;
+}
+.q-text.c-text {
+  top: 10%;
+}
+/*style for question_view.html*/
+.embed {
+  padding: 4%;
+  margin: 1%;
+}
   /* Mobile styling*/
 
   @media screen and (max-width: 1200px){
@@ -353,6 +394,15 @@ div.c-text {
   @media screen and (max-width: 768px) {
     .course-li {
       flex-basis: 100%; /* Set the width to 100% (one item per row) */
+    }
+    .assignment-li {
+      height: 18vh;
+    }
+    .question-li {
+      height: 30vh;
+    }
+    .a-text.c-text {
+      top: 15%;
     }
     #sf-container {
       display: flex;

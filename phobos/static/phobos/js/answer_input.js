@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const screen = document.querySelector('#screen'); 
     const calculatorDiv = document.querySelector('.calculator');
     calculatorDiv.style.display = 'none';
-    let mode = ''
+    let mode = '';
 
     const latexAnswerDiv = `
     <div class="l-answer"><br/>
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     screen.addEventListener('input', ()=> {
-
+        /*
         if(mode==='f-answer'){
             MathJax.typesetPromise().then(() => {
             try {
@@ -121,6 +121,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
               });            
         }
+        */
+        MathJax.typesetPromise().then(() => {
+            try {
+
+            const userInputNode = math.parse(processString(screen.value));
+            var userInputLatex = userInputNode.toTex();
+            const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
+            formattedAnswerDiv.innerHTML = '';
+            formattedAnswerDiv.appendChild(formattedAnswer);
+            } catch (error) {
+               // console.log(error);
+            }
+            
+            }); 
 
     })
     form.addEventListener('submit', (event) => {

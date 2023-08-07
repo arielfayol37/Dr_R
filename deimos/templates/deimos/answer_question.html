@@ -3,19 +3,19 @@
 {% load static %}
 {% block title%} Answer Question {% endblock %}
 {% block body %}
-    <!-- TODO: Include buttons and invent listeners to create subquestions.-->
     <h3>Question {{question.number}}</h3>
-      
+    <div class="page-container" id="answer-question">
     <br/>
     
-    <form method="post" enctype="multipart/form-data" id="question-form" action="{% url 'deimos:answer_question' assignment_id=assignment_id %}">
+    <form method="post" enctype="multipart/form-data" id="question-form">
       {% csrf_token %}
       <p class="question-content">{{question.text}}</p>
     <br/>
+    <input type="submit" value="Submit Answer">
     <div id="formatted-answer"></div>
     {% include 'deimos/calci.html' %}
     <br/>
-    <input type="submit" value="Submit Answer">
+    
     <br/>
     </form>
   
@@ -28,6 +28,7 @@
 <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <script src="{% static 'deimos/js/question.js' %}"></script>
+<script src="{% static 'deimos/js/answer_input.js' %}"></script>
 <script src="{% static 'deimos/js/calci.js' %}"></script>
 
 

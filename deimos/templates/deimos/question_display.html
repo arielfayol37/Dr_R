@@ -16,7 +16,7 @@
         </div>
     </div>
     <div class="edit-section il">{% csrf_token %}
-        <div><a href="{% url 'deimos:question_answer' assignment_id=assignment_id course_id=course_id question_id=question.id%}">
+        <div><a href="{% url 'deimos:answer_question' assignment_id=assignment_id course_id=course_id question_id=question.id%}">
             <button class="btn edit-btn co" data-question-id="{{ question.id}}">View</button></div></a>
        
     </div>

@@ -9,7 +9,7 @@
     </div>
     <br/>
     <a href="{% url 'phobos:create_course' %}" style="display: none;">  Create a new course</a>
-    <h4>My courses</h4>
+    <h4>My courses</h4> <span><a href="{% url 'astros:all_courses' %}">All courses</a></span>
     <!-- Display professor's courses -->
     <ul class="courses course-list">
         {% for course in courses%}

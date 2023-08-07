@@ -11,7 +11,6 @@ class Student(User):
     courses = models.ManyToManyField(Course, through='Enrollment')
     assignments = models.ManyToManyField(Assignment, through='AssignmentStudent')
     questions = models.ManyToManyField(Question, through='QuestionStudent')
-    notes = models.ManyToManyField(Question, through='Note')
 
 class Note(models.Model):
     """
@@ -20,17 +19,17 @@ class Note(models.Model):
     they are viewing the question in the future. 
     This may be helpful when they are preparing for exams.
     """
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="notes")
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    note_text = models.TextField()
+    content = models.TextField()
 
 class NoteImage(models.Model):
     """
-    Stored in Student's Note in case the student upload pictures for notes on a
+    Stored in `Student`'s Note in case the student upload pictures for notes on a
     particular question.
     """
     note = models.ForeignKey(Note, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='deimos/images/note_images/', blank=True, null=True)
+    image = models.ImageField(upload_to='deimos/images/notes_images/', blank=True, null=True)
  
 
 class Resource(models.Model):
@@ -50,9 +49,9 @@ class Resource(models.Model):
     """
     url = models.URLField(blank=False, null=False) # User must input URL
     description = models.TextField(blank = False) # User must provide description
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='resources')
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    is_approved = models.BooleanField(default=False)
+    is_approved = models.BooleanField(default=False, null=True)
 
 class BonusPoint(models.Model):
     """
@@ -71,25 +70,25 @@ class BonusPoint(models.Model):
 
     """
     points = models.IntegerField()
-    resource = models.OneToOneField(Resource, on_delete=models.CASCADE)
+    resource = models.OneToOneField(Resource, on_delete=models.CASCADE, related_name='bonuses')
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
 
 class Enrollment(models.Model):
     """
     Used to handle a `Student`'s enrollment for a particular course.
     """
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='enrollments')
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    grade = models.FloatField(validators=[MaxValueValidator(100)])
+    grade = models.FloatField(validators=[MaxValueValidator(100)], default=0, null=True)
     registration_date = models.DateTimeField(auto_now_add=True)
 
 class AssignmentStudent(models.Model):
     """
     Used to manage `Assigment` - `Student` relationship.
     """
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='assignments_intermediate')
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
-    grade = models.FloatField(validators=[MaxValueValidator(100)])
+    grade = models.FloatField(validators=[MaxValueValidator(100)], default=0, null=True)
 
     def get_grade(self):
         """
@@ -139,5 +138,5 @@ class QuestionAttempt(models.Model):
     """
     content = models.CharField(max_length=200, blank=False, null=False)
     question_student = models.ForeignKey(QuestionStudent, on_delete=models.CASCADE, related_name='attempts')
-    is_successful = models.BooleanField(default=False)
-    num_points = models.FloatField(default=0)
+    is_successful = models.BooleanField(default=False, null=True)
+    num_points = models.FloatField(default=0, null=True)

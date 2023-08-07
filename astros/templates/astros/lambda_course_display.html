@@ -1,4 +1,4 @@
-<!-- deimos: course_display.html -->
+<!-- astros: lambda_course_display.html -->
 <li class="course-li" data-course-id="{{ course.id }}">
     <div class="course-section">
         <div class="image-container">
@@ -8,14 +8,15 @@
         </div>
         <div class="c-text">
             <span class="c-name"><strong>{{course.name}}</strong></span>
-            <p class="c-description">{{ course.description|slice:":100" }}</p>
+            <p class="c-description">{% if course.description|length > 90 %}
+                {{ course.description|slice:":90" }}...
+            {% else %}
+                {{ course.description }}
+            {% endif %}</p>
         
             <p class="timestamp" style="display: none;">Created on {{ course.timestamp|date:"m/d/Y" }}</p>
         </div>
     </div>
-    <div class="edit-section il">{% csrf_token %}
-        <div><a href="{% url 'deimos:course_management' course_id=course.id%}"><button class="btn edit-btn co" data-course-id="{{ course.id}}">View</button></div></a>
-       
-    </div>
+
 
 </li>
