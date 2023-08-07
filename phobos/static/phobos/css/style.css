@@ -3,26 +3,31 @@
   src: url('../fonts/nebula-regular.otf') format('opentype');
   /* Add additional src lines for other font formats if necessary */
 }
+
 @font-face {
   font-family: 'Aileron';
   src: url('../fonts/aileron-regular.otf') format('truetype');
   /* Add additional src lines for other font formats if necessary */
 }
+
 body.body {
     background-color: white !important; 
     color:black;
     padding:0%;
 }
+
 .logout-link {
   position: absolute;
   right: 2%;
   top: 4%;
   z-index: 3;
 }
+
 #logout-link {
   color: white; /* Set the text color to white */
   font-weight: bold;
 }
+
 ul.courses {
   padding: 5%;
 }
@@ -37,11 +42,13 @@ ul.courses {
     height: 100%;
     margin-top:5%;
 }
+
 .navbar {
     position: relative;
     padding-left: 10%;
     width: 100%;
 }
+
 #r-btn {
     position:absolute;
     right: 3%;
@@ -56,19 +63,19 @@ h2#dr-r.bs-overrides{
 }
 
   
-  .brand-name {
+.brand-name {
     color: rgba(249, 105, 0, 1);
     font-family: 'Nebula', sans-serif;
     display: inline-block;
   }
   
-  .sub-heading {
+.sub-heading {
     font-size: 0.8em;
     margin-top: 10px;
   }
   
 
-  textarea {
+textarea {
     width: 100%;
     resize: none;
     overflow-y: hidden;
@@ -102,9 +109,11 @@ h2#dr-r.bs-overrides{
     justify-content: center;
     width: 60%;
 }
+
 form {
     width: 100%;
 }
+
 input.form-control {
     background-color: rgba(0,0,0,0.5);
 }
@@ -119,7 +128,7 @@ input.form-control {
     background-color: rgba(249, 105, 0, 1);
   }
 
-  .btn.btn-primary.r {
+.btn.btn-primary.r {
     margin-left: 45%;
   }
 
@@ -131,11 +140,11 @@ input.form-control {
 
 
   /* ------------------------------------ TOP OF THE PAGE -----------------------------*/
-  div.glass-container {
+div.glass-container {
     background-color: black;
     width: 100%;
   }
-  div.top-page-image {
+div.top-page-image {
     height: 40vh;
     width: 100%;
     min-width: 100%;
@@ -148,7 +157,7 @@ input.form-control {
     position: relative;
   }
 
-  #orange-line {
+#orange-line {
     position: absolute;
     top: 5%;
     left: 3%;
@@ -157,7 +166,7 @@ input.form-control {
     background-color: rgba(249, 105, 0, 1);
   }
 
-  #brand-version-text {
+#brand-version-text {
     top:4%; /**same as #orange-line*/
     left:4%; /* One more than #orange-line*/
     position: absolute;
@@ -166,7 +175,8 @@ input.form-control {
     font-weight: bolder;
     font-family: 'Nebula';
   }
-  #bvt2 {
+  
+#bvt2 {
     transform: translate(3%, -57%);
   }
 
@@ -181,11 +191,12 @@ input.form-control {
     background-color: rgba(249, 105, 0, 1);
     z-index: 1;
   }
-  div.dol + div.dol {
+  
+div.dol + div.dol {
     margin-left: 1.2%;
   }
 
-  div.message {
+div.message {
     position: absolute;
     top: 24%;
     left: 43%;
@@ -199,11 +210,12 @@ input.form-control {
     font-family: 'Aileron';
     z-index: 2;
   }
-  #m2 {
+  
+#m2 {
     transform: translate(0, -90%);
   }
 
-  #triple-orange-lines {
+#triple-orange-lines {
     position:-webkit-sticky;
     position: sticky;
     margin-top: 5vh;
@@ -218,7 +230,8 @@ input.form-control {
     transition: width 0.2s; /* Add a smooth transition effect */
     
   }
-  div.tol {
+  
+div.tol {
     margin:5%;
     width: 100%;
     height: 20%;
@@ -226,11 +239,12 @@ input.form-control {
     background-color: rgba(249, 105, 0, 1);
   }
 
-  #triple-orange-lines:hover {
+#triple-orange-lines:hover {
     width: 4vw;
     cursor: pointer;
   }
-  #search-field {
+
+#search-field {
     position: absolute;
     margin-top: 3vh !important;
     right: 3vw;
@@ -242,20 +256,22 @@ input.form-control {
     outline: none !important;
     font-weight: 100 !important;
   }
-  #search-field:hover {
+
+#search-field:hover {
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.3) !important;
   }
-  h4{
+
+h4{
     margin-left: 5%;
   }
 li{
   list-style-type: none;
 }
+
 .course-list {
   display: flex; /* Use flexbox instead of grid */
   flex-wrap: wrap; /* Wrap the items to multiple rows if needed */
   gap: 20px;
-  
 }
 
 .course-li {
@@ -265,10 +281,8 @@ li{
   height: 60vh;
   padding: 20px;
   border-radius: 5px;
-  /*box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);*/
   background-color: white;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  
   position:relative;
 
 }

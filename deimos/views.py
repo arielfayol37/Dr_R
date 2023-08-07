@@ -158,3 +158,6 @@ def is_student_enrolled(student_id, course_id):
     is_enrolled = Enrollment.objects.filter(student=student, course=course).exists()
 
     return is_enrolled
+
+def question_nav(request):
+    return render(request, 'deimos/question_nav.html', {})
