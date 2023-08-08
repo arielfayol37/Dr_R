@@ -29,6 +29,8 @@ def index(request):
 
 @login_required(login_url='astros:login') 
 def course_management(request, course_id):
+    # Making sure the request is done by a professor.
+    professor = get_object_or_404(Professor, pk=request.user.id)
     course = get_object_or_404(Course, pk = course_id)
     if not course.professors.filter(pk=request.user.pk).exists():
         return HttpResponseForbidden('You are not authorized to manage this course.')
@@ -41,7 +43,8 @@ def course_management(request, course_id):
 
 @login_required(login_url='astros:login') 
 def assignment_management(request, assignment_id, course_id=None):
-    # assert isinstance(request.user, Professor)
+    # Making sure the request is done by a professor.
+    professor = get_object_or_404(Professor, pk=request.user.id)
     assignment = get_object_or_404(Assignment, pk = assignment_id)
     course = assignment.course
     if not course.professors.filter(pk=request.user.pk).exists():
@@ -117,7 +120,8 @@ def register(request):
     
 @login_required(login_url='astros:login')    
 def create_course(request):
-    # assert isinstance(request.user, Professor)
+    # Making sure the request is done by a professor.
+    professor = get_object_or_404(Professor, pk=request.user.id)
     if request.method == 'POST':
         form = CourseForm(request.POST, request.FILES)
         if form.is_valid():
@@ -130,7 +134,8 @@ def create_course(request):
 
 @login_required(login_url='astros:login')    
 def create_assignment(request, course_id=None):
-    # assert isinstance(request.user, Professor)
+    # Making sure the request is done by a professor.
+    professor = get_object_or_404(Professor, pk=request.user.id)
     if request.method == 'POST':
         form = AssignmentForm(request.POST)
         if form.is_valid():
@@ -152,7 +157,8 @@ def create_question(request, assignment_id=None, type_int=None):
     Will usually require the assignment id, and sometimes
     not (in case the questions are stand-alone e.g. in the question bank)
     """
-    # assert isinstance(request.user, Professor)
+    # Making sure the request is done by a professor.
+    professor = get_object_or_404(Professor, pk=request.user.id)
     if request.method == 'POST':
         assignment = Assignment.objects.get(pk = assignment_id)
         quest_num = assignment.questions.count() + 1
@@ -195,6 +201,8 @@ def get_subtopics(request, selected_topic):
 
 @login_required(login_url='astros:login')
 def question_view(request, question_id, assignment_id=None, course_id=None):
+    # Making sure the request is done by a professor.
+    professor = get_object_or_404(Professor, pk=request.user.id)
     question = Question.objects.get(pk=question_id)
     course = Course.objects.get(pk = course_id)
     if course.professors.filter(pk=request.user.pk).exists():

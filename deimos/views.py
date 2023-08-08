@@ -44,8 +44,10 @@ def course_management(request, course_id):
 
 @login_required(login_url='astros:login') 
 def assignment_management(request, assignment_id, course_id=None):
-    assignment = get_object_or_404(Assignment, pk = assignment_id)
+    # Making sure the request is done by a Student.
     student = get_object_or_404(Student, pk = request.user.pk)
+    
+    assignment = get_object_or_404(Assignment, pk = assignment_id)
     is_assigned = AssignmentStudent.objects.filter(student=student, assignment=assignment).exists()
     if not is_assigned:
         return HttpResponseForbidden('You have not be assigned this assignment.')
@@ -58,9 +60,9 @@ def assignment_management(request, assignment_id, course_id=None):
 
 @login_required(login_url='astros:login')
 def course_enroll(request, course_id):
-    # assert isinstance(request.user, Student)
+    # Making sure the request is done by a Student.
+    student = get_object_or_404(Student, pk=request.user.pk)
     course = get_object_or_404(Course, pk = course_id)
-    student = Student.objects.get(pk = request.user.pk)
     if not Enrollment.objects.filter(student=student, course=course).exists():
         # If not enrolled, create a new Enrollment instance
         enrollment = Enrollment.objects.create(student=student, course=course)
@@ -82,10 +84,20 @@ def course_enroll(request, course_id):
 # TODO: Implement question_view as well.
 @login_required(login_url='astros:login')
 def answer_question(request, question_id, assignment_id=None, course_id=None):
+    # Making sure the request is done by a Student.
+    student = get_object_or_404(Student, pk=request.user.pk)
+    assignment = get_object_or_404(Assignment, pk=assignment_id)
+    question_ids = assignment.questions.values_list('id', flat=True)
+    question_nums = assignment.questions.values_list('number', flat=True)
     question = Question.objects.get(pk=question_id)
-
+    context = {
+        'question':question,
+        'question_ids_nums':zip(question_ids, question_nums),
+        'assignment_id': assignment_id,
+        'course_id': course_id
+    }
     return render(request, 'deimos/answer_question.html',
-                  {'question':question})
+                  context)
            
 def login_view(request):
     if request.method == "POST":
