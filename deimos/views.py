@@ -14,6 +14,7 @@ from .models import *
 from django.shortcuts import get_object_or_404
 from django.middleware import csrf
 from django.utils.timesince import timesince
+from phobos.models import QuestionChoices
 
 # Create your views here.
 @login_required(login_url='astros:login') 
@@ -92,11 +93,33 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
     question_ids = assignment.questions.values_list('id', flat=True)
     question_nums = assignment.questions.values_list('number', flat=True)
     question = Question.objects.get(pk=question_id)
+    is_mcq = False
+    answers = []
+    is_latex = []
+    if question.answer_type.startswith('MCQ'):
+        is_mcq = True
+        ea = question.mcq_expression_answers.all()
+        answers.extend(ea)
+        ta = question.mcq_text_answers.all()
+        answers.extend(ta)
+        fa = question.mcq_float_answers.all()
+        answers.extend(fa)
+        la = question.mcq_latex_answers.all()
+        answers.extend(la)
+        # !Important: order matters here
+        is_latex = [0 for _ in range(ea.count()+ta.count()+fa.count())]
+        is_latex.extend([1 for _ in range(la.count())])
+    
+    elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
+        answers.extend(question.latex_answers.all())
+        is_latex.extend([1 for _ in range(question.latex_answers.all().count())])        
     context = {
         'question':question,
         'question_ids_nums':zip(question_ids, question_nums),
         'assignment_id': assignment_id,
-        'course_id': course_id
+        'course_id': course_id,
+        "is_mcq": is_mcq,
+        "answers_is_latex": zip(answers, is_latex) if is_latex else None
     }
     return render(request, 'deimos/answer_question.html',
                   context)

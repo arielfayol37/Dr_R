@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     mcqBtn.addEventListener('click', (event)=>{
     
     event.preventDefault();
+        mode = 'm-answer'
         num_mcq_options_counter = 0; // TODO: change this in case you want store the already inputed mcqs when the user 
                                     // changes answer type options. For example he may click on expression then come back to mcq.
         formattedAnswerDiv.style.display = 'none';
@@ -273,11 +274,11 @@ document.addEventListener('DOMContentLoaded', () => {
             
         }
 
-        if (num_mcq_options_counter < 2){
+        if (num_mcq_options_counter < 2 && mode==='m-answer'){
             event.preventDefault();
             alert('The number of options for an MCQ must be at least 2.');
         }
-        if (num_true_counter < 1){
+        if (num_true_counter < 1 && mode==='m-answer'){
             event.preventDefault();
             alert('Must select at least one MCQ answer as correct.');
         }
@@ -358,8 +359,8 @@ function create_inputed_mcq_div(answer_value, answer_type) {
                 <input value="${answer_value}" type="hidden" name="answer_value_${option_counter}"/>
                 <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="answer_info_${option_counter}"/>
                 <div class="add-delete-btns">
-                    <button class="btn btn-warning mcq-status mcq-false exempt">False</button>
-                    <button class="btn btn-danger mcq-delete exempt">delete</button>
+                    <button type="button" class="btn btn-warning mcq-status mcq-false exempt">False</button>
+                    <button  type="button" class="btn btn-danger mcq-delete exempt">delete</button>
                 </div>
             `;
             

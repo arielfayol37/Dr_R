@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
     const answerFieldsDiv = document.querySelector('.answer-fields');
     const form = document.querySelector('#question-form');
     let currentAction = form.getAttribute('action');
-    const formattedAnswerDiv = document.querySelector('#formatted-answer');
+    const formattedAnswerDiv = document.querySelector('.formatted-answer');
     const calculatorDiv = document.querySelector('.calculator');
     const screen = document.querySelector('#screen'); 
     
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
             formattedAnswerDiv.innerHTML = '';
             formattedAnswerDiv.appendChild(formattedAnswer);
             } catch (error) {
-               // console.log(error);
+               console.log(error);
             }
             
             }); 
@@ -29,5 +29,16 @@ document.addEventListener('DOMContentLoaded', ()=> {
         screen.value = userInputString;
     });
 
+
+    /*------------------------------UTILITY FUNCTIONS ----------------------------*/
+function rep(str, index, char) {
+    str = setCharAt(str,index,char);
+    return str
+}
+
+function setCharAt(str,index,chr) {
+    if(index > str.length-1) return str;
+    return str.substring(0,index) + chr + str.substring(index+1);
+}
 
 });

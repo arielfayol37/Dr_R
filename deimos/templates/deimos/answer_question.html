@@ -10,12 +10,28 @@
     
     <form method="post" enctype="multipart/form-data" id="question-form">
       {% csrf_token %}
-      <p class="question-content">{{question.text}}</p>
-    <br/>
-    <input type="submit" class="btn btn-success exempt" value="Submit Answer">
-    <div id="formatted-answer"></div>
-    {% include 'deimos/calci.html' %}
-    <br/>
+       {% if is_mcq%}
+            {% for answer, is_latex in answers_is_latex %}
+              <div class="formatted-answer">
+                {% if is_latex %}
+                    <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
+                {% else %}   
+                    {{answer.content}}
+                {% endif %}
+              </div>
+              <button type="button" class="btn btn-warning exempt">False</button> 
+              <br/><br/>   
+            {% endfor %}
+
+        {% else %}
+            <p class="question-content">{{question.text}}</p>
+            <br/>
+            <input type="submit" class="btn btn-success exempt" value="Submit Answer">
+            <div class="formatted-answer"></div>
+            {% include 'deimos/calci.html' %}
+            <br/>
+      {% endif %}
+
     
     <br/>
     </form>

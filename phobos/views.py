@@ -167,7 +167,7 @@ def create_question(request, assignment_id=None, type_int=None):
         text = request.POST.get('question_text')
         if type_int != 3:
             question_answer = request.POST.get('answer')
-            if len(text) or len(question_answer) == 0:
+            if len(text)==0 or len(question_answer) == 0:
                 return HttpResponseForbidden('You cannot create a question without content/answer.')
         else:
             if len(text) == 0:
@@ -195,7 +195,7 @@ def create_question(request, assignment_id=None, type_int=None):
                         answer = MCQFloatAnswer(question=new_question, content=answer_content)
                     elif answer_info_encoding[1] == "2": # Latex Answer
                         new_question.answer_type = QuestionChoices.MCQ_LATEX
-                        answer = MCQLatexAnswer(qusetion=new_question, content=answer_content)
+                        answer = MCQLatexAnswer(question=new_question, content=answer_content)
                     elif answer_info_encoding[1] == "3": # Text Answer
                         new_question.answer_type = QuestionChoices.MCQ_TEXT
                         answer = MCQTextAnswer(question=new_question, content=answer_content)
@@ -249,13 +249,21 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
     professor = get_object_or_404(Professor, pk=request.user.id)
     question = Question.objects.get(pk=question_id)
     answers = []
+    is_latex = []
     is_mcq = False
     if question.answer_type.startswith('MCQ'):
         is_mcq = True
-        answers.extend(question.mcq_expression_answers.all())
-        answers.extend(question.mcq_text_answers.all())
-        answers.extend(question.mcq_latex_answers.all())
-        answers.extend(question.mcq_float_answers.all())
+        ea = question.mcq_expression_answers.all()
+        answers.extend(ea)
+        ta = question.mcq_text_answers.all()
+        answers.extend(ta)
+        fa = question.mcq_float_answers.all()
+        answers.extend(fa)
+        la = question.mcq_latex_answers.all()
+        answers.extend(la)
+        # !Important: order matters here
+        is_latex = [0 for _ in range(ea.count()+ta.count()+fa.count())]
+        is_latex.extend([1 for _ in range(la.count())])
     else:
         if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
             answers.extend(question.expression_answers.all())
@@ -263,8 +271,9 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
             answers.extend(question.text_answers.all())
         elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
             answers.extend(question.float_answers.all())
-        elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:
+        elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
             answers.extend(question.latex_answers.all())
+            is_latex.extend([1 for _ in range(question.latex_answers.all().count())])
         else:
             return HttpResponse('Something went wrong.')
     course = Course.objects.get(pk = course_id)
@@ -275,7 +284,8 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
     return render(request, 'phobos/question_view.html',
                   {'question':question,\
                       'show_answer':show_answer,\
-                     'is_mcq':is_mcq, 'answers': answers })
+                     'is_mcq':is_mcq, 'answers': answers,\
+                         'answers_is_latex': zip(answers, is_latex) if is_latex else None})
        
 
 def calci(request):
