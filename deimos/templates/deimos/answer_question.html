@@ -12,7 +12,7 @@
       {% csrf_token %}
       <p class="question-content">{{question.text}}</p>
     <br/>
-    <input type="submit" value="Submit Answer">
+    <input type="submit" class="btn btn-success exempt" value="Submit Answer">
     <div id="formatted-answer"></div>
     {% include 'deimos/calci.html' %}
     <br/>

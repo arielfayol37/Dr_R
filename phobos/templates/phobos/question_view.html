@@ -1,13 +1,36 @@
 <!--phobos: question_view.html-->
 {% extends 'phobos/layout.html' %}
 {% load static %}
+{% block title %} Question {% endblock %}
 {% block body %}
 <div class="embed">
 <p class="question-number"><strong>Question {{question.number}}</strong></p>
 <hr/>
 <p class="question-content">{{question.text}}</p>
 {% if show_answer %}
-<p class="question-answer"><strong>Answer: </strong>{{question.answer}}</p>
-</div>
+
+    {% if is_mcq %}
+        {% for answer in answers %}
+            <div class="formatted-answer">
+                {{answer.content}}
+            </div>
+            {% if answer.is_answer%}
+                <button class="btn btn-info exempt">True</button>
+            {% else %}
+                <button class="btn btn-warning exempt">False</button>
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        <p class="question-answer">
+            {% for answer in answers %}
+            <strong>Answer </strong>
+                <div class="formatted-answer">
+                    {{answer.content}}  
+                </div>
+            {% endfor %}
+        </p>
+    {% endif %}
+
 {% endif %}
+</div>
 {% endblock %}

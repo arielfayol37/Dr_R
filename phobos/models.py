@@ -15,6 +15,16 @@ class SubjectChoices(models.TextChoices):
     PHYSICS = 'PHYSICS', 'Physics'
     # TODO: Add more subject choices as needed.
 
+class QuestionChoices(models.TextChoices):
+    STRUCTURAL_EXPRESSION = 'STRUCTURAL_EXPRESSION', 'Structural Expression'
+    STRUCTURAL_FLOAT = 'STRUCTURAL_FLOAT', 'Structural Float'
+    STRUCTURAL_TEXT = 'STRUCTURAL_TEXT', 'Structural Text'
+    STRUCTURAL_LATEX = 'STRUCTURAL_LATEX', 'Structural Latex'
+    MCQ_EXPRESSION = 'MCQ_EXPRESSION', 'MCQ Expression'
+    MCQ_FLOAT = 'MCQ_FLOAT', 'MCQ Float'
+    MCQ_LATEX = 'MCQ_LATEX', 'MCQ Latex'
+    MCQ_TEXT = 'MCQ_TEXT', 'MCQ Text'
+
 class Course(models.Model):
     """
     Course class to store course on the platform.
@@ -165,7 +175,7 @@ class Question(models.Model):
                                    related_name="questions")
     category = models.CharField(max_length=50, null=True, blank=True)
     topic = models.ForeignKey(Topic, on_delete=models.SET_NULL, null=True, blank=True)
-    sub_topic = models.CharField(max_length=50, null=True, blank=True)
+    sub_topic = models.ForeignKey(SubTopic, on_delete=models.SET_NULL, null=True, blank=True)
     num_points = models.IntegerField(default=10, validators=[MinValueValidator(0), MaxValueValidator(15)]) # Add lower and upper bound.
     parent_question = models.ForeignKey('self', on_delete=models.CASCADE, null=True, \
                                         blank=True, related_name='sub_questions')
@@ -175,10 +185,15 @@ class Question(models.Model):
         choices=DifficultyChoices.choices,
         default=DifficultyChoices.MEDIUM,
     )
+    answer_type = models.CharField(
+        max_length=30,
+        choices = QuestionChoices.choices,
+        default = QuestionChoices.STRUCTURAL_TEXT
+    )
     answer = models.CharField(max_length=50, null=True, blank=True)
 
     def __str__(self):
-        return f"Question {self.number} ranked {self.difficulty_level} for {self.assigment}"
+        return f"Question {self.number} ranked {self.difficulty_level} for {self.assignment}"
     
 
 
@@ -202,25 +217,6 @@ class Hint(models.Model):
     def __str__(self):
         return f"Hint {self.id} for {self.question}"
 
-class McqAnswer(models.Model):
-    """
-    The answer(s) to a multiple choice question may be an image or a text or both. 
-    # TODO: Make sure user inputs either or both. So during testing, make sure the
-    # the view as well as the front end takes care of that.
-
-    # TODO: (maybe) Change the related names to 'answers'.
-    """
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='mcq_answers')
-    image = models.ImageField(upload_to='phobos/images/question_images/', \
-                              blank=True, null=True)
-    content = models.CharField(blank=True, null=True, max_length=200)
-    is_answer = models.BooleanField(default=False)
-
-    def __str__(self):
-        if self.is_answer:
-            return f"Correct MCQ Answer for {self.question}: {self.content[:50]}"
-        else:
-            return f"Incorrect MCQ Answer for {self.question}: {self.content[:50]}"
         
 class FloatAnswer(models.Model):
     """
@@ -234,8 +230,7 @@ class FloatAnswer(models.Model):
         return f"Float Answer for {self.question}: {self.content}"
         
             
-
-class McqExpressionAnswer(models.Model):
+class ExpressionAnswer(models.Model):
     """
     An expression for a `structural Question` may just be interpreted as text. The math.js library
     will parse the expression given by the teacher and the resulting text will be stored.
@@ -248,7 +243,97 @@ class McqExpressionAnswer(models.Model):
         
         return f"Expression Answer for {self.question}: {self.content}"
 
+class LatexAnswer(models.Model):
+    """
+    An answer may a latex string that will later be rendered in the JavaScript.
+    For now, this is only used for MCQ `Questions`.
+    """
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='latex_answers')
+    content = models.CharField(max_length=400)
+
+    def __str__(self):
+
+        return f"Latex Answer for {self.question}: {self.content}"
     
+class TextAnswer(models.Model):
+    """
+    Probably less common, but a `Question` may have a text answer.
+    """
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='text_answers')
+    content = models.CharField(max_length=1000)
+
+    def __str__(self):
+        return f"Text Answer for {self.question}: {self.content}"
+
+class MCQFloatAnswer(models.Model):
+    """
+    Answer to a `structural Question` may be an algebraic expression, a vector, or a float.
+    """
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="mcq_float_answers")
+    content = models.FloatField(blank=False, null=False)
+    is_answer = models.BooleanField(default=False)
+
+    def __str__(self):
+        if self.is_answer:
+            return f"Correct MCQ Float Answer for {self.question}: {self.content}"
+        else:
+            return f"Incorrect MCQ Float Answer for {self.question}: {self.content}" 
+        
+            
+class MCQExpressionAnswer(models.Model):
+    """
+    An expression for a `structural Question` may just be interpreted as text. The math.js library
+    will parse the expression given by the teacher and the resulting text will be stored.
+    When a user will input an answer, it will be compared to that text.
+    """
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="mcq_expression_answers")
+    content = models.CharField(max_length=200) 
+    is_answer = models.BooleanField(default=False)
+    def __str__(self):
+        if self.is_answer:
+            return f"Correct MCQ Expression Answer for {self.question}: {self.content}"
+        else:
+            return f"Incorrect MCQ Expression Answer for {self.question}: {self.content}" 
+
+class MCQLatexAnswer(models.Model):
+    """
+    Latex answer for `MCQ Question`.
+    """
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='mcq_latex_answers')
+    content = models.CharField(max_length=400)
+    is_answer = models.BooleanField(default=False)
+
+    def __str__(self):
+        if self.is_answer:
+            return f"Correct MCQ Latex Answer for {self.question}: {self.content}"
+        else:
+            return f"Incorrect MCQ Latex Answer for {self.question}: {self.content}" 
+    
+class MCQTextAnswer(models.Model):
+    """
+    Text answer for `MCQ Question`.
+    """
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='mcq_text_answers')
+    content = models.CharField(max_length=400)
+    is_answer = models.BooleanField(default=False)
+
+    def __str__(self):
+        if self.is_answer:
+            return f"Correct MCQ Text Answer for {self.question}: {self.content}"
+        else:
+            return f"Incorrect MCQ Text Answer for {self.question}: {self.content}"    
+    
+class MCQImageAnswer(models.Model):
+    """
+    An answer to an `MCQ Question` may simply be an image.
+    """
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='mcq_image_answers')
+    image = models.ImageField(upload_to='phobos/images/question_images/', \
+                              blank=True, null=True)   
+    is_answer = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Image answer for {self.quesiton} with url {self.image.url}" 
 
 class VectorAnswer(models.Model):
     # !Important: Deprecated

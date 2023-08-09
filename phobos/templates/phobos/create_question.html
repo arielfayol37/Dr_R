@@ -41,7 +41,7 @@
             <br/>
               <label>Question:</label><br/>
               <!--!Important: this question must be here!-->
-              <textarea placeholder="Enter the content of the question" id="question-textarea" class="w-100" name="question_text"></textarea>
+              <textarea placeholder="Enter the content of the question" id="question-textarea" class="w-100 question-input-field" name="question_text"></textarea>
           </div>
           <div class="answer-options">
             <!--TODO: Change the colors here to fit the overall design-->
@@ -49,8 +49,28 @@
             <label>Select answer type</label><br/>
             <button id="expression-btn" class="btn btn-primary exempt">Expression</button>
             <button id="float-btn" class="btn btn-info exempt">Float</button>
-            <button id="latex-btn" class="btn btn-secondary exempt">Latex</button>
+            <button id="mcq-btn" class="btn btn-light exempt">MCQ</button>
+            <button id="latex-btn" class="btn btn-secondary exempt"  style="display: none;">Latex</button>
             
+          </div>
+
+          <div class="mcq-answers">
+            <div class="mcq-options-button" style="display: none;">
+              <label>Select MCQ type</label><br/>
+              <button id="mcq-expression-btn" class="btn btn-primary exempt">MCQ-Expression</button>
+              <button id="mcq-float-btn" class="btn btn-info exempt">MCQ-Float</button>
+              <button id="mcq-text-btn" class="btn btn-light exempt">MCQ-Text</button>
+              <button id="mcq-latex-btn" class="btn btn-secondary exempt">MCQ-Latex</button>
+            </div>
+            <div class="inputed-mcq-answers">
+
+            </div>
+            <br/>
+            <div class="mcq-input-div" style="display: none;">
+              <input style="width: 100%; box-sizing: border-box;" type="text" class="mcq-input-field question-input-field"/>
+              <button class="btn btn-success mcq-add">add</button>
+            </div>
+
           </div>
           
           <div class="answer-fields">
@@ -59,10 +79,11 @@
              
       </div>
     <br/>
-    <div id="formatted-answer"></div>
+
+    <div class="formatted-answer" id="structural-formatted-answer"></div>
     {% include 'phobos/calci.html' %}
     <br/>
-    <input type="submit" value="Create Question">
+    <input type="submit" class="btn btn-success exempt" value="Create Question">
     <br/>
     </form>
   

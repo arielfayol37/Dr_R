@@ -50,7 +50,7 @@
     line-height:  65px;
     font-size: 1.5em;
     transition: 0.5s;
-    color: #000;
+    color: #626060;
 }
 .navigation ul li.active a .icon {
     transform: translateY(-32px);

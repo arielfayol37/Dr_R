@@ -368,7 +368,20 @@ textarea {
 .question {
   width: 100%;
 }
+/*
 #formatted-answer 
+{  
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 13px 13px 20px #cbced1,
+              -13px -13px 20px #ffffff; 
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+ 
+}*/
+.formatted-answer 
 {  
     padding: 20px;
     border-radius: 8px;
@@ -427,10 +440,11 @@ textarea {
 .question-content label {
   font-weight: bold;
 }
-
-#question-textarea {
+.question-input-field #question-textarea {
+  height: 100px;
+}
+.question-input-field {
   width: 100%;
-  height: 150px;
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -440,13 +454,18 @@ textarea {
   transition: border-color 0.3s ease-in-out;
 }
 
-#question-textarea:hover {
+.question-input-field:hover {
   border-color: #999;
 }
 
-#question-textarea:focus {
+.question-input-field:focus {
   border-color: #007bff;
   outline: none;
+}
+
+.add-delete-btns {
+  display: flex;
+  flex-direction: row;
 }
 /* Question displays need less height than course but
 more than assignment display */
