@@ -4,29 +4,66 @@ document.addEventListener('DOMContentLoaded', ()=> {
     let currentAction = form.getAttribute('action');
     const formattedAnswerDiv = document.querySelector('.formatted-answer');
     const calculatorDiv = document.querySelector('.calculator');
+    const inputedMcqAnswersDiv = document.querySelector('.inputed-mcq-answers');
+    var num_true_counter = 0;
     const screen = document.querySelector('#screen'); 
-    
-    screen.addEventListener('input', ()=> {
-        MathJax.typesetPromise().then(() => {
-            try {
-    
-            const userInputNode = math.parse(processString(screen.value));
-            var userInputLatex = userInputNode.toTex();
-            const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
-            formattedAnswerDiv.innerHTML = '';
-            formattedAnswerDiv.appendChild(formattedAnswer);
-            } catch (error) {
-               console.log(error);
-            }
-            
-            }); 
-    
+
+    /*----------------------------MCQ QUESTION --------------------------------*/
+    if (!(inputedMcqAnswersDiv === null)){
+    inputedMcqAnswersDiv.addEventListener('click', (event)=>{
+        event.preventDefault();
+        target = event.target
+        if(target.classList.contains('mcq-false')){
+            target.classList.remove('mcq-false','btn-warning');
+            target.classList.add('mcq-true', 'btn-info');
+            target.innerHTML = 'True';
+            num_true_counter += 1;
+            const answer_info_input = target.parentNode.querySelector('.formatted-answer').querySelector('.answer_info');
+            answer_info_input.value = rep(answer_info_input.value, 0, '1');
+        } else if(target.classList.contains('mcq-true')){
+            target.classList.add('mcq-false','btn-warning');
+            target.classList.remove('mcq-true', 'btn-info');
+            target.innerHTML = 'False'; 
+            num_true_counter -= 1;    
+            const answer_info_input = target.parentNode.querySelector('.formatted-answer').querySelector('.answer_info');
+            answer_info_input.value = rep(answer_info_input.value, 0, '0');
+        }
     })
 
+    }
+
+    if (!(screen === null)){
+
+        screen.addEventListener('input', ()=> {
+            MathJax.typesetPromise().then(() => {
+                try {
+        
+                const userInputNode = math.parse(processString(screen.value));
+                var userInputLatex = userInputNode.toTex();
+                const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
+                formattedAnswerDiv.innerHTML = '';
+                formattedAnswerDiv.appendChild(formattedAnswer);
+                } catch (error) {
+                   //console.log(error);
+                }
+                
+                }); 
+        
+        })
+        
+    }
+
+
     form.addEventListener('submit', (event)=>{
+        if (!(screen === null)){
         const userInputNode = math.parse(screen.value);
         var userInputString = userInputNode.toString();
         screen.value = userInputString;
+        }
+        if (!(inputedMcqAnswersDiv === null) && num_true_counter < 1){
+            event.preventDefault();
+            alert('Must select at least one MCQ answer as correct.');
+        }
     });
 
 

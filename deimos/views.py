@@ -93,9 +93,14 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
     question_ids = assignment.questions.values_list('id', flat=True)
     question_nums = assignment.questions.values_list('number', flat=True)
     question = Question.objects.get(pk=question_id)
+    if not QuestionStudent.objects.filter(question=question, student=student).exists():
+        quest = QuestionStudent.objects.create(question=question, student=student)    
     is_mcq = False
     answers = []
     is_latex = []
+    question_type = []
+    question_type_dict = {'ea': 0, 'fa':1, 'la':2, 'ta':3}
+    question_type_count = {'ea': 0, 'fa': 0, 'la': 0, 'ta': 0}
     if question.answer_type.startswith('MCQ'):
         is_mcq = True
         ea = question.mcq_expression_answers.all()
@@ -106,20 +111,39 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
         answers.extend(fa)
         la = question.mcq_latex_answers.all()
         answers.extend(la)
+        
+        question_type_count['ea'] = ea.count()
+        question_type_count['fa'] = fa.count()
+        question_type_count['la'] = la.count()
+        question_type_count['ta'] = ta.count()
         # !Important: order matters here
         is_latex = [0 for _ in range(ea.count()+ta.count()+fa.count())]
         is_latex.extend([1 for _ in range(la.count())])
+        for q_type in question_type_dict:
+            question_type.extend([question_type_dict[q_type] for _ in range(question_type_count[q_type])])
     
     elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
         answers.extend(question.latex_answers.all())
-        is_latex.extend([1 for _ in range(question.latex_answers.all().count())])        
+        is_latex.extend([1 for _ in range(question.latex_answers.all().count())]) 
+        question_type = [2]  
+    elif question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
+        answers.extend(question.expression_answers.all())
+        question_type = [0]
+    elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
+        answers.extend(question.float_answers.all())
+        question_type = [1]
+    elif question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
+        answers.extend(question.text_answers.all())
+        question_type = [3]     
     context = {
         'question':question,
         'question_ids_nums':zip(question_ids, question_nums),
         'assignment_id': assignment_id,
         'course_id': course_id,
         "is_mcq": is_mcq,
-        "answers_is_latex": zip(answers, is_latex) if is_latex else None
+        "answers_is_latex_question_type": zip(answers, is_latex, question_type),
+        'question_type': question_type, # For structural
+        'answer': answers[0]
     }
     return render(request, 'deimos/answer_question.html',
                   context)

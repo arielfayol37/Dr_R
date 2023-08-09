@@ -10,22 +10,34 @@
     
     <form method="post" enctype="multipart/form-data" id="question-form">
       {% csrf_token %}
+      <input type="hidden" value="{{question.id}}" name="question-id"/>
        {% if is_mcq%}
-            {% for answer, is_latex in answers_is_latex %}
-              <div class="formatted-answer">
-                {% if is_latex %}
-                    <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
-                {% else %}   
-                    {{answer.content}}
-                {% endif %}
-              </div>
-              <button type="button" class="btn btn-warning exempt">False</button> 
-              <br/><br/>   
-            {% endfor %}
-
+            <div class="inputed-mcq-answers">
+              {% for answer, is_latex, question_type in answers_is_latex_question_type %}
+                <div class="mcq-option-answer">
+                  <div class="formatted-answer">
+                    {% if is_latex %}
+                        <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
+                    {% else %}   
+                        {{answer.content}}
+                    {% endif %}
+                    <input type="hidden" value="{{answer.pk}}" name="mcq_answer_id_{{ forloop.counter0 }}"/>
+                    <input type="hidden" value="0{{question_type}}" class="answer_info" name="mcq_answer_info_{{ forloop.counter0 }}"/>
+                  </div>
+                  <button type="button" class="btn btn-warning mcq-false exempt">False</button> 
+                </div>
+                <br/> <br/>   
+              {% endfor %}
+            </div> 
+            <input type="submit" class="btn btn-success exempt" value="Submit Answer">
+            <br/> <br/>
         {% else %}
             <p class="question-content">{{question.text}}</p>
             <br/>
+            <input type="hidden" value="{{answer.pk}}" name="structural_answer_id_0"/>
+            {% for q_type in question_type %} <!--expecting to iterate only over one item-->
+              <input type="hidden" value="{{q_type}}" name="structural_answer_info_0"/>
+            {% endfor %}
             <input type="submit" class="btn btn-success exempt" value="Submit Answer">
             <div class="formatted-answer"></div>
             {% include 'deimos/calci.html' %}

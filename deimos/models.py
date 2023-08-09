@@ -130,13 +130,18 @@ class QuestionStudent(models.Model):
         Calculates and returns the number of attempts on a question by a user.
         """
         return self.attempts.count()
+    def __str__(self):
+        return f"Question-Student:{self.question} {self.student.username}"
     
     
 class QuestionAttempt(models.Model):
     """
     Used to manage `Student` attempts on `Question`s
     """
-    content = models.CharField(max_length=200, blank=False, null=False)
+    content = models.CharField(max_length=1000, blank=False, null=False)
     question_student = models.ForeignKey(QuestionStudent, on_delete=models.CASCADE, related_name='attempts')
     is_successful = models.BooleanField(default=False, null=True)
     num_points = models.FloatField(default=0, null=True)
+
+    def __str__(self):
+        return f"{self.question_student.student.username} attempt for {self.question_student.question}"
