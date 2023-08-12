@@ -11,6 +11,8 @@
     <form method="post" enctype="multipart/form-data" id="question-form">
       {% csrf_token %}
       <input type="hidden" value="{{question.id}}" name="question-id"/>
+      <p class="question-content">{{question.text | safe}}</p>
+      <br/>
        {% if is_mcq%}
             <div class="inputed-mcq-answers">
               {% for answer, is_latex, question_type in answers_is_latex_question_type %}
@@ -32,8 +34,7 @@
             <input type="submit" class="btn btn-success exempt" value="Submit Answer">
             <br/> <br/>
         {% else %}
-            <p class="question-content">{{question.text}}</p>
-            <br/>
+
             <input type="hidden" value="{{answer.pk}}" name="structural_answer_id_0"/>
             {% for q_type in question_type %} <!--expecting to iterate only over one item-->
               <input type="hidden" value="{{q_type}}" name="structural_answer_info_0"/>
@@ -81,7 +82,9 @@
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <script src="{% static 'deimos/js/question.js' %}"></script>
 <script src="{% static 'deimos/js/answer_input.js' %}"></script>
-<script src="{% static 'deimos/js/calci.js' %}"></script>
+{% if not is_mcq%}
+  <script src="{% static 'deimos/js/calci.js' %}"></script>
+{% endif %}
 <script src="{% static 'deimos/js/question_nav.js' %}"></script>
 
 

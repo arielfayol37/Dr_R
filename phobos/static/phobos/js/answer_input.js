@@ -79,16 +79,23 @@ document.addEventListener('DOMContentLoaded', () => {
     
     addMcqOptionBtn.addEventListener('click', (event)=>{
         event.preventDefault();
-        try{
-            const formatted_new_answer = create_inputed_mcq_div(mcqInputField.value, mcqInputField.dataset.answerType);
-            inputedMcqAnswersDiv.appendChild(formatted_new_answer);
-            mcqInputField.value = '';
-            option_counter += 1;
+        if (mcqInputField.value === null || mcqInputField.value ==='') {
+            alert('Cannot create an empty mcq option.')
+            
         }
-        catch(error){
-            alert('Make sure you enter the correct format of the answer type you selected.')
+        else{
+            try{
+                const formatted_new_answer = create_inputed_mcq_div(mcqInputField.value, mcqInputField.dataset.answerType);
+                inputedMcqAnswersDiv.appendChild(formatted_new_answer);
+                mcqInputField.value = '';
+                option_counter += 1;
+            }
+            catch(error){
+                alert('Make sure you enter the correct format of the answer type you selected.')
+            }
+            
         }
-        
+
 
     })
 
@@ -341,14 +348,20 @@ function create_inputed_mcq_div(answer_value, answer_type) {
     MathJax.typesetPromise().then(() => {
         var userInputLatex = '';
         try {
-            if (answer_type==='l-answer'){// if latex-answer
+            if (answer_type==='l-answer'){// if latex-answer or text-answer
                 userInputLatex = answer_value;
-            } else{
+                formatted_answer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
+            } else if(answer_type==='t-answer'){
+                userInputLatex = answer_value;
+                formatted_answer = document.createElement('p');
+                formatted_answer.innerHTML = userInputLatex;
+            }
+            else{
                 const userInputNode = math.parse(processString(display_value));
                 userInputLatex = userInputNode.toTex();
+                formatted_answer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
             }
             
-            formatted_answer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
 
             // Now that the formatted_answer is ready, create the necessary HTML structure
             var mcqAnswerDiv = document.createElement('div');

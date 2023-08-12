@@ -8,6 +8,22 @@ document.addEventListener('DOMContentLoaded', ()=> {
     var num_true_counter = 0;
     const screen = document.querySelector('#screen'); 
 
+/*----------------------------DISPLAYING LATEX-------------------------*/
+    console.log('Trying to display latex.')
+    const formattedAnswerDivs = document.querySelectorAll('.formatted-answer');
+    MathJax.typesetPromise().then(() => {
+        formattedAnswerDivs.forEach((formattedAnswerDiv) => {
+            try {
+                const inputElement = formattedAnswerDiv.querySelector('.latex-answer-question-view');
+                const formatted_answer = MathJax.tex2chtml(inputElement.value + '\\phantom{}');
+                //inputElement.remove();
+                formattedAnswerDiv.appendChild(formatted_answer);
+            } catch (error) {
+                console.log(error);
+            }
+        });
+    });
+
     /*----------------------------MCQ QUESTION --------------------------------*/
     if (!(inputedMcqAnswersDiv === null)){
     inputedMcqAnswersDiv.addEventListener('click', (event)=>{

@@ -15,6 +15,7 @@ from django.shortcuts import get_object_or_404
 from django.middleware import csrf
 from django.utils.timesince import timesince
 from phobos.models import QuestionChoices
+import random
 
 # Create your views here.
 @login_required(login_url='astros:login') 
@@ -111,7 +112,7 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
         answers.extend(fa)
         la = question.mcq_latex_answers.all()
         answers.extend(la)
-        
+        random.shuffle(answers)
         question_type_count['ea'] = ea.count()
         question_type_count['fa'] = fa.count()
         question_type_count['la'] = la.count()
