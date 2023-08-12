@@ -18,9 +18,12 @@ function displayLatex(){
         formattedAnswerDivs.forEach((formattedAnswerDiv) => {
             try {
                 const inputElement = formattedAnswerDiv.querySelector('.latex-answer-question-view');
-                const formatted_answer = MathJax.tex2chtml(inputElement.value + '\\phantom{}');
-                //inputElement.remove();
-                formattedAnswerDiv.appendChild(formatted_answer);
+                if (inputElement != null){
+                    const formatted_answer = MathJax.tex2chtml(inputElement.value + '\\phantom{}');
+                    //inputElement.remove();
+                    formattedAnswerDiv.appendChild(formatted_answer);
+                }
+
             } catch (error) {
                 console.log(error);
             }
