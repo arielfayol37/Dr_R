@@ -112,7 +112,7 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
         answers.extend(fa)
         la = question.mcq_latex_answers.all()
         answers.extend(la)
-        random.shuffle(answers)
+        
         question_type_count['ea'] = ea.count()
         question_type_count['fa'] = fa.count()
         question_type_count['la'] = la.count()
@@ -122,7 +122,11 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
         is_latex.extend([1 for _ in range(la.count())])
         for q_type in question_type_dict:
             question_type.extend([question_type_dict[q_type] for _ in range(question_type_count[q_type])])
-    
+        assert len(is_latex) == len(answers)
+        shuffler = [counter for counter in range(len(answers))]
+        random.shuffle(shuffler)  
+        is_latex = [is_latex[i] for i in shuffler]
+        answers = [answers[i] for i in shuffler]
     elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
         answers.extend(question.latex_answers.all())
         is_latex.extend([1 for _ in range(question.latex_answers.all().count())]) 

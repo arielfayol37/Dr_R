@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', ()=> {
     const screen = document.querySelector('#screen'); 
 
 /*----------------------------DISPLAYING LATEX-------------------------*/
+
+function displayLatex(){
+
     console.log('Trying to display latex.')
     const formattedAnswerDivs = document.querySelectorAll('.formatted-answer');
     MathJax.typesetPromise().then(() => {
@@ -23,6 +26,10 @@ document.addEventListener('DOMContentLoaded', ()=> {
             }
         });
     });
+
+}
+
+setTimeout(displayLatex, 300);
 
     /*----------------------------MCQ QUESTION --------------------------------*/
     if (!(inputedMcqAnswersDiv === null)){
