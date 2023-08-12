@@ -1,0 +1,19 @@
+<!-- deimos: course_management.html-->
+{% extends 'deimos/layout.html' %}
+{% block title %} Course {% endblock %}
+{% block body%}
+
+    <div id="sf-container">
+        <input  id="search-field" type="text" name="search" placeholder="search assignment"/>
+    </div>
+    <br/>
+    <h4>{{course.name}}</h4><hr/>
+    
+    <!-- Display course's assignments -->
+    <ul class="courses course-list">
+        {% for assignment in assignments %}
+            {% include 'deimos/assignment_display.html' with assignment=assignment course=course %}
+        {% endfor %}
+    </ul>
+
+{% endblock %}

@@ -20,7 +20,8 @@ from django.utils.timesince import timesince
 # Create your views here.
 @login_required(login_url='astros:login') 
 def index(request):
-    courses = Course.objects.filter(professors__in=[request.user]).order_by('-timestamp')
+    professor = get_object_or_404(Professor, pk = request.user.pk)
+    courses = Course.objects.filter(professors__in=[professor]).order_by('-timestamp')
     context = {
         "courses": courses
     }
@@ -28,6 +29,8 @@ def index(request):
 
 @login_required(login_url='astros:login') 
 def course_management(request, course_id):
+    # Making sure the request is done by a professor.
+    professor = get_object_or_404(Professor, pk=request.user.id)
     course = get_object_or_404(Course, pk = course_id)
     if not course.professors.filter(pk=request.user.pk).exists():
         return HttpResponseForbidden('You are not authorized to manage this course.')
@@ -40,10 +43,12 @@ def course_management(request, course_id):
 
 @login_required(login_url='astros:login') 
 def assignment_management(request, assignment_id, course_id=None):
+    # Making sure the request is done by a professor.
+    professor = get_object_or_404(Professor, pk=request.user.id)
     assignment = get_object_or_404(Assignment, pk = assignment_id)
     course = assignment.course
     if not course.professors.filter(pk=request.user.pk).exists():
-        return HttpResponseForbidden('You are not authorized to manage this course.')
+        return HttpResponseForbidden('You are not authorized to manage this Assignment.')
     questions = Question.objects.filter(assignment = assignment)
     context = {
         "questions": questions,
@@ -115,6 +120,8 @@ def register(request):
     
 @login_required(login_url='astros:login')    
 def create_course(request):
+    # Making sure the request is done by a professor.
+    professor = get_object_or_404(Professor, pk=request.user.id)
     if request.method == 'POST':
         form = CourseForm(request.POST, request.FILES)
         if form.is_valid():
@@ -127,6 +134,8 @@ def create_course(request):
 
 @login_required(login_url='astros:login')    
 def create_assignment(request, course_id=None):
+    # Making sure the request is done by a professor.
+    professor = get_object_or_404(Professor, pk=request.user.id)
     if request.method == 'POST':
         form = AssignmentForm(request.POST)
         if form.is_valid():
@@ -148,20 +157,66 @@ def create_question(request, assignment_id=None, type_int=None):
     Will usually require the assignment id, and sometimes
     not (in case the questions are stand-alone e.g. in the question bank)
     """
+    # Making sure the request is done by a professor.
+    professor = get_object_or_404(Professor, pk=request.user.id)
     if request.method == 'POST':
         assignment = Assignment.objects.get(pk = assignment_id)
         quest_num = assignment.questions.count() + 1
         topic = Topic.objects.get(name=request.POST.get('topic'))
         sub_topic = SubTopic.objects.get(name=request.POST.get('sub_topic'))
+        text = request.POST.get('question_text')
+        if type_int != 3:
+            question_answer = request.POST.get('answer')
+            if len(text)==0 or len(question_answer) == 0:
+                return HttpResponseForbidden('You cannot create a question without content/answer.')
+        else:
+            if len(text) == 0:
+                return HttpResponseForbidden('You cannot create a question without content')
         new_question = Question(
             number = quest_num,
-            text = request.POST.get('question_text'),
+            text = text,
             topic = topic,
             sub_topic = sub_topic,
-            answer = request.POST.get('answer'),
             assignment = assignment
         )
+        new_question.save() # Needed here. Before saving answer
+        if type_int == 3:
+            for key, value in request.POST.items():
+                if key.startswith('answer_value_'):
+                    option_index_start = len('answer_value_')
+                    info_key = 'answer_info_' + key[option_index_start:]
+                    answer_info_encoding = request.POST.get(info_key)
+                    answer_content = value
+                    if answer_info_encoding[1] == "0": # Expression Answer
+                        new_question.answer_type = QuestionChoices.MCQ_EXPRESSION
+                        answer = MCQExpressionAnswer(question=new_question, content=answer_content)
+                    elif answer_info_encoding[1] == "1": # Float Answer
+                        new_question.answer_type = QuestionChoices.MCQ_FLOAT
+                        answer = MCQFloatAnswer(question=new_question, content=answer_content)
+                    elif answer_info_encoding[1] == "2": # Latex Answer
+                        new_question.answer_type = QuestionChoices.MCQ_LATEX
+                        answer = MCQLatexAnswer(question=new_question, content=answer_content)
+                    elif answer_info_encoding[1] == "3": # Text Answer
+                        new_question.answer_type = QuestionChoices.MCQ_TEXT
+                        answer = MCQTextAnswer(question=new_question, content=answer_content)
+                    else:
+                        return HttpResponseForbidden('Something went wrong')
+                    answer.is_answer = True if answer_info_encoding[0] == '1' else False
+                    answer.save() # Needed here.
+        elif type_int == 0:
+            new_question.answer_type = QuestionChoices.STRUCTURAL_EXPRESSION
+            answer = ExpressionAnswer(question=new_question, content=question_answer)
+        elif type_int == 1:
+            new_question.answer_type = QuestionChoices.STRUCTURAL_FLOAT
+            answer = FloatAnswer(question=new_question, content=question_answer)
+        elif type_int == 2:
+            new_question.answer_type = QuestionChoices.STRUCTURAL_LATEX
+            answer = LatexAnswer(question=new_question, content=question_answer)
+
+        else:
+            return HttpResponseForbidden('Something went wrong')
         new_question.save()
+        answer.save() # Needed here too.
         messages.info(request=request, message="Question created successfully!")
         return HttpResponseRedirect(reverse("phobos:assignment_management",\
                                             kwargs={'course_id':assignment.course.id,\
@@ -188,8 +243,39 @@ def get_subtopics(request, selected_topic):
 
     return JsonResponse({'subtopics': subtopics})
 
+@login_required(login_url='astros:login')
 def question_view(request, question_id, assignment_id=None, course_id=None):
+    # Making sure the request is done by a professor.
+    professor = get_object_or_404(Professor, pk=request.user.id)
     question = Question.objects.get(pk=question_id)
+    answers = []
+    is_latex = []
+    is_mcq = False
+    if question.answer_type.startswith('MCQ'):
+        is_mcq = True
+        ea = question.mcq_expression_answers.all()
+        answers.extend(ea)
+        ta = question.mcq_text_answers.all()
+        answers.extend(ta)
+        fa = question.mcq_float_answers.all()
+        answers.extend(fa)
+        la = question.mcq_latex_answers.all()
+        answers.extend(la)
+        # !Important: order matters here
+        is_latex = [0 for _ in range(ea.count()+ta.count()+fa.count())]
+        is_latex.extend([1 for _ in range(la.count())])
+    else:
+        if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
+            answers.extend(question.expression_answers.all())
+        elif question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
+            answers.extend(question.text_answers.all())
+        elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
+            answers.extend(question.float_answers.all())
+        elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
+            answers.extend(question.latex_answers.all())
+            is_latex.extend([1 for _ in range(question.latex_answers.all().count())])
+        else:
+            return HttpResponse('Something went wrong.')
     course = Course.objects.get(pk = course_id)
     if course.professors.filter(pk=request.user.pk).exists():
        show_answer = True
@@ -197,7 +283,9 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
         show_answer = False
     return render(request, 'phobos/question_view.html',
                   {'question':question,\
-                      'show_answer':show_answer})
+                      'show_answer':show_answer,\
+                     'is_mcq':is_mcq, 'answers': answers,\
+                         'answers_is_latex': zip(answers, is_latex) if is_latex else None})
        
 
 def calci(request):

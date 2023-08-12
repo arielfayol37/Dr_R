@@ -3,29 +3,35 @@
   src: url('../fonts/nebula-regular.otf') format('opentype');
   /* Add additional src lines for other font formats if necessary */
 }
+
 @font-face {
   font-family: 'Aileron';
   src: url('../fonts/aileron-regular.otf') format('truetype');
   /* Add additional src lines for other font formats if necessary */
 }
+
 body.body {
     background-color: white !important; 
     color:black;
     padding:0%;
 }
+
 .logout-link {
   position: absolute;
   right: 2%;
   top: 4%;
   z-index: 3;
 }
+
 #logout-link {
   color: white; /* Set the text color to white */
   font-weight: bold;
 }
+
 ul.courses {
   padding: 5%;
 }
+
 .page-container {
     background-color: white;
     color:black;
@@ -37,11 +43,13 @@ ul.courses {
     height: 100%;
     margin-top:5%;
 }
+
 .navbar {
     position: relative;
     padding-left: 10%;
     width: 100%;
 }
+
 #r-btn {
     position:absolute;
     right: 3%;
@@ -55,20 +63,18 @@ h2#dr-r.bs-overrides{
     font-family: 'Nebula';
 }
 
-  
-  .brand-name {
+.brand-name {
     color: rgba(23, 137, 252, 1);
     font-family: 'Nebula', sans-serif;
     display: inline-block;
   }
   
-  .sub-heading {
+.sub-heading {
     font-size: 0.8em;
     margin-top: 10px;
   }
   
-
-  textarea {
+textarea {
     width: 100%;
     resize: none;
     overflow-y: hidden;
@@ -102,9 +108,11 @@ h2#dr-r.bs-overrides{
     justify-content: center;
     width: 60%;
 }
+
 form {
     width: 100%;
 }
+
 input.form-control {
     background-color: rgba(0,0,0,0.5);
 }
@@ -119,7 +127,7 @@ input.form-control {
     background-color: rgba(23, 137, 252, 1);
   }
 
-  .btn.btn-primary.r {
+.btn.btn-primary.r {
     margin-left: 45%;
   }
 
@@ -131,11 +139,11 @@ input.form-control {
 
 
   /* ------------------------------------ TOP OF THE PAGE -----------------------------*/
-  div.glass-container {
+div.glass-container {
     background-color: black;
     width: 100%;
   }
-  div.top-page-image {
+div.top-page-image {
     height: 40vh;
     width: 100%;
     min-width: 100%;
@@ -148,7 +156,7 @@ input.form-control {
     position: relative;
   }
 
-  #orange-line {
+#orange-line {
     position: absolute;
     top: 5%;
     left: 3%;
@@ -157,7 +165,7 @@ input.form-control {
     background-color: rgba(23, 137, 252, 1);
   }
 
-  #brand-version-text {
+#brand-version-text {
     top:4%; /**same as #orange-line*/
     left:4%; /* One more than #orange-line*/
     position: absolute;
@@ -166,12 +174,13 @@ input.form-control {
     font-weight: bolder;
     font-family: 'Nebula';
   }
-  #bvt2 {
+  
+#bvt2 {
     transform: translate(3%, -57%);
   }
 
 
-  div.dol {
+div.dol {
     position: absolute;
     top: 21%;
     left: 47.5%;
@@ -181,11 +190,12 @@ input.form-control {
     background-color: rgba(23, 137, 252, 1);
     z-index: 1;
   }
-  div.dol + div.dol {
+
+div.dol + div.dol {
     margin-left: 1.2%;
   }
 
-  div.message {
+div.message {
     position: absolute;
     top: 24%;
     left: 43%;
@@ -199,11 +209,12 @@ input.form-control {
     font-family: 'Aileron';
     z-index: 2;
   }
-  #m2 {
+
+#m2 {
     transform: translate(0, -90%);
   }
 
-  #triple-orange-lines {
+#triple-orange-lines {
     position:-webkit-sticky;
     position: sticky;
     margin-top: 5vh;
@@ -218,7 +229,8 @@ input.form-control {
     transition: width 0.2s; /* Add a smooth transition effect */
     
   }
-  div.tol {
+  
+div.tol {
     margin:5%;
     width: 100%;
     height: 20%;
@@ -226,11 +238,12 @@ input.form-control {
     background-color: rgba(23, 137, 252, 1);
   }
 
-  #triple-orange-lines:hover {
+#triple-orange-lines:hover {
     width: 4vw;
     cursor: pointer;
   }
-  #search-field {
+
+#search-field {
     position: absolute;
     margin-top: 3vh !important;
     right: 3vw ;
@@ -242,39 +255,42 @@ input.form-control {
     outline: none !important;
     font-weight: 100 !important;
   }
-  #search-field:hover {
+
+#search-field:hover {
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.3) !important;
   }
-  h4{
+
+h4{
     margin-left: 5%;
   }
+
 li{
   list-style-type: none;
 }
+
 .course-list {
   display: flex; /* Use flexbox instead of grid */
   flex-wrap: wrap; /* Wrap the items to multiple rows if needed */
-  gap: 20px;
-  
+  gap: 20px; 
 }
 
 .course-li {
   /*font-family: 'Courier New', Courier, monospace;*/
   font-family:'Nebula', 'Times New Roman', Times, serif;
-  /*background-color: #f1f1f1;
-  /*color:white;
-  background-color: rgba(0, 0, 0, 1);*/
   flex: 1 0 calc(33.33% - 20px); /* Distribute the items equally in three columns */
   height: 60vh;
   padding: 20px;
   border-radius: 5px;
- /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);*/
-  
   position:relative;
   background-color: white;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 
 }
+/* Assignment displays need less height */
+.assignment-li {
+  height: 25vh;
+}
+
 
 div.course-section {
   position: relative;
@@ -304,6 +320,11 @@ div.c-text {
   top: 87%;
   height: 30%;
 }
+
+.a-text.c-text {
+  top: 25%;
+}
+
 .edit-section {
   bottom: 5%;
   position: absolute;
@@ -317,10 +338,46 @@ div.c-text {
 
 }
 .edit-btn:hover {
-  background-color: rgba(249, 105, 0, .7) !important;
+  background-color: rgba(23, 137, 252, 0.7) !important;
 }
 
-  
+
+
+/* ------------------------------Style for answer_question.html-------------*/
+#answer-question {
+  margin-left: 5%;
+  width: 80%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-items: center;
+}
+.formatted-answer 
+{  
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 13px 13px 20px #cbced1,
+              -13px -13px 20px #ffffff; 
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+ 
+}
+
+/* Question displays need less height than course but
+more than assignment display */
+.question-li {
+  height: 35vh;
+}
+.q-text.c-text {
+  top: 10%;
+}
+/*style for question_view.html*/
+.embed {
+  padding: 4%;
+  margin: 1%;
+}
   /* Mobile styling*/
 
   @media screen and (max-width: 1200px){
@@ -353,6 +410,15 @@ div.c-text {
   @media screen and (max-width: 768px) {
     .course-li {
       flex-basis: 100%; /* Set the width to 100% (one item per row) */
+    }
+    .assignment-li {
+      height: 18vh;
+    }
+    .question-li {
+      height: 30vh;
+    }
+    .a-text.c-text {
+      top: 15%;
     }
     #sf-container {
       display: flex;

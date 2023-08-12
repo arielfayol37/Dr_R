@@ -1,7 +1,7 @@
 # forms.py
 
 from django import forms
-from .models import Course, Assignment, Question, McqAnswer, FloatAnswer, McqExpressionAnswer
+from .models import Course, Assignment, Question
 
 class CourseForm(forms.ModelForm):
     class Meta:
@@ -36,17 +36,5 @@ class QuestionForm(forms.ModelForm):
         model = Question
         fields = ['text', 'topic', 'sub_topic', 'num_points', 'parent_question']
 
-class McqAnswerForm(forms.ModelForm):
-    class Meta:
-        model = McqAnswer
-        fields = ['content','image', 'is_answer']
 
-class FloatAnswerForm(forms.ModelForm):
-    class Meta:
-        model = FloatAnswer
-        fields = ['content']
 
-class ExpressionAnswerForm(forms.ModelForm):
-    class Meta:
-        model = McqExpressionAnswer
-        fields = ['content']
