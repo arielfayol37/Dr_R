@@ -142,6 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
     `
     expressionBtn.addEventListener('click', (event)=> {
         event.preventDefault();
+        formattedAnswerDiv.style.display = 'block';
         mcqOptionBtnsDiv.style.display = 'none';
         mcqInputDiv.style.display = 'none';
         calculatorDiv.style.display = 'block';
@@ -162,6 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     floatBtn.addEventListener('click', function(event) { 
         event.preventDefault();
+        formattedAnswerDiv.style.display = 'block';
         mcqOptionBtnsDiv.style.display = 'none';
         mcqInputDiv.style.display = 'none';
         calculatorDiv.style.display = 'block';
@@ -180,6 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     latexBtn.addEventListener('click', (event)=> {
         event.preventDefault();
+        formattedAnswerDiv.style.display = 'block';
         mcqOptionBtnsDiv.style.display = 'none';
         mcqInputDiv.style.display = 'none';
         calculatorDiv.style.display = 'none';
