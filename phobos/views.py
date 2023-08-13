@@ -1,4 +1,4 @@
-import json
+import json, re
 from urllib.parse import unquote  # Import unquote for URL decoding
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
@@ -165,6 +165,7 @@ def create_question(request, assignment_id=None, type_int=None):
         topic = Topic.objects.get(name=request.POST.get('topic'))
         sub_topic = SubTopic.objects.get(name=request.POST.get('sub_topic'))
         text = request.POST.get('question_text')
+        text = replace_links_with_html(text)
         if type_int != 3:
             question_answer = request.POST.get('answer')
             if len(text)==0 or len(question_answer) == 0:
@@ -232,16 +233,7 @@ def create_question(request, assignment_id=None, type_int=None):
         'assignment_id': assignment_id,
     })
 
-def get_subtopics(request, selected_topic):
-    decoded_topic = unquote(selected_topic)
-    try:
-        topic = Topic.objects.get(name=decoded_topic)
-        subtopics = list(topic.sub_topics.values_list('name', flat=True))
-    #except Topic.DoesNotExist:
-    except:
-        subtopics = []
 
-    return JsonResponse({'subtopics': subtopics})
 
 @login_required(login_url='astros:login')
 def question_view(request, question_id, assignment_id=None, course_id=None):
@@ -291,4 +283,30 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
 def calci(request):
     return render(request, 'phobos/calci.html')
 
+#------------------------FETCH VIEWS-----------------------------#
+def get_subtopics(request, selected_topic):
+    decoded_topic = unquote(selected_topic)
+    try:
+        topic = Topic.objects.get(name=decoded_topic)
+        subtopics = list(topic.sub_topics.values_list('name', flat=True))
+    #except Topic.DoesNotExist:
+    except:
+        subtopics = []
 
+    return JsonResponse({'subtopics': subtopics})
+
+#--------------HELPER FUNCTIONS--------------------------------#
+
+def replace_links_with_html(text):
+    # Define a regular expression pattern to match URLs
+    url_pattern = r'https?://\S+'
+
+    # Find all matches of the pattern in the input text
+    matches = re.findall(url_pattern, text)
+
+    # Replace each match with an HTML anchor tag
+    for match in matches:
+        link_tag = f'<a href="{match}">{match}</a>'
+        text = text.replace(match, link_tag)
+
+    return text

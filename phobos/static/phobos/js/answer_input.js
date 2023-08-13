@@ -279,6 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mode==='e-answer'){
             const userInputNode = math.parse(screen.value);
             var userInputString = userInputNode.toString();
+            //var userInputString = math.simplify(userInputNode, {}, {context: math.simplify.realContext}).toString()
             screen.value = userInputString;
         }
         else if(
@@ -392,6 +393,7 @@ function create_inputed_mcq_div(answer_value, answer_type) {
 
             // Append mcqAnswerDiv to inputedMcqDiv
             inputedMcqDiv.appendChild(mcqAnswerDiv);
+            MathJax.typesetPromise();
         } catch (error) {
             console.log(error);
         }

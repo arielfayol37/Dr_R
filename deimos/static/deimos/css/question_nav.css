@@ -8,7 +8,7 @@
 
 .navigation {
     position: relative;
-    width: 400px;
+    width: 500px;
     height: 60px;
     background: #f0f0f0; /* Change the background color to the desired color (e.g., light gray) */
     display: flex;
@@ -20,7 +20,7 @@
 
 .navigation ul {
     display: flex;
-    width: 400px;
+    width: 500px;
 }
 
 .navigation ul li {
