@@ -2,26 +2,25 @@
 {% extends 'phobos/layout.html' %}
 {% load static %}
 {% block title %} Question {% endblock %}
-{% block headscript %}
-<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+
 <!--The following script is included in phobos/question_view.js. It couldn't load properly from here 
     for a reason I ignore.
 -->
 <!--<script id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 -->
 
-{% endblock %}
 {% block body %}
 <div class="embed">
 <p class="question-number"><strong>Question {{question.number}}</strong></p>
 <hr/>
-<p class="question-content">{{question.text}}</p>
+<p class="question-content">{{question.text|safe}}</p>
 {% if show_answer %}
 
     {% if is_mcq %}
         {% for answer, is_latex in answers_is_latex %}
             <div class="formatted-answer">
                 {% if is_latex %}
+                
                     <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
                 {% else %}   
                     {{answer.content}}
@@ -48,6 +47,6 @@
 </div>
 {% endblock %}
 {% block scripts %}
-
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
 <script src="{% static 'phobos/js/question_view.js' %}"></script>
 {% endblock %}

@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     mcqBtn.addEventListener('click', (event)=>{
     
     event.preventDefault();
+        inputedMcqAnswersDiv.style.display = 'block';
         mode = 'm-answer'
         num_mcq_options_counter = 0; // TODO: change this in case you want store the already inputed mcqs when the user 
                                     // changes answer type options. For example he may click on expression then come back to mcq.
@@ -142,6 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
     `
     expressionBtn.addEventListener('click', (event)=> {
         event.preventDefault();
+        inputedMcqAnswersDiv.style.display = 'none';
         formattedAnswerDiv.style.display = 'block';
         mcqOptionBtnsDiv.style.display = 'none';
         mcqInputDiv.style.display = 'none';
@@ -163,6 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     floatBtn.addEventListener('click', function(event) { 
         event.preventDefault();
+        inputedMcqAnswersDiv.style.display = 'none';
         formattedAnswerDiv.style.display = 'block';
         mcqOptionBtnsDiv.style.display = 'none';
         mcqInputDiv.style.display = 'none';
@@ -182,6 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     latexBtn.addEventListener('click', (event)=> {
         event.preventDefault();
+        inputedMcqAnswersDiv.style.display = 'none';
         formattedAnswerDiv.style.display = 'block';
         mcqOptionBtnsDiv.style.display = 'none';
         mcqInputDiv.style.display = 'none';
@@ -210,6 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
                     formattedAnswerDiv.innerHTML = '';
                     formattedAnswerDiv.appendChild(formattedAnswer);
+                    MathJax.typesetPromise();
                 } catch(error){
                     //console.log(error);
                 }
@@ -261,6 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
             formattedAnswerDiv.innerHTML = '';
             formattedAnswerDiv.appendChild(formattedAnswer);
+            MathJax.typesetPromise();
             } catch (error) {
                // console.log(error);
             }
@@ -273,6 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mode==='e-answer'){
             const userInputNode = math.parse(screen.value);
             var userInputString = userInputNode.toString();
+            //var userInputString = math.simplify(userInputNode, {}, {context: math.simplify.realContext}).toString()
             screen.value = userInputString;
         }
         else if(
@@ -386,6 +393,7 @@ function create_inputed_mcq_div(answer_value, answer_type) {
 
             // Append mcqAnswerDiv to inputedMcqDiv
             inputedMcqDiv.appendChild(mcqAnswerDiv);
+            MathJax.typesetPromise();
         } catch (error) {
             console.log(error);
         }
