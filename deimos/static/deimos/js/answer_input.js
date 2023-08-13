@@ -11,8 +11,6 @@ document.addEventListener('DOMContentLoaded', ()=> {
 /*----------------------------DISPLAYING LATEX-------------------------*/
 
 function displayLatex(){
-
-    console.log('Trying to display latex.')
     const formattedAnswerDivs = document.querySelectorAll('.formatted-answer');
     MathJax.typesetPromise().then(() => {
         formattedAnswerDivs.forEach((formattedAnswerDiv) => {
@@ -22,6 +20,7 @@ function displayLatex(){
                     const formatted_answer = MathJax.tex2chtml(inputElement.value + '\\phantom{}');
                     //inputElement.remove();
                     formattedAnswerDiv.appendChild(formatted_answer);
+                    MathJax.typesetPromise();
                 }
 
             } catch (error) {
@@ -32,7 +31,7 @@ function displayLatex(){
 
 }
 
-setTimeout(displayLatex, 300);
+displayLatex();
 
     /*----------------------------MCQ QUESTION --------------------------------*/
     if (!(inputedMcqAnswersDiv === null)){
@@ -69,6 +68,7 @@ setTimeout(displayLatex, 300);
                 const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
                 formattedAnswerDiv.innerHTML = '';
                 formattedAnswerDiv.appendChild(formattedAnswer);
+                MathJax.typesetPromise();
                 } catch (error) {
                    //console.log(error);
                 }

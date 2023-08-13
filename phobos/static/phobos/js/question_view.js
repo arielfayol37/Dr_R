@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const formatted_answer = MathJax.tex2chtml(inputElement.value + '\\phantom{}');
                     //inputElement.remove();
                     formattedAnswerDiv.appendChild(formatted_answer);
+                    MathJax.typesetPromise();
                 } catch (error) {
                     console.log(error);
                 }

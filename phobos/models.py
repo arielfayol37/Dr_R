@@ -24,6 +24,12 @@ class QuestionChoices(models.TextChoices):
     MCQ_FLOAT = 'MCQ_FLOAT', 'MCQ Float'
     MCQ_LATEX = 'MCQ_LATEX', 'MCQ Latex'
     MCQ_TEXT = 'MCQ_TEXT', 'MCQ Text'
+    SURVEY = 'SURVEY', 'Survey'
+
+class AssignmentChoices(models.TextChoices):
+    QUIZ = 'QUIZ', 'Quiz'
+    HOMEWORK = 'HOMEWORK', 'Homework'
+    PRACTICE_TEST = 'PRACTICE_TEST', 'Practice Test'
 
 class Course(models.Model):
     """
@@ -72,35 +78,7 @@ class Professor(User):
 class Topic(models.Model):
 
     """
-    A course may cover various topics. For example Mechanics and Fields in Physics, but should likely cover at most 3.
-    # TODO: Predefine common topics and implement the select field in the `create_course` template such that the instructor
-            may add a new topic if it doesn't already exist.
-            MECHANICS = 'Mechanics'
-            THERMODYNAMICS = 'Thermodynamics'
-            ELECTRICITY_MAGNETISM = 'Electricity and Magnetism'
-            WAVES_OPTICS = 'Waves and Optics'
-            MODERN_PHYSICS = 'Modern Physics'
-            FLUID_MECHANICS = 'Fluid Mechanics'
-            OSCILLATIONS_WAVES = 'Oscillations and Waves'
-            OPTICS_LIGHT = 'Optics and Light'
-
-            TOPIC_CHOICES = [
-                (MECHANICS, 'Mechanics'),
-                (THERMODYNAMICS, 'Thermodynamics'),
-                (ELECTRICITY_MAGNETISM, 'Electricity and Magnetism'),
-                (WAVES_OPTICS, 'Waves and Optics'),
-                (MODERN_PHYSICS, 'Modern Physics'),
-                (FLUID_MECHANICS, 'Fluid Mechanics'),
-                (OSCILLATIONS_WAVES, 'Oscillations and Waves'),
-                (OPTICS_LIGHT, 'Optics and Light'),
-]
-    # TODO: A question will most likely be part of an `Assignment` which will be part of a `Course`
-            As such, it will be very redudant for the instructor to specify the topic each time, because
-            the topic will likely be correlated to the `Course`. For example, Ampere's Law will be a sub topic
-            of `ELECTRICITY_MAGNETISM` topic which will likely be the main topic of the course Electromagnetism.
-            So we want the professor to specify the subtopic, not the topic most of the time. In that regard,
-            the topic should by default have the same name or similar to that of the course, and the instructor
-            may choose another topic name from the dropdown list. 
+    A course may cover various topics. For example Mechanics and Fields in Physics, but should likely cover at most 3. 
     """
     name = models.CharField(max_length=50)
 
@@ -120,7 +98,7 @@ class SubTopic(models.Model):
 
 class Assignment(models.Model):
     """
-    Assignments in the form of quizzes/homeworks will be created by
+    Assignments in the form of quizzes/homeworks/practice_test will be created by
     professors and may be comprised of one or multiple questions. 
     """
     name = models.CharField(max_length=30)
@@ -133,7 +111,8 @@ class Assignment(models.Model):
         choices=DifficultyChoices.choices,
         default=DifficultyChoices.MEDIUM,
     )
-
+    category = models.CharField(max_length=25, choices=AssignmentChoices.choices,
+                                 default = AssignmentChoices.HOMEWORK)
     def __str__(self):
         return f"Assigment {self.name} ranked {self.difficulty_level} for '{self.course.name.title()}'"
 
@@ -186,11 +165,11 @@ class Question(models.Model):
         default=DifficultyChoices.MEDIUM,
     )
     answer_type = models.CharField(
-        max_length=30,
+        max_length = 30,
         choices = QuestionChoices.choices,
         default = QuestionChoices.STRUCTURAL_TEXT
     )
-    answer = models.CharField(max_length=50, null=True, blank=True)
+    answer = models.CharField(max_length=1000, null=True, blank=True)
 
     def __str__(self):
         return f"Question {self.number} ranked {self.difficulty_level} for {self.assignment}"

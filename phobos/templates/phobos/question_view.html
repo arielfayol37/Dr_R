@@ -22,6 +22,7 @@
         {% for answer, is_latex in answers_is_latex %}
             <div class="formatted-answer">
                 {% if is_latex %}
+                
                     <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
                 {% else %}   
                     {{answer.content}}
