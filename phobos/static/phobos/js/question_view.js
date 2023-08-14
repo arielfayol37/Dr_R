@@ -12,10 +12,23 @@ document.addEventListener('DOMContentLoaded', () => {
             formattedAnswerDivs.forEach((formattedAnswerDiv) => {
                 try {
                     const inputElement = formattedAnswerDiv.querySelector('.latex-answer-question-view');
-                    const formatted_answer = MathJax.tex2chtml(inputElement.value + '\\phantom{}');
+                    if (inputElement != null) {
+                        var formatted_answer = MathJax.tex2chtml(inputElement.value + '\\phantom{}');
+                        formattedAnswerDiv.appendChild(formatted_answer);
+                        MathJax.typesetPromise();
+                    }
+                    /*
+                    else {
+                        var formatted_answer = MathJax.tex2chtml(formattedAnswerDiv.innerHTML + '\\phantom{}')
+                        // TODO: Maybe should this differently...because text answers won't be displayed
+                        // well, since 'and' and 'or' will be replaced with conjunction and disjunction symbol.
+                        // furthermore, spaces will be removed.
+                        formattedAnswerDiv.innerHTML = '';
+                    }
+                    
                     //inputElement.remove();
-                    formattedAnswerDiv.appendChild(formatted_answer);
-                    MathJax.typesetPromise();
+
+                    */
                 } catch (error) {
                     console.log(error);
                 }

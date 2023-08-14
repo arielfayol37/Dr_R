@@ -23,5 +23,6 @@ urlpatterns = [
     path('create_question/get_subtopics/<str:selected_topic>', views.get_subtopics, name='get_subtopics'),
     path('courses/<int:course_id>/assignments/<int:assignment_id>/<int:question_id>',
          views.question_view, name='question_view'),
-     path('calci', views.calci, name='calci')
+     path('calci', views.calci, name='calci'),
+     path('create_question/upload-image/', views.upload_image, name='upload_image')
 ]

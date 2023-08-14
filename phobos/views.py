@@ -1,4 +1,5 @@
-import json, re
+import json
+from urllib.parse import urlparse
 from urllib.parse import unquote  # Import unquote for URL decoding
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
@@ -125,7 +126,10 @@ def create_course(request):
     if request.method == 'POST':
         form = CourseForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            course = form.save(commit=False)
+            if 'image' in request.FILES:
+                course.image = request.FILES['image']  # Assign the uploaded image to the course
+            # course.save()
             messages.info(request=request, message='Course created successfully!')
             return redirect('phobos:index')  
     else:
@@ -296,17 +300,25 @@ def get_subtopics(request, selected_topic):
     return JsonResponse({'subtopics': subtopics})
 
 #--------------HELPER FUNCTIONS--------------------------------#
-
 def replace_links_with_html(text):
-    # Define a regular expression pattern to match URLs
-    url_pattern = r'https?://\S+'
+    # Find all URLs in the input text
+    words = text.split()
+    new_words = []
+    for word in words:
+        if word.startswith('http://') or word.startswith('https://'):
+            parsed_url = urlparse(word)
+            link_tag = f'<a href="{word}">{parsed_url.netloc}{parsed_url.path}</a>'
+            new_words.append(link_tag)
+        else:
+            new_words.append(word)
 
-    # Find all matches of the pattern in the input text
-    matches = re.findall(url_pattern, text)
+    return ' '.join(new_words)
 
-    # Replace each match with an HTML anchor tag
-    for match in matches:
-        link_tag = f'<a href="{match}">{match}</a>'
-        text = text.replace(match, link_tag)
-
-    return text
+def upload_image(request):
+    if request.method == 'POST' and request.FILES.get('image'):
+        image = request.FILES['image']
+        # You can perform any image processing or validation here
+        
+        # Return the URL of the uploaded image in the response
+        return JsonResponse({'image_url': image.url})
+    return JsonResponse({'error': 'Invalid request'}, status=400)
