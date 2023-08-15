@@ -126,10 +126,7 @@ def create_course(request):
     if request.method == 'POST':
         form = CourseForm(request.POST, request.FILES)
         if form.is_valid():
-            course = form.save(commit=False)
-            if 'image' in request.FILES:
-                course.image = request.FILES['image']  # Assign the uploaded image to the course
-            # course.save()
+            form.save()
             messages.info(request=request, message='Course created successfully!')
             return redirect('phobos:index')  
     else:
