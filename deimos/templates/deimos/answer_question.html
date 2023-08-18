@@ -3,59 +3,62 @@
 {% load static %}
 {% block title%} Answer Question {% endblock %}
 {% block style%} <link rel="stylesheet" href="{% static 'deimos/css/question_nav.css' %}"/> 
+<link rel="stylesheet" href="{% static 'deimos/css/action_menu.css' %}"/> 
 {% endblock %}
 {% block body %}
     <h3>Question {{question.number}}</h3>
     <div class="page-container" id="answer-question">
     <br/>
-    
-    <form method="post" enctype="multipart/form-data" id="question-form">
-      {% csrf_token %}
-      <input type="hidden" value="{{question.id}}" name="question-id"/>
-      <p class="question-content">{{question.text | safe}}</p>
-      <br/>
-       {% if is_mcq%}
-            <div class="inputed-mcq-answers">
-              {% for answer, is_latex, question_type in answers_is_latex_question_type %}
-                <div class="mcq-option-answer">
-                  <div class="formatted-answer">
-                    {% if is_latex %}
-                        <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
-                    {% else %}
-                      {{answer.content}}
-                    {% endif %}
-                    <input type="hidden" value="{{answer.pk}}" name="mcq_answer_id_{{ forloop.counter0 }}"/>
-                    <input type="hidden" value="0{{question_type}}" class="answer_info" name="mcq_answer_info_{{ forloop.counter0 }}"/>
+      <form method="post" enctype="multipart/form-data" id="question-form">
+        {% csrf_token %}
+        <input type="hidden" value="{{question.id}}" name="question-id"/>
+        <p class="question-content">{{question.text | safe}}</p>
+        <br/>
+         {% if is_mcq%}
+              <div class="inputed-mcq-answers">
+                {% for answer, is_latex, question_type in answers_is_latex_question_type %}
+                  <div class="mcq-option-answer">
+                    <div class="formatted-answer">
+                      {% if is_latex %}
+                          <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
+                      {% else %}
+                        {{answer.content}}
+                      {% endif %}
+                      <input type="hidden" value="{{answer.pk}}" name="mcq_answer_id_{{ forloop.counter0 }}"/>
+                      <input type="hidden" value="0{{question_type}}" class="answer_info" name="mcq_answer_info_{{ forloop.counter0 }}"/>
+                    </div>
+                    <button type="button" class="btn btn-warning mcq-false exempt">False</button> 
                   </div>
-                  <button type="button" class="btn btn-warning mcq-false exempt">False</button> 
-                </div>
-                <br/> <br/>   
+                  <br/> <br/>   
+                {% endfor %}
+              </div> 
+              <input type="submit" class="btn btn-success exempt" value="Submit Answer">
+              <br/> <br/>
+          {% elif is_fr %}
+              
+              <div>
+                <textarea placeholder="Enter answer" class="w-100 question-input-field"></textarea>
+              </div>
+              <div> <input type="submit" class="btn btn-success exempt" value="Submit Answer"></div>
+              <br/><br/>
+          {% else %}
+  
+              <input type="hidden" value="{{answer.pk}}" name="structural_answer_id_0"/>
+              {% for q_type in question_type %} <!--expecting to iterate only over one item-->
+                <input type="hidden" value="{{q_type}}" name="structural_answer_info_0"/>
               {% endfor %}
-            </div> 
-            <input type="submit" class="btn btn-success exempt" value="Submit Answer">
-            <br/> <br/>
-        {% elif is_fr %}
-            
-            <div>
-              <textarea placeholder="Enter answer" class="w-100 question-input-field"></textarea>
-            </div>
-            <div> <input type="submit" class="btn btn-success exempt" value="Submit Answer"></div>
-            <br/><br/>
-        {% else %}
+              <input type="submit" class="btn btn-success exempt" value="Submit Answer">
+              <div class="formatted-answer"></div>
+              {% include 'deimos/calci.html' %}
+              <br/>
+        {% endif %}
+  
+      
+      <br/>
+      </form>
 
-            <input type="hidden" value="{{answer.pk}}" name="structural_answer_id_0"/>
-            {% for q_type in question_type %} <!--expecting to iterate only over one item-->
-              <input type="hidden" value="{{q_type}}" name="structural_answer_info_0"/>
-            {% endfor %}
-            <input type="submit" class="btn btn-success exempt" value="Submit Answer">
-            <div class="formatted-answer"></div>
-            {% include 'deimos/calci.html' %}
-            <br/>
-      {% endif %}
 
-    
-    <br/>
-    </form>
+
 
     <div class="navigation">
       <ul>
@@ -94,6 +97,10 @@
   <script src="{% static 'deimos/js/calci.js' %}"></script>
 {% endif %}
 <script src="{% static 'deimos/js/question_nav.js' %}"></script>
+<script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+<script src="{% static 'deimos/js/action_menu.js' %}"></script>
+
 
 
 {% endblock %}

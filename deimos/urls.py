@@ -15,5 +15,6 @@ urlpatterns = [
 
     path('courses/<int:course_id>/assignments/<int:assignment_id>/questions/<int:question_id>',\
          views.answer_question, name='answer_question'),
-    path('question_nav', views.question_nav, name='question_nav')
+    path('question_nav', views.question_nav, name='question_nav'),
+    path('action_menu', views.action_menu, name='action_menu')
 ]

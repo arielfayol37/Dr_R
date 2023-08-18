@@ -230,3 +230,6 @@ def is_student_enrolled(student_id, course_id):
 
 def question_nav(request):
     return render(request, 'deimos/question_nav.html', {})
+
+def action_menu(request):
+    return render(request, 'deimos/action_menu.html', {})
