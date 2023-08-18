@@ -169,7 +169,8 @@ class Question(models.Model):
         choices = QuestionChoices.choices,
         default = QuestionChoices.STRUCTURAL_TEXT
     )
-    answer = models.CharField(max_length=1000, null=True, blank=True)
+    answer = models.CharField(max_length=1000, null=True, blank=True) # TODO: delete this attribute.
+    deduct_per_attempt = models.FloatField(default=0.05)
 
     def __str__(self):
         return f"Question {self.number} ranked {self.difficulty_level} for {self.assignment}"

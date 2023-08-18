@@ -1,12 +1,21 @@
 document.addEventListener('DOMContentLoaded', ()=> {
     const answerFieldsDiv = document.querySelector('.answer-fields');
     const form = document.querySelector('#question-form');
-    let currentAction = form.getAttribute('action');
+    const validateAnswerActionURL = extractQuestionPath(window.location.href) + '/validate_answer';
+    //console.log(newActionURL);
+    //form.setAttribute('action', newActionURL);
+    const submitBtn = document.querySelector('submit-btn');
     const formattedAnswerDiv = document.querySelector('.formatted-answer');
     const calculatorDiv = document.querySelector('.calculator');
     const inputedMcqAnswersDiv = document.querySelector('.inputed-mcq-answers');
     var num_true_counter = 0;
     const screen = document.querySelector('#screen'); 
+
+/*-----------------------------Question submission-----------------------*/
+
+    submitBtn.addEventListener('click', (event){
+        event.preventDefault();
+    })
 
 /*----------------------------DISPLAYING LATEX-------------------------*/
 
@@ -81,6 +90,7 @@ displayLatex();
 
 
     form.addEventListener('submit', (event)=>{
+        event.preventDefault();
         if (!(screen === null)){
         const userInputNode = math.parse(screen.value);
         var userInputString = userInputNode.toString();
@@ -102,6 +112,15 @@ function rep(str, index, char) {
 function setCharAt(str,index,chr) {
     if(index > str.length-1) return str;
     return str.substring(0,index) + chr + str.substring(index+1);
+}
+
+function extractQuestionPath(url) {
+    const startIndex = url.indexOf('courses');
+    if (startIndex !== -1) {
+        return url.substring(startIndex);
+    } else {
+        return null; // If 'courses' not found in URL
+    }
 }
 
 });

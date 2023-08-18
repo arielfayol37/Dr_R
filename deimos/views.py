@@ -16,6 +16,7 @@ from django.middleware import csrf
 from django.utils.timesince import timesince
 from phobos.models import QuestionChoices
 import random
+from sympy import symbols, simplify, Eq
 
 # Create your views here.
 @login_required(login_url='astros:login') 
@@ -96,8 +97,8 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
     question = Question.objects.get(pk=question_id)
     if not QuestionStudent.objects.filter(question=question, student=student).exists():
         quest = QuestionStudent.objects.create(question=question, student=student)    
-    is_mcq = False
-    is_fr = False
+    is_mcq = False #nis mcq
+    is_fr = False # is free response
     answers = []
     is_latex = []
     question_type = []
@@ -139,7 +140,7 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
         answers.extend(question.float_answers.all())
         question_type = [1]
     elif question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
-        is_fr = True
+        is_fr = True 
         answers.extend(question.text_answers.all())
         question_type = [4]     
     context = {
@@ -148,13 +149,37 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
         'assignment_id': assignment_id,
         'course_id': course_id,
         "is_mcq": is_mcq,
-        "is_fr": is_fr, #is free response
+        "is_fr": is_fr, 
         "answers_is_latex_question_type": zip(answers, is_latex, question_type),
         'question_type': question_type, # For structural
         'answer': answers[0]
     }
     return render(request, 'deimos/answer_question.html',
                   context)
+
+def validate_answer(request, question_id, submitted_answer, assignment_id=None, course_id=None):
+    student = get_object_or_404(Student, pk=request.user.pk)
+    if request.method == 'POST':
+        question = Question.objects.get(pk=question_id)
+        question_student = QuestionStudent(student=student, question=question)
+        attempt = QuestionAttempt.objects.create(question_student=question_student)
+        correct = False
+        if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
+            # assert question.expression_answers.count() == 1
+            answer = question.expression_answers.first() # There should be only one answer.
+            correct = compare_expressions(answer.content, submitted_answer)
+        elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
+            # assert question.float_answers.count() == 1
+            answer = question.float_answers.first()
+            correct = compare_expressions(answer.content, submitted_answer)
+        
+        if correct:
+            attempt.num_points = question.num_points - (question.deduct_per_attempt * question_student.get_num_attempts())
+    return JsonResponse({
+        'correct': correct
+    })        
+
+
            
 def login_view(request):
     if request.method == "POST":
@@ -227,7 +252,20 @@ def is_student_enrolled(student_id, course_id):
     is_enrolled = Enrollment.objects.filter(student=student, course=course).exists()
 
     return is_enrolled
+def compare_expressions(e1, e2):
+    """ Given two strings e1 and e2,
+        returns True if they are algebraically equivalent, 
+        returns False otherwise
+    """
+    su = set(e1) | set(e2)
+    so = symbols(' '.join(su))
+    sym_e1 = simplify(e1, symbols=so)
+    sym_e2 = simplify(e2, symbols=so)
+    same = Eq(sym_e1, sym_e2)
+    return True if same==True else False
 
+
+#--------------------Depecrated functions used in development--------------------
 def question_nav(request):
     return render(request, 'deimos/question_nav.html', {})
 
