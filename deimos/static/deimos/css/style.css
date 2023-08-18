@@ -362,6 +362,25 @@ div.c-text {
 
 
 /* ------------------------------Style for answer_question.html-------------*/
+.question-input-field {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+  color: #333;
+  resize: vertical;
+  transition: border-color 0.3s ease-in-out;
+}
+
+.question-input-field:hover {
+  border-color: #999;
+}
+
+.question-input-field:focus {
+  border-color: #007bff;
+  outline: none;
+}
 #answer-question {
   margin-left: 5%;
   width: 80%;

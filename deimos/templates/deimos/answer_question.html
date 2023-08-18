@@ -21,8 +21,8 @@
                   <div class="formatted-answer">
                     {% if is_latex %}
                         <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
-                    {% else %}   
-                        {{answer.content}}
+                    {% else %}
+                      {{answer.content}}
                     {% endif %}
                     <input type="hidden" value="{{answer.pk}}" name="mcq_answer_id_{{ forloop.counter0 }}"/>
                     <input type="hidden" value="0{{question_type}}" class="answer_info" name="mcq_answer_info_{{ forloop.counter0 }}"/>
@@ -34,6 +34,13 @@
             </div> 
             <input type="submit" class="btn btn-success exempt" value="Submit Answer">
             <br/> <br/>
+        {% elif is_fr %}
+            
+            <div>
+              <textarea placeholder="Enter answer" class="w-100 question-input-field"></textarea>
+            </div>
+            <div> <input type="submit" class="btn btn-success exempt" value="Submit Answer"></div>
+            <br/><br/>
         {% else %}
 
             <input type="hidden" value="{{answer.pk}}" name="structural_answer_id_0"/>

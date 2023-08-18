@@ -37,7 +37,11 @@
             {% for answer in answers %}
             <strong>Answer </strong>
                 <div class="formatted-answer">
-                    {{answer.content}}  
+                    {% if not is_fr %}
+                        {{answer.content}}  
+                    {% else %}
+                        *Free reponse question.*
+                    {% endif %}
                 </div>
             {% endfor %}
         </p>

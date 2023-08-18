@@ -57,39 +57,26 @@
         // Set the new height to match the scrollHeight
         textarea.style.height = textarea.scrollHeight + 'px';
     }
-    /*
-document.addEventListener('DOMContentLoaded', () => {
-  const uploadButton = document.getElementById('upload-button');
-  const imageUpload = document.getElementById('image-upload');
-  const imagePreview = document.getElementById('image-preview');
 
-  uploadButton.addEventListener('click', () => {
-    const imageFile = imageUpload.files[0];
-    const reader = new FileReader();
-
-    reader.onload = function(event) {
-      const imgElement = document.createElement('img');
-      imgElement.src = event.target.result;
-      imgElement.alt = 'Uploaded Image';
-      imagePreview.innerHTML = ''; // Clear previous image
-      imagePreview.appendChild(imgElement);
-    };
-
-    if (imageFile) {
-      reader.readAsDataURL(imageFile);
-    }
-  });
-});*/
 document.querySelector('#course-image').addEventListener('change', function() {
         const reader = new FileReader();
-        
+        const imageFile = this.files[0];
         reader.onload = function(event) {
-            const imagePreview = document.querySelector('#image-preview');
-            imagePreview.src = event.target.result;
+            const imageElement = document.createElement('img');
+            imageElement.src = event.target.result;
+            imageElement.style.maxWidth = '100%';
+            imageElement.style.maxHeight = '200px';
+            imageElement.style.borderRadius = '15px';
+            const imagePreview = document.querySelector('#image-preview'); 
+            //console.log(imagePreview.src);
             imagePreview.style.display = 'block';
+            imagePreview.innerHTML = '';
+            imagePreview.appendChild(imageElement);
         };
+        if(imageFile){
+            reader.readAsDataURL(imageFile);
+        }
         
-        reader.readAsDataURL(this.files[0]);
     });
 </script>
 
