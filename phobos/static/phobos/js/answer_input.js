@@ -27,6 +27,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const calculatorDiv = document.querySelector('.calculator');
     calculatorDiv.style.display = 'none';
     let mode = '';
+/*-----------------------------------------SURVEY QUESTION-----------------------------------*/
+    surveyBtn.addEventListener('click', (event)=> {
+        event.preventDefault();
+    })
 
  /*------------------------------------------MCQ QUESTION --------------------------------- */
  
