@@ -237,6 +237,7 @@ class LatexAnswer(models.Model):
 class TextAnswer(models.Model):
     """
     Probably less common, but a `Question` may have a text answer.
+    Will implement semantic validation for text answers using a transformer later.
     """
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='text_answers')
     content = models.CharField(max_length=1000)

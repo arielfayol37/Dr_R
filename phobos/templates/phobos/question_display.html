@@ -8,9 +8,9 @@
             <span class="c-name"><strong>Question {{question.number}}</strong>
                 
             <p class="c-description">{% if question.text|length > 147 %}
-                {{ question.text|slice:":147" }}...
+                {{ question.text|safe|slice:":147" }}...
             {% else %}
-                {{ question.text }}
+                {{ question.text|safe }}
             {% endif %}</p><br/>
             <p class="timestamp" style="display: none;">Created on {{ question.timestamp|date:"m/d/Y" }}</p>
         </div>

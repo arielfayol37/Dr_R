@@ -97,6 +97,7 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
     if not QuestionStudent.objects.filter(question=question, student=student).exists():
         quest = QuestionStudent.objects.create(question=question, student=student)    
     is_mcq = False
+    is_fr = False
     answers = []
     is_latex = []
     question_type = []
@@ -138,14 +139,16 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
         answers.extend(question.float_answers.all())
         question_type = [1]
     elif question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
+        is_fr = True
         answers.extend(question.text_answers.all())
-        question_type = [3]     
+        question_type = [4]     
     context = {
         'question':question,
         'question_ids_nums':zip(question_ids, question_nums),
         'assignment_id': assignment_id,
         'course_id': course_id,
         "is_mcq": is_mcq,
+        "is_fr": is_fr, #is free response
         "answers_is_latex_question_type": zip(answers, is_latex, question_type),
         'question_type': question_type, # For structural
         'answer': answers[0]

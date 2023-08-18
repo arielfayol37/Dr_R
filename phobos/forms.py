@@ -9,6 +9,7 @@ class CourseForm(forms.ModelForm):
         # TODO: Implement image upload. Make sure the image is uploaded to media/phobos/images/course_images
         fields = ['image', 'name', 'subject', 'difficulty_level','description','topics','professors']
         widgets = {
+            'image': forms.FileInput(attrs={'class': 'form-control', 'id': 'course-image'}),  # Add this line
             'name': forms.TextInput(attrs={'class': 'form-control', 'id': 'course-name'}),
             'subject': forms.Select(attrs={'class': 'form-control', 'id': 'course-subject'}),
             # 'number_of_students': forms.NumberInput(attrs={'class': 'form-control', 'id': 'students-count'}),

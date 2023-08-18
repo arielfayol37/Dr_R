@@ -19,12 +19,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const mcqInputField = mcqInputDiv.querySelector('.mcq-input-field');
     const floatBtn = document.querySelector('#float-btn');
     const latexBtn = document.querySelector('#latex-btn');
+    const frBtn = document.querySelector('#fr-btn');
+    const surveyBtn = document.querySelector('#survey-btn');
     latexBtn.style.display = 'none';
     const formattedAnswerDiv = document.querySelector('#structural-formatted-answer');
     const screen = document.querySelector('#screen'); 
     const calculatorDiv = document.querySelector('.calculator');
     calculatorDiv.style.display = 'none';
     let mode = '';
+
  /*------------------------------------------MCQ QUESTION --------------------------------- */
  
 
@@ -141,6 +144,22 @@ document.addEventListener('DOMContentLoaded', () => {
         <input style="width: 100%; box-sizing: border-box;" class="question-input-field" placeholder="Enter LaTex" type="text" class="latex-answer-input" name="answer"/>
         </div>
     `
+    frBtn.addEventListener('click', (event)=>{
+        event.preventDefault();
+        inputedMcqAnswersDiv.style.display = 'none';
+        formattedAnswerDiv.innerHTML = 'Free response mode selected.'
+        formattedAnswerDiv.style.display = 'block';
+        mcqOptionBtnsDiv.style.display = 'none';
+        mcqInputDiv.style.display = 'none';
+        calculatorDiv.style.display = 'none';
+        answerFieldsDiv.innerHTML = '';
+        mode = 'fr-answer';  
+        formattedAnswerDiv.scrollIntoView({behavior: 'smooth'});
+        // Append '/4' at the end of the URL
+        const newAction = currentAction + '/4';
+        // Update the form's action attribute
+        form.setAttribute('action', newAction);      
+    })
     expressionBtn.addEventListener('click', (event)=> {
         event.preventDefault();
         inputedMcqAnswersDiv.style.display = 'none';
@@ -185,6 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     latexBtn.addEventListener('click', (event)=> {
         event.preventDefault();
+        mode = 'l-answer'
         inputedMcqAnswersDiv.style.display = 'none';
         formattedAnswerDiv.style.display = 'block';
         mcqOptionBtnsDiv.style.display = 'none';
@@ -226,38 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     screen.addEventListener('input', ()=> {
-        /*
-        if(mode==='f-answer'){
-            MathJax.typesetPromise().then(() => {
-            try {
 
-            const userInputNode = math.parse(processString(screen.value));
-            var userInputLatex = userInputNode.toTex();
-            const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
-            formattedAnswerDiv.innerHTML = '';
-            formattedAnswerDiv.appendChild(formattedAnswer);
-            } catch (error) {
-               // console.log(error);
-            }
-            
-            });            
-        }
-        else if(mode==='e-answer'){
-            MathJax.typesetPromise().then(() => {
-                try {
-                    const userInputNode = math.parse(processString(screen.value));
-                    var userInputLatex = userInputNode.toTex();
-                    const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
-                    formattedAnswerDiv.innerHTML = '';
-                    formattedAnswerDiv.appendChild(formattedAnswer);
-
-                } catch (error){
-                   // console.log(error);
-                }
-
-              });            
-        }
-        */
         MathJax.typesetPromise().then(() => {
             try {
 
@@ -289,29 +278,19 @@ document.addEventListener('DOMContentLoaded', () => {
             var userInputString = userInputNode.evaluate();
             screen.value = userInputString;
             
+        } else if (mode=='m-answer'){
+            if(num_mcq_options_counter < 2){
+                event.preventDefault();
+                alert('The number of options for an MCQ must be at least 2.');
+            }
+            if(num_true_counter < 1){
+                event.preventDefault();
+                alert('Must select at least one MCQ answer as correct.');
+            }
+
+    
         }
 
-        if (num_mcq_options_counter < 2 && mode==='m-answer'){
-            event.preventDefault();
-            alert('The number of options for an MCQ must be at least 2.');
-        }
-        if (num_true_counter < 1 && mode==='m-answer'){
-            event.preventDefault();
-            alert('Must select at least one MCQ answer as correct.');
-        }
-        /*
-        else if(
-            answerFieldDiv.classList.contains('l-answer')
-        ) {
-            var latexInputField = answerFieldDiv.querySelector('input');
-            const userInputLatex = latexInputField.value;
-            const formattedAnswerDiv = document.querySelector('.formatted-answer');
-            MathJax.texReset();
-            const formattedAnswer = MathJax.tex2chtml(userInputLatex);
-            formattedAnswerDiv.innerHTML = '<p>User-Friendly Answer:</p>';
-            formattedAnswerDiv.appendChild(formattedAnswer);
-            
-        }*/
         // Now the form will be submited
     });
 

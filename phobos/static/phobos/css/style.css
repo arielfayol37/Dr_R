@@ -27,7 +27,25 @@ body.body {
   color: white; /* Set the text color to white */
   font-weight: bold;
 }
-
+.all-courses-button {
+  background-color: rgb(52, 202, 120);
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 15px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+.courses-toggle {
+  display: flex;
+  flex-direction: center;
+  align-items: center;
+  justify-content: space-evenly;
+  width: 50%;
+   /*margin-top: 0.5%;*/
+  margin-bottom:-6%;
+  padding:5%;
+}
 ul.courses {
   padding: 5%;
 }
@@ -547,5 +565,8 @@ more than assignment display */
       }
       #m2 {
         transform: translate(0, -95%);
+      }
+      .courses-toggle {
+        width: 100%;
       }
     } 

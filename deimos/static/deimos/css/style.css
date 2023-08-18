@@ -27,7 +27,25 @@ body.body {
   color: white; /* Set the text color to white */
   font-weight: bold;
 }
-
+.all-courses-button {
+  background-color: rgb(52, 202, 120);
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 15px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+.courses-toggle {
+  display: flex;
+  flex-direction: center;
+  align-items: center;
+  justify-content:space-evenly;
+  width: 30%;
+  /*margin-top: 0.5%;*/
+  margin-bottom:-6%;
+  padding:5%;
+}
 ul.courses {
   padding: 5%;
 }
@@ -344,6 +362,25 @@ div.c-text {
 
 
 /* ------------------------------Style for answer_question.html-------------*/
+.question-input-field {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+  color: #333;
+  resize: vertical;
+  transition: border-color 0.3s ease-in-out;
+}
+
+.question-input-field:hover {
+  border-color: #999;
+}
+
+.question-input-field:focus {
+  border-color: #007bff;
+  outline: none;
+}
 #answer-question {
   margin-left: 5%;
   width: 80%;
@@ -442,5 +479,8 @@ more than assignment display */
       }
       #m2 {
         transform: translate(0, -95%);
+      }
+      .courses-toggle {
+        width: 100%;
       }
     } 

@@ -36,12 +36,14 @@
                 <label for="{{ form.professors.id_for_label }}">Professors:</label>
                 {{ form.professors }}
             </div>
-
+            <div id="image-preview">
+                <!-- The uploaded image will be displayed here -->
+            </div>
             <div class="form-group">
                 <label for="{{ form.image.id_for_label }}">Upload cover image:</label>
                 {{ form.image }}
+                <img id="image-preview" src="#" alt="Image Preview" style="max-width: 100%; max-height: 200px; display: none;">
             </div>
-            
             <input class= "btn btn-primary" type="submit" value="Create Course">
         </form>
     </div>
@@ -55,6 +57,27 @@
         // Set the new height to match the scrollHeight
         textarea.style.height = textarea.scrollHeight + 'px';
     }
+
+document.querySelector('#course-image').addEventListener('change', function() {
+        const reader = new FileReader();
+        const imageFile = this.files[0];
+        reader.onload = function(event) {
+            const imageElement = document.createElement('img');
+            imageElement.src = event.target.result;
+            imageElement.style.maxWidth = '100%';
+            imageElement.style.maxHeight = '200px';
+            imageElement.style.borderRadius = '15px';
+            const imagePreview = document.querySelector('#image-preview'); 
+            //console.log(imagePreview.src);
+            imagePreview.style.display = 'block';
+            imagePreview.innerHTML = '';
+            imagePreview.appendChild(imageElement);
+        };
+        if(imageFile){
+            reader.readAsDataURL(imageFile);
+        }
+        
+    });
 </script>
 
 {% endblock %}

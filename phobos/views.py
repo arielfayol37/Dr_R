@@ -1,4 +1,5 @@
-import json, re
+import json
+from urllib.parse import urlparse
 from urllib.parse import unquote  # Import unquote for URL decoding
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
@@ -166,7 +167,7 @@ def create_question(request, assignment_id=None, type_int=None):
         sub_topic = SubTopic.objects.get(name=request.POST.get('sub_topic'))
         text = request.POST.get('question_text')
         text = replace_links_with_html(text)
-        if type_int != 3:
+        if type_int != 3 and type_int != 4:
             question_answer = request.POST.get('answer')
             if len(text)==0 or len(question_answer) == 0:
                 return HttpResponseForbidden('You cannot create a question without content/answer.')
@@ -213,7 +214,11 @@ def create_question(request, assignment_id=None, type_int=None):
         elif type_int == 2:
             new_question.answer_type = QuestionChoices.STRUCTURAL_LATEX
             answer = LatexAnswer(question=new_question, content=question_answer)
-
+        elif type_int == 4:
+            # 'Free' response question
+            new_question.answer_type = QuestionChoices.STRUCTURAL_TEXT
+            # No answer yet, but semantic answer validation coming soon.
+            answer = TextAnswer(question=new_question, content='')
         else:
             return HttpResponseForbidden('Something went wrong')
         new_question.save()
@@ -243,6 +248,7 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
     answers = []
     is_latex = []
     is_mcq = False
+    is_fr = False # is free response
     if question.answer_type.startswith('MCQ'):
         is_mcq = True
         ea = question.mcq_expression_answers.all()
@@ -261,6 +267,7 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
             answers.extend(question.expression_answers.all())
         elif question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
             answers.extend(question.text_answers.all())
+            is_fr = True
         elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
             answers.extend(question.float_answers.all())
         elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
@@ -276,7 +283,7 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
     return render(request, 'phobos/question_view.html',
                   {'question':question,\
                       'show_answer':show_answer,\
-                     'is_mcq':is_mcq, 'answers': answers,\
+                     'is_mcq':is_mcq, 'is_fr':is_fr,'answers': answers,\
                          'answers_is_latex': zip(answers, is_latex) if is_latex else None})
        
 
@@ -296,17 +303,25 @@ def get_subtopics(request, selected_topic):
     return JsonResponse({'subtopics': subtopics})
 
 #--------------HELPER FUNCTIONS--------------------------------#
-
 def replace_links_with_html(text):
-    # Define a regular expression pattern to match URLs
-    url_pattern = r'https?://\S+'
+    # Find all URLs in the input text
+    words = text.split()
+    new_words = []
+    for word in words:
+        if word.startswith('http://') or word.startswith('https://'):
+            parsed_url = urlparse(word)
+            link_tag = f'<a href="{word}">{parsed_url.netloc}{parsed_url.path}</a>'
+            new_words.append(link_tag)
+        else:
+            new_words.append(word)
 
-    # Find all matches of the pattern in the input text
-    matches = re.findall(url_pattern, text)
+    return ' '.join(new_words)
 
-    # Replace each match with an HTML anchor tag
-    for match in matches:
-        link_tag = f'<a href="{match}">{match}</a>'
-        text = text.replace(match, link_tag)
-
-    return text
+def upload_image(request):
+    if request.method == 'POST' and request.FILES.get('image'):
+        image = request.FILES['image']
+        # You can perform any image processing or validation here
+        
+        # Return the URL of the uploaded image in the response
+        return JsonResponse({'image_url': image.url})
+    return JsonResponse({'error': 'Invalid request'}, status=400)
