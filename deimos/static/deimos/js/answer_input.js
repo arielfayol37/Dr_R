@@ -1,12 +1,52 @@
 document.addEventListener('DOMContentLoaded', ()=> {
     const answerFieldsDiv = document.querySelector('.answer-fields');
     const form = document.querySelector('#question-form');
-    let currentAction = form.getAttribute('action');
+    const validateAnswerActionURL = extractQuestionPath(window.location.href) + '/validate_answer';
+    //console.log(newActionURL);
+    //form.setAttribute('action', newActionURL);
+    const submitBtn = document.querySelector('#submit-btn');
     const formattedAnswerDiv = document.querySelector('.formatted-answer');
     const calculatorDiv = document.querySelector('.calculator');
     const inputedMcqAnswersDiv = document.querySelector('.inputed-mcq-answers');
     var num_true_counter = 0;
     const screen = document.querySelector('#screen'); 
+    const questionType = document.querySelector('.question-type');
+
+/*-----------------------------Question submission-----------------------*/
+
+    submitBtn.addEventListener('click', (event)=>{
+        event.preventDefault();
+        if (questionType.value==='structural'){
+            fetch(`/${validateAnswerActionURL}`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                body: JSON.stringify({
+                        answer: screen.value,
+                        questionType: questionType.value    
+                })
+              })
+              .then(response => response.json())
+              .then(result => {
+                  // Print result
+                  console.log(result.correct);
+              });
+        } else if( questionType.value ==='mcq'){
+            fetch(`/${validateAnswerActionURL}`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                body: JSON.stringify({
+                        answer: getSelectedTrueAnswerIds(),
+                        questionType: questionType.value    
+                })
+              })
+              .then(response => response.json())
+              .then(result => {
+                  // Print result
+                  console.log(result.correct);
+              });
+        }
+        
+    });
 
 /*----------------------------DISPLAYING LATEX-------------------------*/
 
@@ -81,6 +121,7 @@ displayLatex();
 
 
     form.addEventListener('submit', (event)=>{
+        event.preventDefault();
         if (!(screen === null)){
         const userInputNode = math.parse(screen.value);
         var userInputString = userInputNode.toString();
@@ -104,4 +145,49 @@ function setCharAt(str,index,chr) {
     return str.substring(0,index) + chr + str.substring(index+1);
 }
 
+function extractQuestionPath(url) {
+    const startIndex = url.indexOf('deimos');
+    if (startIndex !== -1) {
+        return url.substring(startIndex);
+    } else {
+        return null; // If 'courses' not found in URL
+    }
+}
+
+
+function getCookie(name) {
+    if (!document.cookie) {
+      return null;
+    }
+
+    const csrfCookie = document.cookie
+      .split(';')
+      .map(c => c.trim())
+      .find(c => c.startsWith(name + '='));
+
+    if (!csrfCookie) {
+      return null;
+    }
+
+    return decodeURIComponent(csrfCookie.split('=')[1]);
+  }
+
+  function getSelectedTrueAnswerIds() {
+    const mcqOptions = document.querySelectorAll('.mcq-option-answer');
+    const selectedAnswerIds = [];
+  
+    mcqOptions.forEach((option) => {
+      const answerIdInput = option.querySelector('.answer_id');
+      const answerInfoInput = option.querySelector('.answer_info');
+  
+      if (answerIdInput && answerInfoInput && answerInfoInput.value.charAt(0) === '1') {
+        selectedAnswerIds.push(answerIdInput.value);
+      }
+    });
+  
+    return selectedAnswerIds;
+  }
+
+
 });
+
