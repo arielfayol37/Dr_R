@@ -172,29 +172,29 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
         question_student, created = QuestionStudent.objects.get_or_create(student=student, question=question)
         
         if (question_student.get_num_attempts() < question.max_num_attempts and not question_student.success):
-            
-            attempt = QuestionAttempt.objects.create(question_student=question_student)
-            attempt.content = submitted_answer
-            if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
-                assert question.expression_answers.count() == 1
-                answer = question.expression_answers.first()
-                correct = compare_expressions(answer.content, submitted_answer)
-            elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
-                assert question.float_answers.count() == 1
-                answer = question.float_answers.first()
-                try:
-                    correct = compare_floats(answer.content, float(submitted_answer)) 
-                except ValueError:
-                    # TODO: Maybe return a value to the user side that will ask them to enter a float.
-                    correct = False
-            if correct:
-                # Deduct points based on attempts, but ensure it doesn't go negative
-                attempt.num_points = max(0, question.num_points - (question.deduct_per_attempt * question_student.get_num_attempts()))
-                question_student.success = True
-                attempt.success = True
-                
-            question_student.save()  # Save the changes to the QuestionStudent instance
-            attempt.save()
+            if data["questionType"] == 'structural':
+                attempt = QuestionAttempt.objects.create(question_student=question_student)
+                attempt.content = submitted_answer
+                if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
+                    assert question.expression_answers.count() == 1
+                    answer = question.expression_answers.first()
+                    correct = compare_expressions(answer.content, submitted_answer)
+                elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
+                    assert question.float_answers.count() == 1
+                    answer = question.float_answers.first()
+                    try:
+                        correct = compare_floats(answer.content, float(submitted_answer)) 
+                    except ValueError:
+                        # TODO: Maybe return a value to the user side that will ask them to enter a float.
+                        correct = False
+                if correct:
+                    # Deduct points based on attempts, but ensure it doesn't go negative
+                    attempt.num_points = max(0, question.num_points - (question.deduct_per_attempt * question_student.get_num_attempts()))
+                    question_student.success = True
+                    attempt.success = True
+                    
+                question_student.save()  # Save the changes to the QuestionStudent instance
+                attempt.save()
         # Return a JsonResponse
         return JsonResponse({
             'correct': correct

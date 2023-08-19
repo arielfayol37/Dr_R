@@ -31,7 +31,19 @@ document.addEventListener('DOMContentLoaded', ()=> {
                   console.log(result.correct);
               });
         } else if( questionType.value ==='mcq'){
-            console.log('mcq answer')
+            fetch(`/${validateAnswerActionURL}`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                body: JSON.stringify({
+                        answer: getSelectedTrueAnswerIds(),
+                        questionType: questionType.value    
+                })
+              })
+              .then(response => response.json())
+              .then(result => {
+                  // Print result
+                  console.log(result.correct);
+              });
         }
         
     });
