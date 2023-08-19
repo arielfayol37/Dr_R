@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
         MathJax.typesetPromise().then(() => {
             try {
 
-            const userInputNode = math.parse(processString(screen.value));
+            const userInputNode = math.simplify(processString(screen.value));
             var userInputLatex = userInputNode.toTex();
             const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
             formattedAnswerDiv.innerHTML = '';
@@ -270,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', (event) => {
 
         if (mode==='e-answer'){
-            const userInputNode = math.parse(screen.value);
+            const userInputNode = math.simplify(processString(screen.value));
             var userInputString = userInputNode.toString();
             //var userInputString = math.simplify(userInputNode, {}, {context: math.simplify.realContext}).toString()
             screen.value = userInputString;
@@ -278,7 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
         else if(
             mode==='f-answer'
         ) {
-            const userInputNode = math.parse(screen.value);
+            const userInputNode = math.simplify(processString(screen.value));
             var userInputString = userInputNode.evaluate();
             screen.value = userInputString;
             
@@ -319,7 +319,7 @@ function create_inputed_mcq_div(answer_value, answer_type) {
     switch (answer_type) {
         case 'f-answer':
             display_value = answer_value;
-            answer_value = math.parse(answer_value).evaluate();
+            answer_value = math.simplify(processString(answer_value)).evaluate();
             answer_info_encoding = rep(answer_info_encoding, 1, '1');
             break;
         case 't-answer':
@@ -331,7 +331,7 @@ function create_inputed_mcq_div(answer_value, answer_type) {
             answer_info_encoding = rep(answer_info_encoding, 1, '2');
             break;
         case 'e-answer':
-            answer_value = math.parse(answer_value).toString();
+            answer_value = math.simplify(processString(answer_value)).toString();
             display_value = answer_value;
             answer_info_encoding = rep(answer_info_encoding, 1, '0');
             break;
@@ -350,7 +350,7 @@ function create_inputed_mcq_div(answer_value, answer_type) {
                 formatted_answer.innerHTML = userInputLatex;
             }
             else{
-                const userInputNode = math.parse(processString(display_value));
+                const userInputNode = math.simplify(processString(display_value));
                 userInputLatex = userInputNode.toTex();
                 formatted_answer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
             }

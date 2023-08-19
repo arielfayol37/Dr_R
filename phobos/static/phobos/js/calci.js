@@ -15,7 +15,7 @@ const specialBtns = document.querySelectorAll('.special');
 
 const replacementDict = {
     'π':'pi',
-    '√':'sqrt'
+    '√':'sqrt',
 }
 
 const specialBtnsTextDict ={

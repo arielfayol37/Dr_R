@@ -15,8 +15,8 @@ from django.shortcuts import get_object_or_404
 from django.middleware import csrf
 from django.utils.timesince import timesince
 from phobos.models import QuestionChoices
-import random
-from sympy import symbols, simplify, Eq
+import random, re
+from sympy import symbols, simplify
 
 # Create your views here.
 @login_required(login_url='astros:login') 
@@ -284,7 +284,7 @@ def register(request):
             student.save()
         except IntegrityError:
             return render(request, "astros/register.html", {
-                "message": "Username already taken."
+                "message": "Username/email already taken."
             })
         login(request, student)
         return HttpResponseRedirect(reverse("deimos:index"))
@@ -302,17 +302,35 @@ def is_student_enrolled(student_id, course_id):
     is_enrolled = Enrollment.objects.filter(student=student, course=course).exists()
 
     return is_enrolled
+def  extract_numbers(text):
+    # Regular expression pattern to match floats and ints
+    pattern = r'[-+]?\d*\.\d+|\d+'
+    
+    # Find all matches using the pattern
+    matches = re.findall(pattern, text)
+    
+    # Convert matches to floats or ints
+    numbers = [str(match) if '.' in match else str(match) for match in matches]
+    
+    return numbers
+
 def compare_expressions(e1, e2):
-    """ Given two strings e1 and e2,
-        returns True if they are algebraically equivalent, 
-        returns False otherwise
     """
-    su = set(e1) | set(e2)
-    so = symbols(' '.join(su))
-    sym_e1 = simplify(e1, symbols=so)
-    sym_e2 = simplify(e2, symbols=so)
-    same = Eq(sym_e1, sym_e2)
-    return True if same==True else False
+    Given two strings e1 and e2,
+    returns True if they are algebraically equivalent,
+    returns False otherwise.
+    """
+    if not (isinstance(e1, str) and isinstance(e2, str)):
+        raise ValueError("Both inputs should be strings")
+
+    symbols_union = set(e1) | set(e2)  # Combined set of symbols from both expressions
+    symbols_union.update(extract_numbers(e1 + e2))  # Update with extracted numbers
+    symbls = symbols(' '.join(symbols_union))
+    sym_e1 = simplify(e1, symbols=symbls)
+    sym_e2 = simplify(e2, symbols=symbls)
+    difference = (simplify(sym_e1 - sym_e2, symbols=symbls))
+    return True if difference == 0 else False
+
 
 def compare_floats(f1, f2, margin_error=0.0):
     """
