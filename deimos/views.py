@@ -183,7 +183,8 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                     assert question.float_answers.count() == 1
                     answer = question.float_answers.first()
                     try:
-                        correct = compare_floats(answer.content, float(submitted_answer)) 
+                        # answer.content must come first in the compare_floats()
+                        correct = compare_floats(answer.content, float(submitted_answer), question.margin_error) 
                     except ValueError:
                         # TODO: Maybe return a value to the user side that will ask them to enter a float.
                         correct = False
@@ -194,6 +195,33 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                     attempt.success = True
                     
                 question_student.save()  # Save the changes to the QuestionStudent instance
+                attempt.save()
+            elif data["questionType"] == 'mcq':
+                # retrieve list of 'true' mcq options
+                # !important: mcq answers of different type may have the same primary key.
+                attempt = QuestionAttempt.objects.create(question_student=question_student)
+                attempt.content = str(submitted_answer)
+                question_type_dict = {'ea': 0, 'fa':1, 'la':2, 'ta':3}
+                answers = []
+                ea = list(question.mcq_expression_answers.filter(is_answer=True).values_list('pk', flat=True))
+                ea = [str(pk) + str(question_type_dict['ea']) for pk in ea]
+                answers.extend(ea)
+                ta = list(question.mcq_text_answers.filter(is_answer=True).values_list('pk', flat=True))
+                ta = [str(pk) + str(question_type_dict['ta']) for pk in ta]
+                answers.extend(ta)
+                fa = list(question.mcq_float_answers.filter(is_answer=True).values_list('pk', flat=True))
+                fa = [str(pk) + str(question_type_dict['fa']) for pk in fa]
+                answers.extend(fa)
+                la = list(question.mcq_latex_answers.filter(is_answer=True).values_list('pk', flat=True))
+                la = [str(pk)+ str(question_type_dict['la']) for pk in la]
+                answers.extend(la)
+                if len(submitted_answer) == len(answers):
+                    if set(submitted_answer) == set(answers):
+                        correct = True
+                        attempt.num_points = max(0, question.num_points * (1 - (question.deduct_per_attempt * question_student.get_num_attempts())))
+                        question_student.success = True
+                        attempt.success = True
+                question_student.save()
                 attempt.save()
         # Return a JsonResponse
         return JsonResponse({
@@ -286,15 +314,13 @@ def compare_expressions(e1, e2):
     same = Eq(sym_e1, sym_e2)
     return True if same==True else False
 
-def compare_floats(f1, f2):
+def compare_floats(f1, f2, margin_error=0.0):
     """
     Given two floats f1 and f2,
-    returns True if they are equal,
+    returns True if they are equal or close,
     returns False otherwise
     """
-
-    # TODO! Implement margin error
-    if f1 == f2:
+    if abs(f1-f2)/f1 <= margin_error:
         return True
     else:
         return False

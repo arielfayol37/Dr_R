@@ -25,7 +25,7 @@
                       {% else %}
                         {{answer.content}}
                       {% endif %}
-                      <input type="hidden" value="{{answer.pk}}" class="answer_id" name="mcq_answer_id_{{ forloop.counter0 }}"/>
+                      <input type="hidden" value="{{answer.pk}}{{question_type}}" class="answer_id" name="mcq_answer_id_{{ forloop.counter0 }}"/>
                       <input type="hidden" value="0{{question_type}}" class="answer_info" name="mcq_answer_info_{{ forloop.counter0 }}"/>
                     </div>
                     <button type="button" class="btn btn-warning mcq-false exempt">False</button> 
