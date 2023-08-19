@@ -15,6 +15,7 @@
         <p class="question-content">{{question.text | safe}}</p>
         <br/>
          {% if is_mcq%}
+              <input type="hidden" value="mcq" class="question-type"/>
               <div class="inputed-mcq-answers">
                 {% for answer, is_latex, question_type in answers_is_latex_question_type %}
                   <div class="mcq-option-answer">
@@ -24,7 +25,7 @@
                       {% else %}
                         {{answer.content}}
                       {% endif %}
-                      <input type="hidden" value="{{answer.pk}}" name="mcq_answer_id_{{ forloop.counter0 }}"/>
+                      <input type="hidden" value="{{answer.pk}}" class="answer_id" name="mcq_answer_id_{{ forloop.counter0 }}"/>
                       <input type="hidden" value="0{{question_type}}" class="answer_info" name="mcq_answer_info_{{ forloop.counter0 }}"/>
                     </div>
                     <button type="button" class="btn btn-warning mcq-false exempt">False</button> 
@@ -35,14 +36,14 @@
               <input type="submit" class="btn btn-success exempt" id="submit-btn" value="Submit Answer">
               <br/> <br/>
           {% elif is_fr %}
-              
+            <input type="hidden" value="fr" class="question-type"/>
               <div>
                 <textarea placeholder="Enter answer" class="w-100 question-input-field"></textarea>
               </div>
               <div> <input type="submit" class="btn btn-success exempt" id="submit-btn" value="Submit Answer"></div>
               <br/><br/>
           {% else %}
-  
+              <input type="hidden" value="structural" class="question-type"/>
               <input type="hidden" value="{{answer.pk}}" name="structural_answer_id_0"/>
               {% for q_type in question_type %} <!--expecting to iterate only over one item-->
                 <input type="hidden" value="{{q_type}}" name="structural_answer_info_0"/>

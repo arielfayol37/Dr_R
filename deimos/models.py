@@ -110,7 +110,7 @@ class QuestionStudent(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     num_points = models.FloatField(default=0)
-
+    success = models.BooleanField(default=False)
     def get_num_points(self):
         """
         Calculates adn returns the number of points a student gets from a question
@@ -140,8 +140,9 @@ class QuestionAttempt(models.Model):
     """
     content = models.CharField(max_length=1000, blank=False, null=False)
     question_student = models.ForeignKey(QuestionStudent, on_delete=models.CASCADE, related_name='attempts')
-    is_successful = models.BooleanField(default=False, null=True)
+    success = models.BooleanField(default=False, null=True)
     num_points = models.FloatField(default=0, null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.question_student.student.username} attempt for {self.question_student.question}"

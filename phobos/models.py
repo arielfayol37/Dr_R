@@ -169,6 +169,7 @@ class Question(models.Model):
         choices = QuestionChoices.choices,
         default = QuestionChoices.STRUCTURAL_TEXT
     )
+    max_num_attempts = models.IntegerField(default=5)
     answer = models.CharField(max_length=1000, null=True, blank=True) # TODO: delete this attribute.
     deduct_per_attempt = models.FloatField(default=0.05)
 

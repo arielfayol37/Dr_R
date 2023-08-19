@@ -95,8 +95,8 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
     question_ids = assignment.questions.values_list('id', flat=True)
     question_nums = assignment.questions.values_list('number', flat=True)
     question = Question.objects.get(pk=question_id)
-    if not QuestionStudent.objects.filter(question=question, student=student).exists():
-        quest = QuestionStudent.objects.create(question=question, student=student)    
+    question_student, created = QuestionStudent.objects.get_or_create(question=question, student=student)
+    question_student.save() 
     is_mcq = False #nis mcq
     is_fr = False # is free response
     answers = []
@@ -156,28 +156,50 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
     }
     return render(request, 'deimos/answer_question.html',
                   context)
-
-def validate_answer(request, question_id, submitted_answer, assignment_id=None, course_id=None):
+@login_required(login_url='astros:login')
+def validate_answer(request, question_id, assignment_id=None, course_id=None):
     student = get_object_or_404(Student, pk=request.user.pk)
+    
     if request.method == 'POST':
-        question = Question.objects.get(pk=question_id)
-        question_student = QuestionStudent(student=student, question=question)
-        attempt = QuestionAttempt.objects.create(question_student=question_student)
         correct = False
-        if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
-            # assert question.expression_answers.count() == 1
-            answer = question.expression_answers.first() # There should be only one answer.
-            correct = compare_expressions(answer.content, submitted_answer)
-        elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
-            # assert question.float_answers.count() == 1
-            answer = question.float_answers.first()
-            correct = compare_expressions(answer.content, submitted_answer)
+        data = json.loads(request.body)
+        submitted_answer = data["answer"]
+        question = Question.objects.get(pk=question_id)
         
-        if correct:
-            attempt.num_points = question.num_points - (question.deduct_per_attempt * question_student.get_num_attempts())
-    return JsonResponse({
-        'correct': correct
-    })        
+        # Use get_or_create to avoid duplicating QuestionStudent instances
+        # Normally, we should just use get because QuestionStudent object is already created
+        # whenever the user opens a question for the first time, but just to be safe.
+        question_student, created = QuestionStudent.objects.get_or_create(student=student, question=question)
+        
+        if (question_student.get_num_attempts() < question.max_num_attempts and not question_student.success):
+            
+            attempt = QuestionAttempt.objects.create(question_student=question_student)
+            attempt.content = submitted_answer
+            if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
+                assert question.expression_answers.count() == 1
+                answer = question.expression_answers.first()
+                correct = compare_expressions(answer.content, submitted_answer)
+            elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
+                assert question.float_answers.count() == 1
+                answer = question.float_answers.first()
+                try:
+                    correct = compare_floats(answer.content, float(submitted_answer)) 
+                except ValueError:
+                    # TODO: Maybe return a value to the user side that will ask them to enter a float.
+                    correct = False
+            if correct:
+                # Deduct points based on attempts, but ensure it doesn't go negative
+                attempt.num_points = max(0, question.num_points - (question.deduct_per_attempt * question_student.get_num_attempts()))
+                question_student.success = True
+                attempt.success = True
+                
+            question_student.save()  # Save the changes to the QuestionStudent instance
+            attempt.save()
+        # Return a JsonResponse
+        return JsonResponse({
+            'correct': correct
+        })
+    
 
 
            
@@ -264,7 +286,18 @@ def compare_expressions(e1, e2):
     same = Eq(sym_e1, sym_e2)
     return True if same==True else False
 
+def compare_floats(f1, f2):
+    """
+    Given two floats f1 and f2,
+    returns True if they are equal,
+    returns False otherwise
+    """
 
+    # TODO! Implement margin error
+    if f1 == f2:
+        return True
+    else:
+        return False
 #--------------------Depecrated functions used in development--------------------
 def question_nav(request):
     return render(request, 'deimos/question_nav.html', {})
