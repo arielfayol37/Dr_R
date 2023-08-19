@@ -302,6 +302,22 @@ def is_student_enrolled(student_id, course_id):
     is_enrolled = Enrollment.objects.filter(student=student, course=course).exists()
 
     return is_enrolled
+
+def transform_expression(expr):
+    """Insert multiplication signs between combined characters"""
+    expression = expr.replace(' ','')
+    strs = []
+    for index, character in enumerate(expression):
+        string = character
+        if index > 0:
+            if character.isalpha() and expression[index-1].isalnum():
+                string = '*' + character
+            elif character.isdigit() and expression[index-1].isalpha():
+                string = '*' + character
+        strs.append(string)
+    transformed_expression = ''.join(strs)   
+    return transformed_expression
+
 def  extract_numbers(text):
     # Regular expression pattern to match floats and ints
     pattern = r'[-+]?\d*\.\d+|\d+'
@@ -314,12 +330,14 @@ def  extract_numbers(text):
     
     return numbers
 
-def compare_expressions(e1, e2):
+def compare_expressions(expression1, expression2):
     """
     Given two strings e1 and e2,
     returns True if they are algebraically equivalent,
     returns False otherwise.
     """
+    e1 = transform_expression(expression1)
+    e2 = transform_expression(expression2)
     if not (isinstance(e1, str) and isinstance(e2, str)):
         raise ValueError("Both inputs should be strings")
 
@@ -330,7 +348,6 @@ def compare_expressions(e1, e2):
     sym_e2 = simplify(e2, symbols=symbls)
     difference = (simplify(sym_e1 - sym_e2, symbols=symbls))
     return True if difference == 0 else False
-
 
 def compare_floats(f1, f2, margin_error=0.0):
     """
