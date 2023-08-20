@@ -319,16 +319,18 @@ def transform_expression(expr):
     return transformed_expression
 
 def  extract_numbers(text):
-    # Regular expression pattern to match floats and ints
-    pattern = r'[-+]?\d*\.\d+|\d+'
+    """
+    Returns a list of numbers and subscrippted characters in a string.
+    # E.g of a subscriptted char: 'e_1'
+    """
+    # Regular expression pattern to match numbers and subscriptted chars.
+    
+    pattern = r'[-+]?\d*\.\d+|\d+|\w+_\w+'
     
     # Find all matches using the pattern
     matches = re.findall(pattern, text)
     
-    # Convert matches to floats or ints
-    numbers = [str(match) if '.' in match else str(match) for match in matches]
-    
-    return numbers
+    return matches
 
 def compare_expressions(expression1, expression2):
     """

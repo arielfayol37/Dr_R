@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 #from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
-
+import random
 class DifficultyChoices(models.TextChoices):
     EASY = 'EASY', 'Easy'
     MEDIUM = 'MEDIUM', 'Medium'
@@ -317,6 +317,42 @@ class MCQImageAnswer(models.Model):
 
     def __str__(self):
         return f"Image answer for {self.quesiton} with url {self.image.url}" 
+class Variable(models.Model):
+    """
+    A `Question` may have variables associated to it. 
+    A variable will have symbol representing it. Will be one character most of the times
+    but some may be subscripted. E.g epislon_zero may be represented like this 'e_0'
+
+    For example, question with pk 12 may have 5 variables associated to it.
+    Those variable will each have maybe 4 instances and each time a student
+    opens a `Question` for the first time, one of the instances of each variable
+    is going to assigned to `QuestionStudent` object which relates the `Question`
+    and the `Student`.
+    """
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='variables')
+    symbol = models.CharField(max_length=3, blank=False, null=False)
+
+    def __str__(self):
+        return f"Variable `{self.symbol}` for question {self.question}"
+    def create_instances(self, num, lower_bound, upper_bound, is_int=False):
+        """
+        Creates num number of random variable instances.
+        """
+        for i in num:
+            random_float = random.uniform(lower_bound, upper_bound)
+            if is_int:
+                random_float = float(int(random_float))
+            vi = VariableInstance.objects.create(variable=self, value=random_float)
+            vi.save()
+    def get_instance(self):
+        # This is assuming that instances will already be created.
+        return random.choice(self.instances)
+class VariableInstance(models.Model):
+    """
+    Instance of `Variable`
+    """
+    variable = models.ForeignKey(Variable, on_delete=models.CASCADE, related_name='instances')
+    value = models.FloatField(null=False, blank=False)
 
 class VectorAnswer(models.Model):
     # !Important: Deprecated
