@@ -15,8 +15,8 @@ from django.shortcuts import get_object_or_404
 from django.middleware import csrf
 from django.utils.timesince import timesince
 from phobos.models import QuestionChoices
-import random
-from sympy import symbols, simplify, Eq
+import random, re
+from sympy import symbols, simplify
 
 # Create your views here.
 @login_required(login_url='astros:login') 
@@ -183,7 +183,8 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                     assert question.float_answers.count() == 1
                     answer = question.float_answers.first()
                     try:
-                        correct = compare_floats(answer.content, float(submitted_answer)) 
+                        # answer.content must come first in the compare_floats()
+                        correct = compare_floats(answer.content, float(submitted_answer), question.margin_error) 
                     except ValueError:
                         # TODO: Maybe return a value to the user side that will ask them to enter a float.
                         correct = False
@@ -194,6 +195,33 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                     attempt.success = True
                     
                 question_student.save()  # Save the changes to the QuestionStudent instance
+                attempt.save()
+            elif data["questionType"] == 'mcq':
+                # retrieve list of 'true' mcq options
+                # !important: mcq answers of different type may have the same primary key.
+                attempt = QuestionAttempt.objects.create(question_student=question_student)
+                attempt.content = str(submitted_answer)
+                question_type_dict = {'ea': 0, 'fa':1, 'la':2, 'ta':3}
+                answers = []
+                ea = list(question.mcq_expression_answers.filter(is_answer=True).values_list('pk', flat=True))
+                ea = [str(pk) + str(question_type_dict['ea']) for pk in ea]
+                answers.extend(ea)
+                ta = list(question.mcq_text_answers.filter(is_answer=True).values_list('pk', flat=True))
+                ta = [str(pk) + str(question_type_dict['ta']) for pk in ta]
+                answers.extend(ta)
+                fa = list(question.mcq_float_answers.filter(is_answer=True).values_list('pk', flat=True))
+                fa = [str(pk) + str(question_type_dict['fa']) for pk in fa]
+                answers.extend(fa)
+                la = list(question.mcq_latex_answers.filter(is_answer=True).values_list('pk', flat=True))
+                la = [str(pk)+ str(question_type_dict['la']) for pk in la]
+                answers.extend(la)
+                if len(submitted_answer) == len(answers):
+                    if set(submitted_answer) == set(answers):
+                        correct = True
+                        attempt.num_points = max(0, question.num_points * (1 - (question.deduct_per_attempt * question_student.get_num_attempts())))
+                        question_student.success = True
+                        attempt.success = True
+                question_student.save()
                 attempt.save()
         # Return a JsonResponse
         return JsonResponse({
@@ -256,7 +284,7 @@ def register(request):
             student.save()
         except IntegrityError:
             return render(request, "astros/register.html", {
-                "message": "Username already taken."
+                "message": "Username/email already taken."
             })
         login(request, student)
         return HttpResponseRedirect(reverse("deimos:index"))
@@ -274,27 +302,60 @@ def is_student_enrolled(student_id, course_id):
     is_enrolled = Enrollment.objects.filter(student=student, course=course).exists()
 
     return is_enrolled
-def compare_expressions(e1, e2):
-    """ Given two strings e1 and e2,
-        returns True if they are algebraically equivalent, 
-        returns False otherwise
-    """
-    su = set(e1) | set(e2)
-    so = symbols(' '.join(su))
-    sym_e1 = simplify(e1, symbols=so)
-    sym_e2 = simplify(e2, symbols=so)
-    same = Eq(sym_e1, sym_e2)
-    return True if same==True else False
 
-def compare_floats(f1, f2):
+def transform_expression(expr):
+    """Insert multiplication signs between combined characters"""
+    expression = expr.replace(' ','')
+    strs = []
+    for index, character in enumerate(expression):
+        string = character
+        if index > 0:
+            if character.isalpha() and expression[index-1].isalnum():
+                string = '*' + character
+            elif character.isdigit() and expression[index-1].isalpha():
+                string = '*' + character
+        strs.append(string)
+    transformed_expression = ''.join(strs)   
+    return transformed_expression
+
+def  extract_numbers(text):
+    # Regular expression pattern to match floats and ints
+    pattern = r'[-+]?\d*\.\d+|\d+'
+    
+    # Find all matches using the pattern
+    matches = re.findall(pattern, text)
+    
+    # Convert matches to floats or ints
+    numbers = [str(match) if '.' in match else str(match) for match in matches]
+    
+    return numbers
+
+def compare_expressions(expression1, expression2):
+    """
+    Given two strings e1 and e2,
+    returns True if they are algebraically equivalent,
+    returns False otherwise.
+    """
+    e1 = transform_expression(expression1)
+    e2 = transform_expression(expression2)
+    if not (isinstance(e1, str) and isinstance(e2, str)):
+        raise ValueError("Both inputs should be strings")
+
+    symbols_union = set(e1) | set(e2)  # Combined set of symbols from both expressions
+    symbols_union.update(extract_numbers(e1 + e2))  # Update with extracted numbers
+    symbls = symbols(' '.join(symbols_union))
+    sym_e1 = simplify(e1, symbols=symbls)
+    sym_e2 = simplify(e2, symbols=symbls)
+    difference = (simplify(sym_e1 - sym_e2, symbols=symbls))
+    return True if difference == 0 else False
+
+def compare_floats(f1, f2, margin_error=0.0):
     """
     Given two floats f1 and f2,
-    returns True if they are equal,
+    returns True if they are equal or close,
     returns False otherwise
     """
-
-    # TODO! Implement margin error
-    if f1 == f2:
+    if abs(f1-f2)/f1 <= margin_error:
         return True
     else:
         return False

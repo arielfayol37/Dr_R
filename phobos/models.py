@@ -171,7 +171,8 @@ class Question(models.Model):
     )
     max_num_attempts = models.IntegerField(default=5)
     answer = models.CharField(max_length=1000, null=True, blank=True) # TODO: delete this attribute.
-    deduct_per_attempt = models.FloatField(default=0.05)
+    deduct_per_attempt = models.FloatField(default=0.05, blank=True, null=True)
+    margin_error = models.FloatField(default=0.03, blank=True, null=True)
 
     def __str__(self):
         return f"Question {self.number} ranked {self.difficulty_level} for {self.assignment}"

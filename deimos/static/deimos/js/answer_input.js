@@ -16,12 +16,12 @@ document.addEventListener('DOMContentLoaded', ()=> {
 
     submitBtn.addEventListener('click', (event)=>{
         event.preventDefault();
-        if (questionType.value==='structural'){
+        if (questionType.value==='structural' && screen.value.length > 0){
             fetch(`/${validateAnswerActionURL}`, {
                 method: 'POST',
                 headers: { 'X-CSRFToken': getCookie('csrftoken') },
                 body: JSON.stringify({
-                        answer: screen.value,
+                        answer: math.simplify(processString(screen.value)).toString(),
                         questionType: questionType.value    
                 })
               })
@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
                   console.log(result.correct);
               });
         } else if( questionType.value ==='mcq'){
+            // TODO make sure some mcqs are selected as true.
             fetch(`/${validateAnswerActionURL}`, {
                 method: 'POST',
                 headers: { 'X-CSRFToken': getCookie('csrftoken') },
@@ -103,7 +104,7 @@ displayLatex();
             MathJax.typesetPromise().then(() => {
                 try {
         
-                const userInputNode = math.parse(processString(screen.value));
+                const userInputNode = math.simplify(processString(screen.value));
                 var userInputLatex = userInputNode.toTex();
                 const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
                 formattedAnswerDiv.innerHTML = '';
@@ -123,7 +124,7 @@ displayLatex();
     form.addEventListener('submit', (event)=>{
         event.preventDefault();
         if (!(screen === null)){
-        const userInputNode = math.parse(screen.value);
+        const userInputNode = math.simplify(processString(screen.value));
         var userInputString = userInputNode.toString();
         screen.value = userInputString;
         }
