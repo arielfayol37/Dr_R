@@ -18,13 +18,19 @@ class SubjectChoices(models.TextChoices):
 class QuestionChoices(models.TextChoices):
     STRUCTURAL_EXPRESSION = 'STRUCTURAL_EXPRESSION', 'Structural Expression'
     STRUCTURAL_FLOAT = 'STRUCTURAL_FLOAT', 'Structural Float'
+    STRUCTURAL_VARIABLE_FLOAT = 'STRUCTURAL_VARIABLE_FLOAT', 'Variable Float'
     STRUCTURAL_TEXT = 'STRUCTURAL_TEXT', 'Structural Text'
     STRUCTURAL_LATEX = 'STRUCTURAL_LATEX', 'Structural Latex'
+    SURVEY = 'SURVEY', 'Survey'
+    # The following MCQ variations are useless because a `Question` 
+    # may have different types of MCQ answers. So at the end of the
+    # day, we just check if it's an MCQ and check all the types.
     MCQ_EXPRESSION = 'MCQ_EXPRESSION', 'MCQ Expression'
     MCQ_FLOAT = 'MCQ_FLOAT', 'MCQ Float'
+    MCQ_VARIABLE_FLOAT = 'MCQ_VARIABLE_FLOAT', 'MCQ Variable Float'
     MCQ_LATEX = 'MCQ_LATEX', 'MCQ Latex'
     MCQ_TEXT = 'MCQ_TEXT', 'MCQ Text'
-    SURVEY = 'SURVEY', 'Survey'
+    
 
 class AssignmentChoices(models.TextChoices):
     QUIZ = 'QUIZ', 'Quiz'
@@ -192,9 +198,8 @@ class Hint(models.Model):
     """
     Each question/subquestion may have hints in the form of text or urls to help.
     """
-    text = models.TextField(blank=False, null=False) # Professor must include text(description)
-    url = models.URLField(blank=True, null=True)
     question = models.ForeignKey(Question, related_name='hints', on_delete=models.CASCADE)
+    text = models.TextField(blank=False, null=False) # Professor must include text(description)
 
     def __str__(self):
         return f"Hint {self.id} for {self.question}"
@@ -210,6 +215,18 @@ class FloatAnswer(models.Model):
     def __str__(self):
             
         return f"Float Answer for {self.question}: {self.content}"
+    
+class VariableFloatAnswer(models.Model):
+    """
+    Answer to a `structural Question` or `MCQ Question` may be a variable float. 
+    E.g answer = F/m, where F and m are going to have multiple different values assigned
+    to different users.
+    """
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='variable_float_answers')
+    content = models.CharField(max_length=100, null=False, blank=False)
+
+    def __str__(self):
+        return f"Variable Float answer for {self.question}: {self.content}"
         
             
 class ExpressionAnswer(models.Model):
@@ -250,7 +267,7 @@ class TextAnswer(models.Model):
 
 class MCQFloatAnswer(models.Model):
     """
-    Answer to a `structural Question` may be an algebraic expression, a vector, or a float.
+    Float Answer to a `MCQ Question`.
     """
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="mcq_float_answers")
     content = models.FloatField(blank=False, null=False)
@@ -262,12 +279,26 @@ class MCQFloatAnswer(models.Model):
         else:
             return f"Incorrect MCQ Float Answer for {self.question}: {self.content}" 
         
+class MCQVariableFloatAnswer(models.Model):
+    """
+    Answer to a `structural Question` or `MCQ Question` may be a variable float. 
+    E.g answer = F/m, where F and m are going to have multiple different values assigned
+    to different users.
+    """
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='mcq_variable_float_answers')
+    content = models.CharField(max_length=100, null=False, blank=False)
+    is_answer = models.BooleanField(default=False)
+
+    def __str__(self):
+        if self.is_answer:
+            return f"Correct MCQ Variable Float Answer for {self.question}: {self.content}"
+        else:
+            return f"Incorrect MCQ Variable Float Answer for {self.question}: {self.content}" 
+        
             
 class MCQExpressionAnswer(models.Model):
     """
-    An expression for a `structural Question` may just be interpreted as text. The math.js library
-    will parse the expression given by the teacher and the resulting text will be stored.
-    When a user will input an answer, it will be compared to that text.
+    Expression answer for a `MCQ Question`.
     """
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="mcq_expression_answers")
     content = models.CharField(max_length=200) 
@@ -331,31 +362,49 @@ class Variable(models.Model):
     """
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='variables')
     symbol = models.CharField(max_length=3, blank=False, null=False)
+    instances_created = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Variable `{self.symbol}` for question {self.question}"
-    def create_instances(self, num, lower_bound, upper_bound, is_int=False):
+    def create_instances(self, num = 5, is_int=False):
         """
         Creates num number of random variable instances.
         """
+        intervals = self.intervals.all()
         for i in num:
+            bounds = random.choice(intervals)
+            lower_bound = bounds.lower_bound
+            upper_bound = bounds.upper_bound
             random_float = random.uniform(lower_bound, upper_bound)
             if is_int:
                 random_float = float(int(random_float))
             vi = VariableInstance.objects.create(variable=self, value=random_float)
             vi.save()
     def get_instance(self):
-        # This is assuming that instances will already be created.
-        return random.choice(self.instances)
+        if not self.instances_created:
+            self.create_instances()
+            self.instances_created = False
+        return random.choice(self.instances.all())
 class VariableInstance(models.Model):
     """
     Instance of `Variable`
     """
     variable = models.ForeignKey(Variable, on_delete=models.CASCADE, related_name='instances')
     value = models.FloatField(null=False, blank=False)
+class VariableInterval(models.Model):
+    """
+    A `Variable` may have multiple intervals in its domain.
+    For example, variable x domain may be [1,5] U [9, 17]
+    """
+    variable = models.ForeignKey(Variable, on_delete=models.CASCADE,related_name='intervals')
+    lower_bound = models.FloatField(default=-999,blank=False, null=False)
+    upper_bound = models.FloatField(default=999, blank=False, null=False)
 
+    def __str__(self):
+        return f"Interval {self.lower_bound} - {self.upper_bound} for {self.variable}"
 class VectorAnswer(models.Model):
     # !Important: Deprecated
+    # A vector is simply an expression.
     """
     A vector answer for a structural question can be n-dimensional. n >= 2  
     # TODO: !Important: the content should be an array of floats.

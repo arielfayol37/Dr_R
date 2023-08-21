@@ -1,5 +1,5 @@
 from django.db import models
-from phobos.models import Course, Question, User, Assignment, VariableInstance
+from phobos.models import Course, Question, User, Assignment, VariableInstance, QuestionChoices
 from django.core.validators import MaxValueValidator, MinValueValidator
 class Student(User):
     """
@@ -111,18 +111,47 @@ class QuestionStudent(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     num_points = models.FloatField(default=0)
     success = models.BooleanField(default=False)
-    # Will probably never use that related name.
     var_instances = models.ManyToManyField(VariableInstance, related_name='question_students')
-    def get_instances(self):
+    instances_created = models.BooleanField(default=False)
+    def create_instances(self):
         """
         Get variable instances from the variables associated to the question.
         """
-        for var in self.question.variables:
+        self.var_instances.clear()
+        for var in self.question.variables.all():
             self.var_instances.add(var.get_instance())
-    
+    def compute_structural_answer(self):
+        """
+        Computes the answer to the question if it's a `Question` with `Variable` answers.
+        """
+        if not self.instances_created:
+            self.create_instances()
+            self.instances_created = True
+        if self.question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
+            assert self.question.variable_float_answers.count() == 1
+            answer = self.question.variable_float_answers.first().content
+            for var_instance in self.var_instances:
+                answer = answer.replace(var_instance.variable.symbol, var_instance.value)
+        # TODO: Add a clause here if the answer type is different
+        # TODO: Add another clause here to make sure the answer evaluates to a float.
+            return eval(answer)
+    def compute_mcq_answers(self):
+        """
+        Computes the float anwers to an MCQ question if they were variables.
+        """
+        if self.question.answer_type.startswith('MCQ'):
+            mcq_var_floats = self.question.mcq_variable_float_answers.all()
+            answers = []
+            for mcq_var_float in mcq_var_floats:
+                answer = mcq_var_float.content
+                for var_instance in self.var_instances:
+                    answer = answer.replace(var_instance.variable.symbol, var_instance.value)
+                answers.append(eval(answer))
+            return answers
+        
     def get_num_points(self):
         """
-        Calculates adn returns the number of points a student gets from a question
+        Calculates and returns the number of points a student gets from a question
         """
         total = 0
         for attempt in self.attempts:

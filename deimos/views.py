@@ -136,13 +136,20 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
     elif question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
         answers.extend(question.expression_answers.all())
         question_type = [0]
+    elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
+        # TODO:!important ...extend the answers appropriately
+        answer = question_student.compute_structural_answer()
+        question_type = [5]
+        pass
     elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
         answers.extend(question.float_answers.all())
         question_type = [1]
     elif question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
         is_fr = True 
         answers.extend(question.text_answers.all())
-        question_type = [4]     
+        question_type = [4]    
+    
+
     context = {
         'question':question,
         'question_ids_nums':zip(question_ids, question_nums),
