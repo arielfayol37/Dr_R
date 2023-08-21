@@ -44,6 +44,7 @@
               <br/><br/>
           {% else %}
               <input type="hidden" value="structural" class="question-type"/>
+              <!--TODO: !Important. I don't think we will ever use the pk of the answer for structural questions.-->
               <input type="hidden" value="{{answer.pk}}" name="structural_answer_id_0"/>
               {% for q_type in question_type %} <!--expecting to iterate only over one item-->
                 <input type="hidden" value="{{q_type}}" name="structural_answer_info_0"/>

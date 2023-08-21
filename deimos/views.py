@@ -1,4 +1,6 @@
 import json
+from urllib.parse import urlparse
+from urllib.parse import unquote  # Import unquote for URL decoding
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth import authenticate, login, logout
@@ -95,8 +97,18 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
     question_ids = assignment.questions.values_list('id', flat=True)
     question_nums = assignment.questions.values_list('number', flat=True)
     question = Question.objects.get(pk=question_id)
+    
     question_student, created = QuestionStudent.objects.get_or_create(question=question, student=student)
+    if created:
+        question_student.create_instances()
+    else:
+        if not question_student.instances_created:
+            question_student.create_instances()
     question_student.save() 
+    # Detect links and replace with html a-tags
+    question.text = replace_links_with_html(question.text)
+    # Replace vars with values in colored tags.
+    question.text = replace_vars_with_values(question.text, question_student.get_var_value_dict())
     is_mcq = False #nis mcq
     is_fr = False # is free response
     answers = []
@@ -130,23 +142,21 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
         is_latex = [is_latex[i] for i in shuffler]
         answers = [answers[i] for i in shuffler]
     elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
-        answers.extend(question.latex_answers.all())
+        answers.extend(question.latex_answers.first())
         is_latex.extend([1 for _ in range(question.latex_answers.all().count())]) 
         question_type = [2]  
     elif question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
-        answers.extend(question.expression_answers.all())
+        answers.extend(question.expression_answers.first())
         question_type = [0]
     elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
-        # TODO:!important ...extend the answers appropriately
-        answer = question_student.compute_structural_answer()
+        answers.extend(question.variable_float_answers.first())
         question_type = [5]
-        pass
     elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
-        answers.extend(question.float_answers.all())
+        answers.extend(question.float_answers.first())
         question_type = [1]
     elif question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
         is_fr = True 
-        answers.extend(question.text_answers.all())
+        answers.extend(question.text_answers.first())
         question_type = [4]    
     
 
@@ -173,8 +183,8 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
         submitted_answer = data["answer"]
         question = Question.objects.get(pk=question_id)
         
-        # Use get_or_create to avoid duplicating QuestionStudent instances
-        # Normally, we should just use get because QuestionStudent object is already created
+        # Use get_or_create() to avoid duplicating QuestionStudent instances
+        # Normally, we should just use get() because QuestionStudent object is already created
         # whenever the user opens a question for the first time, but just to be safe.
         question_student, created = QuestionStudent.objects.get_or_create(student=student, question=question)
         
@@ -194,6 +204,12 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                         correct = compare_floats(answer.content, float(submitted_answer), question.margin_error) 
                     except ValueError:
                         # TODO: Maybe return a value to the user side that will ask them to enter a float.
+                        # TODO: Actually, ensure this on the front-end.
+                        correct = False
+                elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
+                    try:
+                        correct = compare_expressions(answer.content, question_student.compute_structural_answer())
+                    except ValueError:
                         correct = False
                 if correct:
                     # Deduct points based on attempts, but ensure it doesn't go negative
@@ -368,6 +384,35 @@ def compare_floats(f1, f2, margin_error=0.0):
         return True
     else:
         return False
+    
+def replace_links_with_html(text):
+    """
+    Find linkes in text and return text with those links
+    within html a-tags.
+    """
+    words = text.split()
+    new_words = []
+    for word in words:
+        if word.startswith('http://') or word.startswith('https://'):
+            parsed_url = urlparse(word)
+            link_tag = f'<a href="{word}">{parsed_url.netloc}{parsed_url.path}</a>'
+            new_words.append(link_tag)
+        else:
+            new_words.append(word)
+
+    return ' '.join(new_words)
+
+def replace_vars_with_values(text, variable_dict):
+    """
+    Find variables in text, and replace with highlited/colored values of instances.
+    """
+    for var_symbol in variable_dict:
+        # TODO: !Important Make the replacements only when the text has something 
+        # to indicate that a certain sequence of string will contain
+        # variables
+        text = text.replace(var_symbol,f"<em class=\"variable\">{variable_dict[var_symbol]}</em>")
+    return text
+
 #--------------------Depecrated functions used in development--------------------
 def question_nav(request):
     return render(request, 'deimos/question_nav.html', {})

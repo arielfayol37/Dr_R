@@ -120,13 +120,13 @@ class QuestionStudent(models.Model):
         self.var_instances.clear()
         for var in self.question.variables.all():
             self.var_instances.add(var.get_instance())
+        self.instances_created = True
     def compute_structural_answer(self):
         """
         Computes the answer to the question if it's a `Question` with `Variable` answers.
         """
         if not self.instances_created:
             self.create_instances()
-            self.instances_created = True
         if self.question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
             assert self.question.variable_float_answers.count() == 1
             answer = self.question.variable_float_answers.first().content
@@ -135,6 +135,15 @@ class QuestionStudent(models.Model):
         # TODO: Add a clause here if the answer type is different
         # TODO: Add another clause here to make sure the answer evaluates to a float.
             return eval(answer)
+    def get_var_value_dict(self):
+        """
+        Returns a dictionary of variable symbols and the corresponding instance value for
+        this particular `Question`-`Student`.
+        """
+        var_value_dict = {}
+        for var_instance in self.var_instances:
+            var_value_dict[var_instance.variable.symbol] = var_instance.value
+        return var_value_dict
     def compute_mcq_answers(self):
         """
         Computes the float anwers to an MCQ question if they were variables.

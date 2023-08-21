@@ -166,7 +166,6 @@ def create_question(request, assignment_id=None, type_int=None):
         topic = Topic.objects.get(name=request.POST.get('topic'))
         sub_topic = SubTopic.objects.get(name=request.POST.get('sub_topic'))
         text = request.POST.get('question_text')
-        text = replace_links_with_html(text)
         if type_int != 3 and type_int != 4:
             question_answer = request.POST.get('answer')
             if len(text)==0 or len(question_answer) == 0:
@@ -245,6 +244,7 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
     # Making sure the request is done by a professor.
     professor = get_object_or_404(Professor, pk=request.user.id)
     question = Question.objects.get(pk=question_id)
+    question.text = replace_links_with_html(question.text)
     answers = []
     is_latex = []
     is_mcq = False

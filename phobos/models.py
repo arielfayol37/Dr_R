@@ -371,20 +371,25 @@ class Variable(models.Model):
         Creates num number of random variable instances.
         """
         intervals = self.intervals.all()
-        for i in num:
-            bounds = random.choice(intervals)
-            lower_bound = bounds.lower_bound
-            upper_bound = bounds.upper_bound
-            random_float = random.uniform(lower_bound, upper_bound)
-            if is_int:
-                random_float = float(int(random_float))
-            vi = VariableInstance.objects.create(variable=self, value=random_float)
-            vi.save()
+        if intervals:
+            for _ in range(num):
+                bounds = random.choice(intervals)
+                lower_bound = bounds.lower_bound
+                upper_bound = bounds.upper_bound
+                random_float = random.uniform(lower_bound, upper_bound)
+                if is_int:
+                    random_float = float(int(random_float))
+                vi = VariableInstance.objects.create(variable=self, value=random_float)
+                vi.save()
+            self.instances_created = True
+        # TODO: Handle case when intervals are not created.
+        else:
+            raise Exception("Intervals were not created before create_instances() was called.")
     def get_instance(self):
         if not self.instances_created:
             self.create_instances()
-            self.instances_created = False
         return random.choice(self.instances.all())
+    
 class VariableInstance(models.Model):
     """
     Instance of `Variable`
