@@ -51,6 +51,8 @@ def assignment_management(request, assignment_id, course_id=None):
     if not course.professors.filter(pk=request.user.pk).exists():
         return HttpResponseForbidden('You are not authorized to manage this Assignment.')
     questions = Question.objects.filter(assignment = assignment)
+    for question in questions:
+        question.text = replace_links_with_html(question.text)
     context = {
         "questions": questions,
         "assignment": assignment
