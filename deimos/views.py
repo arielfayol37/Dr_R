@@ -17,7 +17,7 @@ from django.shortcuts import get_object_or_404
 from django.middleware import csrf
 from django.utils.timesince import timesince
 from phobos.models import QuestionChoices
-import random, re
+import random
 from sympy import symbols, simplify
 
 # Create your views here.
@@ -108,7 +108,7 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
     # Detect links and replace with html a-tags
     question.text = replace_links_with_html(question.text)
     # Replace vars with values in colored tags.
-    question.text = replace_vars_with_values(question.text, question_student.get_var_value_dict())
+    question.text = question_student.evaluate_var_expressions_in_text(question.text, add_html_style=True)
     is_mcq = False #nis mcq
     is_fr = False # is free response
     answers = []
@@ -141,22 +141,24 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
         random.shuffle(shuffler)  
         is_latex = [is_latex[i] for i in shuffler]
         answers = [answers[i] for i in shuffler]
+    # TODO: Subclass all structural answers to a more general class 
+    # so that you may use only one if.
     elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
-        answers.extend(question.latex_answers.first())
+        answers.extend(question.latex_answers.all())
         is_latex.extend([1 for _ in range(question.latex_answers.all().count())]) 
         question_type = [2]  
     elif question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
-        answers.extend(question.expression_answers.first())
+        answers.extend(question.expression_answers.all())
         question_type = [0]
     elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
-        answers.extend(question.variable_float_answers.first())
+        answers.extend(question.variable_float_answers.all())
         question_type = [5]
     elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
-        answers.extend(question.float_answers.first())
+        answers.extend(question.float_answers.all())
         question_type = [1]
     elif question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
         is_fr = True 
-        answers.extend(question.text_answers.first())
+        answers.extend(question.text_answers.all())
         question_type = [4]    
     
 
@@ -326,20 +328,6 @@ def is_student_enrolled(student_id, course_id):
 
     return is_enrolled
 
-def transform_expression(expr):
-    """Insert multiplication signs between combined characters"""
-    expression = expr.replace(' ','')
-    strs = []
-    for index, character in enumerate(expression):
-        string = character
-        if index > 0:
-            if character.isalpha() and expression[index-1].isalnum():
-                string = '*' + character
-            elif character.isdigit() and expression[index-1].isalpha():
-                string = '*' + character
-        strs.append(string)
-    transformed_expression = ''.join(strs)   
-    return transformed_expression
 
 def  extract_numbers(text):
     """
@@ -403,13 +391,14 @@ def replace_links_with_html(text):
     return ' '.join(new_words)
 
 def replace_vars_with_values(text, variable_dict):
+    # Deprecated
     """
     Find variables in text, and replace with highlited/colored values of instances.
     """
     for var_symbol in variable_dict:
         # TODO: !Important Make the replacements only when the text has something 
         # to indicate that a certain sequence of string will contain
-        # variables
+        # variables. Perhaps  {}
         text = text.replace(var_symbol,f"<em class=\"variable\">{variable_dict[var_symbol]}</em>")
     return text
 
