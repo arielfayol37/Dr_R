@@ -346,5 +346,7 @@ def gradebook(request, course_id):
                                                        assignment_student.student.last_name]))
             students['usernames'].append(assignment_student.student.get_username())
                   
-     return render(request,'phobos/gradebook.html',{'student_names': students['student_names'], 'student_usernames': students['usernames'],'assignments':assignments ,'submitted_assignments': assignment_students})
+     return render(request,'phobos/gradebook.html',\
+                   {'student_names': students['student_names'], 'student_usernames': students['usernames'],\
+                    'assignments':assignments ,'submitted_assignments': assignment_students})
 
