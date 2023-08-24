@@ -348,4 +348,3 @@ def gradebook(request, course_id):
     return render(request,'phobos/gradebook.html',\
                 {'students_grades': zip(enrolled_students,student_grades),\
                 'assignments':assignments})
-
