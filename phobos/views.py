@@ -16,7 +16,7 @@ from .models import *
 from django.shortcuts import get_object_or_404
 from django.middleware import csrf
 from django.utils.timesince import timesince
-
+from deimos.models import AssignmentStudent, Student
 
 # Create your views here.
 @login_required(login_url='astros:login') 
@@ -327,3 +327,48 @@ def upload_image(request):
         # Return the URL of the uploaded image in the response
         return JsonResponse({'image_url': image.url})
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+def gradebook(request, course_id):
+     course = Course.objects.get(pk = course_id)
+     assignments= Assignment.objects.filter(course = course)
+     assignmentstudent = list()
+     students = {
+         'student':[], 'name': []
+     }
+     studentsname =[]
+     for i in assignments: 
+         # getting a set of sets of submitted assignments
+         assignmentstudent.append(AssignmentStudent.objects.filter(assignment = i))
+         # getting the name of all the students enrolled in the course
+     for i in assignmentstudent:
+         for j in i:
+             if j.student.get_username() in students['name']:
+                print('already')
+             else:
+                 students['student'].append(j.student)
+                 students['name'].append(j.student.get_username())
+         for x, y in students.items():
+             print(x, y)
+                 
+     return render(request,'phobos/gradebook.html',{'studentd': students['student'], 'studentname': students['name'],'assignmentcourse':assignments ,'submittedassigmentsSeTs': assignmentstudent})
+
+def gradebok(course):
+     assignments= Assignment.objects.filter(course = course)
+     assignmentstudent = list()
+     students = {
+         'student':[], 'name': []
+     }
+     studentsname =[]
+     for i in assignments: 
+         # getting a set of sets of submitted assignments
+         assignmentstudent.append(AssignmentStudent.objects.filter(assignment = i))
+         # getting the name of all the students enrolled in the course
+     for i in assignmentstudent:
+         for j in i:
+             if j.student in students['student']:
+                print('already')
+             else:
+                 students['student'].append(j.student)
+                 students['name'].append(j.student.get_username())
+     for x, y in students.items():
+             print(x, y)
