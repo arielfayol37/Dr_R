@@ -159,7 +159,7 @@ class QuestionStudent(models.Model):
         # TODO: !important Alternatively, we could just update the permanent dictionary whenever the professor
         # makes changes to question.
         var_value_dict = {}
-        for var_instance in self.var_instances:
+        for var_instance in self.var_instances.all():
             var_value_dict[var_instance.variable.symbol] = var_instance.value
         return var_value_dict
     
