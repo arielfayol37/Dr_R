@@ -331,22 +331,22 @@ def upload_image(request):
 def gradebook(request, course_id):
      course = Course.objects.get(pk = course_id)
      assignments= Assignment.objects.filter(course = course)
-     assignmentstudent = list()
+     assignment_students = list()
      students = {
-         'student':[], 'name': []
+         'student_names':[], 'usernames': []
      }
-     studentsname =[]
-     for i in assignments: 
+
+     for assignment in assignments: 
          # getting a set of sets of submitted assignments
-         assignmentstudent.append(AssignmentStudent.objects.filter(assignment = i))
+         assignment_students.extend(AssignmentStudent.objects.filter(assignment=assignment))
          # getting the name of all the students enrolled in the course
-     for i in assignmentstudent:
-         for j in i:
-             if j.student.get_username() in students['name']:
-                print('already')
-             else:
-                students['student'].append(j.student)
-                students['name'].append(j.student.get_username())
+     for assignment_student in assignment_students:
+        if not assignment_student.student.get_username() in students['usernames']:
+            students['student_names'].append(" ".join([assignment_student.student.first_name, \
+                                                       assignment_student.student.last_name]))
+            students['usernames'].append(assignment_student.student.get_username())
                   
-     return render(request,'phobos/gradebook.html',{'studentd': students['student'], 'studentname': students['name'],'assignmentcourse':assignments ,'submittedassigmentsSeTs': assignmentstudent})
+     return render(request,'phobos/gradebook.html',\
+                   {'student_names': students['student_names'], 'student_usernames': students['usernames'],\
+                    'assignments':assignments ,'submitted_assignments': assignment_students})
 
