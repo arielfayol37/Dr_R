@@ -345,30 +345,8 @@ def gradebook(request, course_id):
              if j.student.get_username() in students['name']:
                 print('already')
              else:
-                 students['student'].append(j.student)
-                 students['name'].append(j.student.get_username())
-         for x, y in students.items():
-             print(x, y)
-                 
+                students['student'].append(j.student)
+                students['name'].append(j.student.get_username())
+                  
      return render(request,'phobos/gradebook.html',{'studentd': students['student'], 'studentname': students['name'],'assignmentcourse':assignments ,'submittedassigmentsSeTs': assignmentstudent})
 
-def gradebok(course):
-     assignments= Assignment.objects.filter(course = course)
-     assignmentstudent = list()
-     students = {
-         'student':[], 'name': []
-     }
-     studentsname =[]
-     for i in assignments: 
-         # getting a set of sets of submitted assignments
-         assignmentstudent.append(AssignmentStudent.objects.filter(assignment = i))
-         # getting the name of all the students enrolled in the course
-     for i in assignmentstudent:
-         for j in i:
-             if j.student in students['student']:
-                print('already')
-             else:
-                 students['student'].append(j.student)
-                 students['name'].append(j.student.get_username())
-     for x, y in students.items():
-             print(x, y)
