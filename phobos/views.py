@@ -16,7 +16,7 @@ from .models import *
 from django.shortcuts import get_object_or_404
 from django.middleware import csrf
 from django.utils.timesince import timesince
-
+from deimos.models import AssignmentStudent, Student
 
 # Create your views here.
 @login_required(login_url='astros:login') 
@@ -327,3 +327,26 @@ def upload_image(request):
         # Return the URL of the uploaded image in the response
         return JsonResponse({'image_url': image.url})
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+def gradebook(request, course_id):
+     course = Course.objects.get(pk = course_id)
+     assignments= Assignment.objects.filter(course = course)
+     assignment_students = list()
+     students = {
+         'student_names':[], 'usernames': []
+     }
+
+     for assignment in assignments: 
+         # getting a set of sets of submitted assignments
+         assignment_students.extend(AssignmentStudent.objects.filter(assignment=assignment))
+         # getting the name of all the students enrolled in the course
+     for assignment_student in assignment_students:
+        if not assignment_student.student.get_username() in students['usernames']:
+            students['student_names'].append(" ".join([assignment_student.student.first_name, \
+                                                       assignment_student.student.last_name]))
+            students['usernames'].append(assignment_student.student.get_username())
+                  
+     return render(request,'phobos/gradebook.html',\
+                   {'student_names': students['student_names'], 'student_usernames': students['usernames'],\
+                    'assignments':assignments ,'submitted_assignments': assignment_students})
+
