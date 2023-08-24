@@ -3,23 +3,20 @@
 {% block body%}
 
 <h1> GradeBook</h1>
-<table><tr><td><b>student name</b></td>
-    {% for i in assignmentcourse %}
-    <td> <b>{{i.name}}</b> </td>
-    {% endfor %}
-</tr>
-    {% for student in studentd %}
+<table><tr>
+            <td><b>First Name</b></td>
+            <td><b>Last Name</b></td>
+            {% for assignment in assignments %}
+            <td> <b>{{assignment.name}}</b> </td>
+            {% endfor %}
+        </tr>
+    {% for student, grade_list in students_grades %}
     <tr>
-        <td>{{ student }} </td>
-    {% for set in submittedassigmentsSeTs %}
-        {% for assignment in set %}
-        {% if assignment.student == student %}
-        <td> {{assignment.grade}} </td>
-        
-        {% endif %}
-
+        <td>{{ student.first_name}} </td>
+        <td>{{ student.last_name}} </td>
+        {% for grade in grade_list %}
+            <td> {{grade}} </td>
         {% endfor %}
-    {% endfor %}
     </tr>
     {% endfor %}
 </table>
