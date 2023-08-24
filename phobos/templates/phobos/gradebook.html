@@ -1,0 +1,28 @@
+{% extends 'phobos/layout.html' %}
+{% block title %} Course {% endblock %}
+{% block body%}
+
+<h1> GradeBook</h1>
+<table><tr><td><b>student name</b></td>
+    {% for i in assignmentcourse %}
+    <td> <b>{{i.name}}</b> </td>
+    {% endfor %}
+</tr>
+    {% for student in studentd %}
+    <tr>
+        <td>{{ student }} </td>
+    {% for set in submittedassigmentsSeTs %}
+        {% for assignment in set %}
+        {% if assignment.student == student %}
+        <td> {{assignment.grade}} </td>
+        
+        {% endif %}
+
+        {% endfor %}
+    {% endfor %}
+    </tr>
+    {% endfor %}
+</table>
+
+    
+{% endblock %}
