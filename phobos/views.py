@@ -16,7 +16,7 @@ from .models import *
 from django.shortcuts import get_object_or_404
 from django.middleware import csrf
 from django.utils.timesince import timesince
-
+from deimos.models import AssignmentStudent, Student
 
 # Create your views here.
 @login_required(login_url='astros:login') 
@@ -51,6 +51,8 @@ def assignment_management(request, assignment_id, course_id=None):
     if not course.professors.filter(pk=request.user.pk).exists():
         return HttpResponseForbidden('You are not authorized to manage this Assignment.')
     questions = Question.objects.filter(assignment = assignment)
+    for question in questions:
+        question.text = replace_links_with_html(question.text)
     context = {
         "questions": questions,
         "assignment": assignment
@@ -154,7 +156,7 @@ def create_assignment(request, course_id=None):
 @login_required(login_url='astros:login')
 def create_question(request, assignment_id=None, type_int=None):
     """
-    creates a question object.
+    creates a `Question` object.
     Will usually require the assignment id, and sometimes
     not (in case the questions are stand-alone e.g. in the question bank)
     """
@@ -166,7 +168,6 @@ def create_question(request, assignment_id=None, type_int=None):
         topic = Topic.objects.get(name=request.POST.get('topic'))
         sub_topic = SubTopic.objects.get(name=request.POST.get('sub_topic'))
         text = request.POST.get('question_text')
-        text = replace_links_with_html(text)
         if type_int != 3 and type_int != 4:
             question_answer = request.POST.get('answer')
             if len(text)==0 or len(question_answer) == 0:
@@ -245,6 +246,7 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
     # Making sure the request is done by a professor.
     professor = get_object_or_404(Professor, pk=request.user.id)
     question = Question.objects.get(pk=question_id)
+    question.text = replace_links_with_html(question.text)
     answers = []
     is_latex = []
     is_mcq = False
@@ -325,3 +327,24 @@ def upload_image(request):
         # Return the URL of the uploaded image in the response
         return JsonResponse({'image_url': image.url})
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+@login_required(login_url='astros:login')
+def gradebook(request, course_id):
+    course = Course.objects.get(pk = course_id)
+    enrolled_students = Student.objects.filter(enrollments__course=course)
+    assignments= Assignment.objects.filter(course = course)
+    student_grades = []
+    for student in enrolled_students: 
+        grades = []
+        for assignment in assignments:
+            try:
+                grade = AssignmentStudent.objects.get(student=student, assignment=assignment).get_grade()
+            except AssignmentStudent.DoesNotExist:
+                grade = 'None'
+
+            grades.append(grade)
+        student_grades.append(grades)
+                  
+    return render(request,'phobos/gradebook.html',\
+                {'students_grades': zip(enrolled_students,student_grades),\
+                'assignments':assignments})

@@ -1,6 +1,7 @@
 from django.db import models
-from phobos.models import Course, Question, User, Assignment
+from phobos.models import Course, Question, User, Assignment, VariableInstance, QuestionChoices
 from django.core.validators import MaxValueValidator, MinValueValidator
+import re
 class Student(User):
     """
     Student class to handle students in the platform.
@@ -96,11 +97,14 @@ class AssignmentStudent(models.Model):
         """
         num_points = 0
         total = 0
-        for question in self.assignment.questions:
-            question_student = QuestionStudent.objects.filter(\
-                question=question, student=self.student)
+        for question in self.assignment.questions.all():
             total += question.num_points
-            num_points += question_student.get_num_points()
+            try:
+                question_student = QuestionStudent.objects.get(\
+                    question=question, student=self.student)
+                num_points += question_student.get_num_points()  
+            except QuestionStudent.DoesNotExist:
+                num_points += 0
         self.grade = (num_points/total) * 100
         return self.grade
 class QuestionStudent(models.Model):
@@ -111,12 +115,91 @@ class QuestionStudent(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     num_points = models.FloatField(default=0)
     success = models.BooleanField(default=False)
+    var_instances = models.ManyToManyField(VariableInstance, related_name='question_students')
+    instances_created = models.BooleanField(default=False)
+    def create_instances(self):
+        """
+        Get variable instances from the variables associated to the question.
+        """
+        if not self.question.parent_question:
+            self.var_instances.clear()
+            for var in self.question.variables.all():
+                self.var_instances.add(var.get_instance())
+        else:
+            parent_question_student = QuestionStudent.objects.get(question=self.question.parent_question,\
+                                                                   student=self.student)
+            if not parent_question_student.instances_created:
+                parent_question_student.create_instances()
+        self.instances_created = True
+    def compute_structural_answer(self):
+        """
+        Computes the answer to the question if it's a `Question` with `Variable` answers.
+        """
+        if not self.instances_created:
+            self.create_instances()
+        if self.question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
+            assert self.question.variable_float_answers.count() == 1
+            answer = self.question.variable_float_answers.first().content
+        # TODO: Add a clause here if the answer type is different
+        # TODO: Add another clause here to make sure the answer evaluates to a float.
+        # Possible reasons why it won't evaluate:
+            # 1: missing multiplication signs. E.g ab instead of a*b. transform_expression() handles that
+            # 2: a symbol/character(s) that is among the variables. Fix: make sure on the frontEnd that
+            #    an answer never contains symbols that are not defined variables.
+            return eval(transform_expression(answer), self.get_var_value_dict())
+    def get_var_value_dict(self):
+        """
+        Returns a dictionary of variable symbols and the corresponding instance value for
+        this particular `Question`-`Student`.
+        """
+        # Note: We could have created a permanent dictionary for this instead of computing
+        # each time, but this is the best to do it in case the professor changes the value/intervals
+        # of variables.
+
+        # TODO: !important Alternatively, we could just update the permanent dictionary whenever the professor
+        # makes changes to question.
+        var_value_dict = {}
+        for var_instance in self.var_instances:
+            var_value_dict[var_instance.variable.symbol] = var_instance.value
+        return var_value_dict
+    
+    def evaluate_var_expressions_in_text(self, text, add_html_style=False):
+        """
+        Takes a text and evaluates expressions expected to contain variables.
+        It looks for text within {} and do the replacements. 
+        """
+        regex = re.compile(r'{(.*)}') # Expecting anything within those curly braces to be variable symbols
+                                      # and real numbers.
+        # TODO: Do this more efficiently.
+        var_value_dict = self.get_var_value_dict()
+        matches = regex.findall(text)
+        if not add_html_style:
+            for match in matches:
+                text = text.replace(match, eval(transform_expression(match), var_value_dict))
+        else:
+            for match in matches:
+                replacement = f"<em class=\"variable\">{eval(transform_expression(match), var_value_dict)}</em>"
+                text  = text.replace(match, replacement)
+        return text
+    def compute_mcq_answers(self):
+        """
+        Computes the float anwers to an MCQ question if they were variables.
+        """
+        if self.question.answer_type.startswith('MCQ'):
+            mcq_var_floats = self.question.mcq_variable_float_answers.all()
+            answers = []
+            var_value_dict = self.get_var_value_dict()
+            for mcq_var_float in mcq_var_floats:
+                answer = mcq_var_float.content
+                answers.append(eval(transform_expression(answer), var_value_dict))
+            return answers
+        
     def get_num_points(self):
         """
-        Calculates adn returns the number of points a student gets from a question
+        Calculates and returns the number of points a student gets from a question
         """
         total = 0
-        for attempt in self.attempts:
+        for attempt in self.attempts.all():
             # The idea here is that at some point
             # the student may get points even if attempts
             # are not successful. Maybe due to a new functionality
@@ -146,3 +229,19 @@ class QuestionAttempt(models.Model):
 
     def __str__(self):
         return f"{self.question_student.student.username} attempt for {self.question_student.question}"
+    
+
+def transform_expression(expr):
+    """Insert multiplication signs between combined characters"""
+    expression = expr.replace(' ','')
+    strs = []
+    for index, character in enumerate(expression):
+        string = character
+        if index > 0:
+            if character.isalpha() and expression[index-1].isalnum():
+                string = '*' + character
+            elif character.isdigit() and expression[index-1].isalpha():
+                string = '*' + character
+        strs.append(string)
+    transformed_expression = ''.join(strs)   
+    return transformed_expression
