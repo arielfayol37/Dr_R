@@ -338,8 +338,8 @@ def gradebook(request, course_id):
         grades = []
         for assignment in assignments:
             try:
-                grade = AssignmentStudent.objects.get(student=student, assignment=assignment).grade
-            except:
+                grade = AssignmentStudent.objects.get(student=student, assignment=assignment).get_grade()
+            except AssignmentStudent.DoesNotExist:
                 grade = 'None'
 
             grades.append(grade)
