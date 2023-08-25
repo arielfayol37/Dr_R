@@ -304,6 +304,27 @@ def get_subtopics(request, selected_topic):
 
     return JsonResponse({'subtopics': subtopics})
 
+@login_required(login_url='astros:login')
+def gradebook(request, course_id):
+    course = Course.objects.get(pk = course_id)
+    enrolled_students = Student.objects.filter(enrollments__course=course)
+    assignments= Assignment.objects.filter(course = course)
+    student_grades = []
+    for student in enrolled_students: 
+        grades = []
+        for assignment in assignments:
+            try:
+                grade = AssignmentStudent.objects.get(student=student, assignment=assignment).get_grade()
+            except AssignmentStudent.DoesNotExist:
+                grade = 'None'
+
+            grades.append(grade)
+        student_grades.append(grades)
+                  
+    return render(request,'phobos/gradebook.html',\
+                {'students_grades': zip(enrolled_students,student_grades),\
+                'assignments':assignments})
+
 #--------------HELPER FUNCTIONS--------------------------------#
 def replace_links_with_html(text):
     # Find all URLs in the input text
@@ -327,24 +348,3 @@ def upload_image(request):
         # Return the URL of the uploaded image in the response
         return JsonResponse({'image_url': image.url})
     return JsonResponse({'error': 'Invalid request'}, status=400)
-
-@login_required(login_url='astros:login')
-def gradebook(request, course_id):
-    course = Course.objects.get(pk = course_id)
-    enrolled_students = Student.objects.filter(enrollments__course=course)
-    assignments= Assignment.objects.filter(course = course)
-    student_grades = []
-    for student in enrolled_students: 
-        grades = []
-        for assignment in assignments:
-            try:
-                grade = AssignmentStudent.objects.get(student=student, assignment=assignment).get_grade()
-            except AssignmentStudent.DoesNotExist:
-                grade = 'None'
-
-            grades.append(grade)
-        student_grades.append(grades)
-                  
-    return render(request,'phobos/gradebook.html',\
-                {'students_grades': zip(enrolled_students,student_grades),\
-                'assignments':assignments})
