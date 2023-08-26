@@ -287,6 +287,8 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
                       'show_answer':show_answer,\
                      'is_mcq':is_mcq, 'is_fr':is_fr,'answers': answers,\
                          'answers_is_latex': zip(answers, is_latex) if is_latex else None})
+
+
        
 
 def calci(request):
@@ -348,3 +350,5 @@ def upload_image(request):
         # Return the URL of the uploaded image in the response
         return JsonResponse({'image_url': image.url})
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
