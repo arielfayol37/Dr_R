@@ -8,7 +8,10 @@
     <div class="page-container" id="create-question">
       
     <br/>
-    
+    <div class="add-var-section">
+        <button class="btn btn-info">v</button>
+        <div class="var-info-div"></div>
+    </div>
     <form method="post" enctype="multipart/form-data" id="question-form" action="{% url 'phobos:create_question' assignment_id=assignment_id %}">
       {% csrf_token %}
       <div class="question">
