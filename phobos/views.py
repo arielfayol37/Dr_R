@@ -338,8 +338,8 @@ def gradebook(request, course_id):
         grades = []
         for assignment in assignments:
             try:
-                grade = AssignmentStudent.objects.get(student=student, assignment=assignment).grade
-            except:
+                grade = AssignmentStudent.objects.get(student=student, assignment=assignment).get_grade()
+            except AssignmentStudent.DoesNotExist:
                 grade = 'None'
 
             grades.append(grade)
@@ -347,7 +347,7 @@ def gradebook(request, course_id):
                   
     return render(request,'phobos/gradebook.html',\
                 {'students_grades': zip(enrolled_students,student_grades),\
-                'assignments':assignments, 'course':course})
+                 'assignments':assignments, 'course':course})
 
 def student_profile(request,course_id,student_id):
     student= Student.objects.get(pk =student_id)
@@ -365,3 +365,4 @@ def student_profile(request,course_id,student_id):
     return render(request,'phobos/student_profile.html',\
                 {'student_grade': zip(assignments,grades),\
                  'student':student, 'course':course})
+

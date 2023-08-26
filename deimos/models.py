@@ -97,11 +97,14 @@ class AssignmentStudent(models.Model):
         """
         num_points = 0
         total = 0
-        for question in self.assignment.questions:
-            question_student = QuestionStudent.objects.filter(\
-                question=question, student=self.student)
+        for question in self.assignment.questions.all():
             total += question.num_points
-            num_points += question_student.get_num_points()
+            try:
+                question_student = QuestionStudent.objects.get(\
+                    question=question, student=self.student)
+                num_points += question_student.get_num_points()  
+            except QuestionStudent.DoesNotExist:
+                num_points += 0
         self.grade = (num_points/total) * 100
         return self.grade
 class QuestionStudent(models.Model):
@@ -156,7 +159,7 @@ class QuestionStudent(models.Model):
         # TODO: !important Alternatively, we could just update the permanent dictionary whenever the professor
         # makes changes to question.
         var_value_dict = {}
-        for var_instance in self.var_instances:
+        for var_instance in self.var_instances.all():
             var_value_dict[var_instance.variable.symbol] = var_instance.value
         return var_value_dict
     
@@ -196,7 +199,7 @@ class QuestionStudent(models.Model):
         Calculates and returns the number of points a student gets from a question
         """
         total = 0
-        for attempt in self.attempts:
+        for attempt in self.attempts.all():
             # The idea here is that at some point
             # the student may get points even if attempts
             # are not successful. Maybe due to a new functionality
