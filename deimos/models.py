@@ -105,7 +105,10 @@ class AssignmentStudent(models.Model):
                 num_points += question_student.get_num_points()  
             except QuestionStudent.DoesNotExist:
                 num_points += 0
-        self.grade = (num_points/total) * 100
+        if total == 0:
+            self.grade = 0
+        else:
+            self.grade = (num_points/total) * 100
         return self.grade
 class QuestionStudent(models.Model):
     """
