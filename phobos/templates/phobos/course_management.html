@@ -9,7 +9,7 @@
     <br/>
     <h4>{{course.name}}</h4><hr/>
     <a href="{% url 'phobos:create_assignment' course_id=course.id %}" style="display: inline;">  Create a new assigment</a>
-    <button><a href="{% url 'phobos:gradebook' course_id=course.id %}" style="display: inline;">  GradeBook </a></button>
+   <a href="{% url 'phobos:gradebook' course_id=course.id %}" style="display: inline;"><button class="btn btn-secondary">GradeBook </button></a>
 
     <!-- Display course's assignments -->
     <ul class="courses course-list">

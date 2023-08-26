@@ -53,11 +53,16 @@ def assignment_management(request, assignment_id, course_id=None):
     student = get_object_or_404(Student, pk = request.user.pk)
     
     assignment = get_object_or_404(Assignment, pk = assignment_id)
+    assignment_student = AssignmentStudent.objects.create(student = student, assignment=assignment)
+    assignment_student.save()
+    # TODO: Do delete the following code in comment.
+    """
     is_assigned = AssignmentStudent.objects.filter(student=student, assignment=assignment).exists()
     if not is_assigned:
         return HttpResponseForbidden('You have not be assigned this assignment.')
-    # For every question, make sure a `QuestionStudent` object exists.
-    # Create one if it doesn't 
+    
+    """
+
     questions = Question.objects.filter(assignment = assignment)
     context = {
         "questions": questions,
