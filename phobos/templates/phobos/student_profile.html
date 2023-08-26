@@ -1,0 +1,28 @@
+{% extends 'phobos/layout.html' %}
+{% block title %} Course {% endblock %}
+{% block body%}
+
+<h1> {{ student.first_name}} {{student.last_name}} </h1>
+<h2> Student Profile - {{course.name}} </h2>
+
+<table><tr>
+            <td><b>Assignments</b></td>
+            <td><b>Grades</b></td>
+            <td><b>Remark</b></td>
+            
+        </tr>
+    {% for assignment, grade in student_grade %}
+    <tr>
+        <td>{{ assignment.name}} </td>
+        <td> {{grade}} </td>
+        {% if grade > 70 %}
+        <td> Passed </td>
+        {% else %}
+        <td> Failed</td>
+        {% endif %}
+    </tr>
+    {% endfor %}
+</table>
+
+    
+{% endblock %}
