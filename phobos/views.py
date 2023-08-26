@@ -351,4 +351,20 @@ def upload_image(request):
         return JsonResponse({'image_url': image.url})
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
+def student_profile(request,course_id,student_id):
+    student= Student.objects.get(pk =student_id)
+    course = Course.objects.get(pk = course_id)
+    assignments= Assignment.objects.filter(course = course)
+    grades = []
+    for assignment in assignments:
+        try:
+            grade = AssignmentStudent.objects.get(student=student, assignment=assignment).get_grade()
+        except:
+            grade = 'None'
+
+        grades.append(grade)
+    
+    return render(request,'phobos/student_profile.html',\
+                {'student_grade': zip(assignments,grades),\
+                 'student':student, 'course':course})
 

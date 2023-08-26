@@ -8,10 +8,7 @@
     <div class="page-container" id="create-question">
       
     <br/>
-    <div class="add-var-section">
-        <button class="btn btn-info">v</button>
-        <div class="var-info-div"></div>
-    </div>
+
     <form method="post" enctype="multipart/form-data" id="question-form" action="{% url 'phobos:create_question' assignment_id=assignment_id %}">
       {% csrf_token %}
       <div class="question">
@@ -91,7 +88,15 @@
     <input type="submit" class="btn btn-success exempt" value="Create Question">
     <br/>
     </form>
-  
+      <div class="add-var-section">
+        <button class="btn btn-info var-btn">v</button>
+        <div class="var-info-div" style="display: none;">
+            <input class="var-symbol" type="text" placeholder="enter symbol e.g. x"/>
+            <input class="var-domain" type="text" placeholder="enter intervals e.g.(1,3) (-8, 20)"/>
+            <button class="btn btn-success btn-create-var">Create var</button>
+        </div>
+        <div class="created-vars"></div>
+    </div>
   </div>
 
 {% endblock %}
@@ -104,6 +109,7 @@
 <script src="{% static 'phobos/js/answer_input.js' %}"></script>
 <script src="{% static 'phobos/js/question.js' %}"></script>
 <script src="{% static 'phobos/js/calci.js' %}"></script>
+<script src="{% static 'phobos/js/variable.js' %}"></script>
 
 
 
