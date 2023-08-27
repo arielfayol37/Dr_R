@@ -182,7 +182,26 @@ def create_question(request, assignment_id=None, type_int=None):
             sub_topic = sub_topic,
             assignment = assignment
         )
-        new_question.save() # Needed here. Before saving answer
+        new_question.save() # Needed here. Before saving answer'
+        vars_dict = {}
+        for key, value in request.POST.items():
+            if key.startswith('domain'):
+                _, bound_type, var_symbol, bound_number = key.split('_')
+                bound_value = value
+                if var_symbol not in vars_dict:
+                    vars_dict[var_symbol] = {}
+                if bound_type not in vars_dict[var_symbol]:
+                    vars_dict[var_symbol][bound_type] = []
+                vars_dict[var_symbol][bound_type].append(bound_value)
+        for var_symbol in vars_dict:
+            new_variable = Variable(question=new_question, symbol=var_symbol)
+            new_variable.save()
+            assert len(vars_dict[var_symbol]['lb']) == len(vars_dict[var_symbol]['ub'])
+            for bound_index in range(len(vars_dict[var_symbol]['lb'])):
+                var_interval = VariableInterval(variable=new_variable, \
+                                                lower_bound = vars_dict[var_symbol]['lb'][bound_index],\
+                                                upper_bound = vars_dict[var_symbol]['ub'][bound_index])
+                var_interval.save()
         if type_int == 3:
             for key, value in request.POST.items():
                 if key.startswith('answer_value_'):
@@ -190,12 +209,21 @@ def create_question(request, assignment_id=None, type_int=None):
                     info_key = 'answer_info_' + key[option_index_start:]
                     answer_info_encoding = request.POST.get(info_key)
                     answer_content = value
+                    # Really, all thsoe QuestionChoices don't matter for two reasons:
+                        # 1) If there are different types of mcq answers which is often the case
+                        #     the answer_type will end up being just the type of the last answer
+                        # 2) All what the other parts of the programs care about is whether the question
+                        #     is an MCQ or not.
                     if answer_info_encoding[1] == "0": # Expression Answer
                         new_question.answer_type = QuestionChoices.MCQ_EXPRESSION
                         answer = MCQExpressionAnswer(question=new_question, content=answer_content)
                     elif answer_info_encoding[1] == "1": # Float Answer
-                        new_question.answer_type = QuestionChoices.MCQ_FLOAT
-                        answer = MCQFloatAnswer(question=new_question, content=answer_content)
+                        if not vars_dict:
+                            new_question.answer_type = QuestionChoices.MCQ_FLOAT
+                            answer = MCQFloatAnswer(question=new_question, content=answer_content)
+                        else:
+                            new_question.answer_type = QuestionChoices.MCQ_VARIABLE_FLOAT
+                            answer = MCQVariableFloatAnswer(question=new_question, content=answer_content)
                     elif answer_info_encoding[1] == "2": # Latex Answer
                         new_question.answer_type = QuestionChoices.MCQ_LATEX
                         answer = MCQLatexAnswer(question=new_question, content=answer_content)
@@ -206,12 +234,17 @@ def create_question(request, assignment_id=None, type_int=None):
                         return HttpResponseForbidden('Something went wrong')
                     answer.is_answer = True if answer_info_encoding[0] == '1' else False
                     answer.save() # Needed here.
+                
         elif type_int == 0:
             new_question.answer_type = QuestionChoices.STRUCTURAL_EXPRESSION
             answer = ExpressionAnswer(question=new_question, content=question_answer)
         elif type_int == 1:
-            new_question.answer_type = QuestionChoices.STRUCTURAL_FLOAT
-            answer = FloatAnswer(question=new_question, content=question_answer)
+            if not vars_dict:
+                new_question.answer_type = QuestionChoices.STRUCTURAL_FLOAT
+                answer = FloatAnswer(question=new_question, content=question_answer)
+            else:
+                new_question.answer_type = QuestionChoices.STRUCTURAL_VARIABLE_FLOAT
+                answer = VariableFloatAnswer(question=new_question, content=question_answer)
         elif type_int == 2:
             new_question.answer_type = QuestionChoices.STRUCTURAL_LATEX
             answer = LatexAnswer(question=new_question, content=question_answer)
@@ -275,6 +308,8 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
         elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
             answers.extend(question.latex_answers.all())
             is_latex.extend([1 for _ in range(question.latex_answers.all().count())])
+        elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
+            answers.extend(question.variable_float_answers.all())
         else:
             return HttpResponse('Something went wrong.')
     course = Course.objects.get(pk = course_id)
@@ -287,6 +322,8 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
                       'show_answer':show_answer,\
                      'is_mcq':is_mcq, 'is_fr':is_fr,'answers': answers,\
                          'answers_is_latex': zip(answers, is_latex) if is_latex else None})
+
+
        
 
 def calci(request):
@@ -303,6 +340,27 @@ def get_subtopics(request, selected_topic):
         subtopics = []
 
     return JsonResponse({'subtopics': subtopics})
+
+@login_required(login_url='astros:login')
+def gradebook(request, course_id):
+    course = Course.objects.get(pk = course_id)
+    enrolled_students = Student.objects.filter(enrollments__course=course)
+    assignments= Assignment.objects.filter(course = course)
+    student_grades = []
+    for student in enrolled_students: 
+        grades = []
+        for assignment in assignments:
+            try:
+                grade = AssignmentStudent.objects.get(student=student, assignment=assignment).get_grade()
+            except AssignmentStudent.DoesNotExist:
+                grade = 'None'
+
+            grades.append(grade)
+        student_grades.append(grades)
+                  
+    return render(request,'phobos/gradebook.html',\
+                {'students_grades': zip(enrolled_students,student_grades),\
+                'assignments':assignments, 'course':course})
 
 #--------------HELPER FUNCTIONS--------------------------------#
 def replace_links_with_html(text):
@@ -328,23 +386,20 @@ def upload_image(request):
         return JsonResponse({'image_url': image.url})
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
-@login_required(login_url='astros:login')
-def gradebook(request, course_id):
+def student_profile(request,course_id,student_id):
+    student= Student.objects.get(pk =student_id)
     course = Course.objects.get(pk = course_id)
-    enrolled_students = Student.objects.filter(enrollments__course=course)
     assignments= Assignment.objects.filter(course = course)
-    student_grades = []
-    for student in enrolled_students: 
-        grades = []
-        for assignment in assignments:
-            try:
-                grade = AssignmentStudent.objects.get(student=student, assignment=assignment).get_grade()
-            except AssignmentStudent.DoesNotExist:
-                grade = 'None'
+    grades = []
+    for assignment in assignments:
+        try:
+            grade = AssignmentStudent.objects.get(student=student, assignment=assignment).get_grade()
+        except:
+            grade = 'None'
 
-            grades.append(grade)
-        student_grades.append(grades)
-                  
-    return render(request,'phobos/gradebook.html',\
-                {'students_grades': zip(enrolled_students,student_grades),\
-                'assignments':assignments})
+        grades.append(grade)
+    
+    return render(request,'phobos/student_profile.html',\
+                {'student_grade': zip(assignments,grades),\
+                 'student':student, 'course':course})
+

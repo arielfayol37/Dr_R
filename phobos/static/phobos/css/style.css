@@ -365,6 +365,25 @@ div.c-text {
 
 
 /* -----------------Style for phobos:create_question.html--------- */
+.add-var-section {
+  position:absolute;
+  right: 2%;
+  transform: translateY(-100%);
+}
+.add-var-section button {
+  border-radius: 15px;
+}
+.var-info-div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.created-vars {
+  display: flex;
+  flex-direction: row;
+}
 #create-question {
   margin-left: 5%;
   width: 80%;

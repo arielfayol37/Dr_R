@@ -25,5 +25,6 @@ urlpatterns = [
          views.question_view, name='question_view'),
      path('calci', views.calci, name='calci'),
      path('create_question/upload-image/', views.upload_image, name='upload_image'),
-     path('courses/<int:course_id>/gradebook', views.gradebook, name='gradebook')
+     path('courses/<int:course_id>/gradebook', views.gradebook, name='gradebook'),
+     path('courses/<int:course_id>/<int:student_id>/student_profile', views.student_profile, name='student_profile')
 ]

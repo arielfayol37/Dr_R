@@ -105,7 +105,10 @@ class AssignmentStudent(models.Model):
                 num_points += question_student.get_num_points()  
             except QuestionStudent.DoesNotExist:
                 num_points += 0
-        self.grade = (num_points/total) * 100
+        if total != 0:
+            self.grade = round((num_points/total) * 100, 2)
+        else:
+            self.grade = 0
         return self.grade
 class QuestionStudent(models.Model):
     """
@@ -146,7 +149,7 @@ class QuestionStudent(models.Model):
             # 1: missing multiplication signs. E.g ab instead of a*b. transform_expression() handles that
             # 2: a symbol/character(s) that is among the variables. Fix: make sure on the frontEnd that
             #    an answer never contains symbols that are not defined variables.
-            return eval(transform_expression(answer), self.get_var_value_dict())
+            return round(eval(transform_expression(answer), self.get_var_value_dict()),3)
     def get_var_value_dict(self):
         """
         Returns a dictionary of variable symbols and the corresponding instance value for
@@ -159,28 +162,35 @@ class QuestionStudent(models.Model):
         # TODO: !important Alternatively, we could just update the permanent dictionary whenever the professor
         # makes changes to question.
         var_value_dict = {}
-        for var_instance in self.var_instances:
+        for var_instance in self.var_instances.all():
             var_value_dict[var_instance.variable.symbol] = var_instance.value
         return var_value_dict
     
+
+
     def evaluate_var_expressions_in_text(self, text, add_html_style=False):
         """
         Takes a text and evaluates expressions expected to contain variables.
-        It looks for text within {} and do the replacements. 
+        It looks for text within {} and does the replacements. 
         """
-        regex = re.compile(r'{(.*)}') # Expecting anything within those curly braces to be variable symbols
-                                      # and real numbers.
-        # TODO: Do this more efficiently.
+        def replace_match(match):
+            expression = match.group(1)  # Extract the expression within the curly braces
+            value = round(eval(transform_expression(expression), var_value_dict), 3)
+            if add_html_style:
+                return f"<span class=\"variable-value\">{value}</span>"
+            else:
+                return str(value)
+
+        regex = re.compile(r'{(.*?)}')  # Use non-greedy matching to avoid unexpected results
+
         var_value_dict = self.get_var_value_dict()
-        matches = regex.findall(text)
-        if not add_html_style:
-            for match in matches:
-                text = text.replace(match, eval(transform_expression(match), var_value_dict))
-        else:
-            for match in matches:
-                replacement = f"<em class=\"variable\">{eval(transform_expression(match), var_value_dict)}</em>"
-                text  = text.replace(match, replacement)
-        return text
+        replaced_text = regex.sub(replace_match, text)
+        
+        # Remove the remaining curly braces after replacements
+        replaced_text = replaced_text.replace('{', '').replace('}', '')
+        
+        return replaced_text
+
     def compute_mcq_answers(self):
         """
         Computes the float anwers to an MCQ question if they were variables.
@@ -191,7 +201,7 @@ class QuestionStudent(models.Model):
             var_value_dict = self.get_var_value_dict()
             for mcq_var_float in mcq_var_floats:
                 answer = mcq_var_float.content
-                answers.append(eval(transform_expression(answer), var_value_dict))
+                answers.append(round(eval(transform_expression(answer), var_value_dict), 3))
             return answers
         
     def get_num_points(self):

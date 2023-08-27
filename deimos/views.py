@@ -53,11 +53,16 @@ def assignment_management(request, assignment_id, course_id=None):
     student = get_object_or_404(Student, pk = request.user.pk)
     
     assignment = get_object_or_404(Assignment, pk = assignment_id)
+    assignment_student, created = AssignmentStudent.objects.get_or_create(student = student, assignment=assignment)
+    assignment_student.save()
+    # TODO: Do delete the following code in comment.
+    """
     is_assigned = AssignmentStudent.objects.filter(student=student, assignment=assignment).exists()
     if not is_assigned:
         return HttpResponseForbidden('You have not be assigned this assignment.')
-    # For every question, make sure a `QuestionStudent` object exists.
-    # Create one if it doesn't 
+    
+    """
+
     questions = Question.objects.filter(assignment = assignment)
     context = {
         "questions": questions,
@@ -122,10 +127,14 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
         answers.extend(ea)
         ta = question.mcq_text_answers.all()
         answers.extend(ta)
-        fa = question.mcq_float_answers.all()
-        answers.extend(fa)
         la = question.mcq_latex_answers.all()
         answers.extend(la)
+        # Putting before floats because they are not a django character field.
+        for answer in answers:
+            answer.content = question_student.evaluate_var_expressions_in_text(answer.content, add_html_style=True)
+        fa = question.mcq_float_answers.all()
+        answers.extend(fa)
+        
         
         question_type_count['ea'] = ea.count()
         question_type_count['fa'] = fa.count()
@@ -141,6 +150,7 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
         random.shuffle(shuffler)  
         is_latex = [is_latex[i] for i in shuffler]
         answers = [answers[i] for i in shuffler]
+
     # TODO: Subclass all structural answers to a more general class 
     # so that you may use only one if.
     elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
@@ -189,7 +199,6 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
         # Normally, we should just use get() because QuestionStudent object is already created
         # whenever the user opens a question for the first time, but just to be safe.
         question_student, created = QuestionStudent.objects.get_or_create(student=student, question=question)
-        
         if (question_student.get_num_attempts() < question.max_num_attempts and not question_student.success):
             if data["questionType"] == 'structural':
                 attempt = QuestionAttempt.objects.create(question_student=question_student)
@@ -203,14 +212,16 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                     answer = question.float_answers.first()
                     try:
                         # answer.content must come first in the compare_floats()
-                        correct = compare_floats(answer.content, float(submitted_answer), question.margin_error) 
+                        correct = compare_floats(answer.content, eval(submitted_answer), question.margin_error) 
                     except ValueError:
                         # TODO: Maybe return a value to the user side that will ask them to enter a float.
                         # TODO: Actually, ensure this on the front-end.
                         correct = False
                 elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
                     try:
-                        correct = compare_expressions(answer.content, question_student.compute_structural_answer())
+                        answer_temp = question_student.compute_structural_answer()
+                        correct = compare_floats(answer_temp, eval(submitted_answer),
+                                                    question.margin_error)
                     except ValueError:
                         correct = False
                 if correct:
