@@ -363,7 +363,7 @@ div.c-text {
 
 /* ------------------------------Style for answer_question.html-------------*/
 .variable-value {
-  color:rgba(23, 137, 252, 0.7);
+  color:rgba(23, 137, 252, 0.7) !important;
 }
 .question-input-field {
   width: 100%;

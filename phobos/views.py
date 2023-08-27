@@ -234,7 +234,20 @@ def create_question(request, assignment_id=None, type_int=None):
                         return HttpResponseForbidden('Something went wrong')
                     answer.is_answer = True if answer_info_encoding[0] == '1' else False
                     answer.save() # Needed here.
-                
+            for key, value in request.FILES.items():
+                if key.startswith('answer_value_'):
+                    option_index_start = len('answer_value_')
+                    info_key = 'answer_info_' + key[option_index_start:]
+                    answer_info_encoding = request.POST.get(info_key)
+                    image = value
+                    if answer_info_encoding[1] == '4': # Image answer
+                        new_question.answer_type = QuestionChoices.MCQ_IMAGE
+                        # image = request.FILES.get(info_key)
+                        answer = MCQImageAnswer(question=new_question, image=image)
+                    else:
+                        return HttpResponseForbidden('Something went wrong')
+                    answer.is_answer = True if answer_info_encoding[0] == '1' else False
+                    answer.save() # Needed here.                
         elif type_int == 0:
             new_question.answer_type = QuestionChoices.STRUCTURAL_EXPRESSION
             answer = ExpressionAnswer(question=new_question, content=question_answer)

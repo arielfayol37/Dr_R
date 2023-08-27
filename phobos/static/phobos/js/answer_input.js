@@ -12,11 +12,13 @@ document.addEventListener('DOMContentLoaded', () => {
     var num_mcq_options_counter = 2;
     var num_true_counter = 0;
     var option_counter = 0;
+    var image_counter = 0;
 
     const addMcqOptionBtn = document.querySelector('.mcq-add');
     
     const mcqInputDiv = document.querySelector('.mcq-input-div');
     const mcqInputField = mcqInputDiv.querySelector('.mcq-input-field');
+    const mcqImagePreview = document.querySelector('.mcq-image-preview');
     const floatBtn = document.querySelector('#float-btn');
     const latexBtn = document.querySelector('#latex-btn');
     const frBtn = document.querySelector('#fr-btn');
@@ -41,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     event.preventDefault();
         inputedMcqAnswersDiv.style.display = 'block';
+        mcqImagePreview.style.display = 'block';
         mode = 'm-answer'
         num_mcq_options_counter = 0; // TODO: change this in case you want store the already inputed mcqs when the user 
                                     // changes answer type options. For example he may click on expression then come back to mcq.
@@ -79,6 +82,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 mcqInputField.placeholder = 'Enter latex and click add';
                 mcqInputField.setAttribute('data-answer-type', 'l-answer');
                 break;
+            case 'mcq-image-btn':
+                mcqInputField.value = '';
+                mcqInputField.placeholder = 'Optional: Enter image label';
+                mcqInputField.setAttribute('data-answer-type', 'i-answer');
+                const imageUploadInput = document.createElement('input');
+                imageUploadInput.type = 'file';
+                imageUploadInput.name = `image_${image_counter}`;
+                image_counter = image_counter + 1
+                imageUploadInput.setAttribute('accept', 'image/*');
+                imageUploadInput.classList.add('form-control', 'image-upload-input-field')
+                imageUploadInput.addEventListener('change', ()=>{
+                    const reader = new FileReader();
+                    const imageFile = imageUploadInput.files[0];
+                    reader.onload = function(event) {
+                        const imageElement = document.createElement('img');
+                        imageElement.src = event.target.result;
+                        imageElement.style.maxWidth = '100%';
+                        imageElement.style.maxHeight = '200px';
+                        imageElement.style.borderRadius = '15px';
+                        //console.log(imagePreview.src);
+                        
+                        mcqImagePreview.style.display = 'block';
+                        mcqImagePreview.innerHTML = '';
+                        mcqImagePreview.appendChild(imageElement);
+                    };
+                    if(imageFile){
+                        reader.readAsDataURL(imageFile);
+                    }
+                })
+                mcqInputField.parentElement.appendChild(imageUploadInput);
             default:
                 // Nothing yet
         }
@@ -93,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         else{
             try{
-                const formatted_new_answer = create_inputed_mcq_div(mcqInputField.value, mcqInputField.dataset.answerType);
+                const formatted_new_answer = create_inputed_mcq_div(mcqInputField, mcqInputField.dataset.answerType);
                 inputedMcqAnswersDiv.appendChild(formatted_new_answer);
                 mcqInputField.value = '';
                 option_counter += 1;
@@ -155,6 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formattedAnswerDiv.style.display = 'block';
         mcqOptionBtnsDiv.style.display = 'none';
         mcqInputDiv.style.display = 'none';
+        mcqImagePreview.style.display = 'none';
         calculatorDiv.style.display = 'none';
         answerFieldsDiv.innerHTML = '';
         mode = 'fr-answer';  
@@ -170,6 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formattedAnswerDiv.style.display = 'block';
         mcqOptionBtnsDiv.style.display = 'none';
         mcqInputDiv.style.display = 'none';
+        mcqImagePreview.style.display = 'none';
         calculatorDiv.style.display = 'block';
         answerFieldsDiv.innerHTML = '';
         mode = 'e-answer';
@@ -192,6 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formattedAnswerDiv.style.display = 'block';
         mcqOptionBtnsDiv.style.display = 'none';
         mcqInputDiv.style.display = 'none';
+        mcqImagePreview.style.display = 'none';
         calculatorDiv.style.display = 'block';
         answerFieldsDiv.innerHTML = '';
         mode = 'f-answer';
@@ -213,6 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formattedAnswerDiv.style.display = 'block';
         mcqOptionBtnsDiv.style.display = 'none';
         mcqInputDiv.style.display = 'none';
+        mcqImagePreview.style.display = 'none';
         calculatorDiv.style.display = 'none';
         screen.value = ''
         formattedAnswerDiv.innerHTML = ''
@@ -303,7 +340,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-function create_inputed_mcq_div(answer_value, answer_type) {
+function create_inputed_mcq_div(input_field, answer_type) {
+    var answer_value = input_field.value
     var inputedMcqDiv = document.createElement('div'); // to be appended to .inputed-mcq-answers.
     num_mcq_options_counter += 1;
     var answer_info_encoding = '000' // First character for True or False, second for question type, and third for question_number 
@@ -327,7 +365,7 @@ function create_inputed_mcq_div(answer_value, answer_type) {
             answer_info_encoding = rep(answer_info_encoding, 1, '3');
             break;
         case 'l-answer':
-            display_value = answer_value; // Actually doesn't do anything.
+            display_value = answer_value; // Actually doesn't do anything because we don't use Latex as a direct answer yet.
             answer_info_encoding = rep(answer_info_encoding, 1, '2');
             break;
         case 'e-answer':
@@ -335,6 +373,10 @@ function create_inputed_mcq_div(answer_value, answer_type) {
             display_value = answer_value;
             answer_info_encoding = rep(answer_info_encoding, 1, '0');
             break;
+        case 'i-answer':
+            display_value = answer_value;
+            answer_value = 'image_' + answer_value; 
+            answer_info_encoding = rep(answer_info_encoding, 1, '4');
         default:
             //
     }
@@ -349,7 +391,7 @@ function create_inputed_mcq_div(answer_value, answer_type) {
                 formatted_answer = document.createElement('p');
                 formatted_answer.innerHTML = userInputLatex;
             }
-            else{
+            else {
                 const userInputNode = math.simplify(processString(display_value));
                 userInputLatex = userInputNode.toTex();
                 formatted_answer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
@@ -359,7 +401,8 @@ function create_inputed_mcq_div(answer_value, answer_type) {
             // Now that the formatted_answer is ready, create the necessary HTML structure
             var mcqAnswerDiv = document.createElement('div');
             mcqAnswerDiv.className = 'inputed-mcq-answer';
-            mcqAnswerDiv.innerHTML = `
+            if (answer_type != 'i-answer'){
+                mcqAnswerDiv.innerHTML = `
                 <br/>
                 <div class="formatted-answer"></div>
                 <input value="${answer_value}" type="hidden" name="answer_value_${option_counter}"/>
@@ -369,10 +412,29 @@ function create_inputed_mcq_div(answer_value, answer_type) {
                     <button  type="button" class="btn btn-danger mcq-delete exempt">delete</button>
                 </div>
             `;
+             }else {
+                mcqAnswerDiv.innerHTML = `
+                <br/>
+                <div class="formatted-answer"></div>
+                <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="answer_info_${option_counter}"/>
+                <div class="add-delete-btns">
+                    <button type="button" class="btn btn-warning mcq-status mcq-false exempt">False</button>
+                    <button  type="button" class="btn btn-danger mcq-delete exempt">delete</button>
+                </div>
+            `;
             
+             }
+           
             // Append the formatted_answer element as a child
             var formattedAnswerDiv = mcqAnswerDiv.querySelector('.formatted-answer');
             formattedAnswerDiv.appendChild(formatted_answer);
+            if (answer_type === 'i-answer'){
+                formattedAnswerDiv.appendChild(mcqImagePreview.cloneNode(true));
+                input_field_clone = input_field.cloneNode(true);
+                input_field_clone.name = `answer_value_${option_counter}`;
+                formattedAnswerDiv.appendChild(input_field_clone);
+            }
+            formattedAnswerDiv.scrollIntoView({behavior:'smooth'});
 
             // Append mcqAnswerDiv to inputedMcqDiv
             inputedMcqDiv.appendChild(mcqAnswerDiv);
