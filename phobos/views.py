@@ -234,7 +234,21 @@ def create_question(request, assignment_id=None, type_int=None):
                         return HttpResponseForbidden('Something went wrong')
                     answer.is_answer = True if answer_info_encoding[0] == '1' else False
                     answer.save() # Needed here.
-                
+            for key, value in request.FILES.items():
+                if key.startswith('answer_value_'):
+                    option_index_start = len('answer_value_')
+                    info_key = 'answer_info_' + key[option_index_start:]
+                    answer_info_encoding = request.POST.get(info_key)
+                    image = value
+                    if answer_info_encoding[1] == '7': # Image answer
+                        new_question.answer_type = QuestionChoices.MCQ_IMAGE
+                        # image = request.FILES.get(info_key)
+                        label = request.POST.get('image_label_' + key[option_index_start:])
+                        answer = MCQImageAnswer(question=new_question, image=image, label=label)
+                    else:
+                        return HttpResponseForbidden('Something went wrong')
+                    answer.is_answer = True if answer_info_encoding[0] == '1' else False
+                    answer.save() # Needed here.                
         elif type_int == 0:
             new_question.answer_type = QuestionChoices.STRUCTURAL_EXPRESSION
             answer = ExpressionAnswer(question=new_question, content=question_answer)
@@ -292,10 +306,12 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
         answers.extend(ta)
         fa = question.mcq_float_answers.all()
         answers.extend(fa)
+        ia = question.mcq_image_answers.all()
+        answers.extend(ia)
         la = question.mcq_latex_answers.all()
         answers.extend(la)
-        # !Important: order matters here
-        is_latex = [0 for _ in range(ea.count()+ta.count()+fa.count())]
+        # !Important: order matters here. Latex has to be last!
+        is_latex = [0 for _ in range(ea.count()+ta.count()+fa.count()+ia.count())]
         is_latex.extend([1 for _ in range(la.count())])
     else:
         if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
@@ -378,6 +394,7 @@ def replace_links_with_html(text):
     return ' '.join(new_words)
 
 def upload_image(request):
+    # Depecrated (Never used actually but just keeping here)
     if request.method == 'POST' and request.FILES.get('image'):
         image = request.FILES['image']
         # You can perform any image processing or validation here

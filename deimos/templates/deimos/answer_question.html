@@ -23,7 +23,12 @@
                       {% if is_latex %}
                           <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
                       {% else %}
-                        {{answer.content|safe}}
+                        {% if answer.image %}
+                          {{answer.label}}
+                          <img src="{{answer.image.url}}" class="mcq-image-answer" alt="{{answer.image.label}}"/>
+                        {% else %}
+                          {{answer.content|safe}}
+                        {% endif %}
                       {% endif %}
                       <input type="hidden" value="{{answer.pk}}{{question_type}}" class="answer_id" name="mcq_answer_id_{{ forloop.counter0 }}"/>
                       <input type="hidden" value="0{{question_type}}" class="answer_info" name="mcq_answer_info_{{ forloop.counter0 }}"/>

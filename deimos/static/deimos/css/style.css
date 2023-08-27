@@ -363,7 +363,7 @@ div.c-text {
 
 /* ------------------------------Style for answer_question.html-------------*/
 .variable-value {
-  color:rgba(23, 137, 252, 0.7);
+  color:rgba(23, 137, 252, 0.7) !important;
 }
 .question-input-field {
   width: 100%;
@@ -399,12 +399,18 @@ div.c-text {
     box-shadow: 13px 13px 20px #cbced1,
               -13px -13px 20px #ffffff; 
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
- 
+    position: relative;
 }
 
+.mcq-image-answer {
+  max-width: 90%; /* Limit image width to 100% of parent div's width */
+  max-height: 90%; /* Limit image height to 100% of parent div's height */
+  display: block; /* Remove any extra space below the image */
+  border-radius: 10px;
+}
 /* Question displays need less height than course but
 more than assignment display */
 .question-li {

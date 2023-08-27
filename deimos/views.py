@@ -119,29 +119,31 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
     answers = []
     is_latex = []
     question_type = []
-    question_type_dict = {'ea': 0, 'fa':1, 'la':2, 'ta':3}
-    question_type_count = {'ea': 0, 'fa': 0, 'la': 0, 'ta': 0}
+    question_type_dict = {'ea': 0, 'fa':1, 'la':2, 'ta':3, 'ia':7}
+    question_type_count = {'ea': 0, 'fa': 0, 'la': 0, 'ta': 0, 'ia': 0}
     if question.answer_type.startswith('MCQ'):
         is_mcq = True
         ea = question.mcq_expression_answers.all()
         answers.extend(ea)
         ta = question.mcq_text_answers.all()
         answers.extend(ta)
-        la = question.mcq_latex_answers.all()
-        answers.extend(la)
         # Putting before floats because they are not a django character field.
         for answer in answers:
             answer.content = question_student.evaluate_var_expressions_in_text(answer.content, add_html_style=True)
         fa = question.mcq_float_answers.all()
         answers.extend(fa)
-        
+        ia = question.mcq_image_answers.all()
+        answers.extend(ia)
+        la = question.mcq_latex_answers.all()
+        answers.extend(la)
         
         question_type_count['ea'] = ea.count()
         question_type_count['fa'] = fa.count()
         question_type_count['la'] = la.count()
         question_type_count['ta'] = ta.count()
-        # !Important: order matters here
-        is_latex = [0 for _ in range(ea.count()+ta.count()+fa.count())]
+        question_type_count['ia'] = ia.count()
+        # !Important: order matters here. Latex has to be last!
+        is_latex = [0 for _ in range(ea.count()+ta.count()+fa.count()+ia.count())]
         is_latex.extend([1 for _ in range(la.count())])
         for q_type in question_type_dict:
             question_type.extend([question_type_dict[q_type] for _ in range(question_type_count[q_type])])
@@ -237,7 +239,7 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                 # !important: mcq answers of different type may have the same primary key.
                 attempt = QuestionAttempt.objects.create(question_student=question_student)
                 attempt.content = str(submitted_answer)
-                question_type_dict = {'ea': 0, 'fa':1, 'la':2, 'ta':3}
+                question_type_dict = {'ea': 0, 'fa':1, 'la':2, 'ta':3, 'ia':7}
                 answers = []
                 ea = list(question.mcq_expression_answers.filter(is_answer=True).values_list('pk', flat=True))
                 ea = [str(pk) + str(question_type_dict['ea']) for pk in ea]
@@ -251,6 +253,9 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                 la = list(question.mcq_latex_answers.filter(is_answer=True).values_list('pk', flat=True))
                 la = [str(pk)+ str(question_type_dict['la']) for pk in la]
                 answers.extend(la)
+                ia = list(question.mcq_image_answers.filter(is_answer=True).values_list('pk', flat=True))
+                ia = [str(pk) + str(question_type_dict['ia']) for pk in ia]
+                answers.extend(ia)
                 if len(submitted_answer) == len(answers):
                     if set(submitted_answer) == set(answers):
                         correct = True
