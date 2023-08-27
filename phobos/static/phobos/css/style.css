@@ -428,7 +428,14 @@ textarea {
     flex-direction: column;
     align-items: center;
     justify-content: center;
- 
+    position: relative;
+}
+
+.mcq-image-answer {
+  max-width: 90%; /* Limit image width to 100% of parent div's width */
+  max-height: 90%; /* Limit image height to 100% of parent div's height */
+  display: block; /* Remove any extra space below the image */
+  border-radius: 10px;
 }
 #topics-subtopics {
   display: flex;

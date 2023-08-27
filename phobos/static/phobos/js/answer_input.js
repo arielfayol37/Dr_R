@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const mcqInputDiv = document.querySelector('.mcq-input-div');
     const mcqInputField = mcqInputDiv.querySelector('.mcq-input-field');
     const mcqImagePreview = document.querySelector('.mcq-image-preview');
+    const imageUploadInput = document.querySelector('.image-upload-input-field');
     const floatBtn = document.querySelector('#float-btn');
     const latexBtn = document.querySelector('#latex-btn');
     const frBtn = document.querySelector('#fr-btn');
@@ -37,7 +38,25 @@ document.addEventListener('DOMContentLoaded', () => {
  /*------------------------------------------MCQ QUESTION --------------------------------- */
  
 
-
+ imageUploadInput.addEventListener('change', ()=>{
+    const reader = new FileReader();
+    const imageFile = imageUploadInput.files[0];
+    reader.onload = function(event) {
+        const imageElement = document.createElement('img');
+        imageElement.src = event.target.result;
+        imageElement.style.maxWidth = '100%';
+        imageElement.style.maxHeight = '200px';
+        imageElement.style.borderRadius = '15px';
+        //console.log(imagePreview.src);
+        
+        mcqImagePreview.style.display = 'block';
+        mcqImagePreview.innerHTML = '';
+        mcqImagePreview.appendChild(imageElement);
+    };
+    if(imageFile){
+        reader.readAsDataURL(imageFile);
+    }
+})
 
     mcqBtn.addEventListener('click', (event)=>{
     
@@ -63,55 +82,39 @@ document.addEventListener('DOMContentLoaded', () => {
         mcqInputDiv.style.display = 'block';
         switch (event.target.id) {
             case 'mcq-expression-btn':
+                imageUploadInput.style.display ='none';
+                mcqImagePreview.style.display = 'none';
                 mcqInputField.value = '';
                 mcqInputField.placeholder = 'Enter expression and click add';
                 mcqInputField.setAttribute('data-answer-type', 'e-answer');
                 break;
             case 'mcq-float-btn':
+                imageUploadInput.style.display ='none';
+                mcqImagePreview.style.display = 'none';
                 mcqInputField.value = '';
                 mcqInputField.placeholder = 'Enter float and click add';
                 mcqInputField.setAttribute('data-answer-type', 'f-answer');
                 break;
             case 'mcq-text-btn':
+                imageUploadInput.style.display ='none';
+                mcqImagePreview.style.display = 'none';
                 mcqInputField.value = '';
                 mcqInputField.placeholder = 'Enter text and click add';
                 mcqInputField.setAttribute('data-answer-type', 't-answer');
                 break;
             case 'mcq-latex-btn':
+                imageUploadInput.style.display ='none';
+                mcqImagePreview.style.display = 'none';
                 mcqInputField.value = '';
                 mcqInputField.placeholder = 'Enter latex and click add';
                 mcqInputField.setAttribute('data-answer-type', 'l-answer');
                 break;
             case 'mcq-image-btn':
                 mcqInputField.value = '';
-                mcqInputField.placeholder = 'Optional: Enter image label';
+                mcqInputField.placeholder = 'Enter image label';
                 mcqInputField.setAttribute('data-answer-type', 'i-answer');
-                const imageUploadInput = document.createElement('input');
-                imageUploadInput.type = 'file';
-                imageUploadInput.name = `image_${image_counter}`;
-                image_counter = image_counter + 1
-                imageUploadInput.setAttribute('accept', 'image/*');
-                imageUploadInput.classList.add('form-control', 'image-upload-input-field')
-                imageUploadInput.addEventListener('change', ()=>{
-                    const reader = new FileReader();
-                    const imageFile = imageUploadInput.files[0];
-                    reader.onload = function(event) {
-                        const imageElement = document.createElement('img');
-                        imageElement.src = event.target.result;
-                        imageElement.style.maxWidth = '100%';
-                        imageElement.style.maxHeight = '200px';
-                        imageElement.style.borderRadius = '15px';
-                        //console.log(imagePreview.src);
-                        
-                        mcqImagePreview.style.display = 'block';
-                        mcqImagePreview.innerHTML = '';
-                        mcqImagePreview.appendChild(imageElement);
-                    };
-                    if(imageFile){
-                        reader.readAsDataURL(imageFile);
-                    }
-                })
-                mcqInputField.parentElement.appendChild(imageUploadInput);
+                imageUploadInput.style.display ='block';
+                mcqImagePreview.style.display = 'block';
             default:
                 // Nothing yet
         }
@@ -376,7 +379,7 @@ function create_inputed_mcq_div(input_field, answer_type) {
         case 'i-answer':
             display_value = answer_value;
             answer_value = 'image_' + answer_value; 
-            answer_info_encoding = rep(answer_info_encoding, 1, '4');
+            answer_info_encoding = rep(answer_info_encoding, 1, '7');
         default:
             //
     }
@@ -416,6 +419,7 @@ function create_inputed_mcq_div(input_field, answer_type) {
                 mcqAnswerDiv.innerHTML = `
                 <br/>
                 <div class="formatted-answer"></div>
+                <input value="${display_value}" type="hidden" name="image_label_${option_counter}"/>
                 <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="answer_info_${option_counter}"/>
                 <div class="add-delete-btns">
                     <button type="button" class="btn btn-warning mcq-status mcq-false exempt">False</button>
@@ -430,9 +434,10 @@ function create_inputed_mcq_div(input_field, answer_type) {
             formattedAnswerDiv.appendChild(formatted_answer);
             if (answer_type === 'i-answer'){
                 formattedAnswerDiv.appendChild(mcqImagePreview.cloneNode(true));
-                input_field_clone = input_field.cloneNode(true);
-                input_field_clone.name = `answer_value_${option_counter}`;
-                formattedAnswerDiv.appendChild(input_field_clone);
+                const image_input_field_clone = imageUploadInput.cloneNode(true);
+                image_input_field_clone.name = `answer_value_${option_counter}`;
+                image_input_field_clone.style.display = 'none';
+                formattedAnswerDiv.appendChild(image_input_field_clone);
             }
             formattedAnswerDiv.scrollIntoView({behavior:'smooth'});
 

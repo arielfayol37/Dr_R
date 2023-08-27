@@ -194,7 +194,7 @@ class QuestionImage(models.Model):
     """
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(upload_to='phobos/images/question_images/', blank=True, null=True)
-    name = models.CharField(max_length=70, blank=True, null=True)
+    label = models.CharField(max_length=70, blank=True, null=True)
 
     def __str__(self):
         return f"{self.name} for {self.question}"
@@ -348,7 +348,8 @@ class MCQImageAnswer(models.Model):
     """
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='mcq_image_answers')
     image = models.ImageField(upload_to='phobos/images/question_images/', \
-                              blank=True, null=True)   
+                              blank=True, null=True)  
+    label = models.CharField(max_length=70, blank=True, null=True) 
     is_answer = models.BooleanField(default=False)
 
     def __str__(self):
