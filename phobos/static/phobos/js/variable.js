@@ -12,10 +12,12 @@ document.addEventListener('DOMContentLoaded', ()=>{
         event.preventDefault();
         if(state==='closed'){
             state = 'open';
+            addVarBtn.innerHTML ='v-';
             varInfoDiv.style.display = 'block';
         }
         else if(state==='open'){
             state ='closed';
+            addVarBtn.innerHTML = 'v+';
             varInfoDiv.style.display = 'none';
         }
     })
@@ -40,16 +42,41 @@ document.addEventListener('DOMContentLoaded', ()=>{
                 alert('Invalid domain');
                 return;
             }
+            
 
             // passed all the tests
-
             const newVarDiv = document.createElement('div');
-            newVarDiv.innerHTML = symbol;
+            const newVarBtn = document.createElement('button');
+            newVarBtn.type = 'button';
+            newVarBtn.classList.add('btn', 'btn-warning'); // Separate the classes
+            
+            newVarBtn.innerHTML = symbol;
+            newVarDiv.appendChild(newVarBtn);
+            newVarDiv.classList.add('variable');
+            newVarDiv.setAttribute('data-symbol', symbol);
+            for (let i = 0; i < parsedDomain.length; i++) {
+                const domainLbHiddenInput = document.createElement('input');
+                domainLbHiddenInput.type = 'hidden';
+                domainLbHiddenInput.name = `domain_lb_${symbol}_${i}`
+                domainLbHiddenInput.value = parsedDomain[i].lower
+                
+                const domainUbHiddenInput = document.createElement('input');
+                domainUbHiddenInput.type = 'hidden';
+                domainUbHiddenInput.name = `domain_ub_${symbol}_${i}`
+                domainUbHiddenInput.value = parsedDomain[i].upper
+
+                newVarBtn.appendChild(domainLbHiddenInput);
+                newVarBtn.appendChild(domainUbHiddenInput);
+            }
             // TODO: add the hidden input fields.
             createdVarsDiv.appendChild(newVarDiv);
+            createdVarsDiv.scrollIntoView({behavior:"smooth"});
             varInfoDiv.style.display = 'none';
             varSymbolField.value = '';
             varDomainField.value = '';
+
+            state ='closed';
+            addVarBtn.innerHTML = 'v+';
 
         }
 

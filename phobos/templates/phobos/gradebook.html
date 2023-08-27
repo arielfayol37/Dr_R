@@ -25,8 +25,8 @@
             {% for student, grade_list in students_grades %}
             <tr>
                 <td>{{ student.email }}</td>
-                <td><a href="{% url 'phobos:Student_Profile' course.id  student.id %} ">{{ student.first_name}} </a></td>
-                <td><a href="{% url 'phobos:Student_Profile' course.id  student.id %} ">{{ student.last_name}} </a></td>
+                <td><a href="{% url 'phobos:student_profile' course_id=course.id  student_id=student.id %} ">{{ student.first_name}} </a></td>
+                <td><a href="{% url 'phobos:student_profile' course_id=course.id  student_id=student.id %} ">{{ student.last_name}} </a></td>
                 {% for grade in grade_list %}
                     <td> {{grade}} </td>
                 {% endfor %}

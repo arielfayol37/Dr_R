@@ -373,6 +373,17 @@ div.c-text {
 .add-var-section button {
   border-radius: 15px;
 }
+.var-info-div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.created-vars {
+  display: flex;
+  flex-direction: row;
+}
 #create-question {
   margin-left: 5%;
   width: 80%;
