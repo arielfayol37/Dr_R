@@ -1,3 +1,23 @@
 #gradebook-page-container {
     padding:4%;
 }
+
+
+
+
+ #search-bar{
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items:center;
+        width: 100vw;
+        position: relative;
+    }
+
+#search{
+        position: relative;
+        width:80%;
+    }
+
+
+    

@@ -403,3 +403,17 @@ def student_profile(request,course_id,student_id):
                 {'student_grade': zip(assignments,grades),\
                  'student':student, 'course':course})
 
+def student_search(request,course_id):
+    course = Course.objects.get(pk = course_id)
+    enrolled_students = Student.objects.filter(enrollments__course=course)
+  
+    if request.method =="GET":
+        student_name= request.GET['q'].lower()
+        search_result = []
+        for i in enrolled_students:
+            if (student_name in i.last_name.lower()) or (student_name in i.first_name.lower()):
+                search_result.append(i)
+
+        return render(request, "phobos/student_search.html", {'course':course,\
+            'search':student_name,"entries": search_result, 'length':len(search_result)})
+        

@@ -7,6 +7,12 @@
     {% block body %}
     <h1> GradeBook</h1>
     <br/>
+    <div id= "search-bar">
+                <form action="{% url 'phobos:student_search' course_id=course.id %}" method="get">
+                    <input id="search" type="text" name="q" placeholder="Looking for a student? search here">
+                </form>
+    </div>
+    <br/>
     <button id="export-button" class="btn btn-info">Export as Excel</button>
     <br/>
     <br/>
