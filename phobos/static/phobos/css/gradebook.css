@@ -2,22 +2,33 @@
     padding:4%;
 }
 
+#Result{
+    padding:3%;
+}
 
-
-
- #search-bar{
+#search-bar{
         display: flex;
         flex-direction: row;
         justify-content: center;
         align-items:center;
         width: 100vw;
-        position: relative;
-    }
+        position: relative; }
 
 #search{
         position: relative;
         width:80%;
+        transition: border-color 0.3s ease-in-out;
+        border: 1px solid #ccc;
     }
+#search:hover {
+    border-color: #999;
+    }
+    
+/* Focus effect */
+#search:focus {
+border-color: #007bff;
+outline: none;
+}
 
 
     
