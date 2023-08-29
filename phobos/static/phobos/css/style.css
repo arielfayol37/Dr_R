@@ -431,9 +431,9 @@ textarea {
     position: relative;
 }
 
-.mcq-image-answer {
-  max-width: 90%; /* Limit image width to 100% of parent div's width */
-  max-height: 90%; /* Limit image height to 100% of parent div's height */
+.image-in-formatted {
+  max-width: 70%; /* Limit image width to 100% of parent div's width */
+  max-height: 70%; /* Limit image height to 100% of parent div's height */
   display: block; /* Remove any extra space below the image */
   border-radius: 10px;
 }
@@ -449,7 +449,10 @@ textarea {
   align-items: center; /* Align items vertically */
   margin-right: 20px; /* Adjust this value based on your preference */
 }
-
+.question-image-upload-section {
+  display: flex;
+  flex-direction: column;
+}
 .option-label {
   margin-right: 10px; /* Add some spacing between the label and the dropdown */
   min-width: 80px; /* Set a minimum width for the labels to ensure consistent spacing */

@@ -193,6 +193,15 @@ def create_question(request, assignment_id=None, type_int=None):
                 if bound_type not in vars_dict[var_symbol]:
                     vars_dict[var_symbol][bound_type] = []
                 vars_dict[var_symbol][bound_type].append(bound_value)
+            
+            if key.startswith('question_image_label_'):
+                image_number = key[len('question_image_label_'):]
+                label_name = 'question_image_label_' + image_number
+                image_name = 'question_image_file_' + image_number
+                image = request.FILES.get(image_name)
+                label = request.POST.get(label_name)
+                question_image = QuestionImage(question=new_question, image=image, label=label)
+                question_image.save()
         for var_symbol in vars_dict:
             new_variable = Variable(question=new_question, symbol=var_symbol)
             new_variable.save()
@@ -234,6 +243,8 @@ def create_question(request, assignment_id=None, type_int=None):
                         return HttpResponseForbidden('Something went wrong')
                     answer.is_answer = True if answer_info_encoding[0] == '1' else False
                     answer.save() # Needed here.
+            
+            # Getting the MCQ images
             for key, value in request.FILES.items():
                 if key.startswith('answer_value_'):
                     option_index_start = len('answer_value_')
@@ -294,6 +305,10 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
     professor = get_object_or_404(Professor, pk=request.user.id)
     question = Question.objects.get(pk=question_id)
     question.text = replace_links_with_html(question.text)
+    # replace_image_labels_with_links() should come after replace_links_with_html()
+    labels_urls_list = [(question_image.label, question_image.image.url) for question_image in \
+                         question.images.all()]
+    question.text = replace_image_labels_with_links(question.text, labels_urls_list)
     answers = []
     is_latex = []
     is_mcq = False
@@ -392,6 +407,15 @@ def replace_links_with_html(text):
             new_words.append(word)
 
     return ' '.join(new_words)
+def replace_image_labels_with_links(text, labels_url_pairs):
+    """
+    Returns the text with labels within html link tags.
+    labels_url_pairs = ("john_image", "astros/images/jjs.png")
+    """
+    for label, url in labels_url_pairs:
+        replacement = f"<a href=\"#{url}\">{label}</a>"
+        text = text.replace(label, replacement)
+    return text
 
 def upload_image(request):
     # Depecrated (Never used actually but just keeping here)

@@ -405,7 +405,7 @@ div.c-text {
     position: relative;
 }
 
-.mcq-image-answer {
+.image-in-formatted {
   max-width: 90%; /* Limit image width to 100% of parent div's width */
   max-height: 90%; /* Limit image height to 100% of parent div's height */
   display: block; /* Remove any extra space below the image */

@@ -14,6 +14,15 @@
 <p class="question-number"><strong>Question {{question.number}}</strong></p>
 <hr/>
 <p class="question-content">{{question.text|safe}}</p>
+<div class="question-images">
+    {% for question_image in question.images.all %}
+        <div class="formatted-answer" id="{{question_image.image.url}}">
+            <p>{{question_image.label}}</p>
+            <img src="{{question_image.image.url}}" class="question-image image-in-formatted" alt="{{question_image.label}}"/>
+        </div>
+    {% endfor %}
+</div><br/>
+
 {% if show_answer %}
 
     {% if is_mcq %}
@@ -25,7 +34,7 @@
                 {% else %}   
                     {% if answer.image %}
                         {{answer.label}}
-                        <img src="{{answer.image.url}}" class="mcq-image-answer" alt="{{answer.image.label}}"/>
+                        <img src="{{answer.image.url}}" class="mcq-image-answer image-in-formatted" alt="{{answer.image.label}}"/>
                     {% else %}
                         {{answer.content|safe}}
                     {% endif %}

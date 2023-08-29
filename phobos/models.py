@@ -197,7 +197,7 @@ class QuestionImage(models.Model):
     label = models.CharField(max_length=70, blank=True, null=True)
 
     def __str__(self):
-        return f"{self.name} for {self.question}"
+        return f"{self.label} for {self.question}"
 
 class Hint(models.Model):
     """
