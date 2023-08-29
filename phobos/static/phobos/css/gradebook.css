@@ -19,5 +19,14 @@
         width:80%;
     }
 
+.assignment{
+    color: blue;
+    }
+
+.assignment:hover {
+    font-size: larger;
+    color:blue;
+    text-decoration: underline;
+}
 
     

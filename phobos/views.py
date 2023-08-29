@@ -16,7 +16,7 @@ from .models import *
 from django.shortcuts import get_object_or_404
 from django.middleware import csrf
 from django.utils.timesince import timesince
-from deimos.models import AssignmentStudent, Student
+from deimos.models import AssignmentStudent, Student, QuestionStudent
 
 # Create your views here.
 @login_required(login_url='astros:login') 
@@ -416,4 +416,15 @@ def student_search(request,course_id):
 
         return render(request, "phobos/student_search.html", {'course':course,\
             'search':student_name,"entries": search_result, 'length':len(search_result)})
-        
+
+def get_questions(request,course_id,student_id,assignment_id):
+    assignment= Assignment.objects.get(id=assignment_id)
+    questions= Question.objects.filter(assignment= assignment ) 
+    student= Student.objects.get(id=student_id)
+    question_details=[{'name':assignment.name,'assignment_id':assignment_id}]
+    for i in questions:
+        p= QuestionStudent.objects.get(student= student, question=i)
+        question_details.append({'Question_number':'Question ' + i.number,'score':p.get_num_attempts()})
+        print(question_details)
+    question_details= json.dumps(question_details)
+    return HttpResponse(question_details)
