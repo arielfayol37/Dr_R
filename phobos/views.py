@@ -458,14 +458,20 @@ def student_search(request,course_id):
         return render(request, "phobos/student_search.html", {'course':course,\
             'search':student_name,"entries": search_result, 'length':len(search_result)})
 
-def get_questions(request,course_id,student_id,assignment_id):
+def get_questions(request, student_id, assignment_id, course_id=None):
     assignment= Assignment.objects.get(id=assignment_id)
     questions= Question.objects.filter(assignment= assignment ) 
     student= Student.objects.get(id=student_id)
     question_details=[{'name':assignment.name,'assignment_id':assignment_id}]
-    for i in questions:
-        p= QuestionStudent.objects.get(student= student, question=i)
-        question_details.append({'Question_number':'Question ' + i.number,'score':p.get_num_attempts()})
-        print(question_details)
+    for question in questions:
+        try:
+            question_student = QuestionStudent.objects.get(student= student, question=question)
+            question_details.append({'Question_number':'Question ' + question.number,\
+                                 'score':question_student.get_num_points(), \
+                                    'num_attempts': question_student.get_num_attempts()})
+        except QuestionStudent.DoesNotExist:
+            question_details.append({'Question_number':'Question' + question.number,\
+                                     'score':"0",'num_attempts': "0"})    
+        
     question_details= json.dumps(question_details)
     return HttpResponse(question_details)
