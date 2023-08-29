@@ -16,7 +16,7 @@ from .models import *
 from django.shortcuts import get_object_or_404
 from django.middleware import csrf
 from django.utils.timesince import timesince
-from deimos.models import AssignmentStudent, Student
+from deimos.models import AssignmentStudent, Student, QuestionStudent
 
 # Create your views here.
 @login_required(login_url='astros:login') 
@@ -193,6 +193,15 @@ def create_question(request, assignment_id=None, type_int=None):
                 if bound_type not in vars_dict[var_symbol]:
                     vars_dict[var_symbol][bound_type] = []
                 vars_dict[var_symbol][bound_type].append(bound_value)
+            
+            elif key.startswith('question_image_label_'):
+                image_number = key[len('question_image_label_'):]
+                label_name = 'question_image_label_' + image_number
+                image_name = 'question_image_file_' + image_number
+                image = request.FILES.get(image_name)
+                label = request.POST.get(label_name)
+                question_image = QuestionImage(question=new_question, image=image, label=label)
+                question_image.save()
         for var_symbol in vars_dict:
             new_variable = Variable(question=new_question, symbol=var_symbol)
             new_variable.save()
@@ -234,6 +243,8 @@ def create_question(request, assignment_id=None, type_int=None):
                         return HttpResponseForbidden('Something went wrong')
                     answer.is_answer = True if answer_info_encoding[0] == '1' else False
                     answer.save() # Needed here.
+            
+            # Getting the MCQ images
             for key, value in request.FILES.items():
                 if key.startswith('answer_value_'):
                     option_index_start = len('answer_value_')
@@ -294,6 +305,10 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
     professor = get_object_or_404(Professor, pk=request.user.id)
     question = Question.objects.get(pk=question_id)
     question.text = replace_links_with_html(question.text)
+    # replace_image_labels_with_links() should come after replace_links_with_html()
+    labels_urls_list = [(question_image.label, question_image.image.url) for question_image in \
+                         question.images.all()]
+    question.text = replace_image_labels_with_links(question.text, labels_urls_list)
     answers = []
     is_latex = []
     is_mcq = False
@@ -392,6 +407,15 @@ def replace_links_with_html(text):
             new_words.append(word)
 
     return ' '.join(new_words)
+def replace_image_labels_with_links(text, labels_url_pairs):
+    """
+    Returns the text with labels within html link tags.
+    labels_url_pairs = ("john_image", "astros/images/jjs.png")
+    """
+    for label, url in labels_url_pairs:
+        replacement = f"<a href=\"#{url}\">{label}</a>"
+        text = text.replace(label, replacement)
+    return text
 
 def upload_image(request):
     # Depecrated (Never used actually but just keeping here)
@@ -420,3 +444,34 @@ def student_profile(request,course_id,student_id):
                 {'student_grade': zip(assignments,grades),\
                  'student':student, 'course':course})
 
+def student_search(request,course_id):
+    course = Course.objects.get(pk = course_id)
+    enrolled_students = Student.objects.filter(enrollments__course=course)
+  
+    if request.method =="GET":
+        student_name= request.GET['q'].lower()
+        search_result = []
+        for enrolled_student in enrolled_students:
+            if (student_name in enrolled_student.last_name.lower()) or (student_name in enrolled_student.first_name.lower()):
+                search_result.append(enrolled_student)
+
+        return render(request, "phobos/student_search.html", {'course':course,\
+            'search':student_name,"entries": search_result, 'length':len(search_result)})
+
+def get_questions(request, student_id, assignment_id, course_id=None):
+    assignment= Assignment.objects.get(id=assignment_id)
+    questions= Question.objects.filter(assignment= assignment ) 
+    student= Student.objects.get(id=student_id)
+    question_details=[{'name':assignment.name,'assignment_id':assignment_id}]
+    for question in questions:
+        try:
+            question_student = QuestionStudent.objects.get(student= student, question=question)
+            question_details.append({'Question_number':'Question ' + question.number,\
+                                 'score':question_student.get_num_points(), \
+                                    'num_attempts': question_student.get_num_attempts()})
+        except QuestionStudent.DoesNotExist:
+            question_details.append({'Question_number':'Question' + question.number,\
+                                     'score':"0",'num_attempts': "0"})    
+        
+    question_details= json.dumps(question_details)
+    return HttpResponse(question_details)

@@ -1,0 +1,29 @@
+{% extends "phobos/layout.html" %}
+{% load static %}
+{% block title %}
+    Student Search Result
+{% endblock %}
+
+{% block style %} <link rel="stylesheet" href="{% static 'phobos/css/gradebook.css' %}"/> {% endblock %}
+
+
+{% block body %}
+<div id= "search-bar">
+    <form action="{% url 'phobos:student_search' course_id=course.id %}" method="get">
+        <input id="search" type="text" name="q" placeholder="Looking for a student? search here">
+    </form>
+</div>
+<br/>
+<h1>"{{search}}" Search Results</h1>
+<div id="Result">
+<p><b>{{length }} matches found:</b>
+    <ul>
+        {% for student in entries %}
+            <li><a href="{% url 'phobos:student_profile' course.id  student.id %}"> {{ student.last_name }} {{student.first_name}} </a></li>
+        {% empty %}
+        <p> Couldn't find any student with name <b>"{{search}}" </b></p>
+        {% endfor %}
+    </ul>
+</p>
+</div>
+{% endblock %}

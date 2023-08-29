@@ -9,11 +9,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const mcqBtn = document.querySelector('#mcq-btn');
     const mcqOptionBtnsDiv = mcqAnswersDiv.querySelector('.mcq-options-button');
     const inputedMcqAnswersDiv = document.querySelector('.inputed-mcq-answers');
+    const imgLabelInputField = document.querySelector('.image-label-input-field');
+    const questionAddImgBtn = document.querySelector('.main-question-add-image-btn');
+    const questionImgUploadSection = document.querySelector('.question-image-upload-section');
+    const uploadedQuestionPreview = document.querySelector('.uploaded-question-preview');
     var num_mcq_options_counter = 2;
     var num_true_counter = 0;
     var option_counter = 0;
-    var image_counter = 0;
+    var question_img_counter = 0;
 
+    const addQuestionImgBtn = document.querySelector('.question-image-add');
     const addMcqOptionBtn = document.querySelector('.mcq-add');
     
     const mcqInputDiv = document.querySelector('.mcq-input-div');
@@ -30,6 +35,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const calculatorDiv = document.querySelector('.calculator');
     calculatorDiv.style.display = 'none';
     let mode = '';
+
+    const mainQuestionImageInput = document.querySelector('.main-question-image-input');
+    const mainQuestionImagePreview = document.querySelector('.main-question-image-preview');
+  
+
 /*-----------------------------------------SURVEY QUESTION-----------------------------------*/
     surveyBtn.addEventListener('click', (event)=> {
         event.preventDefault();
@@ -111,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             case 'mcq-image-btn':
                 mcqInputField.value = '';
-                mcqInputField.placeholder = 'Enter image label';
+                mcqInputField.placeholder = 'Enter image label and click add';
                 mcqInputField.setAttribute('data-answer-type', 'i-answer');
                 imageUploadInput.style.display ='block';
                 mcqImagePreview.style.display = 'block';
@@ -438,6 +448,8 @@ function create_inputed_mcq_div(input_field, answer_type) {
                 image_input_field_clone.name = `answer_value_${option_counter}`;
                 image_input_field_clone.style.display = 'none';
                 formattedAnswerDiv.appendChild(image_input_field_clone);
+                imageUploadInput.value = '';
+                mcqImagePreview.innerHTML = '';
             }
             formattedAnswerDiv.scrollIntoView({behavior:'smooth'});
 
@@ -454,6 +466,96 @@ function create_inputed_mcq_div(input_field, answer_type) {
 }
 
 
+
+
+
+//------------------------------------IMAGE UPLOAD HANDLING FOR MAIN QUESTION-------------------
+// Expanding image upload section
+questionAddImgBtn.addEventListener('click', (event)=>{
+    event.preventDefault();
+    if(questionAddImgBtn.classList.contains('open')){
+        questionAddImgBtn.classList.remove('open');
+        questionAddImgBtn.classList.add('closed');
+        questionAddImgBtn.innerHTML = '-collapse-'
+        questionImgUploadSection.style.display = 'block';
+        questionImgUploadSection.scrollIntoView({behavior:'smooth'});
+    }
+    else{
+        questionAddImgBtn.classList.remove('closed');
+        questionAddImgBtn.classList.add('open');
+        uploadedQuestionPreview.innerHTML = '';
+        questionAddImgBtn.innerHTML = 'Upload Image';
+        questionImgUploadSection.style.display = 'none'; 
+    }
+})
+// Rendering an uploaded image
+mainQuestionImageInput.addEventListener('change', function () {
+    uploadedQuestionPreview.innerHTML = '';
+    for (const file of mainQuestionImageInput.files) {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '200px';
+        img.style.borderRadius = '15px';
+        img.classList.add('preview-image');
+        uploadedQuestionPreview.appendChild(img);
+    }
+});
+
+addQuestionImgBtn.addEventListener('click', (event)=>{
+    event.preventDefault();
+    if (imgLabelInputField.value === null || imgLabelInputField.value ==='') {
+        alert('You must enter a label for the image.')
+        
+    }
+    else{
+        try{
+            const formatted_new_img = create_img_div(mainQuestionImageInput, imgLabelInputField.value);
+            mainQuestionImagePreview.appendChild(formatted_new_img);
+            imgLabelInputField.value = '';
+            question_img_counter += 1;
+        }
+        catch(error){
+            alert('Make sure you entered a label for the image and selected an image file.')
+        }
+        
+    }
+
+
+})
+// Deleting an uploaded image
+mainQuestionImagePreview.addEventListener('click', (event)=>{
+    target = event.target
+    if(target.classList.contains('img-delete')){
+        mainQuestionImagePreview.removeChild(target.parentNode.parentNode);
+    }
+})
+
+function create_img_div(img_input_field, img_label){
+    var imgDiv = document.createElement('div');
+    var imgLabel = document.createElement('p');
+    imgLabel.innerHTML = img_label;
+    imgDiv.className = 'question-image';
+    imgDiv.innerHTML = `
+    <br/>
+    <div class="formatted-answer"></div>
+    <input value="${img_label}" type="hidden" name="question_image_label_${question_img_counter}"/>
+    <div class="add-delete-btns">
+        <button  type="button" class="btn btn-danger img-delete exempt">delete</button>
+    </div>
+`;
+    var formattedImgDiv = imgDiv.querySelector('.formatted-answer');
+    formattedImgDiv.appendChild(imgLabel);
+    formattedImgDiv.appendChild(uploadedQuestionPreview.cloneNode(true));
+    const image_input_field_clone = img_input_field.cloneNode(true);
+    image_input_field_clone.name = `question_image_file_${question_img_counter}`;
+    image_input_field_clone.style.display = 'none';
+    formattedImgDiv.appendChild(image_input_field_clone);
+    uploadedQuestionPreview.innerHTML = '';
+    img_input_field.value = '';
+
+    return imgDiv;
+}
 
 /*------------------------------UTILITY FUNCTIONS ----------------------------*/
 function rep(str, index, char) {

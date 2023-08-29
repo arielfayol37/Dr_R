@@ -112,6 +112,9 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
     question_student.save() 
     # Detect links and replace with html a-tags
     question.text = replace_links_with_html(question.text)
+    labels_urls_list = [(question_image.label, question_image.image.url) for question_image in \
+                    question.images.all()]
+    question.text = replace_image_labels_with_links(question.text,labels_urls_list)
     # Replace vars with values in colored tags.
     question.text = question_student.evaluate_var_expressions_in_text(question.text, add_html_style=True)
     is_mcq = False #nis mcq
@@ -418,6 +421,15 @@ def replace_vars_with_values(text, variable_dict):
         text = text.replace(var_symbol,f"<em class=\"variable\">{variable_dict[var_symbol]}</em>")
     return text
 
+def replace_image_labels_with_links(text, labels_url_pairs):
+    """
+    Returns the text with labels within html link tags.
+    labels_url_pairs = ("john_image", "astros/images/jjs.png")
+    """
+    for label, url in labels_url_pairs:
+        replacement = f"<a href=\"#{url}\">{label}</a>"
+        text = text.replace(label, replacement)
+    return text
 #--------------------Depecrated functions used in development--------------------
 def question_nav(request):
     return render(request, 'deimos/question_nav.html', {})
