@@ -18,7 +18,7 @@
     <tbody>
     {% for assignment, grade in student_grade %}
     <tr>
-        <td>{{ assignment.name}} </td>
+        <td class="assignment" id='{{assignment.id}}'>{{ assignment.name}} </td>
         <td> {{grade}} </td>
         {% if grade > 70 %}
         <td> Passed </td>
@@ -29,6 +29,10 @@
     {% endfor %}
     </tbody>
 </table>
+
+{% block script %}
+<script src="{% static 'phobos/js/student_profile.js' %}"></script>
+{% endblock %}
 
     
 {% endblock %}
