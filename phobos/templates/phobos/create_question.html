@@ -53,6 +53,14 @@
               <!--!Important: this question must be here!-->
               <textarea placeholder="Enter the content of the question" id="question-textarea" class="w-100 question-input-field" name="question_text"></textarea>
           </div>
+          <div class="main-question-image-preview"></div>
+          <div class="uploaded-question-preview"></div>
+          <button type="button" class="main-question-add-image-btn btn btn-light open">Upload Image</button>
+          <div class="question-image-upload-section" style="display: none;">
+            <input type="text" placeholder="Enter image label" class="image-label-input-field question-input-field"/>
+            <input type="file" accept="image/*" class="main-question-image-input">
+            <button type="button" class="btn btn-success question-image-add">add</button>
+          </div>
           <div class="answer-options">
             <!--TODO: Change the colors here to fit the overall design-->
             
@@ -73,13 +81,17 @@
               <button type="button" id="mcq-float-btn" class="btn btn-info exempt">Float mode</button>
               <button type="button" id="mcq-text-btn" class="btn btn-light exempt">Text mode</button>
               <button type="button" id="mcq-latex-btn" class="btn btn-secondary exempt">Latex mode</button>
+              <button type="button" id="mcq-image-btn" class="btn btn-dark exempt">Image mode</button>
             </div>
             <div class="inputed-mcq-answers">
 
             </div>
             <br/>
+            <div class="mcq-image-preview"></div>
+            <br/>
             <div class="mcq-input-div" style="display: none;">
               <input style="width: 100%; box-sizing: border-box;" type="text" class="mcq-input-field question-input-field"/>
+              <input type="file" accept="image/*" class="image-upload-input-field" style="display:none;"/>
               <button type="button" class="btn btn-success mcq-add">add</button>
             </div>
 
@@ -103,7 +115,6 @@
 
 {% endblock %}
 {% block scripts%}
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.9.1/math.js"></script>
 <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -112,7 +123,4 @@
 <script src="{% static 'phobos/js/question.js' %}"></script>
 <script src="{% static 'phobos/js/calci.js' %}"></script>
 <script src="{% static 'phobos/js/variable.js' %}"></script>
-
-
-
 {% endblock %}

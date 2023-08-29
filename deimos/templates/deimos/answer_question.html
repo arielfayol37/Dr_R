@@ -14,6 +14,14 @@
         <input type="hidden" value="{{question.id}}" name="question-id"/>
         <p class="question-content">{{question.text | safe}}</p>
         <br/>
+        <div class="question-images">
+          {% for question_image in question.images.all %}
+              <div class="formatted-answer" id="{{question_image.image.url}}">
+                  <p>{{question_image.label}}</p>
+                  <img src="{{question_image.image.url}}" class="question-image image-in-formatted" alt="{{question_image.label}}"/>
+              </div>
+          {% endfor %}
+      </div><br/>
          {% if is_mcq%}
               <input type="hidden" value="mcq" class="question-type"/>
               <div class="inputed-mcq-answers">
@@ -23,7 +31,12 @@
                       {% if is_latex %}
                           <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
                       {% else %}
-                        {{answer.content|safe}}
+                        {% if answer.image %}
+                          {{answer.label}}
+                          <img src="{{answer.image.url}}" class="mcq-image-answer image-in-formatted" alt="{{answer.image.label}}"/>
+                        {% else %}
+                          {{answer.content|safe}}
+                        {% endif %}
                       {% endif %}
                       <input type="hidden" value="{{answer.pk}}{{question_type}}" class="answer_id" name="mcq_answer_id_{{ forloop.counter0 }}"/>
                       <input type="hidden" value="0{{question_type}}" class="answer_info" name="mcq_answer_info_{{ forloop.counter0 }}"/>

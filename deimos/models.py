@@ -175,7 +175,10 @@ class QuestionStudent(models.Model):
         """
         def replace_match(match):
             expression = match.group(1)  # Extract the expression within the curly braces
-            value = round(eval(transform_expression(expression), var_value_dict), 3)
+            try:
+                value = round(eval(transform_expression(expression), var_value_dict), 3)
+            except:
+                value = expression
             if add_html_style:
                 return f"<span class=\"variable-value\">{value}</span>"
             else:
