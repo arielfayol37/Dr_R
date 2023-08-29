@@ -194,7 +194,7 @@ def create_question(request, assignment_id=None, type_int=None):
                     vars_dict[var_symbol][bound_type] = []
                 vars_dict[var_symbol][bound_type].append(bound_value)
             
-            if key.startswith('question_image_label_'):
+            elif key.startswith('question_image_label_'):
                 image_number = key[len('question_image_label_'):]
                 label_name = 'question_image_label_' + image_number
                 image_name = 'question_image_file_' + image_number
@@ -451,9 +451,9 @@ def student_search(request,course_id):
     if request.method =="GET":
         student_name= request.GET['q'].lower()
         search_result = []
-        for i in enrolled_students:
-            if (student_name in i.last_name.lower()) or (student_name in i.first_name.lower()):
-                search_result.append(i)
+        for enrolled_student in enrolled_students:
+            if (student_name in enrolled_student.last_name.lower()) or (student_name in enrolled_student.first_name.lower()):
+                search_result.append(enrolled_student)
 
         return render(request, "phobos/student_search.html", {'course':course,\
             'search':student_name,"entries": search_result, 'length':len(search_result)})
