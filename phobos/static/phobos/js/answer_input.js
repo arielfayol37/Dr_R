@@ -43,12 +43,17 @@ document.addEventListener('DOMContentLoaded', () => {
 /*-----------------------------------------SURVEY QUESTION-----------------------------------*/
     surveyBtn.addEventListener('click', (event)=> {
         event.preventDefault();
+        mode = 's-answer';
+        // NOT A HIGH PRIORITY FOR NOW. TO BE IMPLEMENTED LATER
     })
 
  /*------------------------------------------MCQ QUESTION --------------------------------- */
  
 
  imageUploadInput.addEventListener('change', ()=>{
+    // Reads the uploaded image and renders on the page.
+    // THERE is another way to do this at the bottom of this file which might be better
+    // Ctrl + F and seatch 'image and renders' on page.
     const reader = new FileReader();
     const imageFile = imageUploadInput.files[0];
     reader.onload = function(event) {
@@ -69,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
 })
 
     mcqBtn.addEventListener('click', (event)=>{
-    
+    // If the instructor chooses mcq as the answer option.
     event.preventDefault();
         inputedMcqAnswersDiv.style.display = 'block';
         mcqImagePreview.style.display = 'block';
@@ -89,6 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     mcqOptionBtnsDiv.addEventListener('click', (event)=> {
         event.preventDefault();
+        // Selecting different MCQ modes.
         mcqInputDiv.style.display = 'block';
         switch (event.target.id) {
             case 'mcq-expression-btn':
@@ -133,6 +139,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     addMcqOptionBtn.addEventListener('click', (event)=>{
         event.preventDefault();
+        // Adding an mcq option after filling the input field.
+        // This may look small but it's the most dense function in this file
+        // Checkout create_inputed_mcq_div() to see what I mean.
         if (mcqInputField.value === null || mcqInputField.value ==='') {
             alert('Cannot create an empty mcq option.')
             
@@ -155,8 +164,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     inputedMcqAnswersDiv.addEventListener('click', (event)=>{
         event.preventDefault();
+        // Here adding the ability to change the status of an mcq option as true or false
+        // Also, there's a delete button.
         target = event.target
         if(target.classList.contains('mcq-false')){
+            // changing an mcq option from false to true.
             target.classList.remove('mcq-false','btn-warning');
             target.classList.add('mcq-true', 'btn-info');
             target.innerHTML = 'True';
@@ -164,6 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const answer_info_input = target.parentNode.parentNode.querySelector('.answer_info');
             answer_info_input.value = rep(answer_info_input.value, 0, '1');
         } else if(target.classList.contains('mcq-true')){
+            // changing an mcq option from true to false.
             target.classList.add('mcq-false','btn-warning');
             target.classList.remove('mcq-true', 'btn-info');
             target.innerHTML = 'False'; 
@@ -171,6 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const answer_info_input = target.parentNode.parentNode.querySelector('.answer_info');
             answer_info_input.value = rep(answer_info_input.value, 0, '0');
         } else if (target.classList.contains('mcq-delete')){
+            // deleting an mcq option.
             num_mcq_options_counter -= 1;
             if (target.classList.contains('mcq-true')){
                 num_true_counter -= 1;
@@ -187,15 +201,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     /*------------------------------------------STRUCTURAL QUESTION --------------------------------- */
-
+    // latexAnswerDiv is never used but just keeping it here.
     const latexAnswerDiv = `
     <div class="l-answer"><br/>
     <label>Latex Answer:</label>
         <input style="width: 100%; box-sizing: border-box;" class="question-input-field" placeholder="Enter LaTex" type="text" class="latex-answer-input" name="answer"/>
         </div>
     `
+    // Free response button selected.
     frBtn.addEventListener('click', (event)=>{
         event.preventDefault();
+        mode = 'fr-answer';  
         inputedMcqAnswersDiv.style.display = 'none';
         formattedAnswerDiv.innerHTML = 'Free response mode selected.'
         formattedAnswerDiv.style.display = 'block';
@@ -204,15 +220,18 @@ document.addEventListener('DOMContentLoaded', () => {
         mcqImagePreview.style.display = 'none';
         calculatorDiv.style.display = 'none';
         answerFieldsDiv.innerHTML = '';
-        mode = 'fr-answer';  
+        
         formattedAnswerDiv.scrollIntoView({behavior: 'smooth'});
         // Append '/4' at the end of the URL
         const newAction = currentAction + '/4';
         // Update the form's action attribute
         form.setAttribute('action', newAction);      
     })
+
+    // Expression answer button selected.
     expressionBtn.addEventListener('click', (event)=> {
         event.preventDefault();
+        mode = 'e-answer';
         inputedMcqAnswersDiv.style.display = 'none';
         formattedAnswerDiv.style.display = 'block';
         mcqOptionBtnsDiv.style.display = 'none';
@@ -220,7 +239,6 @@ document.addEventListener('DOMContentLoaded', () => {
         mcqImagePreview.style.display = 'none';
         calculatorDiv.style.display = 'block';
         answerFieldsDiv.innerHTML = '';
-        mode = 'e-answer';
         screen.value = ''
         screen.placeholder = 'Algebraic expression';
         formattedAnswerDiv.innerHTML = ''
@@ -234,8 +252,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     });
 
+    // Float button selected.
     floatBtn.addEventListener('click', function(event) { 
         event.preventDefault();
+        mode = 'f-answer';
         inputedMcqAnswersDiv.style.display = 'none';
         formattedAnswerDiv.style.display = 'block';
         mcqOptionBtnsDiv.style.display = 'none';
@@ -243,7 +263,6 @@ document.addEventListener('DOMContentLoaded', () => {
         mcqImagePreview.style.display = 'none';
         calculatorDiv.style.display = 'block';
         answerFieldsDiv.innerHTML = '';
-        mode = 'f-answer';
         screen.value = ''
         screen.placeholder = 'Enter real number';
         formattedAnswerDiv.innerHTML = ''
@@ -255,6 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
         form.setAttribute('action', newAction);
     });
 
+    // Latex button selected. Probably never used.
     latexBtn.addEventListener('click', (event)=> {
         event.preventDefault();
         mode = 'l-answer'
@@ -298,7 +318,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         })
     });
-
+    // Here, each time the value of answer input screen changes,
+    // we use mathjax to display the updated content.
     screen.addEventListener('input', ()=> {
 
         MathJax.typesetPromise().then(() => {
@@ -322,6 +343,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mode==='e-answer'){
             const userInputNode = math.simplify(processString(screen.value));
             var userInputString = userInputNode.toString();
+            // The following is in case we don't want to change the domain of the algebraic expression
+            // for example, if we don't want (x+1)(x-1)/(x-1) to simplify to just (x+1)
             //var userInputString = math.simplify(userInputNode, {}, {context: math.simplify.realContext}).toString()
             screen.value = userInputString;
         }
@@ -341,11 +364,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 event.preventDefault();
                 alert('Must select at least one MCQ answer as correct.');
             }
-
-    
         }
-
-        // Now the form will be submited
+        // Now the form will be submitted
     });
 
 
@@ -362,9 +382,6 @@ function create_inputed_mcq_div(input_field, answer_type) {
     // One of the hidden inputs should store the string value of the answer, as well as the type of answer it is..
     // The other hidden input will store the reference question.i.e 0 = 'main', 1 = 'a', 2 = 'b', 4 = 'c' etc. 
     //     so 0 may mean it is an mcq option for the main question. while 'b' means it is sub question.
-   //      Side note: In the spirit of the definition of the django models, it's actually not possible to have an answer
-   //      for 'main' given that it should only comprise of text. 
-   //      
    // May add an edit button later, but I don't think it is useful.
     var formatted_answer = '';
     switch (answer_type) {
@@ -488,8 +505,9 @@ questionAddImgBtn.addEventListener('click', (event)=>{
         questionImgUploadSection.style.display = 'none'; 
     }
 })
-// Rendering an uploaded image
+
 mainQuestionImageInput.addEventListener('change', function () {
+    // Reads the uploaded image and renders on the page.
     uploadedQuestionPreview.innerHTML = '';
     for (const file of mainQuestionImageInput.files) {
         const img = document.createElement('img');
