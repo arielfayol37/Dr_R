@@ -19,6 +19,11 @@ from django.utils.timesince import timesince
 from phobos.models import QuestionChoices
 import random
 from sympy import symbols, simplify
+import numpy as np
+import torch
+from sklearn.metrics.pairwise import cosine_similarity
+from transformers import BertTokenizer, BertModel
+from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
 
 # Create your views here.
 @login_required(login_url='astros:login') 
@@ -436,3 +441,55 @@ def question_nav(request):
 
 def action_menu(request):
     return render(request, 'deimos/action_menu.html', {})
+
+
+def attention_pooling(hidden_states, attention_mask):
+    # Apply attention mask to hidden states
+    attention_mask_expanded = attention_mask.unsqueeze(-1).expand(hidden_states.size())
+    masked_hidden_states = hidden_states * attention_mask_expanded
+    
+    # Calculate mean along the sequence dimension
+    summed_hidden_states = masked_hidden_states.sum(dim=1)
+    sequence_lengths = attention_mask.sum(dim=1, keepdim=True)
+    pooled_output = summed_hidden_states / sequence_lengths
+
+    return pooled_output
+
+def search_question(request):
+    if request.method == 'POST':
+        input_text = request.POST.get('search_question', '')
+
+        # Tokenize and encode the input text
+        input_tokens = BERT_TOKENIZER.encode(input_text, add_special_tokens=True)
+        with torch.no_grad():
+            input_tensor = torch.tensor([input_tokens])
+            attention_mask = (input_tensor != 0).float()  # Create attention mask
+            encoded_output = BERT_MODEL(input_tensor, attention_mask=attention_mask)[0]  # Take the hidden states
+
+        # Apply attention-based pooling to encoded output
+        encoded_output_pooled = attention_pooling(encoded_output, attention_mask)
+
+        # Calculate cosine similarity with stored question objects
+        similar_questions = []
+        for question in Question.objects.all():
+            question_tokens = BERT_TOKENIZER.encode(question.text, add_special_tokens=True)
+            with torch.no_grad():
+                question_tensor = torch.tensor([question_tokens])
+                question_attention_mask = (question_tensor != 0).float()  # Create attention mask
+                question_encoded_output = BERT_MODEL(question_tensor, attention_mask=question_attention_mask)[0]
+
+            # Apply attention-based pooling to question encoded output
+            question_encoded_output_pooled = attention_pooling(question_encoded_output, question_attention_mask)
+
+            similarity_score = cosine_similarity(encoded_output_pooled, question_encoded_output_pooled).item()
+            similar_questions.append({'question': question, 'similarity': similarity_score})
+
+        # Sort by similarity score and get top 5
+        similar_questions.sort(key=lambda x: x['similarity'], reverse=True)
+        top_similar_questions = similar_questions[:5]
+
+        return render(request,'deimos/search_question.html', {'similar_questions': top_similar_questions})
+
+    return render(request,'deimos/search_question.html')
+
+
