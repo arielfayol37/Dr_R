@@ -278,6 +278,10 @@ div.tol {
 #search-field:hover {
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.3) !important;
   }
+#search-field.active {
+  width: 90%;
+  box-sizing: border-box;
+}
 
 h4{
     margin-left: 5%;
