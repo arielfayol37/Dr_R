@@ -180,6 +180,17 @@ class Question(models.Model):
     answer = models.CharField(max_length=1000, null=True, blank=True) # TODO: delete this attribute.
     deduct_per_attempt = models.FloatField(default=0.05, blank=True, null=True)
     margin_error = models.FloatField(default=0.03, blank=True, null=True)
+    due_date = models.DateTimeField(null=True, blank=True)
+
+    def default_due_date(self):
+        if self.assignment:
+            return self.assignment.due_date
+        return None
+
+    def save(self, *args, **kwargs):
+        if self.due_date is None:
+            self.due_date = self.default_due_date()
+        super(Question, self).save(*args, **kwargs)
 
     def __str__(self):
         return f"Question {self.number} ranked {self.difficulty_level} for {self.assignment}"

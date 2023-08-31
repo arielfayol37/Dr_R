@@ -8,7 +8,7 @@
 {% block body %}
     <h3>Question {{question.number}}</h3>
     <div class="page-container" id="answer-question">
-    <br/>
+      <br/>
       <form method="post" enctype="multipart/form-data" id="question-form">
         {% csrf_token %}
         <input type="hidden" value="{{question.id}}" name="question-id"/>
@@ -21,7 +21,7 @@
                   <img src="{{question_image.image.url}}" class="question-image image-in-formatted" alt="{{question_image.label}}"/>
               </div>
           {% endfor %}
-      </div><br/>
+        </div><br/>
          {% if is_mcq%}
               <input type="hidden" value="mcq" class="question-type"/>
               <div class="inputed-mcq-answers">
@@ -51,7 +51,7 @@
           {% elif is_fr %}
             <input type="hidden" value="fr" class="question-type"/>
               <div>
-                <textarea placeholder="Enter answer" class="w-100 question-input-field"></textarea>
+                <textarea placeholder="Enter answer" class="w-100 question-input-field" name="fr_answer_{{question.id}}"></textarea>
               </div>
               <div> <input type="submit" class="btn btn-success exempt" id="submit-btn" value="Submit Answer"></div>
               <br/><br/>
@@ -75,29 +75,27 @@
 
 
 
-    <div class="navigation">
-      <ul>
-        {% for question_id, question_num in question_ids_nums %}
-          {% if question_id == question.id %}
-            <li class="list active">
-          {% else %}
-            <li class="list">
-          {% endif %}
-                <a href="{% url 'deimos:answer_question' question_id=question_id assignment_id=assignment_id course_id=course_id %}">
-                    <span class="icon">{{question_num}}</span>    
-                </a>
-            </li>
-        {% endfor %}  
-  
-          <div class="indicator"></div>
-      </ul>
-   </div>  
+      <div class="navigation">
+        <ul>
+          {% for question_id, question_num in question_ids_nums %}
+            {% if question_id == question.id %}
+              <li class="list active">
+            {% else %}
+              <li class="list">
+            {% endif %}
+                  <a href="{% url 'deimos:answer_question' question_id=question_id assignment_id=assignment_id course_id=course_id %}">
+                      <span class="icon">{{question_num}}</span>    
+                  </a>
+              </li>
+          {% endfor %}  
+    
+            <div class="indicator"></div>
+        </ul>
+      </div>  
 
-  </div>
   
-  </div>
-
-  <div id="questions-navigator">
+    </div>
+  
 
 
 {% endblock %}
