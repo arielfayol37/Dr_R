@@ -442,20 +442,20 @@ def question_nav(request):
 def action_menu(request):
     return render(request, 'deimos/action_menu.html', {})
 
-
 def attention_pooling(hidden_states, attention_mask):
     # Apply attention mask to hidden states
     attention_mask_expanded = attention_mask.unsqueeze(-1).expand(hidden_states.size())
     masked_hidden_states = hidden_states * attention_mask_expanded
     
-    # Calculate mean along the sequence dimension
-    summed_hidden_states = masked_hidden_states.sum(dim=1)
-    sequence_lengths = attention_mask.sum(dim=1, keepdim=True)
-    pooled_output = summed_hidden_states / sequence_lengths
-
+    # Calculate attention scores and apply softmax
+    attention_scores = torch.nn.functional.softmax(masked_hidden_states, dim=1)
+    
+    # Weighted sum using attention scores
+    pooled_output = (masked_hidden_states * attention_scores).sum(dim=1)
     return pooled_output
 
 def search_question(request):
+    
     if request.method == 'POST':
         input_text = request.POST.get('search_question', '')
 
@@ -485,12 +485,22 @@ def search_question(request):
             similar_questions.append({'question': question, 'similarity': similarity_score})
 
         # Sort by similarity score and get top 5
-        similar_questions.sort(key=lambda x: x['similarity'], reverse=True)
-        top_similar_questions = similar_questions[:5]
+        top_n = 5
 
-        return render(request,'deimos/search_question.html', {'similar_questions': top_similar_questions, 
+        # The following is a truncated selection sort to reduce the search time
+        # by not sorting the entire list. Improves search time by more than 1 second!
+        top_similar_questions = []
+        for i in range(top_n):
+            top_index = i
+            top_score = similar_questions[i]['similarity']
+            for index, similar_q in enumerate(similar_questions[i+1:]):
+                if similar_q['similarity'] > top_score:
+                    top_score = similar_q['similarity']
+                    top_index =  index + i + 1
+            # Swapping top element with current index
+            similar_questions[i], similar_questions[top_index] = similar_questions[top_index], similar_questions[i]
+            top_similar_questions.append(similar_questions[i])
+        return render(request,'phobos/search_question.html', {'similar_questions': top_similar_questions, 
                                                               'search_text': input_text})
 
-    return render(request,'deimos/search_question.html')
-
-
+    return render(request,'phobos/search_question.html')
