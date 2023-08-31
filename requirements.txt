@@ -5,4 +5,4 @@ pillow
 torch
 transformers
 numpy
-sklearn
+scikit-learn
