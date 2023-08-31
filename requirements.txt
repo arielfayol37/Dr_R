@@ -2,3 +2,6 @@ django
 django-extensions
 sympy
 pillow
+torch
+transformers
+numpy
