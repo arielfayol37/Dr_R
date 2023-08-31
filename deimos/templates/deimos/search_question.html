@@ -7,7 +7,11 @@
     <form action="{% url 'deimos:search_question' %}" method="post" id="search-form">
         {% csrf_token %} 
         <div id="sf-container">
-            <input  id="search-field" type="text" name="search_question" placeholder="search question"/>
+            {% if search_text %}
+                <input  id="search-field" type="text" name="search_question" placeholder="search question" value="{{search_text}}"/>
+            {% else %}
+                <input  id="search-field" type="text" name="search_question" placeholder="search question" />
+            {% endif %}
         </div>
     </form>
     <br/>

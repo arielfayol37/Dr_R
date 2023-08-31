@@ -527,6 +527,7 @@ def search_question(request):
         similar_questions.sort(key=lambda x: x['similarity'], reverse=True)
         top_similar_questions = similar_questions[:5]
 
-        return render(request,'phobos/search_question.html', {'similar_questions': top_similar_questions})
+        return render(request,'phobos/search_question.html', {'similar_questions': top_similar_questions, 
+                                                              'search_text': input_text})
 
     return render(request,'phobos/search_question.html')

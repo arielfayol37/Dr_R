@@ -24,4 +24,5 @@ document.addEventListener('DOMContentLoaded',()=>{
         searchField.style.height = 'auto'; // Reset the height to auto
         searchField.style.height = (searchField.scrollHeight) + 'px'; // Set the height to match the content
     });
+    searchField.dispatchEvent(new Event('input'));
 })

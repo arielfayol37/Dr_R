@@ -488,7 +488,8 @@ def search_question(request):
         similar_questions.sort(key=lambda x: x['similarity'], reverse=True)
         top_similar_questions = similar_questions[:5]
 
-        return render(request,'deimos/search_question.html', {'similar_questions': top_similar_questions})
+        return render(request,'deimos/search_question.html', {'similar_questions': top_similar_questions, 
+                                                              'search_text': input_text})
 
     return render(request,'deimos/search_question.html')
 
