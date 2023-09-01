@@ -3,8 +3,13 @@ Web platform for Assigments System.
 
 This is the README file for the Dr_R web application built using Django. The application is designed to provide different functionalities for students (Deimos), instructors (Phobos), and general users (Astros).
 
-## Features
-
+## Impressive Features
+- Algebraic expressions symbolic comparisons
+- Semantic search engine
+- Ability to take Notes for any question and come back to the later
+- Supports latex input for equations
+- Randomized variables for both multiple choice and structural questions
+- Supports images in question body and mcq input
 ### Deimos (Student Interface)
 
 - Students can access various courses.
@@ -95,7 +100,7 @@ When contributing code, please adhere to the project's coding style and conventi
 
 ## Bug Reports and Feature Requests
 
-If you encounter a bug in the application or have a feature request, please [open an issue](https://github.com/your-username/deimos-phobos-astros/issues). We value your feedback and appreciate your input.
+If you encounter a bug in the application or have a feature request, please [open an issue](https://github.com/arielfayol37/Dr_r/issues). We value your feedback and appreciate your input.
 
 ## Contact
 
