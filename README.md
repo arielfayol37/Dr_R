@@ -10,6 +10,7 @@ This is the README file for the Dr_R web application built using Django. The app
 - Supports latex input for equations
 - Randomized variables for both multiple choice and structural questions
 - Supports images in question body and mcq input
+- Coming soon: customized automated practice tests
 ### Deimos (Student Interface)
 
 - Students can access various courses.
