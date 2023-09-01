@@ -1,5 +1,7 @@
 # PHOBOS
 Here are the two least straight forward phobos views.
+## Table of contents
+1. [Search Question View](#search_question-View)
 ## `search_question` View
 
 The `search_question` view is responsible for enabling users to search for questions that are similar based on a search input. This view utilizes BERT embeddings to compute the cosine similarity between the input text and the text of stored questions. It then presents the top similar questions to the user.
