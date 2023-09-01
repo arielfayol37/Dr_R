@@ -2,13 +2,13 @@
 
 ## GENERAL Table of contents
 
-1.1 [Models](#models.py-Python-Code-Documentation-for-phobos)
+1.1 [Models](#models-Python-Code-Documentation-for-phobos)
 2.1 [Search Question View](#search_question-View)
 2.2 [Create_Question_View](#create_question-View)
 3.1 [Javascript Documentation for question creation (answer_input.js)](#JavaScript-Code-Documentation-for-Create-Question-in-PHOBOS)
 3.2 [Javascript Documentation for calci (the high precision calculator)](#javascript-documentation-for-calci-the-embedded-high-precision-calculator)
 
-# `models.py` - Python Code Documentation for phobos
+# `models` - Python Code Documentation for phobos
 
 `models.py` is part of the Django application for the Phobos platform and contains Django models for various aspects of the platform, such as courses, assignments, questions, and more.
 
