@@ -1,10 +1,145 @@
 # PHOBOS
-Here are the two least straight forward phobos views.
-## Table of contents
-1. [Search Question View](#search_question-View)
-2. [Create_Question_View](#create_question-View)
-3. [Javascript Documentation for question creation (answer_input.js)](#JavaScript-Code-Documentation-for-Create-Question-in-PHOBOS)
-4. [Javascript Documentation for calci (the high precision calculator)](#javascript-documentation-for-calci-the-embedded-high-precision-calculator)
+## GENERAL Table of contents
+1.1 [Models](#models.py-Python-Code-Documentation-for-phobos)
+2.1 [Search Question View](#search_question-View)
+2.2 [Create_Question_View](#create_question-View)
+3.1 [Javascript Documentation for question creation (answer_input.js)](#JavaScript-Code-Documentation-for-Create-Question-in-PHOBOS)
+3.2 [Javascript Documentation for calci (the high precision calculator)](#javascript-documentation-for-calci-the-embedded-high-precision-calculator)
+# `models.py` - Python Code Documentation for phobos
+
+`models.py` is part of the Django application for the Phobos platform and contains Django models for various aspects of the platform, such as courses, assignments, questions, and more.
+
+## MODELS Table of Contents
+
+- [Difficulty and Subject Choices](#difficulty-and-subject-choices)
+- [Course](#course)
+- [Professor](#professor)
+- [Topic and SubTopic](#topic-and-subtopic)
+- [Assignment](#assignment)
+- [Question](#question)
+- [QuestionImage](#questionimage)
+- [Hint](#hint)
+- [FloatAnswer](#floatanswer)
+- [VariableFloatAnswer](#variablefloatanswer)
+- [ExpressionAnswer](#expressionanswer)
+- [LatexAnswer](#latexanswer)
+- [TextAnswer](#textanswer)
+- [MCQFloatAnswer](#mcqfloatanswer)
+- [MCQVariableFloatAnswer](#mcqvariablefloatanswer)
+- [MCQExpressionAnswer](#mcqexpressionanswer)
+- [MCQLatexAnswer](#mcqlatexanswer)
+- [MCQTextAnswer](#mcqtextanswer)
+- [MCQImageAnswer](#mcqimageanswer)
+- [Variable](#variable)
+- [VariableInstance](#variableinstance)
+- [VariableInterval](#variableinterval)
+- [VectorAnswer](#vectoranswer)
+
+## Difficulty and Subject Choices
+
+Phobos uses the following choices for difficulty and subject:
+
+- Difficulty:
+  - Easy
+  - Medium
+  - Difficult
+
+- Subject:
+  - Computer Science
+  - Maths
+  - Physics
+
+## Course
+
+The `Course` model represents a course on the Phobos platform, with attributes such as name, description, subject, number of students, difficulty level, professors, topics, timestamp, and an optional image.
+
+## Professor
+
+The `Professor` model represents professors on the platform and extends the built-in Django `User` model with a department field.
+
+## Topic and SubTopic
+
+The `Topic` model represents course topics, while the `SubTopic` model represents subtopics associated with topics.
+
+## Assignment
+
+The `Assignment` model represents assignments, including quizzes, homework, and practice tests, with attributes such as name, course, timestamp, due date, assigned date, difficulty level, and category.
+
+## Question
+
+The `Question` model represents questions, which can be standalone or part of an assignment. It includes attributes such as number, text, assignment, category, topic, sub-topic, number of points, parent question, timestamp, difficulty level, answer type, maximum number of attempts, answer, deduction per attempt, margin of error, and due date.
+
+## QuestionImage
+
+The `QuestionImage` model represents images associated with questions, allowing for additional context or image-based multiple-choice options.
+
+## Hint
+
+The `Hint` model represents hints for questions, providing additional guidance for solving questions.
+
+## FloatAnswer
+
+The `FloatAnswer` model represents float-type answers for structural questions, such as algebraic expressions or numerical values.
+
+## VariableFloatAnswer
+
+The `VariableFloatAnswer` model represents variable float answers for structural questions, allowing variables with different values for different users.
+
+## ExpressionAnswer
+
+The `ExpressionAnswer` model represents expression answers for structural questions, which are compared to teacher-provided expressions.
+
+## LatexAnswer
+
+The `LatexAnswer` model represents Latex answers for multiple-choice questions (MCQs).
+
+## TextAnswer
+
+The `TextAnswer` model represents text answers for questions, which may include semantic validation using transformers.
+
+## MCQFloatAnswer
+
+The `MCQFloatAnswer` model represents float-type answers for MCQs, including correct and incorrect options.
+
+## MCQVariableFloatAnswer
+
+The `MCQVariableFloatAnswer` model represents variable float answers for MCQs, allowing different variable values for different users.
+
+## MCQExpressionAnswer
+
+The `MCQExpressionAnswer` model represents expression answers for MCQs, with both correct and incorrect options.
+
+## MCQLatexAnswer
+
+The `MCQLatexAnswer` model represents Latex answers for MCQs, with both correct and incorrect options.
+
+## MCQTextAnswer
+
+The `MCQTextAnswer` model represents text answers for MCQs, with both correct and incorrect options.
+
+## MCQImageAnswer
+
+The `MCQImageAnswer` model represents image answers for MCQs, including correct and incorrect options.
+
+## Variable
+
+The `Variable` model represents variables associated with questions, allowing different instances of variables to be assigned to different users.
+
+## VariableInstance
+
+The `VariableInstance` model represents instances of variables associated with questions.
+
+## VariableInterval
+
+The `VariableInterval` model represents intervals for variables, defining the range of values for variables.
+
+## VectorAnswer
+
+The `VectorAnswer` model (deprecated) represented vector-type answers for structural questions. It was stored as a float array.
+
+This documentation provides an overview of the Django models used in the Phobos platform for course management, assignments, and questions. For detailed information on each model and its attributes, please refer to the code in `models.py`.
+
+
 ## `search_question` View
 
 The `search_question` view is responsible for enabling users to search for questions that are similar based on a search input. This view utilizes BERT embeddings to compute the cosine similarity between the input text and the text of stored questions. It then presents the top similar questions to the user.
@@ -207,3 +342,4 @@ For images, each time one is uploaded (not submitted), we render the uploaded im
 - `replaceChars(str, charA, charB)`: Replaces all occurrences of `charA` with `charB` in the given string `str`.
 
 - `processString(str)`: Processes the input string by replacing characters defined in the `replacementDict` dictionary with their corresponding replacements.
+
