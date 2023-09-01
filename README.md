@@ -37,5 +37,8 @@ This is the README file for the Dr_R web application built using Django. The app
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/arielfayol37/Dr_r.git
-cd Dr_r
+git clone https://github.com/arielfayol37/Dr_r.git ```
+
+2. Change directory:
+```bash
+cd Dr_r ```
