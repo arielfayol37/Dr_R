@@ -1,3 +1,4 @@
+#python3 phobos:views.py
 import json
 from urllib.parse import urlparse
 from urllib.parse import unquote  # Import unquote for URL decoding
@@ -23,7 +24,7 @@ import torch
 from sklearn.metrics.pairwise import cosine_similarity
 from transformers import BertTokenizer, BertModel
 from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
-import time
+import heapq
 
 
 # Create your views here.
@@ -527,21 +528,8 @@ def search_question(request):
             similar_questions.append({'question': question, 'similarity': similarity_score})
 
         # Sort by similarity score and get top 5
-        top_n = 5
-
-        # The following is a truncated selection sort to reduce the search time
-        # by not sorting the entire list. Improves search time by more than 1 second!
-        top_similar_questions = []
-        for i in range(top_n):
-            top_index = i
-            top_score = similar_questions[i]['similarity']
-            for index, similar_q in enumerate(similar_questions[i+1:]):
-                if similar_q['similarity'] > top_score:
-                    top_score = similar_q['similarity']
-                    top_index =  index + i + 1
-            # Swapping top element with current index
-            similar_questions[i], similar_questions[top_index] = similar_questions[top_index], similar_questions[i]
-            top_similar_questions.append(similar_questions[i])
+        top_n = 10
+        top_similar_questions = heapq.nlargest(top_n, similar_questions, key=lambda x: x['similarity'])
         return render(request,'phobos/search_question.html', {'similar_questions': top_similar_questions, 
                                                               'search_text': input_text})
 
