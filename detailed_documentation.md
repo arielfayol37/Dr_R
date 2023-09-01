@@ -74,7 +74,7 @@ The `Question` model represents questions, which can be standalone or part of an
 
 ## QuestionImage
 
-The `QuestionImage` model represents images associated with questions, allowing for additional context or image-based multiple-choice options.
+The `QuestionImage` model represents images associated with questions, allowing for additional context.
 
 ## Hint
 
