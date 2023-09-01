@@ -2,6 +2,9 @@
 Here are the two least straight forward phobos views.
 ## Table of contents
 1. [Search Question View](#search_question-View)
+2. [Create_Question_View](#create_question-View)
+3. [Javascript Documentation for question creation (answer_input.js)](#JavaScript-Code-Documentation-for-Create-Question-in-PHOBOS)
+4. [Javascript Documentation for calci (the high precision calculator)](#javascript-documentation-for-calci-the-embedded-high-precision-calculator)
 ## `search_question` View
 
 The `search_question` view is responsible for enabling users to search for questions that are similar based on a search input. This view utilizes BERT embeddings to compute the cosine similarity between the input text and the text of stored questions. It then presents the top similar questions to the user.
