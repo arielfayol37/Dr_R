@@ -1,42 +1,45 @@
 # PHOBOS
 
 ## GENERAL Table of contents
+# PHOBOS
 
-1.1 [Models](#models-Python-Code-Documentation-for-phobos)
-2.1 [Search Question View](#search_question-View)
-2.2 [Create_Question_View](#create_question-View)
-3.1 [Javascript Documentation for question creation (answer_input.js)](#JavaScript-Code-Documentation-for-Create-Question-in-PHOBOS)
-3.2 [Javascript Documentation for calci (the high precision calculator)](#javascript-documentation-for-calci-the-embedded-high-precision-calculator)
+## Table of Contents
+
+1. [Models](#models-python-code-documentation-for-phobos)
+   1.1 [General](#general)
+   1.2 [Difficulty and Subject Choices](#difficulty-and-subject-choices)
+   1.3 [Course](#course)
+   1.4 [Professor](#professor)
+   1.5 [Topic and SubTopic](#topic-and-subtopic)
+   1.6 [Assignment](#assignment)
+   1.7 [Question](#question)
+   1.8 [QuestionImage](#questionimage)
+   1.9 [Hint](#hint)
+   1.10 [FloatAnswer](#floatanswer)
+   1.11 [VariableFloatAnswer](#variablefloatanswer)
+   1.12 [ExpressionAnswer](#expressionanswer)
+   1.13 [LatexAnswer](#latexanswer)
+   1.14 [TextAnswer](#textanswer)
+   1.15 [MCQFloatAnswer](#mcqfloatanswer)
+   1.16 [MCQVariableFloatAnswer](#mcqvariablefloatanswer)
+   1.17 [MCQExpressionAnswer](#mcqexpressionanswer)
+   1.18 [MCQLatexAnswer](#mcqlatexanswer)
+   1.19 [MCQTextAnswer](#mcqtextanswer)
+   1.20 [MCQImageAnswer](#mcqimageanswer)
+   1.21 [Variable](#variable)
+   1.22 [VariableInstance](#variableinstance)
+   1.23 [VariableInterval](#variableinterval)
+   1.24 [VectorAnswer](#vectoranswer)
+
+2. [Search Question View](#search-question-view)
+3. [Create Question View](#create-question-view)
+4. [JavaScript Documentation for Question Creation (answer_input.js)](#javascript-code-documentation-for-create-question-in-phobos)
+5. [JavaScript Documentation for CALCI (the High Precision Calculator)](#javascript-documentation-for-calci-the-embedded-high-precision-calculator)
+
 
 # `models` - Python Code Documentation for phobos
 
 `models.py` is part of the Django application for the Phobos platform and contains Django models for various aspects of the platform, such as courses, assignments, questions, and more.
-
-## MODELS Table of Contents
-
-- [Difficulty and Subject Choices](#difficulty-and-subject-choices)
-- [Course](#course)
-- [Professor](#professor)
-- [Topic and SubTopic](#topic-and-subtopic)
-- [Assignment](#assignment)
-- [Question](#question)
-- [QuestionImage](#questionimage)
-- [Hint](#hint)
-- [FloatAnswer](#floatanswer)
-- [VariableFloatAnswer](#variablefloatanswer)
-- [ExpressionAnswer](#expressionanswer)
-- [LatexAnswer](#latexanswer)
-- [TextAnswer](#textanswer)
-- [MCQFloatAnswer](#mcqfloatanswer)
-- [MCQVariableFloatAnswer](#mcqvariablefloatanswer)
-- [MCQExpressionAnswer](#mcqexpressionanswer)
-- [MCQLatexAnswer](#mcqlatexanswer)
-- [MCQTextAnswer](#mcqtextanswer)
-- [MCQImageAnswer](#mcqimageanswer)
-- [Variable](#variable)
-- [VariableInstance](#variableinstance)
-- [VariableInterval](#variableinterval)
-- [VectorAnswer](#vectoranswer)
 
 ## Difficulty and Subject Choices
 
