@@ -37,8 +37,71 @@ This is the README file for the Dr_R web application built using Django. The app
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/arielfayol37/Dr_r.git ```
+git clone https://github.com/arielfayol37/Dr_r.git
+```
 
-2. Change directory:
+2. Change into the project directory:
 ```bash
-cd Dr_r ```
+cd Dr_r
+```
+
+3. Create virtual environment (optional):
+```bash
+python3 -m venv venv
+```
+
+4. Activate the virtual environment
+  a. On macOS and Linux:
+  ```bash
+  source venv/bin/activate
+  ```
+  b. On Windows:
+  ```bash
+  venv\Scripts\activate
+  ```
+
+5. Install reqiored packages:
+```bash
+pip install -r requirements.txt
+```
+
+6. Run migrations:
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+7. Run the development server:
+```bash
+python manage.py runserver
+```
+Then copy and paste the url from the terminal to your browser.
+
+## Contributing
+
+Contributions are welcome! If you'd like to contribute to the project, please follow these steps:
+
+1. Fork the repository.
+2. Create a new branch for your feature or bug fix.
+3. Make your changes and commit them.
+4. Push your changes to your fork.
+5. Create a pull request to the main repository.
+
+We appreciate your contributions and thank you for helping make this project better!
+
+## Code Style
+
+When contributing code, please adhere to the project's coding style and conventions. This ensures that the codebase remains consistent and easy to maintain.
+
+## Bug Reports and Feature Requests
+
+If you encounter a bug in the application or have a feature request, please [open an issue](https://github.com/your-username/deimos-phobos-astros/issues). We value your feedback and appreciate your input.
+
+## Contact
+
+If you have any questions or need assistance, feel free to reach out to the project maintainers or open a discussion in the repository.
+
+## License
+
+This project is licensed under the MIT License. By contributing to this project, you agree to abide by the terms of this license. See the [LICENSE](LICENSE) file for details.
+
