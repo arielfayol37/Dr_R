@@ -1,5 +1,5 @@
 # Dr_R
-Web platform for Assigments System.
+Web platform for Physics Assigments System.
 
 This is the README file for the Dr_R web application built using Django. The application is designed to provide different functionalities for students (Deimos), instructors (Phobos), and general users (Astros).
 
