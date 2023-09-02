@@ -22,8 +22,6 @@
     <ul class="courses course-list">
         {% for similar_question in similar_questions %}
             {% include 'deimos/question_display.html' with question=similar_question.question assignment_id=similar_question.question.assignment.id course_id=similar_question.question.assignment.course.id%}
-        {% empty %}
-            <h3>Sorry, no matches Found</h3>
         {% endfor %}
     </ul>
 

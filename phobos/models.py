@@ -182,6 +182,7 @@ class Question(models.Model):
     deduct_per_attempt = models.FloatField(default=0.05, blank=True, null=True)
     margin_error = models.FloatField(default=0.03, blank=True, null=True)
     due_date = models.DateTimeField(null=True, blank=True)
+    embedding = models.JSONField(null=True, blank=True)  # Field to store encoded representation for search
 
     def default_due_date(self):
         if self.assignment:
