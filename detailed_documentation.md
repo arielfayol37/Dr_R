@@ -347,9 +347,9 @@ For images, each time one is uploaded (not submitted), we render the uploaded im
 - `processString(str)`: Processes the input string by replacing characters defined in the `replacementDict` dictionary with their corresponding replacements.
 
   # DEIMOS (Student app)
-0 [Jump to Phobos (Instructor App)](#Phobos-Instructor-App)
-1 [Models](#Deimos-MODELS)
-2 [Views](#Deimos-Views)
+0. [Jump to Phobos (Instructor App)](#Phobos-Instructor-App)
+1. [Models](#Deimos-MODELS)
+2. [Views](#Deimos-Views)
    2.1 [Index View](#index-view)
    2.2 [Course Management View](#course-management-view)
    2.3 [Assignment Management View](#assignment-management-view)
@@ -357,7 +357,7 @@ For images, each time one is uploaded (not submitted), we render the uploaded im
    2.5 [Answer Question View](#answer-question-view)
    2.6 [Validate Answer View (API Endpoint)](#validate-answer-view-api-endpoint)
    2.7 [Authentication Views](#authentication-views)
-3 [Helper Functions](#helper-functions)
+3. [Helper Functions](#helper-functions)
    3.1 [is_student_enrolled(student_id, course_id)](#is_student_enrolledstudent_id-course_id)
    3.3 [extract_numbers(text)](#extract_numberstext)
    3.4 [compare_expressions(expression1, expression2)](#compare_expressionsexpression1-expression2)
