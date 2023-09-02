@@ -482,8 +482,8 @@ def search_question(request):
         # Sort by similarity score and get top 10
         top_n = 10
         top_similar_questions = heapq.nlargest(top_n, similar_questions, key=lambda x: x['similarity'])
-        return render(request, 'phobos/search_question.html', {'similar_questions': top_similar_questions,\
+        return render(request, 'deimos/search_question.html', {'similar_questions': top_similar_questions,\
                                                                'search_text': input_text}) 
                                        
 
-    return render(request,'phobos/search_question.html')
+    return render(request,'deimos/search_question.html')

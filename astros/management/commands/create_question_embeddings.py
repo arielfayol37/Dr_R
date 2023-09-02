@@ -1,10 +1,10 @@
 from django.core.management.base import BaseCommand
 import torch
 from transformers import BertTokenizer, BertModel
-from phobos.models import Question
-from phobos.views import attention_pooling
+from phobos.models import Question, attention_pooling
 
 class Command(BaseCommand):
+    """ Calculates the embeddings of all the questions in the system. """
     help = 'Create question embeddings'
 
     def handle(self, *args, **options):
