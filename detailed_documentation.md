@@ -28,8 +28,8 @@
    1.23 [VariableInterval](#variableinterval)
    1.24 [VectorAnswer](#vectoranswer)
 
-2. [Search Question View](#search-question-view)
-3. [Create Question View](#create-question-view)
+2. [Search Question View](#search_question-view)
+3. [Create Question View](#create_question-view)
 4. [JavaScript Documentation for Question Creation (answer_input.js)](#javascript-code-documentation-for-create-question-in-phobos)
 5. [JavaScript Documentation for CALCI (the High Precision Calculator)](#javascript-documentation-for-calci-the-embedded-high-precision-calculator)
 
