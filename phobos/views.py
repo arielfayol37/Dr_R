@@ -19,10 +19,7 @@ from django.middleware import csrf
 from django.utils.timesince import timesince
 from deimos.models import AssignmentStudent, Student, QuestionStudent
 
-import numpy as np
-import torch
 from sklearn.metrics.pairwise import cosine_similarity
-from transformers import BertTokenizer, BertModel
 from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
 import heapq
 
@@ -485,20 +482,8 @@ def get_questions(request, student_id, assignment_id, course_id=None):
     question_details= json.dumps(question_details)
     return HttpResponse(question_details)
 
-def attention_pooling(hidden_states, attention_mask):
-    # Apply attention mask to hidden states
-    attention_mask_expanded = attention_mask.unsqueeze(-1).expand(hidden_states.size())
-    masked_hidden_states = hidden_states * attention_mask_expanded
-    
-    # Calculate attention scores and apply softmax
-    attention_scores = torch.nn.functional.softmax(masked_hidden_states, dim=1)
-    
-    # Weighted sum using attention scores
-    pooled_output = (masked_hidden_states * attention_scores).sum(dim=1)
-    return pooled_output
 
 def search_question(request):
-    
     if request.method == 'POST':
         input_text = request.POST.get('search_question', '')
 
@@ -512,26 +497,23 @@ def search_question(request):
         # Apply attention-based pooling to encoded output
         encoded_output_pooled = attention_pooling(encoded_output, attention_mask)
 
-        # Calculate cosine similarity with stored question objects
-        similar_questions = []
-        for question in Question.objects.all():
-            question_tokens = BERT_TOKENIZER.encode(question.text, add_special_tokens=True)
-            with torch.no_grad():
-                question_tensor = torch.tensor([question_tokens])
-                question_attention_mask = (question_tensor != 0).float()  # Create attention mask
-                question_encoded_output = BERT_MODEL(question_tensor, attention_mask=question_attention_mask)[0]
+        # Retrieve all question objects from the database
+        all_questions = Question.objects.all()
 
-            # Apply attention-based pooling to question encoded output
-            question_encoded_output_pooled = attention_pooling(question_encoded_output, question_attention_mask)
+        # Calculate cosine similarity with stored question encodings
+        similar_questions = []
+        for question in all_questions:
+            question_encoded_output_pooled = torch.tensor(question.embedding)  # Load pre-computed encoding
 
             similarity_score = cosine_similarity(encoded_output_pooled, question_encoded_output_pooled).item()
             similar_questions.append({'question': question, 'similarity': similarity_score})
 
-        # Sort by similarity score and get top 5
+        # Sort by similarity score and get top 10
         top_n = 10
         top_similar_questions = heapq.nlargest(top_n, similar_questions, key=lambda x: x['similarity'])
-        return render(request,'phobos/search_question.html', {'similar_questions': top_similar_questions, 
-                                                              'search_text': input_text})
+        return render(request, 'phobos/search_question.html', {'similar_questions': top_similar_questions,\
+                                                               'search_text': input_text}) 
+                                       
 
     return render(request,'phobos/search_question.html')
 

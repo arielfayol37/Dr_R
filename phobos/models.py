@@ -4,6 +4,21 @@ from django.contrib.auth.models import User
 #from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
 import random
+from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
+import torch
+
+def attention_pooling(hidden_states, attention_mask):
+    # Apply attention mask to hidden states
+    attention_mask_expanded = attention_mask.unsqueeze(-1).expand(hidden_states.size())
+    masked_hidden_states = hidden_states * attention_mask_expanded
+    
+    # Calculate attention scores and apply softmax
+    attention_scores = torch.nn.functional.softmax(masked_hidden_states, dim=1)
+    
+    # Weighted sum using attention scores
+    pooled_output = (masked_hidden_states * attention_scores).sum(dim=1)
+    return pooled_output
+
 class DifficultyChoices(models.TextChoices):
     EASY = 'EASY', 'Easy'
     MEDIUM = 'MEDIUM', 'Medium'
@@ -182,6 +197,7 @@ class Question(models.Model):
     deduct_per_attempt = models.FloatField(default=0.05, blank=True, null=True)
     margin_error = models.FloatField(default=0.03, blank=True, null=True)
     due_date = models.DateTimeField(null=True, blank=True)
+    embedding = models.JSONField(null=True, blank=True)  # Field to store encoded representation for search
 
     def default_due_date(self):
         if self.assignment:
@@ -191,7 +207,22 @@ class Question(models.Model):
     def save(self, *args, **kwargs):
         if self.due_date is None:
             self.due_date = self.default_due_date()
+
+        if not self.embedding:
+            question_tokens = BERT_TOKENIZER.encode(self.text, add_special_tokens=True)
+            with torch.no_grad():
+                question_tensor = torch.tensor([question_tokens])
+                question_attention_mask = (question_tensor != 0).float()  # Create attention mask
+                question_encoded_output = BERT_MODEL(question_tensor, attention_mask=question_attention_mask)[0]
+
+            # Apply attention-based pooling to question encoded output
+            question_encoded_output_pooled = attention_pooling(question_encoded_output, question_attention_mask)
+
+            # Save the encoded output to the question object
+            self.embedding = question_encoded_output_pooled.tolist()
+
         super(Question, self).save(*args, **kwargs)
+
 
     def __str__(self):
         return f"Question {self.number} ranked {self.difficulty_level} for {self.assignment}"

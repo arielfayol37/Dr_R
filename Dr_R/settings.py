@@ -133,6 +133,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 import torch
 from transformers import BertTokenizer, BertModel
 
+
 # Load pre-trained BERT model and tokenizer
 BERT_MODEL_NAME = 'bert-base-uncased'
 bert_tokenizer = BertTokenizer.from_pretrained(BERT_MODEL_NAME)
@@ -142,3 +143,4 @@ bert_model.eval()
 # Add these to your Django settings
 BERT_TOKENIZER = bert_tokenizer
 BERT_MODEL = bert_model
+
