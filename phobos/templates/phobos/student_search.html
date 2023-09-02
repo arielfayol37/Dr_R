@@ -19,7 +19,7 @@
 <p><b>{{length }} matches found:</b>
     <ul>
         {% for student in entries %}
-            <li><a href="{% url 'phobos:student_profile' course.id  student.id %}"> {{ student.last_name }} {{student.first_name}} </a></li>
+            <li><a href="{% url 'phobos:student_profile' course.id  student.id %}"> {{ student.last_name }} {{student.first_name}} :::  <p>{{student.email}}</p> </a></li>
         {% empty %}
         <p> Couldn't find any student with name <b>"{{search}}" </b></p>
         {% endfor %}

@@ -79,8 +79,8 @@
 .menu ul li{
     list-style: none;
     cursor: pointer;
-    opacity: 0;
-    visibility: hidden;
+    opacity: 1;
+    visibility: visible;
     transform: translateY(-30px);
     transition: 0.25s;
     transition-delay: calc(0s + var(--i));

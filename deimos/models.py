@@ -258,3 +258,12 @@ def transform_expression(expr):
         strs.append(string)
     transformed_expression = ''.join(strs)   
     return transformed_expression
+
+class QuestionNote(models.Model):
+    question=models.ForeignKey(QuestionStudent, on_delete=models.CASCADE, related_name='question_note')
+    content = models.CharField(max_length=1000)
+
+    def __str__(self):
+        return f"mote number: {self.content} in question {self.question.id}"
+    
+

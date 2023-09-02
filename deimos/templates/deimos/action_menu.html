@@ -4,8 +4,8 @@
     <div class="menu">
         <ul>
             <li style="--i:0.1s;">
-                <a href="#"><ion-icon name="pencil-outline"></ion-icon>
-                </a>
+                <button id="note"><ion-icon name="pencil-outline"></ion-icon>note
+                </button>
             </li>
             <li style="--i:0.2s;">
                 <a href="#"><ion-icon name="camera-outline"></ion-icon>
@@ -18,3 +18,146 @@
         </ul>
     </div>
 </div>
+<script>
+
+chat_box = document.createElement('div');
+chat_box.id= 'chatbox';
+
+function generate_chat(chat){
+    console.log(chat,chat.content,chat.id);
+                chat_div = document.createElement('div');
+    chat_div.id = chat.id;
+    text_div = document.createElement('div');
+    text = document.createElement('input');
+    text.type='textarea';
+    text.value = chat.content;
+    edit_btn = document.createElement('input');
+    edit_btn.type='button';
+    edit_btn.value='edit';
+    edit_btn.addEventListener('click',(event)=>{
+        event.preventDefault();
+        console.log(event.target.value)
+        edit_chat(chat_div,chat);
+    } )
+    delete_btn = document.createElement('input');
+    delete_btn.type='button';
+    delete_btn.value='delete';
+    delete_btn.addEventListener('click',(event)=>{
+        event.preventDefault();
+        text_div.parentNode.removeChild(text_div);
+        delete_chat(chat_div);
+    } )
+
+    text_div.append(text);
+    text_div.append(edit_btn);
+    text_div.append(delete_btn);   
+    chat_div.append(text_div)
+    chat_box.append(chat_div);
+}
+
+function save_chat(content){
+
+    t=fetch(`/deimos/save_note/${encodeURIComponent(content)}/{{question.id}}`)
+    t.then(response=>response.json()).then(chat=>{
+                //load_note
+                generate_chat(chat)
+    })
+    console.log(t)
+}
+
+
+
+function New_chat(div,initial_content,action){
+    text=document.createElement('textarea');
+    text.value=initial_content;
+
+    save=document.createElement('input');
+    save.type='button';
+    save.value='save';
+    save.addEventListener('click', (event)=>{
+        event.preventDefault();
+        form.parentNode.removeChild(form);
+        if(action==='save'){
+    save_chat(text.value);}
+        else if(action === 'edit'){
+    save_edit(text.value,div.id)
+        }
+        
+
+    })
+
+        cancel=document.createElement('input');
+    cancel.value='cancel';
+    cancel.type= 'button'
+    cancel.addEventListener('click',(event)=>{
+        event.preventDefault();
+        div.removeChild(form);
+
+    })
+    form= document.createElement('form');
+    form.append(text);
+    form.append(save);
+    form.append(cancel);
+  
+    div.append(form);
+    form.scrollIntoView(false);
+    
+}
+
+function edit_chat(chat_div,content){
+    chat_div.querySelector('div').style.display = 'none';
+    New_chat(chat_div,content,'edit');
+
+}
+
+function save_edit(Newcontent,chat_id){
+
+    t=fetch(`/deimos/edit_note/${encodeURIComponent(Newcontent)}/${encodeURIComponent(chat_id)}`)
+    t.then(response=>response.json()).then(chat=>{
+                //load_note
+                generate_chat(chat)
+    })
+    console.log(t)
+}
+function delete_chat(chat_div){
+    chat_div.querySelector('div').style.display = 'none';
+    console.log(content,encodeURIComponent(content),typeof(content))
+    t=fetch(`/deimos/delete_note/${encodeURIComponent(chat_div.id)}`)
+    t.then(response=>response.json()).then(chat=>{
+                //load_note
+                chat_div.apppend(chat)
+    })
+    console.log(t)
+}
+
+function Load_chats(chats,chat_box){
+for (i=0; i<chats.length; i++){
+        chat=chats[i];
+     generate_chat(chat);
+}
+
+}
+
+function Chat_box(){
+fetch(`/deimos/get_notes/{{question.id}}`)
+.then(response=>response.json())
+.then(chats => {
+    Load_chats(chats,chat_box);
+})
+new_btn= document.createElement('input');
+new_btn.value= 'New_note';
+new_btn.type='button';
+chat_box.append(new_btn);
+new_btn.addEventListener('click',(event)=>{
+    event.preventDefault();
+    New_chat(chat_box,'kdjfls','save');
+    
+});
+
+document.body.append(chat_box);
+chat_box.scrollIntoView(true);
+}
+
+note = document.querySelector('#note');
+note.addEventListener('click',Chat_box);
+</script>
