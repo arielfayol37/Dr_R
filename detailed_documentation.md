@@ -346,3 +346,289 @@ For images, each time one is uploaded (not submitted), we render the uploaded im
 
 - `processString(str)`: Processes the input string by replacing characters defined in the `replacementDict` dictionary with their corresponding replacements.
 
+  # DEIMOS
+## `Deimos MODELS`
+## Student Class
+
+The `Student` class is used to represent students on the platform. It extends the `User` class.
+
+### Attributes
+
+- `courses`: A many-to-many relationship with `Course` through the `Enrollment` model.
+- `assignments`: A many-to-many relationship with `Assignment` through the `AssignmentStudent` model.
+- `questions`: A many-to-many relationship with `Question` through the `QuestionStudent` model.
+
+### TODOs
+
+- Profile pictures can be added if needed.
+- School name may be added if the platform scales.
+
+## Note Class
+
+The `Note` class is used to allow students to write notes for questions.
+
+### Attributes
+
+- `student`: A foreign key to the `Student` model.
+- `question`: A foreign key to the `Question` model.
+- `content`: Text content of the note.
+
+## NoteImage Class
+
+The `NoteImage` class is used to store images in a student's notes for a particular question.
+
+### Attributes
+
+- `note`: A foreign key to the `Note` model.
+- `image`: An image field for uploading images related to the note.
+
+## Resource Class
+
+The `Resource` class is used to store resources suggested by students.
+
+### Attributes
+
+- `url`: A URL field for the suggested resource.
+- `description`: A text field for the description of the resource.
+- `student`: A foreign key to the `Student` model.
+- `question`: A foreign key to the `Question` model.
+- `is_approved`: A boolean field indicating whether the resource is approved.
+
+## BonusPoint Class
+
+The `BonusPoint` class represents bonus points gained by students.
+
+### Attributes
+
+- `points`: An integer representing the number of bonus points.
+- `resource`: A one-to-one relationship with the `Resource` model.
+- `student`: A foreign key to the `Student` model.
+
+## Enrollment Class
+
+The `Enrollment` class is used to handle a student's enrollment in a particular course.
+
+### Attributes
+
+- `student`: A foreign key to the `Student` model.
+- `course`: A foreign key to the `Course` model.
+- `grade`: A float representing the student's grade in the course.
+- `registration_date`: A date and time field indicating the date of enrollment.
+
+## AssignmentStudent Class
+
+The `AssignmentStudent` class manages the relationship between assignments and students.
+
+### Attributes
+
+- `student`: A foreign key to the `Student` model.
+- `assignment`: A foreign key to the `Assignment` model.
+- `grade`: A float representing the student's grade for the assignment.
+
+### Methods
+
+- `get_grade()`: Computes and returns the grade of a student on an assignment.
+
+## QuestionStudent Class
+
+The `QuestionStudent` class manages the relationship between questions and students.
+
+### Attributes
+
+- `student`: A foreign key to the `Student` model.
+- `question`: A foreign key to the `Question` model.
+- `num_points`: A float representing the number of points earned by the student.
+- `success`: A boolean indicating if the question was successfully answered.
+- `var_instances`: A many-to-many relationship with `VariableInstance`.
+- `instances_created`: A boolean indicating if variable instances have been created.
+
+### Methods
+
+- `create_instances()`: Creates variable instances for the question.
+- `compute_structural_answer()`: Computes the answer to the question if it has variable answers.
+- `get_var_value_dict()`: Returns a dictionary of variable symbols and values.
+- `evaluate_var_expressions_in_text(text, add_html_style)`: Evaluates expressions containing variables in text.
+- `compute_mcq_answers()`: Computes the float answers to an MCQ question if they are variables.
+- `get_num_points()`: Calculates and returns the number of points earned by a student.
+- `get_num_attempts()`: Returns the number of attempts on a question by a student.
+
+## QuestionAttempt Class
+
+The `QuestionAttempt` class is used to manage student attempts on questions.
+
+### Attributes
+
+- `content`: Text content of the attempt.
+- `question_student`: A foreign key to the `QuestionStudent` model.
+- `success`: A boolean indicating if the attempt was successful.
+- `num_points`: A float representing the number of points earned.
+- `timestamp`: A date and time field indicating the timestamp of the attempt.
+
+### Methods
+
+- `__str__()`: Returns a string representation of the attempt.
+
+## Utility Function: transform_expression(expr)
+
+The `transform_expression` function is a utility function that inserts multiplication signs between combined characters in a mathematical expression.
+
+## `Deimos Views`
+
+## Index View
+
+- **URL Route**: `/deimos/index`
+- **Description**: Displays the main dashboard for students.
+- **User Access**: Requires user authentication. Redirects to the login page if not authenticated.
+- **Functionality**:
+  - Retrieves courses associated with the authenticated student.
+  - Displays a list of courses.
+- **Template**: `deimos/index.html`
+
+## Course Management View
+
+- **URL Route**: `/deimos/course_management/<course_id>`
+- **Description**: Manages a specific course, displaying assignments and related information.
+- **User Access**: Requires user authentication. Redirects to the login page if not authenticated.
+- **Functionality**:
+  - Checks if the authenticated student is enrolled in the specified course.
+  - Retrieves assignments associated with the course.
+- **Template**: `deimos/course_management.html`
+
+## Assignment Management View
+
+- **URL Route**: `/deimos/assignment_management/<assignment_id>`
+- **Description**: Manages a specific assignment, displaying questions and related information.
+- **User Access**: Requires user authentication. Redirects to the login page if not authenticated.
+- **Functionality**:
+  - Validates if the authenticated student is assigned to the specified assignment.
+  - Retrieves questions associated with the assignment.
+- **Template**: `deimos/assignment_management.html`
+
+## Course Enrollment View
+
+- **URL Route**: `/deimos/course_enroll/<course_id>`
+- **Description**: Allows students to enroll in a specific course.
+- **User Access**: Requires user authentication. Redirects to the login page if not authenticated.
+- **Functionality**:
+  - Checks if the authenticated student is already enrolled in the course.
+  - Creates a new enrollment instance if not enrolled.
+- **Template**: N/A
+
+## Answer Question View
+
+- **URL Route**: `/deimos/answer_question/<question_id>`
+- **Description**: Allows students to answer a specific question within an assignment.
+- **User Access**: Requires user authentication. Redirects to the login page if not authenticated.
+- **Functionality**:
+  - Retrieves the question and associated answers.
+  - Handles different types of questions, including MCQ and structural questions.
+- **Template**: `deimos/answer_question.html`
+
+## Validate Answer View (API Endpoint)
+
+- **URL Route**: `/deimos/validate_answer/<question_id>`
+- **Description**: Validates a student's answer to a specific question.
+- **User Access**: Requires user authentication. Redirects to the login page if not authenticated.
+- **Functionality**:
+  - Validates submitted answers, considering question types and attempts.
+  - Returns a JSON response indicating correctness.
+- **Template**: N/A
+
+## Authentication Views
+
+### Login View
+
+- **URL Route**: `/deimos/login`
+- **Description**: Handles user authentication and login.
+- **User Access**: Available for all users, including guests and authenticated users.
+- **Functionality**:
+  - Validates email and password.
+  - Logs in the user if credentials are correct.
+- **Template**: `astros/login.html`
+
+### Logout View
+
+- **URL Route**: `/deimos/logout`
+- **Description**: Logs out the currently authenticated user.
+- **User Access**: Available for authenticated users.
+- **Functionality**:
+  - Logs out the user and redirects to the homepage.
+- **Template**: N/A
+
+### Register View
+
+- **URL Route**: `/deimos/register`
+- **Description**: Handles user registration.
+- **User Access**: Available for all users, including guests and authenticated users.
+- **Functionality**:
+  - Validates and registers new students.
+  - Performs password confirmation.
+- **Template**: `astros/register.html`
+
+## Helper Functions
+
+### `is_student_enrolled(student_id, course_id)`
+
+- **Description**: Checks if a student is enrolled in a specific course.
+- **Parameters**:
+  - `student_id`: The ID of the student to check enrollment for.
+  - `course_id`: The ID of the course to check enrollment in.
+- **Returns**:
+  - `is_enrolled`: Boolean value indicating enrollment status.
+
+### `extract_numbers(text)`
+
+- **Description**: Extracts numbers and subscripted characters from a string.
+- **Parameters**:
+  - `text`: The input text to extract numbers and characters from.
+- **Returns**:
+  - `matches`: A list of extracted numbers and characters.
+
+### `compare_expressions(expression1, expression2)`
+
+- **Description**: Compares two algebraic expressions for equivalence.
+- **Parameters**:
+  - `expression1`: The first algebraic expression.
+  - `expression2`: The second algebraic expression.
+- **Returns**:
+  - `True`: If the expressions are algebraically equivalent.
+  - `False`: Otherwise.
+
+### `compare_floats(f1, f2, margin_error=0.0)`
+
+- **Description**: Compares two floating-point numbers for equality with a specified margin of error.
+- **Parameters**:
+  - `f1`: The first floating-point number.
+  - `f2`: The second floating-point number.
+  - `margin_error`: Margin of error for the comparison (default is 0.0).
+- **Returns**:
+  - `True`: If the numbers are equal or close within the margin of error.
+  - `False`: Otherwise.
+
+### `replace_links_with_html(text)`
+
+- **Description**: Finds links in text and replaces them with HTML `a` tags.
+- **Parameters**:
+  - `text`: The input text containing links.
+- **Returns**:
+  - `text`: The text with links replaced by HTML `a` tags.
+
+### `replace_vars_with_values(text, variable_dict)`
+
+- **Description**: Replaces variables in text with colored values.
+- **Parameters**:
+  - `text`: The input text containing variables.
+  - `variable_dict`: A dictionary of variables and their values.
+- **Returns**:
+  - `text`: The text with variables replaced by colored values.
+
+### `replace_image_labels_with_links(text, labels_url_pairs)`
+
+- **Description**: Replaces labels in text with HTML links.
+- **Parameters**:
+  - `text`: The input text containing labels.
+  - `labels_url_pairs`: A list of label-url pairs.
+- **Returns**:
+  - `text`: The text with labels replaced by HTML links.
+
+
