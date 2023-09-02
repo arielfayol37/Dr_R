@@ -268,7 +268,7 @@ div.tol {
     border-radius: 20px !important;
     border: 1px solid #ccc !important;
     padding-left: 40px !important;
-    transition: box-shadow 0.3s ease !important;
+    transition: box-shadow 0.3s ease, height 0.5s ease, width 0.5s ease !important;
     background-color: transparent !important;
     outline: none !important;
     font-weight: 100 !important;
@@ -424,6 +424,12 @@ more than assignment display */
   padding: 4%;
   margin: 1%;
 }
+
+/* Style for search_question.html */
+#search-field.active {
+  width: 90%;
+  box-sizing: border-box;
+}
   /* Mobile styling*/
 
   @media screen and (max-width: 1200px){
@@ -478,6 +484,7 @@ more than assignment display */
       position: relative;
       width:80%;
     }
+  
   }
   @media screen and (max-width: 450px){
     div.message {

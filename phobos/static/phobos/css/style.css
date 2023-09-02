@@ -269,7 +269,7 @@ div.tol {
     border-radius: 20px !important;
     border: 1px solid #ccc !important;
     padding-left: 40px !important;
-    transition: box-shadow 0.3s ease !important;
+    transition: box-shadow 0.3s ease, height 0.5s ease, width 0.5s ease !important;
     background-color: transparent !important;
     outline: none !important;
     font-weight: 100 !important;
@@ -278,6 +278,10 @@ div.tol {
 #search-field:hover {
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.3) !important;
   }
+#search-field.active {
+  width: 90%;
+  box-sizing: border-box;
+}
 
 h4{
     margin-left: 5%;

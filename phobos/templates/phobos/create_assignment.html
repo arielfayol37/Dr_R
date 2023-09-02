@@ -13,6 +13,10 @@
                 <label for="{{ form.name.id_for_label }}">Assignment Name:</label>
                 {{ form.name }}
             </div>
+            <div class="form-group">
+                <label for="{{ form.due_date.id_for_label }}">Due date:</label>
+                {{ form.due_date }}
+            </div>
             
             <div class="form-group">
                 <label for="{{ form.course.id_for_label }}">Course:</label>
@@ -30,4 +34,14 @@
 </div>
 
 
+{% endblock %}
+{% block scripts %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script>
+    $(document).ready(function() {
+        $(".datepicker").datepicker();
+    });
+</script>
 {% endblock %}

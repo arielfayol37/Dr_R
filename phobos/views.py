@@ -1,3 +1,4 @@
+#python3 phobos:views.py
 import json
 from urllib.parse import urlparse
 from urllib.parse import unquote  # Import unquote for URL decoding
@@ -17,6 +18,11 @@ from django.shortcuts import get_object_or_404
 from django.middleware import csrf
 from django.utils.timesince import timesince
 from deimos.models import AssignmentStudent, Student, QuestionStudent
+
+from sklearn.metrics.pairwise import cosine_similarity
+from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
+import heapq
+
 
 # Create your views here.
 @login_required(login_url='astros:login') 
@@ -194,7 +200,7 @@ def create_question(request, assignment_id=None, type_int=None):
                     vars_dict[var_symbol][bound_type] = []
                 vars_dict[var_symbol][bound_type].append(bound_value)
             
-            if key.startswith('question_image_label_'):
+            elif key.startswith('question_image_label_'):
                 image_number = key[len('question_image_label_'):]
                 label_name = 'question_image_label_' + image_number
                 image_name = 'question_image_file_' + image_number
@@ -451,21 +457,64 @@ def student_search(request,course_id):
     if request.method =="GET":
         student_name= request.GET['q'].lower()
         search_result = []
-        for i in enrolled_students:
-            if (student_name in i.last_name.lower()) or (student_name in i.first_name.lower()):
-                search_result.append(i)
+        for enrolled_student in enrolled_students:
+            if (student_name in enrolled_student.last_name.lower()) or (student_name in enrolled_student.first_name.lower()):
+                search_result.append(enrolled_student)
 
         return render(request, "phobos/student_search.html", {'course':course,\
             'search':student_name,"entries": search_result, 'length':len(search_result)})
 
-def get_questions(request,course_id,student_id,assignment_id):
+def get_questions(request, student_id, assignment_id, course_id=None):
     assignment= Assignment.objects.get(id=assignment_id)
     questions= Question.objects.filter(assignment= assignment ) 
     student= Student.objects.get(id=student_id)
     question_details=[{'name':assignment.name,'assignment_id':assignment_id}]
-    for i in questions:
-        p= QuestionStudent.objects.get(student= student, question=i)
-        question_details.append({'Question_number':'Question ' + i.number,'score':p.get_num_attempts()})
-        print(question_details)
+    for question in questions:
+        try:
+            question_student = QuestionStudent.objects.get(student= student, question=question)
+            question_details.append({'Question_number':'Question ' + question.number,\
+                                 'score':question_student.get_num_points(), \
+                                    'num_attempts': question_student.get_num_attempts()})
+        except QuestionStudent.DoesNotExist:
+            question_details.append({'Question_number':'Question' + question.number,\
+                                     'score':"0",'num_attempts': "0"})    
+        
     question_details= json.dumps(question_details)
     return HttpResponse(question_details)
+
+
+def search_question(request):
+    if request.method == 'POST':
+        input_text = request.POST.get('search_question', '')
+
+        # Tokenize and encode the input text
+        input_tokens = BERT_TOKENIZER.encode(input_text, add_special_tokens=True)
+        with torch.no_grad():
+            input_tensor = torch.tensor([input_tokens])
+            attention_mask = (input_tensor != 0).float()  # Create attention mask
+            encoded_output = BERT_MODEL(input_tensor, attention_mask=attention_mask)[0]  # Take the hidden states
+
+        # Apply attention-based pooling to encoded output
+        encoded_output_pooled = attention_pooling(encoded_output, attention_mask)
+
+        # Retrieve all question objects from the database
+        all_questions = Question.objects.all()
+
+        # Calculate cosine similarity with stored question encodings
+        similar_questions = []
+        for question in all_questions:
+            question_encoded_output_pooled = torch.tensor(question.embedding)  # Load pre-computed encoding
+
+            similarity_score = cosine_similarity(encoded_output_pooled, question_encoded_output_pooled).item()
+            similar_questions.append({'question': question, 'similarity': similarity_score})
+
+        # Sort by similarity score and get top 10
+        top_n = 10
+        top_similar_questions = heapq.nlargest(top_n, similar_questions, key=lambda x: x['similarity'])
+        return render(request, 'phobos/search_question.html', {'similar_questions': top_similar_questions,\
+                                                               'search_text': input_text}) 
+                                       
+
+    return render(request,'phobos/search_question.html')
+
+
