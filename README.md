@@ -110,5 +110,5 @@ If you have any questions or need assistance, feel free to reach out to the proj
 
 ## License
 
-This project is licensed under the MIT License. By contributing to this project, you agree to abide by the terms of this license. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the Creative Commons Legal Code License. By contributing to this project, you agree to abide by the terms of this license. See the [LICENSE](LICENSE) file for details.
 
