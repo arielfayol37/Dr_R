@@ -19,10 +19,7 @@ from django.middleware import csrf
 from django.utils.timesince import timesince
 from deimos.models import AssignmentStudent, Student, QuestionStudent
 
-import numpy as np
-import torch
 from sklearn.metrics.pairwise import cosine_similarity
-from transformers import BertTokenizer, BertModel
 from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
 import heapq
 
@@ -485,17 +482,6 @@ def get_questions(request, student_id, assignment_id, course_id=None):
     question_details= json.dumps(question_details)
     return HttpResponse(question_details)
 
-def attention_pooling(hidden_states, attention_mask):
-    # Apply attention mask to hidden states
-    attention_mask_expanded = attention_mask.unsqueeze(-1).expand(hidden_states.size())
-    masked_hidden_states = hidden_states * attention_mask_expanded
-    
-    # Calculate attention scores and apply softmax
-    attention_scores = torch.nn.functional.softmax(masked_hidden_states, dim=1)
-    
-    # Weighted sum using attention scores
-    pooled_output = (masked_hidden_states * attention_scores).sum(dim=1)
-    return pooled_output
 
 def search_question(request):
     if request.method == 'POST':
