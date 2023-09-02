@@ -1,8 +1,5 @@
 # PHOBOS
 
-## GENERAL Table of contents
-# PHOBOS
-
 ## Table of Contents
 
 1. [Models](#models-python-code-documentation-for-phobos)
