@@ -1,5 +1,5 @@
 # Dr_R
-Web platform for Assigments System.
+Web platform for Physics Assigments System.
 
 This is the README file for the Dr_R web application built using Django. The application is designed to provide different functionalities for students (Deimos), instructors (Phobos), and general users (Astros).
 
@@ -9,6 +9,7 @@ This is the README file for the Dr_R web application built using Django. The app
 - Ability to take Notes for any question and come back to the later
 - Supports latex input for equations
 - Randomized variables for both multiple choice and structural questions
+- High precision calculator
 - Supports images in question body and mcq input
 - Coming soon: customized automated practice tests
 ### Deimos (Student Interface)
@@ -109,5 +110,5 @@ If you have any questions or need assistance, feel free to reach out to the proj
 
 ## License
 
-This project is licensed under the MIT License. By contributing to this project, you agree to abide by the terms of this license. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the Creative Commons Legal Code License. By contributing to this project, you agree to abide by the terms of this license. See the [LICENSE](LICENSE) file for details.
 
