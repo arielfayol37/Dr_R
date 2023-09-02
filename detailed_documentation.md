@@ -1,7 +1,7 @@
 # PHOBOS (Instructor app)
 
 ## Table of Contents
-0. [Skip To Deimos(student app)](#Deimos)
+0. [Skip To Deimos(student app)](#Deimos-Student-App)
 1. [Models](#models-python-code-documentation-for-phobos)
    1.1 [General](#general)
    1.2 [Difficulty and Subject Choices](#difficulty-and-subject-choices)
