@@ -1,0 +1,59 @@
+<!-- deimos: layout.html-->
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>{% block title %} Deimos {% endblock %}</title>
+        {% block style %}{% endblock %}
+        <link rel="stylesheet" href="{% static 'deimos/css/style.css' %}"/> 
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+          crossorigin="anonymous">
+        <link rel="icon" href="{% static 'deimos/images/mars.ico' %}" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body class="body">
+        <ul class="navbar-nav mr-auto">
+            {% if user.is_authenticated %}
+                <li class="nav-item" style="display:none">
+                    <strong>@{{ user.username }}</strong>
+                </li>
+                <li class="nav-item logout-link">
+                    <a id="logout-link" class="nav-link" href="{% url 'deimos:logout' %}">Logout</a>
+                </li>  
+            {% endif %}
+        </ul>
+            <!--Top of the page. -->
+    <div class="glass-container">
+        <div class="top-page-image">
+        </div>
+    </div>
+    <div id="brand-section">
+        <div id="orange-line"></div>
+        <div id="brand-version-text">
+            <div id="bvt1">Dr. r</div>
+            <div id="bvt2">deimos</div>
+        </div>
+
+        <div id="double-orange-lines">
+            <div class="dol"></div>
+            <div class="dol"></div>
+        </div>
+        <div class="message">
+            <span id="m1">And Man created AI</span> <br/> 
+            <span id="m2">in his image.</span>  
+        </div>
+    </div>
+    <!-- Course creation/management menu -->
+    <div id="options">
+        <div id="triple-orange-lines">
+            <div class="tol"></div>
+            <div class="tol"></div>
+            <div class="tol"></div>
+        </div>
+    </div>
+
+    {% block body %} {% endblock %}
+    {% block scripts %}{% endblock %}
+    </body>
+</html>

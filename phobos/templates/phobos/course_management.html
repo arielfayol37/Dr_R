@@ -1,0 +1,22 @@
+<!-- phobos: course_management.html-->
+{% extends 'phobos/layout.html' %}
+{% block title %} Course {% endblock %}
+{% block body%}
+
+    <div id="sf-container">
+        <input  id="search-field" type="text" name="search" placeholder="search assignment"/>
+    </div>
+    <br/>
+    <h4>{{course.name}}</h4><hr/>
+    <a href="{% url 'phobos:create_assignment' course_id=course.id %}" style="display: inline;">  Create a new assigment</a>
+   <a href="{% url 'phobos:gradebook' course_id=course.id %}" style="display: inline;"><button class="btn btn-secondary">GradeBook </button></a>
+
+    <!-- Display course's assignments -->
+    <ul class="courses course-list">
+        {% for assignment in assignments %}
+            {% include 'phobos/assignment_display.html' with assignment=assignment course=course %}
+        {% endfor %}
+    </ul>
+
+    
+{% endblock %}

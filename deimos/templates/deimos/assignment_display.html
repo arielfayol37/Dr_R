@@ -1,0 +1,23 @@
+<!-- deimos: assignment_display.html -->
+<li class="assignment-li course-li" data-assignment-id="{{ assigment.id }}">
+    <div class="course-section assigment-section">
+        <div class="image-container">
+        </div>
+        <div class="c-text a-text">
+            <span class="c-name"><strong>{{assignment.name | safe}}</strong></span>
+            <p class="timestamp" style="display: none;">Created on {{ assignment.timestamp|date:"m/d/Y" }}</p>
+            {% if assignment.assigned_date %}
+                <p class="timestamp">Assigned on {{ assignment.assigned_date|date:"m/d/Y" }}</p>
+            {% endif %}
+            {% if assignment.due_date %}
+                <p class="timestamp">Due on {{ assignment.due_date|date:"m/d/Y" }}</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="edit-section il">{% csrf_token %}
+        <div><a href="{% url 'deimos:assignment_management' course_id=course.id assignment_id=assignment.id %}">
+            <button class="btn edit-btn co" data-assignment-id="{{ assignment.id}}">View</button></div></a>
+       
+    </div>
+
+</li>

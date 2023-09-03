@@ -1,0 +1,23 @@
+<!-- phobos: index.html-->
+{% extends 'phobos/layout.html' %}
+
+{% block body%}
+
+
+    <div id="sf-container">
+        <input  id="search-field" type="text" name="search" placeholder="search course"/>
+    </div>
+    <br/>
+
+    <div class="courses-toggle">
+        <h4>My courses</h4> <span><a href="{% url 'astros:all_courses' %}"><button class="all-courses-button">All courses</button></a></span>
+        <span><a href="{% url 'phobos:create_course' %}"> <button class="btn btn-info">Create a new course</button></a></span>
+    </div>
+    <!-- Display professor's courses -->
+    <ul class="courses course-list">
+        {% for course in courses%}
+            {% include 'phobos/course_display.html' with course=course%}
+        {% endfor %}
+    </ul>
+
+{% endblock %}

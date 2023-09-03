@@ -1,0 +1,27 @@
+<!-- deimos: assignment_management.html-->
+{% extends 'deimos/layout.html' %}
+{% block title %} Assignment {% endblock %}
+{% load static %}
+{% block body%}
+
+<form action="{% url 'deimos:search_question' %}" method="post" id="search-form">
+    {% csrf_token %} 
+    <div id="sf-container">
+        <input  id="search-field" type="text" name="search_question" placeholder="search question"/>
+    </div>
+</form>
+    <br/>
+    <br/>
+    <h4>{{assignment.course.name}}: {{assignment.name}}</h4><hr/>
+    
+    <!-- Display assignment's questions -->
+    <ul class="courses course-list">
+        {% for question in questions %}
+            {% include 'deimos/question_display.html' with question=question assignment_id=assignment.id course_id=assignment.course.id%}
+        {% endfor %}
+    </ul>
+
+{% endblock %}
+{% block scripts%}
+<script src="{% static 'deimos/js/search_question.js' %}"></script>
+{% endblock %}

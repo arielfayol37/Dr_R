@@ -1,0 +1,31 @@
+<!-- phobos: search_questions.html-->
+{% extends 'phobos/layout.html' %}
+{% block title %} Search {% endblock %}
+{% load static %}
+{% block body%}
+
+    <form action="{% url 'phobos:search_question' %}" method="post" id="search-form">
+        {% csrf_token %} 
+        <div id="sf-container">
+            {% if search_text %}
+                <input  id="search-field" type="text" name="search_question" placeholder="search question" value="{{search_text}}"/>
+            {% else %}
+                <input  id="search-field" type="text" name="search_question" placeholder="search question" />
+            {% endif %}
+        </div>
+    </form>
+    <br/>
+    <br/>
+    <h4>Search Results...</h4><hr/>
+    
+    <!-- Display assignment's questions -->
+    <ul class="courses course-list">
+        {% for similar_question in similar_questions %}
+            {% include 'phobos/question_display.html' with question=similar_question.question assignment_id=similar_question.question.assignment.id course_id=similar_question.question.assignment.course.id%}
+        {% endfor %}
+    </ul>
+
+{% endblock %}
+{% block scripts%}
+<script src="{% static 'phobos/js/search_question.js' %}"></script>
+{% endblock %}

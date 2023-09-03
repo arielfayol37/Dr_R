@@ -1,0 +1,83 @@
+<!-- phobos: create_course.html -->
+{% extends 'phobos/layout.html' %}
+{% block title%} Create Course {% endblock %}
+{% block body %}
+<div class="page-container">
+
+    
+    <div class="course-form">
+        <h1>Create a New Course</h1>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="{{ form.name.id_for_label }}">Course Name:</label>
+                {{ form.name }}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.subject.id_for_label }}">Subject:</label>
+                {{ form.subject }}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.difficulty_level.id_for_label }}">Difficulty Level:</label>
+                {{ form.difficulty_level }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.description.id_for_label }}">Description:</label>
+                {{ form.description }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.topics.id_for_label }}">Topics:</label>
+                {{ form.topics }}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.professors.id_for_label }}">Professors:</label>
+                {{ form.professors }}
+            </div>
+            <div id="image-preview">
+                <!-- The uploaded image will be displayed here -->
+            </div>
+            <div class="form-group">
+                <label for="{{ form.image.id_for_label }}">Upload cover image:</label>
+                {{ form.image }}
+                <img id="image-preview" src="#" alt="Image Preview" style="max-width: 100%; max-height: 200px; display: none;">
+            </div>
+            <input class= "btn btn-primary" type="submit" value="Create Course">
+        </form>
+    </div>
+</div>
+
+<script>
+    // TODO: Move this to JS file
+    function resizeTextarea(textarea) {
+        // Reset the textarea's height to 0 to get the scrollHeight
+        textarea.style.height = '0';
+        // Set the new height to match the scrollHeight
+        textarea.style.height = textarea.scrollHeight + 'px';
+    }
+
+document.querySelector('#course-image').addEventListener('change', function() {
+        const reader = new FileReader();
+        const imageFile = this.files[0];
+        reader.onload = function(event) {
+            const imageElement = document.createElement('img');
+            imageElement.src = event.target.result;
+            imageElement.style.maxWidth = '100%';
+            imageElement.style.maxHeight = '200px';
+            imageElement.style.borderRadius = '15px';
+            const imagePreview = document.querySelector('#image-preview'); 
+            //console.log(imagePreview.src);
+            imagePreview.style.display = 'block';
+            imagePreview.innerHTML = '';
+            imagePreview.appendChild(imageElement);
+        };
+        if(imageFile){
+            reader.readAsDataURL(imageFile);
+        }
+        
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,9 @@
+django
+django-extensions
+sympy
+pillow
+torch
+transformers
+numpy
+scikit-learn
+stripe

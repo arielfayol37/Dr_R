@@ -1,0 +1,16 @@
+<!-- deimos: index.html-->
+{% extends 'deimos/layout.html' %}
+
+{% block body%}
+
+
+<div class="courses-toggle">
+    <h4>My courses</h4> <span><a href="{% url 'astros:all_courses' %}"><button class="all-courses-button">All courses</button></a></span>
+</div>    <!-- Display Student's courses -->
+    <ul class="courses course-list">
+        {% for course in courses%}
+            {% include 'deimos/course_display.html' with course=course%}
+        {% endfor %}
+    </ul>
+
+{% endblock %}

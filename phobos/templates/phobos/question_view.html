@@ -1,0 +1,70 @@
+<!--phobos: question_view.html-->
+{% extends 'phobos/layout.html' %}
+{% load static %}
+{% block title %} Question {% endblock %}
+
+<!--The following script is included in phobos/question_view.js. It couldn't load properly from here 
+    for a reason I ignore.
+-->
+<!--<script id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+-->
+
+{% block body %}
+<div class="embed">
+<p class="question-number"><strong>Question {{question.number}}</strong></p>
+<hr/>
+<p class="question-content">{{question.text|safe}}</p>
+<div class="question-images">
+    {% for question_image in question.images.all %}
+        <div class="formatted-answer" id="{{question_image.image.url}}">
+            <p>{{question_image.label}}</p>
+            <img src="{{question_image.image.url}}" class="question-image image-in-formatted" alt="{{question_image.label}}"/>
+        </div>
+    {% endfor %}
+</div><br/>
+
+{% if show_answer %}
+
+    {% if is_mcq %}
+        {% for answer, is_latex in answers_is_latex %}
+            <div class="formatted-answer">
+                {% if is_latex %}
+                
+                    <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
+                {% else %}   
+                    {% if answer.image %}
+                        {{answer.label}}
+                        <img src="{{answer.image.url}}" class="mcq-image-answer image-in-formatted" alt="{{answer.image.label}}"/>
+                    {% else %}
+                        {{answer.content|safe}}
+                    {% endif %}
+                {% endif %}
+            </div>
+            {% if answer.is_answer%}
+                <button type="button" class="btn btn-info exempt">True</button>
+            {% else %}
+                <button type="button" class="btn btn-warning exempt">False</button>
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        <p class="question-answer">
+            {% for answer in answers %}
+            <strong>Answer </strong>
+                <div class="formatted-answer">
+                    {% if not is_fr %}
+                        {{answer.content}}  
+                    {% else %}
+                        *Free reponse question.*
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </p>
+    {% endif %}
+
+{% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script src="{% static 'phobos/js/question_view.js' %}"></script>
+{% endblock %}

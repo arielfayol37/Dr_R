@@ -1,0 +1,31 @@
+<!-- astros: all_courses.html-->
+{% extends 'astros/layout.html' %}
+
+{% block body%}
+
+
+    <div id="sf-container">
+        <input  id="search-field" type="text" name="search" placeholder="search course"/>
+    </div>
+    <br/>
+    <h4>All courses</h4>
+    <!-- Display courses -->
+    <ul class="courses course-list">
+        {% if is_professor%}
+            {% for course, is_course_prof in courses__is_professor %}
+                {% include 'astros/prof_course_display.html' with course=course is_course_prof=is_course_prof%}
+            {% endfor %}
+
+        {% elif is_student %}
+            {% for course, is_course_stud in courses__is_student %}
+                {% include 'astros/stud_course_display.html' with course=course is_course_stud=is_course_stud %}
+            {% endfor %}
+        
+        {% else %}
+            {% for course in courses %}
+                {% include 'astros/lambda_course_display.html' with course=course%}
+            {% endfor %}
+        {% endif %}
+    </ul>
+
+{% endblock %}

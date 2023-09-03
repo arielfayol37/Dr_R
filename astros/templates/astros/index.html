@@ -1,0 +1,43 @@
+<!--astros:index.html-->
+{% extends "astros/registration_layout.html" %}
+{% load static %}
+
+    {% block body %}
+        
+        
+    <div class="landing-container">
+        <div class="landing-leftside">
+            <img id="mars-image" src="{% static 'astros/images/mars.jpg' %}" alt="Mars image"/>
+        </div>
+
+        <div class="lading-rightside">
+            <nav class="navbar">
+                <a href="{% url 'astros:register'%}" id="r-btn"><button class="btn btn-primary" > Register </button></a>
+            </nav>
+            <div class="intro-section">
+                <div class="genesis-quote">
+                    In the beginning God Created heaven and <span class="canceled-text">Earth</span> 
+                    <span class="mars-text"> Mars.</span>
+                    <p class="reference">
+                        <em>~Genesis 1:1</em>
+                    </p>
+                </div>
+                <!--
+                    <div class="welcome-message">
+                    <strong><em>Welcome to Dr R!</em></strong><br/> Student or Instructor? Login to create/continue courses.
+                    You don't have an account with us? Register in 2 mins 37 seconds.
+                    <p><a href=""><button class="login-button btn btn-primary"> Login </button></a></p>
+                </div>
+                -->
+                <div class="welcome-section">
+                    <h4>Welcome to <span class="brand-name">Dr. R</span>!</h4>
+                    <p class="sub-heading">Are you a student or an instructor?</p>
+                    <p>Login to continue or create courses.</p>
+                    <p><a href="{% url 'astros:login' %}"><button class="btn btn-primary" id="login-button"> Login </button></a></p>
+                  </div>
+                  
+            </div>
+        </div>
+    </div>    
+        
+    {% endblock %}

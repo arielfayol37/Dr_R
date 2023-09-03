@@ -1,0 +1,38 @@
+{% extends 'phobos/layout.html' %}
+{% load static %}
+{% block title %} Student_Profile {% endblock %}
+{% block style %} <link rel="stylesheet" href="{% static 'phobos/css/gradebook.css' %}"/> {% endblock %}
+{% block body%}
+
+<h1> {{ student.first_name}} {{student.last_name}} </h1>
+<h2> Student Profile - {{course.name}} </h2>
+
+<table class="table table-striped table-bordered table-hover">
+    <thead>
+        <tr>
+            <td><b>Assignments</b></td>
+            <td><b>Grades</b></td>
+            <td><b>Remark</b></td>
+        </tr>
+    </thead>
+    <tbody>
+    {% for assignment, grade in student_grade %}
+    <tr>
+        <td class="assignment" id='{{assignment.id}}'>{{ assignment.name}} </td>
+        <td> {{grade}} </td>
+        {% if grade > 70 %}
+        <td> Passed </td>
+        {% else %}
+        <td> Failed</td>
+        {% endif %}
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% block script %}
+<script src="{% static 'phobos/js/student_profile.js' %}"></script>
+{% endblock %}
+
+    
+{% endblock %}
