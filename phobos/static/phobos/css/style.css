@@ -36,16 +36,6 @@ body.body {
   cursor: pointer;
   margin-right: 10px;
 }
-.courses-toggle {
-  display: flex;
-  flex-direction: center;
-  align-items: center;
-  justify-content: space-evenly;
-  width: 50%;
-   /*margin-top: 0.5%;*/
-  margin-bottom:-6%;
-  padding:5%;
-}
 ul.courses {
   padding: 5%;
 }
@@ -261,6 +251,46 @@ div.tol {
     width: 4vw;
     cursor: pointer;
   }
+
+  .sidebar {
+    position: fixed;
+    right: 0;
+    width: 250px;
+    height: 100%;
+    background: rgba(249, 105, 0, 1);
+    transition: all 0.4 ease;
+    transform: translateY(-4%);
+    z-index: 3;
+}
+.sidebar header {
+    font-size: 22px;
+    color: white;
+    transform: translate(75%, 20%);
+    transition: all 0.3s ease;
+}
+.sidebar header:hover {
+    font-size: 30px;
+    cursor: pointer;
+    color:rgb(67, 59, 54);
+}
+.sidebar ul a{
+    display: block;
+    height: 100%;
+    width: 90%;
+    line-height: 65px;
+    font-size: 20px;
+    color: white;
+    padding-left: 40px;
+    box-sizing: 1px solid rgba(255,255,255,.1);
+    transition: all 0.4s ease;
+    text-decoration: none;
+    border-radius: 5px;
+}
+
+.sidebar ul li:hover a{
+    padding-left: 30px;
+    background-color: #AA4400;
+}
 
 #search-field {
     position: absolute;
@@ -598,8 +628,5 @@ more than assignment display */
       }
       #m2 {
         transform: translate(0, -95%);
-      }
-      .courses-toggle {
-        width: 100%;
       }
     } 

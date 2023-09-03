@@ -5,6 +5,13 @@
 
 <div id="gradebook-page-container">
     {% block body %}
+    <div class="sidebar" style="display:none">
+        <header class="sidebar-header">X</header>
+        <ul>
+            <li><a href="{% url 'phobos:index' %}">Home</a></li>
+            <li><a href="{% url 'phobos:course_management' course_id=course.id %}">Assignments</a></li>
+        </ul>
+    </div>
     <h1> GradeBook</h1>
     <br/>
     <div id= "search-bar">
