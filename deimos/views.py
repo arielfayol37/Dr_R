@@ -448,7 +448,7 @@ def get_notes(request,question_id):
         student = get_object_or_404(Student, pk=request.user.pk)
         question = Question.objects.get(pk = question_id)
         question_student= QuestionStudent.objects.get(student=student,question=question)
-        Notes= QuestionNote.objects.filter(question = question_student)
+        Notes= Note.objects.filter(question_student = question_student)
         notes=[]
         for note in Notes:
             notes.append({'content':note.content,'id':note.id})
@@ -460,14 +460,14 @@ def save_notes(request,content,question_id):
         student = get_object_or_404(Student, pk=request.user.pk)
         question = Question.objects.get(pk = question_id)
         question_student= QuestionStudent.objects.get(student=student,question=question)
-        note= QuestionNote(content= content, question = question_student)
+        note= Note(content=content, question_student= question_student)
         note.save()
 
         return HttpResponse(json.dumps({'content':note.content,'id':note.id}))
     
 def edit_note(request,content,note_id):
     if request.method=='GET':
-        note= QuestionNote.objects.get(pk=note_id)
+        note= Note.objects.get(pk=note_id)
         note.content= content
         note.save(update_fields=['content'])
         
@@ -475,7 +475,7 @@ def edit_note(request,content,note_id):
     
 def delete_note(request,note_id):
     if request.method=='GET':
-        note= QuestionNote.objects.get(pk=note_id)
+        note= Note.objects.get(pk=note_id)
         delete_value,deleted_note=note.delete()
         if(delete_value):
             return HttpResponse(json.dumps('delete successful'))

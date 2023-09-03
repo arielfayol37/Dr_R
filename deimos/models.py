@@ -13,24 +13,7 @@ class Student(User):
     assignments = models.ManyToManyField(Assignment, through='AssignmentStudent')
     questions = models.ManyToManyField(Question, through='QuestionStudent')
 
-class Note(models.Model):
-    """
-    For any particular question, the Student should have the option to 
-    write text and/orupload pictures for their own personal use whenever 
-    they are viewing the question in the future. 
-    This may be helpful when they are preparing for exams.
-    """
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="notes")
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    content = models.TextField()
 
-class NoteImage(models.Model):
-    """
-    Stored in `Student`'s Note in case the student upload pictures for notes on a
-    particular question.
-    """
-    note = models.ForeignKey(Note, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='deimos/images/notes_images/', blank=True, null=True)
  
 
 class Resource(models.Model):
@@ -228,6 +211,26 @@ class QuestionStudent(models.Model):
         return self.attempts.count()
     def __str__(self):
         return f"Question-Student:{self.question} {self.student.username}"
+
+class Note(models.Model):
+    """
+    For any particular question, the Student should have the option to 
+    write text and/orupload pictures for their own personal use whenever 
+    they are viewing the question in the future. 
+    This may be helpful when they are preparing for exams.
+    """
+    question_student = models.ForeignKey(QuestionStudent, on_delete=models.CASCADE, related_name='notes')
+    content = models.TextField()
+
+    def __str__(self):
+        return f"Note {self.content[:50]} for {self.question_student}"
+class NoteImage(models.Model):
+    """
+    Stored in `Student`'s Note in case the student upload pictures for notes on a
+    particular question.
+    """
+    note = models.ForeignKey(Note, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='deimos/images/notes_images/', blank=True, null=True)
     
     
 class QuestionAttempt(models.Model):
@@ -259,11 +262,6 @@ def transform_expression(expr):
     transformed_expression = ''.join(strs)   
     return transformed_expression
 
-class QuestionNote(models.Model):
-    question=models.ForeignKey(QuestionStudent, on_delete=models.CASCADE, related_name='question_note')
-    content = models.CharField(max_length=1000)
 
-    def __str__(self):
-        return f"mote number: {self.content} in question {self.question.id}"
     
 
