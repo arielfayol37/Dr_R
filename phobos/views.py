@@ -365,6 +365,8 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
 
 def calci(request):
     return render(request, 'phobos/calci.html')
+def sidebar(request):
+    return render(request, 'phobos/sidebar.html')
 
 #------------------------FETCH VIEWS-----------------------------#
 def get_subtopics(request, selected_topic):

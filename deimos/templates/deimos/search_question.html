@@ -4,6 +4,13 @@
 {% load static %}
 {% block body%}
 
+<div class="sidebar" style="display:none">
+    <header class="sidebar-header">X</header>
+    <ul>
+        <li><a href="{% url 'deimos:index'%}">Home</a></li>
+    </ul>
+</div>
+
     <form action="{% url 'deimos:search_question' %}" method="post" id="search-form">
         {% csrf_token %} 
         <div id="sf-container">

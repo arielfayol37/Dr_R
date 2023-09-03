@@ -31,4 +31,5 @@ urlpatterns = [
      path('courses/<int:course_id>/<int:student_id>/get_questions/<int:assignment_id>',
           views.get_questions,name='get_questions'),
      path('search_question/', views.search_question, name='search_question'),
+     path('sidebar/', views.sidebar, name='sidebar')
 ]

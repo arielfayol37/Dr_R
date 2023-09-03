@@ -3,7 +3,15 @@
 {% block title %} Assignment {% endblock %}
 {% load static %}
 {% block body%}
-
+<div class="sidebar" style="display:none">
+    <header class="sidebar-header">X</header>
+    <ul>
+        <li><a href="{% url 'phobos:index'%}">Home</a></li>
+        <li><a href="{% url 'phobos:create_question' assignment_id=assignment.id %}">Create Question</a></li>
+        <li><a href="{% url 'phobos:course_management' course_id=assignment.course.id %}">Assigments</a></li>
+        <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
+    </ul>
+</div>
 <form action="{% url 'phobos:search_question' %}" method="post" id="search-form">
     {% csrf_token %} 
     <div id="sf-container">
@@ -13,7 +21,6 @@
     <br/>
     <br/>
     <h4>{{assignment.course.name}}: {{assignment.name}}</h4><hr/>
-    <a href="{% url 'phobos:create_question' assignment_id=assignment.id %}" style="display: inline;">  Create a new question</a>
     
     <!-- Display assignment's questions -->
     <ul class="courses course-list">

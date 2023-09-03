@@ -3,6 +3,14 @@
 {% load static %}
 {% block title%} Create question {% endblock %}
 {% block body %}
+
+<div class="sidebar" style="display:none">
+  <header class="sidebar-header">X</header>
+  <ul>
+      <li><a href="{% url 'phobos:index'%}">Home</a></li>
+      <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
+  </ul>
+</div>
     <!-- TODO: Include buttons and invent listeners to create subquestions.-->
     <h3>Create a Question</h3>
     <div class="page-container" id="create-question">
@@ -61,6 +69,7 @@
             <input type="file" accept="image/*" class="main-question-image-input">
             <button type="button" class="btn btn-success question-image-add">add</button>
           </div>
+          <br/>
           <div class="answer-options">
             <!--TODO: Change the colors here to fit the overall design-->
             

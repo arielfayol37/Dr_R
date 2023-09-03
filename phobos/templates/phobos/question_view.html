@@ -10,6 +10,18 @@
 -->
 
 {% block body %}
+  
+<div class="sidebar" style="display:none">
+    <header class="sidebar-header">X</header>
+    <ul>
+        <li><a href="{% url 'phobos:index' %}">Home</a></li>
+        <li><a href="{% url 'phobos:assigment_management' assignment_id=question.assignment.id course_id=question.assignment.course.id %}">Questions</a></li>
+        <li><a href="{% url 'phobos:course_management' course_id=question.assignment.course.id %}">Assignments</a></li>
+        <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
+
+    </ul>
+  </div>
+
 <div class="embed">
 <p class="question-number"><strong>Question {{question.number}}</strong></p>
 <hr/>
