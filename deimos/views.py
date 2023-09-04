@@ -109,6 +109,7 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
     question = Question.objects.get(pk=question_id)
     
     question_student, created = QuestionStudent.objects.get_or_create(question=question, student=student)
+    too_many_attempts = question_student.get_num_attempts() >= question.max_num_attempts
     if created:
         question_student.create_instances()
     else:
@@ -192,7 +193,9 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
         "answers_is_latex_question_type": zip(answers, is_latex, question_type),
         'question_type': question_type, # For structural
         'answer': answers[0],
-        'success':question_student.success
+        'success':question_student.success,
+        'too_many_attempts':too_many_attempts,
+        'sq_type':question_type[0], # structural question type used in js.
     }
     return render(request, 'deimos/answer_question.html',
                   context)
@@ -202,6 +205,7 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
     
     if request.method == 'POST':
         correct = False
+        previously_submitted = False
         data = json.loads(request.body)
         submitted_answer = data["answer"]
         question = Question.objects.get(pk=question_id)
@@ -210,20 +214,35 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
         # Normally, we should just use get() because QuestionStudent object is already created
         # whenever the user opens a question for the first time, but just to be safe.
         question_student, created = QuestionStudent.objects.get_or_create(student=student, question=question)
-        if (question_student.get_num_attempts() < question.max_num_attempts and not question_student.success):
-            if data["questionType"] == 'structural':
-                attempt = QuestionAttempt.objects.create(question_student=question_student)
-                attempt.content = submitted_answer
+        
+        too_many_attempts = question_student.get_num_attempts() >= question.max_num_attempts
+        if ( not (too_many_attempts or question_student.success)):
+            if data["questionType"].startswith('structural'):
+
                 if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
+                    # checking previous attempts
+                    for previous_attempt in question_student.attempts.all():
+                        if compare_expressions(previous_attempt.content, submitted_answer):
+                            previously_submitted = True
+                            return JsonResponse({'previously_submitted': previously_submitted})
                     assert question.expression_answers.count() == 1
+                    attempt = QuestionAttempt.objects.create(question_student=question_student)
+                    attempt.content = submitted_answer
                     answer = question.expression_answers.first()
                     correct = compare_expressions(answer.content, submitted_answer)
                 elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
+                    # Checking previous attempts
+                    for previous_attempt in question_student.attempts.all():
+                        if compare_floats(previous_attempt.content,submitted_answer):
+                            previously_submitted = True
+                            return JsonResponse({'previously_submitted': previously_submitted})
+                    attempt = QuestionAttempt.objects.create(question_student=question_student)
+                    attempt.content = submitted_answer
                     assert question.float_answers.count() == 1
                     answer = question.float_answers.first()
                     try:
                         # answer.content must come first in the compare_floats()
-                        correct = compare_floats(answer.content, eval(submitted_answer), question.margin_error) 
+                        correct = compare_floats(answer.content, submitted_answer, question.margin_error) 
                     except ValueError:
                         # TODO: Maybe return a value to the user side that will ask them to enter a float.
                         # TODO: Actually, ensure this on the front-end.
@@ -231,7 +250,7 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                 elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
                     try:
                         answer_temp = question_student.compute_structural_answer()
-                        correct = compare_floats(answer_temp, eval(submitted_answer),
+                        correct = compare_floats(answer_temp, submitted_answer,
                                                     question.margin_error)
                     except ValueError:
                         correct = False
@@ -246,6 +265,12 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
             elif data["questionType"] == 'mcq':
                 # retrieve list of 'true' mcq options
                 # !important: mcq answers of different type may have the same primary key.
+                
+                # checking previous attempts
+                for previous_attempt in question_student.attempts.all():
+                    if set(submitted_answer) == set(previous_attempt.content):
+                        previously_submitted = True
+                        return JsonResponse({'previously_submitted': previously_submitted})
                 attempt = QuestionAttempt.objects.create(question_student=question_student)
                 attempt.content = str(submitted_answer)
                 question_type_dict = {'ea': 0, 'fa':1, 'la':2, 'ta':3, 'ia':7}
@@ -275,7 +300,9 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                 attempt.save()
         # Return a JsonResponse
         return JsonResponse({
-            'correct': correct
+            'correct': correct,
+            'too_many_attempts': too_many_attempts,
+            'previously_submitted':previously_submitted
         })
     
 
@@ -387,16 +414,19 @@ def compare_expressions(expression1, expression2):
     difference = (simplify(sym_e1 - sym_e2, symbols=symbls))
     return True if difference == 0 else False
 
-def compare_floats(f1, f2, margin_error=0.0):
+def compare_floats(correct_answer, submitted_answer, margin_error=0.0):
     """
     Given two floats f1 and f2,
     returns True if they are equal or close,
     returns False otherwise
     """
-    if abs(f1-f2)/f1 <= margin_error:
-        return True
+    f1 = eval(str(correct_answer))
+    f2 = eval(str(submitted_answer))
+    if f1 == 0:
+        return f1-f2 <= margin_error
     else:
-        return False
+        return abs(f1-f2)/f1 <= margin_error
+
     
 def replace_links_with_html(text):
     """
