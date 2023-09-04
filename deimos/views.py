@@ -191,7 +191,8 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
         "is_fr": is_fr, 
         "answers_is_latex_question_type": zip(answers, is_latex, question_type),
         'question_type': question_type, # For structural
-        'answer': answers[0]
+        'answer': answers[0],
+        'success':question_student.success
     }
     return render(request, 'deimos/answer_question.html',
                   context)

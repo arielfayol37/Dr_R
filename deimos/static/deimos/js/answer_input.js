@@ -28,7 +28,16 @@ document.addEventListener('DOMContentLoaded', ()=> {
               .then(response => response.json())
               .then(result => {
                   // Print result
-                  console.log(result.correct);
+                  //console.log(result.correct);
+                  if(result.correct){
+                    form.querySelector('.red-light').classList.remove('activated');
+                    const greenLight = form.querySelector('.green-light')
+                    greenLight.classList.add('activated');
+                    greenLight.scrollIntoView({behavior:'smooth'});
+                    scrollToCenter(greenLight);
+                  }else {
+                    scrollToCenter(form.querySelector('.red-light'));
+                  }
               });
         } else if( questionType.value ==='mcq'){
             // TODO make sure some mcqs are selected as true.
@@ -43,7 +52,16 @@ document.addEventListener('DOMContentLoaded', ()=> {
               .then(response => response.json())
               .then(result => {
                   // Print result
-                  console.log(result.correct);
+                  //console.log(result.correct);
+                  if(result.correct){
+                    form.querySelector('.red-light').classList.remove('activated');
+                    const greenLight = form.querySelector('.green-light')
+                    greenLight.classList.add('activated');
+                    greenLight.scrollIntoView({behavior:'smooth'});
+                    scrollToCenter(greenLight);
+                  }else {
+                    scrollToCenter(form.querySelector('.red-light'));
+                  }
               });
         }
         
@@ -154,7 +172,13 @@ function extractQuestionPath(url) {
         return null; // If 'courses' not found in URL
     }
 }
-
+function scrollToCenter(element) {
+    const elementRect = element.getBoundingClientRect();
+    const absoluteElementTop = elementRect.top + window.pageYOffset;
+    const middle = absoluteElementTop - window.innerHeight / 2;
+    window.scrollTo({ top: middle, behavior: 'smooth' });
+  }
+  
 
 function getCookie(name) {
     if (!document.cookie) {

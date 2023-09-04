@@ -7,6 +7,7 @@
     <header class="sidebar-header">X</header>
     <ul>
         <li><a href="{% url 'deimos:index'%}">Home</a></li>
+        <li><a href="{% url 'deimos:course_management' course_id=assignment.course.id %}">Assignments</a></li>
         <li><a href="{% url 'deimos:search_question' %}">Search Question</a></li>
     </ul>
 </div>
