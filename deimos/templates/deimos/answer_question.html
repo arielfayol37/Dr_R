@@ -31,8 +31,14 @@
             <div class="tf-light yellow-light"></div>
             <div class="tf-light green-light activated"></div>
           {% else %}
-            <div class="tf-light red-light activated"></div>
-            <div class="tf-light yellow-light"></div>
+            {% if too_many_attempts %}
+              <div class="tf-light red-light"></div>
+              <div class="tf-light yellow-light activated"></div>
+            {% else %}
+              <div class="tf-light red-light activated"></div>
+              <div class="tf-light yellow-light"></div>
+            {% endif %}
+
             <div class="tf-light green-light"></div>
           {% endif %}
         </div>
@@ -78,7 +84,7 @@
               <div> <input type="submit" class="btn btn-success exempt" id="submit-btn" value="Submit Answer"></div>
               <br/><br/>
           {% else %}
-              <input type="hidden" value="structural" class="question-type"/>
+              <input type="hidden" value="structural_{{sq_type}}" class="question-type"/>
               <!--TODO: !Important. I don't think we will ever use the pk of the answer for structural questions.-->
               <input type="hidden" value="{{answer.pk}}" name="structural_answer_id_0"/>
               {% for q_type in question_type %} <!--expecting to iterate only over one item-->
