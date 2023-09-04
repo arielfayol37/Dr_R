@@ -339,7 +339,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     })
     form.addEventListener('submit', (event) => {
-
+        const selected_topic = checkTopicAndSubtopic();
+        if (!selected_topic){
+            event.preventDefault();
+            alert("Please select both a topic and a subtopic.");
+            return;
+        }
         if (mode==='e-answer'){
             const userInputNode = math.simplify(processString(screen.value));
             var userInputString = userInputNode.toString();
@@ -351,9 +356,21 @@ document.addEventListener('DOMContentLoaded', () => {
         else if(
             mode==='f-answer'
         ) {
-            const userInputNode = math.simplify(processString(screen.value));
-            var userInputString = userInputNode.evaluate();
-            screen.value = userInputString;
+            try{
+                const userInputNode = math.simplify(processString(screen.value));
+                var userInputString = userInputNode.evaluate();
+                if(typeof(userInputString) != 'number'){
+                    event.preventDefault();
+                    alert('You selected float mode but the answer you provided is not a float');
+                    return;
+                }
+                screen.value = userInputString;
+            }catch {
+                event.preventDefault();
+                alert('You selected float mode but the answer you provided is not a float');
+                return;
+            }
+            
             
         } else if (mode=='m-answer'){
             if(num_mcq_options_counter < 2){
@@ -386,9 +403,23 @@ function create_inputed_mcq_div(input_field, answer_type) {
     var formatted_answer = '';
     switch (answer_type) {
         case 'f-answer':
-            display_value = answer_value;
-            answer_value = math.simplify(processString(answer_value)).evaluate();
-            answer_info_encoding = rep(answer_info_encoding, 1, '1');
+            // TODO: the float may have variables, so improve the condition below by testing
+            // whether the string contains variables or not.
+            try{
+                display_value = answer_value;
+                answer_value = math.simplify(processString(answer_value)).evaluate();
+                if(typeof(answer_value) != 'number'){
+                    num_mcq_options_counter -= 1
+                    alert('You selected float mode but the answer you provided is not a float');
+                    return;
+                }
+                answer_info_encoding = rep(answer_info_encoding, 1, '1');
+            }catch {
+                num_mcq_options_counter -= 1
+                alert('You selected float mode but the answer you provided is not a float');
+                return;
+            }
+
             break;
         case 't-answer':
             display_value = answer_value;
@@ -586,7 +617,20 @@ function setCharAt(str,index,chr) {
     return str.substring(0,index) + chr + str.substring(index+1);
 }
 
+function checkTopicAndSubtopic() {
+    var topicSelect = document.getElementById("topicSelect");
+    var subTopicSelect = document.getElementById("subTopicSelect");
+    
+    if (topicSelect.value === "" || subTopicSelect.value === "") {
+
+      return false; // Prevent form submission
+    }
+    
+    // If both topic and subtopic are selected, you can submit the form
+    return true;
+  }
+
 });
 
-  
+
   

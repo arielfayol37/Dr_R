@@ -16,26 +16,45 @@ document.addEventListener('DOMContentLoaded', ()=> {
 
     submitBtn.addEventListener('click', (event)=>{
         event.preventDefault();
-        if (questionType.value==='structural'){
-          if(screen.value.length === 0){
-            alert('Cannot submit blank answer');
-            return;
-          }
-         
-        } else if (questionType.value ==='mcq' && num_true_counter===0){
-          alert('Must select at least on MCQ answer as true');
-          return;
-        }
+
         const yellowLight = form.querySelector('.yellow-light');
         const greenLight = form.querySelector('.green-light');
         const redLight = form.querySelector('.red-light');
-        scrollToCenter(redLight);
-        if(!greenLight.classList.contains('activated')){
-
+        
+        // For now, yellow light represents to many attempts
+        if(!greenLight.classList.contains('activated') && !yellowLight.classList.contains('activated')){
+          // Checking whether the submitted answer is valid
+          const question_type = questionType.value
+          if (question_type.startsWith('structural')){
+            if(screen.value.length === 0){
+              alert('Cannot submit blank answer');
+              return;
+            }
+            const last_character = parseInt(question_type.charAt(question_type.length-1)); 
+            // Checks if the answer to the question is supposed to be a float
+            if(last_character===5 || last_character===1){
+              try{
+                const test_answer = math.evaluate(screen.value);
+                if(typeof(test_answer) != 'number'){
+                  
+                  alert('The answer you provided is not a float');
+                  return;
+              }
+              }catch{
+                alert('The answer you provided is not a float');
+                return;
+              }
+            }
+           
+          } else if (questionType.value ==='mcq' && num_true_counter===0){
+            alert('Must select at least on MCQ answer as true');
+            return;
+          }
+          scrollToCenter(redLight);
           yellowLight.classList.add('activated');
           yellowLight.classList.add('blinking');
-          redLight.classList.remove('activated');}
-        if (questionType.value==='structural'){
+          redLight.classList.remove('activated');
+        if (question_type.startsWith('structural')){
             fetch(`/${validateAnswerActionURL}`, {
                 method: 'POST',
                 headers: { 'X-CSRFToken': getCookie('csrftoken') },
@@ -48,9 +67,14 @@ document.addEventListener('DOMContentLoaded', ()=> {
               .then(result => {
                   // Print result
                   //console.log(result.correct);
-                  toggleLight(result.correct, redLight,yellowLight,greenLight);
+                  if(result.previously_submitted){
+                    alert('You already attempted using that answer');
+                    resetLightsToRed(redLight,yellowLight,greenLight);
+                    return;
+                  }
+                  toggleLight(result.correct,result.too_many_attempts,redLight,yellowLight,greenLight);
               });
-        } else if( questionType.value ==='mcq'){
+        } else if( question_type ==='mcq'){
             // TODO make sure some mcqs are selected as true.
             fetch(`/${validateAnswerActionURL}`, {
                 method: 'POST',
@@ -64,10 +88,19 @@ document.addEventListener('DOMContentLoaded', ()=> {
               .then(result => {
                   // Print result
                   //console.log(result.correct);
-                  toggleLight(result.correct, redLight, yellowLight, greenLight);
+                  if(result.previously_submitted){
+                    alert('You already attempted using that answer');
+                    resetLightsToRed(redLight,yellowLight,greenLight);
+                    return;
+                  }
+                  toggleLight(result.correct,result.too_many_attempts, redLight, yellowLight, greenLight);
               });
+        }else {
+          alert('Something went wrong');
         }
-        
+      }else if(greenLight.classList.contains('activated')){
+            alert('You already passed this question')
+      }
     });
 
 /*----------------------------DISPLAYING LATEX-------------------------*/
@@ -157,7 +190,7 @@ displayLatex();
 
 
     /*------------------------------UTILITY FUNCTIONS ----------------------------*/
-    function toggleLight(correct, redLight, yellowLight, greenLight) {
+    function toggleLight(correct, too_many_attempts,redLight, yellowLight, greenLight) {
         // Make the yellow light blink as though the program was 'thinking';
 
           if (correct) {
@@ -174,13 +207,28 @@ displayLatex();
               // Code to execute after 1.6 seconds
               yellowLight.classList.remove('activated');
               yellowLight.classList.remove('blinking');
-              redLight.classList.add('activated');
+              if(too_many_attempts){
+                // Keep yellow light
+                yellowLight.classList.add('activated');
+                alert('Too many attempts for this question');
+              }else {
+                redLight.classList.add('activated');
+              }
+              
             }, 1600);
         
           }
 
       }
       
+    function resetLightsToRed(redLight, yellowLight, greenLight){
+      redLight.classList.add('activated');
+      redLight.classList.remove('blinking');
+      yellowLight.classList.remove('blinking');
+      yellowLight.classList.remove('activated');
+      greenLight.classList.remove('blinking');
+      greenLight.classList.remove('activated');
+    }
 function rep(str, index, char) {
     str = setCharAt(str,index,char);
     return str
