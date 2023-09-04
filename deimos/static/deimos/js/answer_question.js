@@ -16,7 +16,26 @@ document.addEventListener('DOMContentLoaded', ()=> {
 
     submitBtn.addEventListener('click', (event)=>{
         event.preventDefault();
-        if (questionType.value==='structural' && screen.value.length > 0){
+        if (questionType.value==='structural'){
+          if(screen.value.length === 0){
+            alert('Cannot submit blank answer');
+            return;
+          }
+         
+        } else if (questionType.value ==='mcq' && num_true_counter===0){
+          alert('Must select at least on MCQ answer as true');
+          return;
+        }
+        const yellowLight = form.querySelector('.yellow-light');
+        const greenLight = form.querySelector('.green-light');
+        const redLight = form.querySelector('.red-light');
+        scrollToCenter(redLight);
+        if(!greenLight.classList.contains('activated')){
+
+          yellowLight.classList.add('activated');
+          yellowLight.classList.add('blinking');
+          redLight.classList.remove('activated');}
+        if (questionType.value==='structural'){
             fetch(`/${validateAnswerActionURL}`, {
                 method: 'POST',
                 headers: { 'X-CSRFToken': getCookie('csrftoken') },
@@ -29,7 +48,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
               .then(result => {
                   // Print result
                   //console.log(result.correct);
-                  toggleLight(result.correct);
+                  toggleLight(result.correct, redLight,yellowLight,greenLight);
               });
         } else if( questionType.value ==='mcq'){
             // TODO make sure some mcqs are selected as true.
@@ -45,7 +64,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
               .then(result => {
                   // Print result
                   //console.log(result.correct);
-                  toggleLight(result.correct);
+                  toggleLight(result.correct, redLight, yellowLight, greenLight);
               });
         }
         
@@ -138,37 +157,28 @@ displayLatex();
 
 
     /*------------------------------UTILITY FUNCTIONS ----------------------------*/
-    function toggleLight(correct) {
+    function toggleLight(correct, redLight, yellowLight, greenLight) {
         // Make the yellow light blink as though the program was 'thinking';
-        const yellowLight = form.querySelector('.yellow-light');
-        const greenLight = form.querySelector('.green-light');
-        const redLight = form.querySelector('.red-light');
-        yellowLight.classList.add('activated');
-        yellowLight.classList.add('blinking');
-      
-        if (correct) {
-          redLight.classList.remove('activated');
-          greenLight.classList.remove('activated');
-          setTimeout(function () {
-            // Code to execute after 2 seconds
-            yellowLight.classList.remove('activated');
-            yellowLight.classList.remove('blinking');
-            greenLight.classList.add('activated');
-          }, 2000);
-      
-          scrollToCenter(greenLight);
-        } else {
-          redLight.classList.remove('activated');
-          greenLight.classList.remove('activated');
-          setTimeout(function () {
-            // Code to execute after 2 seconds
-            yellowLight.classList.remove('activated');
-            yellowLight.classList.remove('blinking');
-            redLight.classList.add('activated');
-          }, 2000);
-      
-          scrollToCenter(redLight);
-        }
+
+          if (correct) {
+            
+            setTimeout(function () {
+              // Code to execute after 1.6 seconds
+              yellowLight.classList.remove('activated');
+              yellowLight.classList.remove('blinking');
+              greenLight.classList.add('activated');
+            }, 1600);
+        
+          } else {
+            setTimeout(function () {
+              // Code to execute after 1.6 seconds
+              yellowLight.classList.remove('activated');
+              yellowLight.classList.remove('blinking');
+              redLight.classList.add('activated');
+            }, 1600);
+        
+          }
+
       }
       
 function rep(str, index, char) {
