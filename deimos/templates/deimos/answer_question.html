@@ -11,7 +11,7 @@
     <header class="sidebar-header">X</header>
     <ul>
         <li><a href="{% url 'deimos:index'%}">Home</a></li>
-        <li><a href="{% url 'deimos:assigment_management' assignment_id=question.assignment.id course_id=question.assignment.course.id%}">Questions</a></li>
+        <li><a href="{% url 'deimos:assignment_management' assignment_id=question.assignment.id course_id=question.assignment.course.id%}">Questions</a></li>
         <li><a href="{% url 'deimos:course_management' course_id=question.assignment.course.id% }">Assignments</a></li>
         <li><a href="{% url 'deimos:search_question'%}">Search Question</a></li>
 
@@ -25,7 +25,17 @@
         {% csrf_token %}
         <input type="hidden" value="{{question.id}}" name="question-id"/>
         <p class="question-content">{{question.text | safe}}</p>
-        <br/>
+        <div class="question-status">
+          {% if success %}
+            <div class="tf-light red-light"></div>
+            <div class="tf-light yellow-light"></div>
+            <div class="tf-light green-light activated"></div>
+          {% else %}
+            <div class="tf-light red-light activated"></div>
+            <div class="tf-light yellow-light"></div>
+            <div class="tf-light green-light"></div>
+          {% endif %}
+        </div>
         <div class="question-images">
           {% for question_image in question.images.all %}
               <div class="formatted-answer" id="{{question_image.image.url}}">
