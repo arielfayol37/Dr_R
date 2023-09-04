@@ -461,6 +461,37 @@ more than assignment display */
   width: 90%;
   box-sizing: border-box;
 }
+.question-status {
+  width: 80px;
+  height:30px;
+  display: flex;
+  flex-direction: row;
+  justify-content:space-between;
+  align-items: center;
+  background-color: #333;
+  padding:5px;
+  border-radius: 3px;
+}
+.question-status .tf-light {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background-color: #656363;
+  transition: all 0.4s ease;
+}
+.question-status .tf-light.activated {
+  transform: scale(1.3);
+}
+.question-status .tf-light.red-light.activated {
+  background-color: red;
+}
+.question-status .tf-light.yellow-light.activated {
+  background-color: yellow;
+}
+.question-status .tf-light.green-light.activated {
+  background-color: rgb(41, 209, 41);
+}
+
   /* Mobile styling*/
 
   @media screen and (max-width: 1200px){

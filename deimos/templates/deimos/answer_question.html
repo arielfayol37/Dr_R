@@ -25,7 +25,17 @@
         {% csrf_token %}
         <input type="hidden" value="{{question.id}}" name="question-id"/>
         <p class="question-content">{{question.text | safe}}</p>
-        <br/>
+        <div class="question-status">
+          {% if success %}
+            <div class="tf-light red-light"></div>
+            <div class="tf-light yellow-light"></div>
+            <div class="tf-light green-light activated"></div>
+          {% else %}
+            <div class="tf-light red-light activated"></div>
+            <div class="tf-light yellow-light"></div>
+            <div class="tf-light green-light"></div>
+          {% endif %}
+        </div>
         <div class="question-images">
           {% for question_image in question.images.all %}
               <div class="formatted-answer" id="{{question_image.image.url}}">
