@@ -472,6 +472,18 @@ more than assignment display */
   padding:5px;
   border-radius: 3px;
 }
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.blinking {
+  animation: blink 0.5s infinite;
+}
 .question-status .tf-light {
   height: 20px;
   width: 20px;
