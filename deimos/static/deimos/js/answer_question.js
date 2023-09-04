@@ -32,8 +32,11 @@ document.addEventListener('DOMContentLoaded', ()=> {
                   if(result.correct){
                     form.querySelector('.red-light').classList.remove('activated');
                     const greenLight = form.querySelector('.green-light')
-                    greenLight.classList.add('activated');
-                    greenLight.scrollIntoView({behavior:'smooth'});
+                    setTimeout(function() {
+                        // Code to execute after 2 seconds
+                        greenLight.classList.add('activated');
+                      }, 2000);
+                    
                     scrollToCenter(greenLight);
                   }else {
                     scrollToCenter(form.querySelector('.red-light'));
@@ -56,8 +59,10 @@ document.addEventListener('DOMContentLoaded', ()=> {
                   if(result.correct){
                     form.querySelector('.red-light').classList.remove('activated');
                     const greenLight = form.querySelector('.green-light')
-                    greenLight.classList.add('activated');
-                    greenLight.scrollIntoView({behavior:'smooth'});
+                    setTimeout(function() {
+                        // Code to execute after 2 seconds
+                        greenLight.classList.add('activated');
+                      }, 2000);
                     scrollToCenter(greenLight);
                   }else {
                     scrollToCenter(form.querySelector('.red-light'));
