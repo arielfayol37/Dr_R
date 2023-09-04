@@ -29,18 +29,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
               .then(result => {
                   // Print result
                   //console.log(result.correct);
-                  if(result.correct){
-                    form.querySelector('.red-light').classList.remove('activated');
-                    const greenLight = form.querySelector('.green-light')
-                    setTimeout(function() {
-                        // Code to execute after 2 seconds
-                        greenLight.classList.add('activated');
-                      }, 2000);
-                    
-                    scrollToCenter(greenLight);
-                  }else {
-                    scrollToCenter(form.querySelector('.red-light'));
-                  }
+                  toggleLight(result.correct);
               });
         } else if( questionType.value ==='mcq'){
             // TODO make sure some mcqs are selected as true.
@@ -56,17 +45,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
               .then(result => {
                   // Print result
                   //console.log(result.correct);
-                  if(result.correct){
-                    form.querySelector('.red-light').classList.remove('activated');
-                    const greenLight = form.querySelector('.green-light')
-                    setTimeout(function() {
-                        // Code to execute after 2 seconds
-                        greenLight.classList.add('activated');
-                      }, 2000);
-                    scrollToCenter(greenLight);
-                  }else {
-                    scrollToCenter(form.querySelector('.red-light'));
-                  }
+                  toggleLight(result.correct);
               });
         }
         
@@ -159,6 +138,25 @@ displayLatex();
 
 
     /*------------------------------UTILITY FUNCTIONS ----------------------------*/
+function toggleLight(correct){
+    if(correct){
+        form.querySelector('.red-light').classList.remove('activated');
+        const yellowLight = form.querySelector('.yellow-light');
+        setTimeout(function (){
+            yellowLight.classList.add('activated');
+        })
+        const greenLight = form.querySelector('.green-light');
+        setTimeout(function() {
+            // Code to execute after 2 seconds
+            yellowLight.classList.remove('activated')
+            greenLight.classList.add('activated');
+          }, 2000);
+        
+        scrollToCenter(greenLight);
+      }else {
+        scrollToCenter(form.querySelector('.red-light'));
+      }
+}
 function rep(str, index, char) {
     str = setCharAt(str,index,char);
     return str
