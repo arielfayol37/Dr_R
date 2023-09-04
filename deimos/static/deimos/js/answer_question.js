@@ -138,25 +138,39 @@ displayLatex();
 
 
     /*------------------------------UTILITY FUNCTIONS ----------------------------*/
-function toggleLight(correct){
-    if(correct){
-        form.querySelector('.red-light').classList.remove('activated');
+    function toggleLight(correct) {
+        // Make the yellow light blink as though the program was 'thinking';
         const yellowLight = form.querySelector('.yellow-light');
-        setTimeout(function (){
-            yellowLight.classList.add('activated');
-        })
         const greenLight = form.querySelector('.green-light');
-        setTimeout(function() {
+        const redLight = form.querySelector('.red-light');
+        yellowLight.classList.add('activated');
+        yellowLight.classList.add('blinking');
+      
+        if (correct) {
+          redLight.classList.remove('activated');
+          greenLight.classList.remove('activated');
+          setTimeout(function () {
             // Code to execute after 2 seconds
-            yellowLight.classList.remove('activated')
+            yellowLight.classList.remove('activated');
+            yellowLight.classList.remove('blinking');
             greenLight.classList.add('activated');
           }, 2000);
-        
-        scrollToCenter(greenLight);
-      }else {
-        scrollToCenter(form.querySelector('.red-light'));
+      
+          scrollToCenter(greenLight);
+        } else {
+          redLight.classList.remove('activated');
+          greenLight.classList.remove('activated');
+          setTimeout(function () {
+            // Code to execute after 2 seconds
+            yellowLight.classList.remove('activated');
+            yellowLight.classList.remove('blinking');
+            redLight.classList.add('activated');
+          }, 2000);
+      
+          scrollToCenter(redLight);
+        }
       }
-}
+      
 function rep(str, index, char) {
     str = setCharAt(str,index,char);
     return str
