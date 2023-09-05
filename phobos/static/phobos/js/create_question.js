@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     var num_true_counter = 0;
     var option_counter = 0;
     var question_img_counter = 0;
+    const varSymbolsArray = [];
 
     const addQuestionImgBtn = document.querySelector('.question-image-add');
     const addMcqOptionBtn = document.querySelector('.mcq-add');
@@ -148,6 +149,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         else{
             try{
+                const validText = validateText(mcqInputField.value, varSymbolsArray);
+                if(!validText){
+                    alert('Undefined symbol(s) in variable expression(s)');
+                    return;
+                }
                 const formatted_new_answer = create_inputed_mcq_div(mcqInputField, mcqInputField.dataset.answerType);
                 inputedMcqAnswersDiv.appendChild(formatted_new_answer);
                 mcqInputField.value = '';
@@ -339,6 +345,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     })
     form.addEventListener('submit', (event) => {
+        // Make sure question text is valid
+        const questionTextArea = form.querySelector('#question-textarea');
+        const valid_textarea = validateText(questionTextArea.value, varSymbolsArray);
+        if (!valid_textarea){
+            event.preventDefault();
+            alert('The question text has undefined symbol(s) in variable expression(s)');
+            return;
+        }
         const selected_topic = checkTopicAndSubtopic();
         if (!selected_topic){
             event.preventDefault();
@@ -630,6 +644,194 @@ function checkTopicAndSubtopic() {
     return true;
   }
 
+  function validateText(text, array) {
+    // Check if "{...}" is present in the text and verifies there are non-numeric strings in {}
+    // in the text are in the list of variables
+
+    //  returns False if string in {} is non-numerice and not in the list of variables
+    // returns true otherwise.
+    console.log(array);
+    const match = text.match(/@\{(.+?)\}@/);
+  
+    if (match) {
+      const contentWithinBraces = match[1];
+      const contentArray = extractSymbols(contentWithinBraces);
+      if (!contentArray){
+        return false;
+      }
+      // Check if all non-numeric strings in contentArray are in the array
+      for (const item of contentArray) {
+        const trimmedItem = item.trim();
+        if (!isNaN(trimmedItem) || array.includes(trimmedItem)) {
+          // Numeric or found in the array
+          continue;
+        } else {
+          // Non-numeric and not found in the array
+          return false;
+        }
+      }
+      
+      return true; // All non-numeric strings are found in the array
+    }
+  
+    return true; // No "{...}" found in the text
+  }
+  
+
+  function extractSymbols(expr) {
+    // Insert space between combined characters. For example (0.28*a) becomes (0.28 a)
+    //const expression = expr.replace(/ /g, '');
+    var expression;
+    try {
+        expression = math.simplify(expr).toString();
+    } catch {
+        alert('Algebraic expression(s) in the variable expression(s) @{..}@ invalid');
+        return false;
+    }
+    const symbols = [];
+    var char;
+    var run = false;
+    var sub_index;
+    for (let index = 0; index < expression.length; index++) {
+      char = expression.charAt(index);
+      
+        if (/[a-zA-Z]/.test(char) && expression.charAt(index-1) != '-') {
+        run = true
+        sub_index = index + 1
+        while(run && sub_index <= expression.length){
+            if((sub_index === expression.length)){
+                symbols.push(expression.slice(index, sub_index));
+                run = false; //useless here though.
+            }
+            else if(expression.charAt(sub_index) === ' ' || expression.charAt(sub_index) === '(' ||
+            expression.charAt(sub_index) === ')'){
+
+                symbols.push(expression.slice(index, sub_index));
+                run = false;
+            }
+            sub_index  += 1;
+        }
+    }
+}
+    return symbols
+  }
+
+
+
+
+
+
+  //-----------------------------HANDLING VARIABLES---------------------------------------//
+
+  
+  const addVarBtn = document.querySelector('.var-btn');
+  const varInfoDiv = document.querySelector('.var-info-div');
+  const createdVarsDiv = document.querySelector('.created-vars');
+
+  var symbol = '';
+  var enteredDomain = '';
+  varInfoDiv.style.display = 'none';
+  var state = 'closed';
+  addVarBtn.addEventListener('click', (event)=>{
+      event.preventDefault();
+      if(state==='closed'){
+          state = 'open';
+          addVarBtn.innerHTML ='v-';
+          varInfoDiv.style.display = 'block';
+      }
+      else if(state==='open'){
+          state ='closed';
+          addVarBtn.innerHTML = 'v+';
+          varInfoDiv.style.display = 'none';
+      }
+  })
+  
+  varInfoDiv.addEventListener('click', (event)=>{
+      event.preventDefault();
+      if(event.target.classList.contains('btn-create-var')){
+          const varSymbolField = varInfoDiv.querySelector('.var-symbol');
+          const varDomainField = varInfoDiv.querySelector('.var-domain');
+          symbol = varSymbolField.value;
+          // Checking whether it's a valid symbol
+          if (symbol.length === 0 ){
+              alert('You must enter a symbol');
+              return;
+          } else if(varSymbolsArray.includes(symbol)){
+            alert('Symbol already in used');
+            return;
+          }
+          else if ((symbol.length > 3) || (symbol.length === 2) || (/^[a-zA-Z]$/.test(symbol.charAt(0)) === false) || 
+          ((symbol.charAt(1) != '_') && (symbol.length===3))){
+              alert('Invalid symbol');
+              return;
+          }
+          // Checking whether domain entered is valid
+          enteredDomain = varDomainField.value;
+          var parsedDomain = parseDomainInput(enteredDomain);
+          if(parsedDomain.length === 0){
+              alert('Invalid domain');
+              return;
+          }
+        
+          // passed all the tests
+          varSymbolsArray.push(symbol);
+          const newVarDiv = document.createElement('div');
+          const newVarBtn = document.createElement('button');
+          newVarBtn.type = 'button';
+          newVarBtn.classList.add('btn', 'btn-warning'); // Separate the classes
+          
+          newVarBtn.innerHTML = symbol;
+          newVarDiv.appendChild(newVarBtn);
+          newVarDiv.classList.add('variable');
+          newVarDiv.setAttribute('data-symbol', symbol);
+          for (let i = 0; i < parsedDomain.length; i++) {
+              const domainLbHiddenInput = document.createElement('input');
+              domainLbHiddenInput.type = 'hidden';
+              domainLbHiddenInput.name = `domain_lb_${symbol}_${i}`
+              domainLbHiddenInput.value = parsedDomain[i].lower
+              
+              const domainUbHiddenInput = document.createElement('input');
+              domainUbHiddenInput.type = 'hidden';
+              domainUbHiddenInput.name = `domain_ub_${symbol}_${i}`
+              domainUbHiddenInput.value = parsedDomain[i].upper
+
+              newVarBtn.appendChild(domainLbHiddenInput);
+              newVarBtn.appendChild(domainUbHiddenInput);
+          }
+          // TODO: add the hidden input fields.
+          createdVarsDiv.appendChild(newVarDiv);
+          createdVarsDiv.scrollIntoView({behavior:"smooth"});
+          varInfoDiv.style.display = 'none';
+          varSymbolField.value = '';
+          varDomainField.value = '';
+
+          state ='closed';
+          addVarBtn.innerHTML = 'v+';
+
+      }
+
+  })
+
+
+  function parseDomainInput(input) {
+    const boundsArray = [];
+    const groups = input.match(/\((.*?)\)/g); // Match text within parentheses
+
+    if (groups) {
+        groups.forEach(group => {
+            const bounds = group.slice(1, -1).split(','); // Remove parentheses and split by comma
+            if (bounds.length === 2) {
+                const lowerBound = parseFloat(bounds[0]);
+                const upperBound = parseFloat(bounds[1]);
+                if (!isNaN(lowerBound) && !isNaN(upperBound)) {
+                    boundsArray.push({ lower: lowerBound, upper: upperBound });
+                }
+            }
+        });
+    }
+
+    return boundsArray;
+}
 });
 
 
