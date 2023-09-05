@@ -167,13 +167,15 @@ class QuestionStudent(models.Model):
             else:
                 return str(value)
 
-        regex = re.compile(r'{(.*?)}')  # Use non-greedy matching to avoid unexpected results
+        regex = re.compile(r'@{(.*?)}@')  # Use non-greedy matching to avoid unexpected results
+        # For example, it could be "{expression1} some random text {expression2}" and greedy
+        # match will not work since it will include the random text.
 
         var_value_dict = self.get_var_value_dict()
         replaced_text = regex.sub(replace_match, text)
         
         # Remove the remaining curly braces after replacements
-        replaced_text = replaced_text.replace('{', '').replace('}', '')
+        replaced_text = replaced_text.replace('~', '')
         
         return replaced_text
 
