@@ -1,0 +1,28 @@
+<!--deimos: expression_compare_text.html-->
+{% extends 'deimos/layout.html'%}
+{% load static %}
+{% block body %}
+<div class="question-status">
+    <div class="tf-light red-light activated"></div>
+    <div class="tf-light yellow-light"></div>
+    <div class="tf-light green-light"></div>
+</div>
+<div class="expression-comparisons">
+    <div>
+        <input type="text" placeholder="Enter expression 1 here" name="expression_1" class="e1-field question-input-field"/>
+    </div>
+    <div>
+        <input type="text" placeholder="Enter expression 2 here" name="expression_2" class="e2-field question-input-field"/>
+    </div>
+    <button type="button" class="btn btn-success compare-btn">Compare</button>
+</div>
+
+
+<script>
+
+</script>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.9.1/math.js"></script>
+<script src="{% static 'deimos/js/expression_compare_test.js' %}"></script>
+{% endblock %}
