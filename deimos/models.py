@@ -245,18 +245,47 @@ class QuestionAttempt(models.Model):
     def __str__(self):
         return f"{self.question_student.student.username} attempt for {self.question_student.question}"
     
-
 def transform_expression(expr):
-    """Insert multiplication signs between combined characters"""
-    expression = expr.replace(' ','')
-    strs = []
-    for index, character in enumerate(expression):
+    """Insert multiplication signs between combined characters, except within trig functions."""
+    # A caveat here is that there is always a multiplication sign between a closing parenthesis
+    # ) and a symbol in the expr returned from math.simplify() in the front End.
+    # TODO: !important: Handle logarithmic functions.
+    expression = expr
+    pattern = r'(\s*([-+*/^])\s*)'
+    expression = re.sub(pattern, lambda match: match.group(2), expression)
+    expression = expression.replace(' ', '*')
+    # !important: The order of the following trigs matter in the while loop for expression[counter:].startwith(trig_func)
+    # the ones starting with a have to come before.
+    trig_functions = {
+        'asin': r'`', 'acos': r'@', 'atan': r'#', 'arcsin': r'$', 'arccos': r';',
+        'arctan': r'|', 'sin': r'[', 'cos': r'?', 'tan': r']'
+    }
+    trig_functions_values = list(trig_functions.values())
+    expression = encode(expression, trig_functions)
+    strs = [expression[0]]
+    for index in range(1, len(expression)): # Must start at 1 and not 0.
+        character = expression[index]
         string = character
-        if index > 0:
-            if character.isalpha() and expression[index-1].isalnum():
-                string = '*' + character
-            elif character.isdigit() and expression[index-1].isalpha():
-                string = '*' + character
+        if (character.isalpha() or character in trig_functions_values) and (expression[index - 1].isalnum()):
+            string = '*' + character
+        elif character.isdigit() and (expression[index - 1].isalpha()):
+            string = '*' + character
         strs.append(string)
-    transformed_expression = ''.join(strs)   
+    transformed_expression = decode(''.join(strs), trig_functions)
     return transformed_expression
+
+
+
+def encode(text, trig_functions):
+    """Takes a string and replaces trig functions with their corresponding special character."""
+    result = text
+    for key, value in trig_functions.items():
+        result = result.replace(key, value)
+    return result
+
+def decode(text, trig_functions):
+    """Takes a string and replaces special character with their corresponding trig function."""
+    result = text
+    for key, value in trig_functions.items():
+        result = result.replace(value, key)
+    return result

@@ -347,6 +347,11 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', (event) => {
         // Make sure question text is valid
         const questionTextArea = form.querySelector('#question-textarea');
+        if (questionTextArea.value.length <= 5){
+            event.preventDefault();
+            alert('A question cannot be this short!');
+            return;
+        }
         const valid_textarea = validateText(questionTextArea.value, varSymbolsArray);
         if (!valid_textarea){
             event.preventDefault();
@@ -374,15 +379,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 const userInputNode = math.simplify(processString(screen.value));
                 var userInputString = userInputNode.evaluate();
                 if(typeof(userInputString) != 'number'){
+
                     event.preventDefault();
                     alert('You selected float mode but the answer you provided is not a float');
                     return;
                 }
                 screen.value = userInputString;
             }catch {
-                event.preventDefault();
-                alert('You selected float mode but the answer you provided is not a float');
-                return;
+                if(!validateText(screen.value, varSymbolsArray, isFloat=true)){
+
+                    event.preventDefault();
+                    alert('You selected float mode but the answer you provided is not a float');
+                    return;
+                 }
             }
             
             
@@ -427,13 +436,18 @@ function create_inputed_mcq_div(input_field, answer_type) {
                     alert('You selected float mode but the answer you provided is not a float');
                     return;
                 }
-                answer_info_encoding = rep(answer_info_encoding, 1, '1');
+                
             }catch {
-                num_mcq_options_counter -= 1
-                alert('You selected float mode but the answer you provided is not a float');
-                return;
+                if(validateText(answer_value, varSymbolsArray, isFloat=true)){
+                    display_value = answer_value;
+                }else{
+                    num_mcq_options_counter -= 1
+                    alert('You selected float mode but the answer you provided is not a float');
+                    return;
+                }
+                
             }
-
+            answer_info_encoding = rep(answer_info_encoding, 1, '1');
             break;
         case 't-answer':
             display_value = answer_value;
@@ -467,9 +481,15 @@ function create_inputed_mcq_div(input_field, answer_type) {
                 formatted_answer.innerHTML = userInputLatex;
             }
             else {
-                const userInputNode = math.simplify(processString(display_value));
-                userInputLatex = userInputNode.toTex();
-                formatted_answer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
+                try{
+                    const userInputNode = math.simplify(processString(display_value));
+                    userInputLatex = userInputNode.toTex();
+                    formatted_answer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
+                }catch{
+                    formatted_answer = document.createElement('p');
+                    formatted_answer.innerHTML = display_value;
+                }
+                
             }
             
 
@@ -644,16 +664,46 @@ function checkTopicAndSubtopic() {
     return true;
   }
 
-  function validateText(text, array) {
+  function validateText(text, array, isFloat=false) {
     // Check if "{...}" is present in the text and verifies there are non-numeric strings in {}
     // in the text are in the list of variables
 
     //  returns False if string in {} is non-numerice and not in the list of variables
     // returns true otherwise.
-    console.log(array);
+
     const match = text.match(/@\{(.+?)\}@/);
+    if(isFloat){
+        if(text.startsWith("@{") && text.endsWith("}@")){
+            // we use - 4 because "@{" and "}@" count as four characters
+            if(text.length - 4 != match[1].length){
+                return false
+            } 
+        }else {
+            return false
+        }
+
+        const contentWithinBraces = match[1];
+        const contentArray = extractSymbols(contentWithinBraces);
+        if (!contentArray){
+          return false;
+        }
+        // Check if all non-numeric strings in contentArray are in the array
+        for (const item of contentArray) {
+          const trimmedItem = item.trim();
+          if (!isNaN(trimmedItem) || array.includes(trimmedItem)) {
+            // Numeric or found in the array
+            continue;
+          } else {
+            // Non-numeric and not found in the array
+            return false;
+          }
+        }
+        
+        return true; // All non-numeric strings are found in the array
+    }
   
-    if (match) {
+    else {
+        if (match) {
       const contentWithinBraces = match[1];
       const contentArray = extractSymbols(contentWithinBraces);
       if (!contentArray){
@@ -676,6 +726,7 @@ function checkTopicAndSubtopic() {
   
     return true; // No "{...}" found in the text
   }
+}
   
 
   function extractSymbols(expr) {
@@ -758,6 +809,9 @@ function checkTopicAndSubtopic() {
               return;
           } else if(varSymbolsArray.includes(symbol)){
             alert('Symbol already in used');
+            return;
+          }else if(symbol ==='a'){
+            alert('Unauthorized symbol due to trigonometric controversies (asin, arctan, arccos, etc)');
             return;
           }
           else if ((symbol.length > 3) || (symbol.length === 2) || (/^[a-zA-Z]$/.test(symbol.charAt(0)) === false) || 

@@ -369,7 +369,14 @@ def register(request):
         return render(request, "astros/register.html")
 
 
-#---------HELPER FUNCTIONS--------
+#---------HELPER FUNCTIONS--------------------------------------------------------
+def expression_compare_test(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        e1 = data['expression_1']
+        e2 = data['expression_2']
+        return JsonResponse({'correct': compare_expressions(e1,e2)})
+    return render(request, 'deimos/expression_compare_test.html')
 def is_student_enrolled(student_id, course_id):
     # Retrieve the Student and Course instances based on their IDs
     student = get_object_or_404(Student, pk=student_id)
