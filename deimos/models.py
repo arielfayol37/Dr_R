@@ -258,7 +258,8 @@ def transform_expression(expr):
     # the ones starting with a have to come before.
     trig_functions = {
         'asin': r'`', 'acos': r'@', 'atan': r'#', 'arcsin': r'$', 'arccos': r';',
-        'arctan': r'|', 'sin': r'[', 'cos': r'?', 'tan': r']'
+        'arctan': r'|', 'sin': r'[', 'cos': r'?', 'tan': r']', 'log':r'&','ln':r'è',
+        'cosec':r'é', 'sec':r'ç', 'cot':r'<', 'sinh':r'}', 'cosh':r'>', 'tansh':r'{'
     }
     trig_functions_values = list(trig_functions.values())
     expression = encode(expression, trig_functions)
@@ -269,6 +270,8 @@ def transform_expression(expr):
         if (character.isalpha() or character in trig_functions_values) and (expression[index - 1].isalnum()):
             string = '*' + character
         elif character.isdigit() and (expression[index - 1].isalpha()):
+            string = '*' + character
+        elif character =="(" and expression[index - 1].isalpha():
             string = '*' + character
         strs.append(string)
     transformed_expression = decode(''.join(strs), trig_functions)
