@@ -16,13 +16,18 @@
     </div>
     <button type="button" class="btn btn-success compare-btn">Compare</button>
 </div>
-
+<div class="expression-comparisons formatted-e">
+    <div class="formatted-answer" id="e1"></div>
+    <div class="formatted-answer" id="e2"></div>
+</div>
 
 <script>
 
 </script>
 {% endblock %}
 {% block scripts %}
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.9.1/math.js"></script>
 <script src="{% static 'deimos/js/expression_compare_test.js' %}"></script>
 {% endblock %}
