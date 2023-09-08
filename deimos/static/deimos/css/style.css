@@ -516,6 +516,12 @@ more than assignment display */
 .expression-comparisons input{
   margin-top: 10px;
 }
+.expression-comparisons.formatted-e {
+  justify-content: center;
+}
+.expression-comparisons.formatted-e .formatted-answer{
+  margin: 20px;
+}
 /*-----------------------------MOBILE VIEW STYLE--------------------*/
 
   @media screen and (max-width: 1200px){

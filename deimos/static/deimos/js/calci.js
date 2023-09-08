@@ -161,5 +161,60 @@ function replaceChars(str, charA, charB) {
       result = result.replace(regex, charB);
     }
   
-    return result;
+    return transformExpression(result);
   }
+
+  function transformExpression(expr) {
+    let expression = removeExtraSpacesAroundOperators(expr);
+    // !Important, the order of these functions is crucial!
+    const trigFunctions = {
+        'asin': 'ò', 'acos': 'ë', 'atan': 'à', 'arcsin': 'ê', 'arccos': 'ä',
+        'arctan': 'ï', 'sinh': 'ù', 'cosh': 'ô', 'tanh': 'ü', 'sin': 'î', 'cos': 'â', 
+        'tan': 'ö', 'log': 'ÿ', 'ln': 'è',
+        'cosec': 'é', 'sec': 'ç', 'cot': 'û'
+    };
+
+    expression = encode(expression, trigFunctions);
+
+    let transformedExpression = [...expression].map((char, index) => {
+        if (index !== 0 && needsMultiplication(expression, index, trigFunctions)) {
+            return '*' + char;
+        }
+        return char;
+    }).join('');
+
+    return decode(transformedExpression, trigFunctions);
+}
+
+function removeExtraSpacesAroundOperators(text) {
+    return text.replace(/\s*([-+*/^])\s*/g, '$1');
+}
+
+function needsMultiplication(expr, index, trigFunctions) {
+    const char = expr[index];
+    const prevChar = expr[index - 1];
+    return (
+        (/[a-zA-Z]/.test(char) || Object.values(trigFunctions).includes(char)) && /\w/.test(prevChar) ||
+        /\d/.test(char) && /[a-zA-Z]/.test(prevChar) ||
+        char === '(' && (/[a-zA-Z]/.test(prevChar) && !Object.values(trigFunctions).includes(prevChar))
+    );
+}
+
+function encode(text, trigFunctions) {
+    let result = text;
+    for (let [key, value] of Object.entries(trigFunctions)) {
+        result = result.replace(new RegExp(key, 'g'), value);
+    }
+    return result;
+}
+
+function decode(text, trigFunctions) {
+  let result = text;
+
+  for (let [key, value] of Object.entries(trigFunctions)) {
+      result = result.replace(new RegExp(value, 'g'), key);
+  }
+
+  return result;
+}
+

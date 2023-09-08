@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
     var num_true_counter = 0;
     const screen = document.querySelector('#screen'); 
     const questionType = document.querySelector('.question-type');
-
+    var answer_struct;
 /*-----------------------------Question submission-----------------------*/
 
     submitBtn.addEventListener('click', (event)=>{
@@ -45,6 +45,12 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 return;
               }
             }
+            try{
+              answer_struct = math.simplify(processString(screen.value));
+            }catch{
+              alert('Enter a valid expression');
+              return;
+            }
            
           } else if (questionType.value ==='mcq' && num_true_counter===0){
             alert('Must select at least on MCQ answer as true');
@@ -59,7 +65,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 method: 'POST',
                 headers: { 'X-CSRFToken': getCookie('csrftoken') },
                 body: JSON.stringify({
-                        answer: math.simplify(processString(screen.value)).toString(),
+                        answer: answer_struct.toString(),
                         questionType: questionType.value    
                 })
               })
@@ -155,7 +161,9 @@ displayLatex();
     if (!(screen === null)){
 
         screen.addEventListener('input', ()=> {
-            MathJax.typesetPromise().then(() => {
+            if(screen.value.length != 0){
+
+              MathJax.typesetPromise().then(() => {
                 try {
         
                 const userInputNode = math.simplify(processString(screen.value));
@@ -168,7 +176,11 @@ displayLatex();
                    //console.log(error);
                 }
                 
-                }); 
+                });
+            }else {
+              formattedAnswerDiv.innerHTML = '';
+            }
+ 
         
         })
         
@@ -178,9 +190,15 @@ displayLatex();
     form.addEventListener('submit', (event)=>{
         event.preventDefault();
         if (!(screen === null)){
-        const userInputNode = math.simplify(processString(screen.value));
-        var userInputString = userInputNode.toString();
-        screen.value = userInputString;
+          try{
+            const userInputNode = math.simplify(processString(screen.value));
+            var userInputString = userInputNode.toString();
+            screen.value = userInputString;
+          }catch{
+            alert('Invalid answer');
+            return;
+          }
+
         }
         if (!(inputedMcqAnswersDiv === null) && num_true_counter < 1){
             event.preventDefault();

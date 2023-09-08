@@ -6,11 +6,13 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const compareBtn = document.querySelector('.compare-btn');
     const e1Field = document.querySelector('.e1-field');
     const e2Field = document.querySelector('.e2-field');
+    const formattedDiv1 = document.querySelector('#e1');
+    const formattedDiv2 = document.querySelector('#e2');
     const replacementDict = {
         'π':'pi',
         '√':'sqrt'
     }
-    var e1_toBeCompared, e2_toBeCompared;
+    var e1_toBeCompared, e2_toBeCompared, e1_simplified, e2_simplified, e1_latex, e2_latex;
     compareBtn.addEventListener('click', (event)=>{
         event.preventDefault();
         if(e1Field.value.length === 0 || e2Field.value.length ===0){
@@ -18,11 +20,15 @@ document.addEventListener('DOMContentLoaded', ()=>{
             return;
         }else{
             try{
-                e1_toBeCompared = math.simplify(processString(e1Field.value)).toString();
-                e2_toBeCompared = math.simplify(processString(e2Field.value)).toString();
+                e1_simplified =  math.simplify(processString(e1Field.value))
+                e2_simplified = math.simplify(processString(e2Field.value))
+                e1_toBeCompared = e1_simplified.toString();
+                e2_toBeCompared = e2_simplified.toString();
+
                 //console.log(e1_toBeCompared);
                 //console.log(e2_toBeCompared);
-            }catch{
+            }catch(error){
+                //console.log(error);
                 alert('Expression(s) not valid algebraic expression');
                 return;
             }
@@ -47,6 +53,51 @@ document.addEventListener('DOMContentLoaded', ()=>{
         }
 
     })
+
+
+e1Field.addEventListener('input', ()=>{
+  if(e1Field.value.length != 0){
+    MathJax.typesetPromise().then(() => {
+      try {
+      e1_simplified = math.simplify(processString(e1Field.value))  
+      e1_latex = e1_simplified.toTex();
+      const formattedAnswer = MathJax.tex2chtml(e1_latex + '\\phantom{}');
+      formattedDiv1.innerHTML = '';
+      formattedDiv1.appendChild(formattedAnswer);
+      MathJax.typesetPromise();
+      } catch (error) {
+        // console.log(error);
+      }
+      
+      }); 
+  }else {
+    formattedDiv1.innerHTML = '';
+  }
+
+})
+
+e2Field.addEventListener('input', ()=>{
+  if(e2Field.value.length != 0){
+
+    MathJax.typesetPromise().then(() => {
+      try {
+      e2_simplified = math.simplify(processString(e2Field.value))  
+      e2_latex = e2_simplified.toTex();
+      const formattedAnswer = MathJax.tex2chtml(e2_latex + '\\phantom{}');
+      formattedDiv2.innerHTML = '';
+      formattedDiv2.appendChild(formattedAnswer);
+      MathJax.typesetPromise();
+      } catch (error) {
+        // console.log(error);
+      }
+      
+      }); 
+  } else {
+    formattedDiv2.innerHTML = '';
+  }
+
+})
+  
 function toggleLight(correct, too_many_attempts,redLight, yellowLight, greenLight) {
     // Make the yellow light blink as though the program was 'thinking';
 
@@ -57,7 +108,7 @@ function toggleLight(correct, too_many_attempts,redLight, yellowLight, greenLigh
           yellowLight.classList.remove('activated');
           yellowLight.classList.remove('blinking');
           greenLight.classList.add('activated');
-        }, 1600);
+        }, 600);
     
       } else {
         setTimeout(function () {
@@ -72,7 +123,7 @@ function toggleLight(correct, too_many_attempts,redLight, yellowLight, greenLigh
             redLight.classList.add('activated');
           }
           
-        }, 1600);
+        }, 600);
     
       }
 
@@ -113,15 +164,72 @@ return decodeURIComponent(csrfCookie.split('=')[1]);
 
 
 
-  function processString(str) {
-    let result = str;
-  
-    for (const charA in replacementDict) {
-      const charB = replacementDict[charA];
-      const regex = new RegExp(charA, 'g');
-      result = result.replace(regex, charB);
-    }
-  
-    return result;
+function processString(str) {
+  let result = str;
+
+  for (const charA in replacementDict) {
+    const charB = replacementDict[charA];
+    const regex = new RegExp(charA, 'g');
+    result = result.replace(regex, charB);
   }
+
+  return transformExpression(result);
+}
+
+function transformExpression(expr) {
+  let expression = removeExtraSpacesAroundOperators(expr);
+  // !Important, the order of these functions is crucial!
+  const trigFunctions = {
+      'asin': 'ò', 'acos': 'ë', 'atan': 'à', 'arcsin': 'ê', 'arccos': 'ä',
+      'arctan': 'ï', 'sinh': 'ù', 'cosh': 'ô', 'tanh': 'ü', 'sin': 'î', 'cos': 'â', 
+      'tan': 'ö', 'log': 'ÿ', 'ln': 'è',
+      'cosec': 'é', 'sec': 'ç', 'cot': 'û'
+  };
+
+  expression = encode(expression, trigFunctions);
+
+  let transformedExpression = [...expression].map((char, index) => {
+      if (index !== 0 && needsMultiplication(expression, index, trigFunctions)) {
+          return '*' + char;
+      }
+      return char;
+  }).join('');
+
+  return decode(transformedExpression, trigFunctions);
+}
+
+function removeExtraSpacesAroundOperators(text) {
+  return text.replace(/\s*([-+*/^])\s*/g, '$1');
+}
+
+function needsMultiplication(expr, index, trigFunctions) {
+  const char = expr[index];
+  const prevChar = expr[index - 1];
+  return (
+      (/[a-zA-Z]/.test(char) || Object.values(trigFunctions).includes(char)) && /\w/.test(prevChar) ||
+      /\d/.test(char) && /[a-zA-Z]/.test(prevChar) ||
+      char === '(' && (/[a-zA-Z]/.test(prevChar) && !Object.values(trigFunctions).includes(prevChar))
+  );
+}
+
+function encode(text, trigFunctions) {
+  let result = text;
+  for (let [key, value] of Object.entries(trigFunctions)) {
+      result = result.replace(new RegExp(key, 'g'), value);
+  }
+  return result;
+}
+
+function decode(text, trigFunctions) {
+  let result = text;
+
+  for (let [key, value] of Object.entries(trigFunctions)) {
+      result = result.replace(new RegExp(value, 'g'), key);
+  }
+
+  return result;
+}
+
+
+
 })

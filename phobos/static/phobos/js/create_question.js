@@ -327,21 +327,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // Here, each time the value of answer input screen changes,
     // we use mathjax to display the updated content.
     screen.addEventListener('input', ()=> {
+        if(screen.value.length != 0){
 
-        MathJax.typesetPromise().then(() => {
-            try {
-
-            const userInputNode = math.simplify(processString(screen.value));
-            var userInputLatex = userInputNode.toTex();
-            const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
+            MathJax.typesetPromise().then(() => {
+                try {
+    
+                const userInputNode = math.simplify(processString(screen.value));
+                var userInputLatex = userInputNode.toTex();
+                const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
+                formattedAnswerDiv.innerHTML = '';
+                formattedAnswerDiv.appendChild(formattedAnswer);
+                MathJax.typesetPromise();
+                } catch (error) {
+                   // console.log(error);
+                }
+                
+                }); 
+        }else {
             formattedAnswerDiv.innerHTML = '';
-            formattedAnswerDiv.appendChild(formattedAnswer);
-            MathJax.typesetPromise();
-            } catch (error) {
-               // console.log(error);
-            }
-            
-            }); 
+        }
+
 
     })
     form.addEventListener('submit', (event) => {
@@ -365,12 +370,20 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         if (mode==='e-answer'){
-            const userInputNode = math.simplify(processString(screen.value));
-            var userInputString = userInputNode.toString();
-            // The following is in case we don't want to change the domain of the algebraic expression
-            // for example, if we don't want (x+1)(x-1)/(x-1) to simplify to just (x+1)
-            //var userInputString = math.simplify(userInputNode, {}, {context: math.simplify.realContext}).toString()
-            screen.value = userInputString;
+            try{
+                const userInputNode = math.simplify(processString(screen.value));
+                var userInputString = userInputNode.toString();
+                // The following is in case we don't want to change the domain of the algebraic expression
+                // for example, if we don't want (x+1)(x-1)/(x-1) to simplify to just (x+1)
+                //var userInputString = math.simplify(userInputNode, {}, {context: math.simplify.realContext}).toString()
+                screen.value = userInputString;
+
+            }catch {
+                event.preventDefault();
+                alert('Expression in answer not valid algebraic expression');
+                return;
+            }
+
         }
         else if(
             mode==='f-answer'
@@ -458,8 +471,15 @@ function create_inputed_mcq_div(input_field, answer_type) {
             answer_info_encoding = rep(answer_info_encoding, 1, '2');
             break;
         case 'e-answer':
-            answer_value = math.simplify(processString(answer_value)).toString();
-            display_value = answer_value;
+            try{
+                answer_value = math.simplify(processString(answer_value)).toString();
+                display_value = answer_value;
+            }
+            catch{
+                num_mcq_options_counter -= 1
+                alert('Expression(s) not valid algebraic expression');   
+                return;
+            }
             answer_info_encoding = rep(answer_info_encoding, 1, '0');
             break;
         case 'i-answer':
@@ -810,9 +830,12 @@ function checkTopicAndSubtopic() {
           } else if(varSymbolsArray.includes(symbol)){
             alert('Symbol already in used');
             return;
-          }else if(symbol ==='a'){
-            alert('Unauthorized symbol due to trigonometric controversies (asin, arctan, arccos, etc)');
-            return;
+          }else if(symbol.length === 1)
+          {
+            if(/[aijk]/.test(symbol)){
+                alert('Unauthorized symbol due to vectors, trigonometric, or complex numbers issues (5i -2j + k, a +bi, asin, arctan, arccos, etc)');
+                return;
+            }
           }
           else if ((symbol.length > 3) || (symbol.length === 2) || (/^[a-zA-Z]$/.test(symbol.charAt(0)) === false) || 
           ((symbol.charAt(1) != '_') && (symbol.length===3))){
@@ -869,7 +892,7 @@ function checkTopicAndSubtopic() {
 
   function parseDomainInput(input) {
     const boundsArray = [];
-    const groups = input.match(/\((.*?)\)/g); // Match text within parentheses
+    const groups = input.match(/[(.*?)]/g); // Match text within parentheses
 
     if (groups) {
         groups.forEach(group => {
