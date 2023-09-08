@@ -287,7 +287,7 @@ def encode(text, trig_functions):
 
 def decode(text, trig_functions):
     """Takes a string and replaces special character with their corresponding trig function."""
-    special_chars = {'e':'E', 'i':'(-1)^0.5'}
+    special_chars = {'e':'E', 'i':'((-1)^0.5)'}
     result = text
     # !Important.  special_chars for loop must come before 
     # the trig_functions for loop!

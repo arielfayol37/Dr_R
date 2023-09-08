@@ -25,8 +25,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
                 e1_toBeCompared = e1_simplified.toString();
                 e2_toBeCompared = e2_simplified.toString();
 
-                //console.log(e1_toBeCompared);
-                //console.log(e2_toBeCompared);
+                console.log(e1_toBeCompared);
+                console.log(e2_toBeCompared);
             }catch(error){
                 //console.log(error);
                 alert('Expression(s) not valid algebraic expression');
