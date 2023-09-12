@@ -169,8 +169,6 @@ class Question(models.Model):
     # Define choices for the topic 
 
     """
-
- 
     number = models.CharField(blank=False, null=False, max_length=5)
     text = models.TextField(max_length= 2000, null=False, blank=False)
     assignment = models.ForeignKey(Assignment, null=True, on_delete=models.CASCADE, \
@@ -198,6 +196,7 @@ class Question(models.Model):
     margin_error = models.FloatField(default=0.03, blank=True, null=True)
     due_date = models.DateTimeField(null=True, blank=True)
     embedding = models.JSONField(null=True, blank=True)  # Field to store encoded representation for search
+    
 
     def default_due_date(self):
         if self.assignment:
@@ -251,9 +250,18 @@ class Hint(models.Model):
 
     def __str__(self):
         return f"Hint {self.id} for {self.question}"
+    
+class AnswerBase(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    content = models.TextField(blank=False, null=False)
+    answer_unit = models.CharField(max_length=50, blank=True, null=True) # Optional field for the units of the answer
+    class Meta:
+        abstract = True
 
+    def __str__(self):
+        return f"Answer for {self.question}: {self.content}"
         
-class FloatAnswer(models.Model):
+class FloatAnswer(AnswerBase):
     """
     Answer to a `structural Question` may be an algebraic expression, a vector, or a float.
     """
@@ -264,7 +272,7 @@ class FloatAnswer(models.Model):
             
         return f"Float Answer for {self.question}: {self.content}"
     
-class VariableFloatAnswer(models.Model):
+class VariableFloatAnswer(AnswerBase):
     """
     Answer to a `structural Question` or `MCQ Question` may be a variable float. 
     E.g answer = F/m, where F and m are going to have multiple different values assigned
@@ -277,7 +285,7 @@ class VariableFloatAnswer(models.Model):
         return f"Variable Float answer for {self.question}: {self.content}"
         
             
-class ExpressionAnswer(models.Model):
+class ExpressionAnswer(AnswerBase):
     """
     An expression for a `structural Question` may just be interpreted as text. The math.js library
     will parse the expression given by the teacher and the resulting text will be stored.
@@ -290,7 +298,7 @@ class ExpressionAnswer(models.Model):
         
         return f"Expression Answer for {self.question}: {self.content}"
 
-class LatexAnswer(models.Model):
+class LatexAnswer(AnswerBase):
     """
     An answer may a latex string that will later be rendered in the JavaScript.
     For now, this is only used for MCQ `Questions`.
@@ -302,7 +310,7 @@ class LatexAnswer(models.Model):
 
         return f"Latex Answer for {self.question}: {self.content}"
     
-class TextAnswer(models.Model):
+class TextAnswer(AnswerBase):
     """
     Probably less common, but a `Question` may have a text answer.
     Will implement semantic validation for text answers using a transformer later.
@@ -312,22 +320,30 @@ class TextAnswer(models.Model):
 
     def __str__(self):
         return f"Text Answer for {self.question}: {self.content}"
+    
+class MCQAnswerBase(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    content = models.TextField(blank=False, null=False)
+    is_answer = models.BooleanField(default=False)
+    class Meta:
+        abstract = True
 
-class MCQFloatAnswer(models.Model):
+    def __str__(self):
+        return f"MCQ Answer for {self.question}: {self.content}"
+
+class MCQFloatAnswer(MCQAnswerBase):
     """
     Float Answer to a `MCQ Question`.
     """
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="mcq_float_answers")
     content = models.FloatField(blank=False, null=False)
-    is_answer = models.BooleanField(default=False)
-
     def __str__(self):
         if self.is_answer:
             return f"Correct MCQ Float Answer for {self.question}: {self.content}"
         else:
             return f"Incorrect MCQ Float Answer for {self.question}: {self.content}" 
         
-class MCQVariableFloatAnswer(models.Model):
+class MCQVariableFloatAnswer(MCQAnswerBase):
     """
     Answer to a `structural Question` or `MCQ Question` may be a variable float. 
     E.g answer = F/m, where F and m are going to have multiple different values assigned
@@ -335,8 +351,6 @@ class MCQVariableFloatAnswer(models.Model):
     """
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='mcq_variable_float_answers')
     content = models.CharField(max_length=100, null=False, blank=False)
-    is_answer = models.BooleanField(default=False)
-
     def __str__(self):
         if self.is_answer:
             return f"Correct MCQ Variable Float Answer for {self.question}: {self.content}"
@@ -344,26 +358,24 @@ class MCQVariableFloatAnswer(models.Model):
             return f"Incorrect MCQ Variable Float Answer for {self.question}: {self.content}" 
         
             
-class MCQExpressionAnswer(models.Model):
+class MCQExpressionAnswer(MCQAnswerBase):
     """
     Expression answer for a `MCQ Question`.
     """
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="mcq_expression_answers")
     content = models.CharField(max_length=200) 
-    is_answer = models.BooleanField(default=False)
     def __str__(self):
         if self.is_answer:
             return f"Correct MCQ Expression Answer for {self.question}: {self.content}"
         else:
             return f"Incorrect MCQ Expression Answer for {self.question}: {self.content}" 
 
-class MCQLatexAnswer(models.Model):
+class MCQLatexAnswer(MCQAnswerBase):
     """
     Latex answer for `MCQ Question`.
     """
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='mcq_latex_answers')
     content = models.CharField(max_length=400)
-    is_answer = models.BooleanField(default=False)
 
     def __str__(self):
         if self.is_answer:
@@ -371,13 +383,12 @@ class MCQLatexAnswer(models.Model):
         else:
             return f"Incorrect MCQ Latex Answer for {self.question}: {self.content}" 
     
-class MCQTextAnswer(models.Model):
+class MCQTextAnswer(MCQAnswerBase):
     """
     Text answer for `MCQ Question`.
     """
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='mcq_text_answers')
     content = models.CharField(max_length=400)
-    is_answer = models.BooleanField(default=False)
 
     def __str__(self):
         if self.is_answer:
@@ -385,7 +396,7 @@ class MCQTextAnswer(models.Model):
         else:
             return f"Incorrect MCQ Text Answer for {self.question}: {self.content}"    
     
-class MCQImageAnswer(models.Model):
+class MCQImageAnswer(MCQAnswerBase):
     """
     An answer to an `MCQ Question` may simply be an image.
     """
@@ -393,10 +404,10 @@ class MCQImageAnswer(models.Model):
     image = models.ImageField(upload_to='phobos/images/question_images/', \
                               blank=True, null=True)  
     label = models.CharField(max_length=70, blank=True, null=True) 
-    is_answer = models.BooleanField(default=False)
+    content = models.CharField(max_length=1, blank=True, null=True)
 
     def __str__(self):
-        return f"Image answer for {self.quesiton} with url {self.image.url}" 
+        return f"Image answer for {self.question} with url {self.image.url}" 
 class Variable(models.Model):
     """
     A `Question` may have variables associated to it. 
@@ -412,6 +423,7 @@ class Variable(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='variables')
     symbol = models.CharField(max_length=3, blank=False, null=False)
     instances_created = models.BooleanField(default=False)
+    is_integer = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Variable `{self.symbol}` for question {self.question}"
@@ -456,19 +468,5 @@ class VariableInterval(models.Model):
 
     def __str__(self):
         return f"Interval {self.lower_bound} - {self.upper_bound} for {self.variable}"
-class VectorAnswer(models.Model):
-    # !Important: Deprecated
-    # A vector is simply an expression.
-    """
-    A vector answer for a structural question can be n-dimensional. n >= 2  
-    # TODO: !Important: the content should be an array of floats.
-            We may not have to do this, since the vectors are usually going to 2D or 3D.
-            As such, we can use one input field for each dimension.
-    """
+
     
-
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='vector_answers')
-    content = models.FloatField(blank=False, null=False)  # Store the vector as an array of floats
-
-    def __str__(self):
-        return f"Correct Vector Answer for {self.question}: {self.content}"

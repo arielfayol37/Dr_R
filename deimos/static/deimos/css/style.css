@@ -509,7 +509,7 @@ more than assignment display */
   padding:3%;
   width:80%;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   justify-content: space-between;
   align-items: center;
 }
@@ -517,7 +517,9 @@ more than assignment display */
   margin-top: 10px;
 }
 .expression-comparisons.formatted-e {
+  padding: 0%;
   justify-content: center;
+  flex-direction: row;
 }
 .expression-comparisons.formatted-e .formatted-answer{
   margin: 20px;

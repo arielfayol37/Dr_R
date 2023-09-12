@@ -249,12 +249,12 @@ class QuestionAttempt(models.Model):
 def transform_expression(expr):
     """Insert multiplication signs between combined characters, except within trig functions."""
     expression = remove_extra_spaces_around_operators(expr)
+    expression = expression.replace(', ', '')
     expression = expression.replace(' ', '*')
-    
     trig_functions = {
         'asin': 'ò', 'acos': 'ë', 'atan': 'à', 'arcsin': 'ê', 'arccos': 'ä',
         'arctan': 'ï', 'sinh': 'ù', 'cosh': 'ô', 'tanh': 'ü', 'sin': 'î', 'cos': 'â', 'tan': 'ö', 'log': 'ÿ', 'ln': 'è',
-        'cosec': 'é', 'sec': 'ç', 'cot': 'û'
+        'cosec': 'é', 'sec': 'ç', 'cot': 'û', 'sqrt':'у́', 'pi': 'я',
     }
 
     expression = encode(expression, trig_functions)
