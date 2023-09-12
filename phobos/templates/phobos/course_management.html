@@ -16,6 +16,12 @@
     </div>
     <br/>
     <h4>{{course.name}}</h4><hr/>
+<div class="course code">
+    <input class="expiring_date_input_feild" type= 'date' style="display: none;" name= 'expiring date of the code'/>
+    <button class="btn-enrollment-code"> Create an Enrollment Links</button>
+
+</div>
+    <ul class=" course code-list" style="color: blue;"></ul>
 
     <!-- Display course's assignments -->
     <ul class="courses course-list">
@@ -23,6 +29,48 @@
             {% include 'phobos/assignment_display.html' with assignment=assignment course=course %}
         {% endfor %}
     </ul>
+<script>
 
+    btn_make_new_code = document.querySelector('.btn-enrollment-code')
+    expiring_date_input_feild= document.querySelector('.expiring_date_input_feild');
+    expiring_date_input_feild.type= 'date';
+    btn_create = document.createElement('button');
+    code_list = document.createElement('li');
+ 
+
+
+    btn_make_new_code.addEventListener('click',()=>{
+        expiring_date_input_feild.style.display= 'block';
+        event.target.parentNode.appendChild(btn_create)
+        btn_make_new_code.style.display = 'none';
+    })
+
+    btn_create.addEventListener('click',()=>{
+        if (expiring_date_input_feild.value != ''){
+            btn_make_new_code.style.display= 'block';
+            event.target.parentNode.removeChild(btn_create);
+         expiring_date_input_feild.style.display= 'none';
+
+        fetch('enrollment_code/{{course.id}}/'+encodeURIComponent(expiring_date_input_feild.value))
+        .then(response => response.json())
+        .then(code =>{
+            code_items = document.createElement('li');
+            code_items.innerHTML =  'code: ' +code.code + "  expiring date: "+ code.ex_date
+            document.querySelector('.code-list').append(code_items);
+        })
+
+        }
+        else {
+
+            alert('enter an expiring date for the code');
+}
+        console.log(expiring_date_input_feild.value, typeof(expiring_date_input_feild.value))
+
+
+
+
+    })
+    
+</script>
     
 {% endblock %}

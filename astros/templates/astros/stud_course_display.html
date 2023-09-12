@@ -25,9 +25,57 @@
         </div>
     {% else %}
         <div class="edit-section il">{% csrf_token %}
-            <div><a href="{% url 'deimos:course_enroll' course_id=course.id %}"><button class="btn edit-btn co" data-course-id="{{ course.id}}">Enroll</button></div></a>
+            <div class="enrollment"><button class="btn edit-btn pre-Enroll">Start</button>
+               <input type="number" placeholder="enter the enrollment code" style="display:none"/>
+                <input type = 'button' value = 'validate' style="display: none;"/>
+                <a href="{% url 'deimos:course_enroll' course_id=course.id %}" ><button style="display:none;" class="btn edit-btn co" data-course-id="{{ course.id}}">Enroll</button></div></a>
         
         </div>
     {% endif %}
 
 </li>
+
+<script>
+
+enrollment_div = document.querySelector('.enrollment');
+btn_pre_Enroll = enrollment_div.querySelector('.pre-Enroll');
+btn_Enroll = enrollment_div.querySelector('.co');
+code_input_field = enrollment_div.querySelector('input[type=number]');
+btn_valide_code = enrollment_div.querySelector('input[type=button]');
+
+
+btn_pre_Enroll.addEventListener('click',(event)=>{
+    event.preventDefault();
+    code_input_field.style.display= 'block';
+    btn_valide_code.style.display= 'block';
+    btn_pre_Enroll.style.display='none';
+  })
+
+code_input_field.addEventListener('change',(event)=>{
+    event.preventDefault();
+    event.target.style.color='black';
+})
+
+btn_valide_code.addEventListener('click',(event)=>{
+    event.preventDefault();
+    console.log(btn_Enroll.dataset.courseId)
+    fetch('Validate_enrollment_code/'+btn_Enroll.dataset.courseId +'/'+ code_input_field.value)
+    .then(response=>response.json())
+    .then(validation =>{
+        console.log(validation)
+        code_input_field.value='';
+        code_input_field.placeholder = validation.response;
+        if(validation.state){
+            btn_Enroll.style.display ='block';
+            error_message.style.display = 'none';
+            code_input_field.style.color='green';
+
+        }
+        else{
+            code_input_field.style.color='red';
+        }
+    })
+})
+
+
+</script>

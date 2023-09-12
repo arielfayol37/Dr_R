@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
                     return;
                   }
                   toggleLight(result.correct,result.too_many_attempts,redLight,yellowLight,greenLight);
+                  feedback_message(result.feedback_data)
               });
         } else if( question_type ==='mcq'){
             // TODO make sure some mcqs are selected as true.
@@ -288,6 +289,10 @@ function getCookie(name) {
     return selectedAnswerIds;
   }
 
+function feedback_message(result){
+
+  console.log(result);
+}
 
 });
 

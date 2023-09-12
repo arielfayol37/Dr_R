@@ -18,7 +18,7 @@ from django.shortcuts import get_object_or_404
 from django.middleware import csrf
 from django.utils.timesince import timesince
 from deimos.models import AssignmentStudent, Student, QuestionStudent
-
+from datetime import date
 from sklearn.metrics.pairwise import cosine_similarity
 from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
 import heapq
@@ -519,4 +519,19 @@ def search_question(request):
 
     return render(request,'phobos/search_question.html')
 
+
+def enrollmentCode(request, course_id, expiring_date):
+    min=100000000000
+    max=999999999999
+    course= Course.objects.get(pk = course_id)
+    enrollment_code = EnrollmentCode(course = course, 
+                                     code= random.randint(min,max),
+                                      creation_date= date.today(), 
+                                      expiring_date= expiring_date)
+    enrollment_code.save()
+    print(EnrollmentCode.objects.all())
+    print(EnrollmentCode.objects.none())
+    return JsonResponse({'code': enrollment_code.code,
+                         'ex_date':enrollment_code.expiring_date})
+    
 

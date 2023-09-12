@@ -209,6 +209,7 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
         data = json.loads(request.body)
         submitted_answer = data["answer"]
         question = Question.objects.get(pk=question_id)
+        feedback_data = ('none')
         
         # Use get_or_create() to avoid duplicating QuestionStudent instances
         # Normally, we should just use get() because QuestionStudent object is already created
@@ -233,7 +234,7 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                 elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
                     # Checking previous attempts
                     for previous_attempt in question_student.attempts.all():
-                        if compare_floats(previous_attempt.content,submitted_answer):
+                        if compare_floats(previous_attempt.content,submitted_answer)[0]:
                             previously_submitted = True
                             return JsonResponse({'previously_submitted': previously_submitted})
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
@@ -242,7 +243,8 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                     answer = question.float_answers.first()
                     try:
                         # answer.content must come first in the compare_floats()
-                        correct = compare_floats(answer.content, submitted_answer, question.margin_error) 
+                        correct = compare_floats(answer.content, submitted_answer, question.margin_error)[0]
+                        feedback_data = compare_floats(answer.content, submitted_answer, question.margin_error) 
                     except ValueError:
                         # TODO: Maybe return a value to the user side that will ask them to enter a float.
                         # TODO: Actually, ensure this on the front-end.
@@ -251,14 +253,19 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                     try:
                         answer_temp = question_student.compute_structural_answer()
                         correct = compare_floats(answer_temp, submitted_answer,
-                                                    question.margin_error)
+                                                    question.margin_error)[0]
+                        feedback_data = compare_floats(answer.content, submitted_answer, question.margin_error)
                     except ValueError:
                         correct = False
+                
                 if correct:
                     # Deduct points based on attempts, but ensure it doesn't go negative
                     attempt.num_points = max(0, question.num_points - (question.deduct_per_attempt * question_student.get_num_attempts()))
                     question_student.success = True
                     attempt.success = True
+                
+                #feedback_data = compare_floats(answer.content, submitted_answer, question.margin_error)
+ 
                     
                 question_student.save()  # Save the changes to the QuestionStudent instance
                 attempt.save()
@@ -302,7 +309,8 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
         return JsonResponse({
             'correct': correct,
             'too_many_attempts': too_many_attempts,
-            'previously_submitted':previously_submitted
+            'previously_submitted':previously_submitted,
+            'feedback_data': feedback_data
         })
     
 
@@ -429,10 +437,11 @@ def compare_floats(correct_answer, submitted_answer, margin_error=0.0):
     """
     f1 = eval(str(correct_answer))
     f2 = eval(str(submitted_answer))
+
     if f1 == 0:
-        return f1-f2 <= margin_error
+        return (f1-f2 <= margin_error,'feedback message function') 
     else:
-        return abs(f1-f2)/f1 <= margin_error
+        return (abs(f1-f2)/f1 <= margin_error,'feedback message function')
 
     
 def replace_links_with_html(text):

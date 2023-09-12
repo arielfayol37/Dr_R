@@ -472,3 +472,11 @@ class VectorAnswer(models.Model):
 
     def __str__(self):
         return f"Correct Vector Answer for {self.question}: {self.content}"
+
+class EnrollmentCode(models.Model):
+
+    course= models.ForeignKey(Course, on_delete=models.CASCADE, related_name="enrollment_code")
+    code = models.IntegerField(default=0000)
+    creation_date = models.DateField()
+    expiring_date = models.DateField()
+
