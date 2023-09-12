@@ -39,7 +39,7 @@ def course_management(request, course_id):
     # Making sure the request is done by a professor.
     professor = get_object_or_404(Professor, pk=request.user.id)
     course = get_object_or_404(Course, pk = course_id)
-    if not course.professors.filter(pk=request.user.pk).exists():
+    if not course.professors.filter(pk=request.user.pk).exists() and course.name !='Question Bank':
         return HttpResponseForbidden('You are not authorized to manage this course.')
     assignments = Assignment.objects.filter(course=course)
     context = {
@@ -54,7 +54,7 @@ def assignment_management(request, assignment_id, course_id=None):
     professor = get_object_or_404(Professor, pk=request.user.id)
     assignment = get_object_or_404(Assignment, pk = assignment_id)
     course = assignment.course
-    if not course.professors.filter(pk=request.user.pk).exists():
+    if not course.professors.filter(pk=request.user.pk).exists() and course.name != 'Question Bank':
         return HttpResponseForbidden('You are not authorized to manage this Assignment.')
     questions = Question.objects.filter(assignment = assignment)
     for question in questions:
@@ -350,7 +350,7 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
         else:
             return HttpResponse('Something went wrong.')
     course = Course.objects.get(pk = course_id)
-    if course.professors.filter(pk=request.user.pk).exists():
+    if course.professors.filter(pk=request.user.pk).exists() or course.name=='Question Bank':
        show_answer = True
     else:
         show_answer = False

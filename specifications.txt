@@ -20,3 +20,4 @@ B) Create the necessary animations for the templates `astros: register.html` and
         the left side and right side. i.e. the instructor login/register section and the student login/register section
 
 
+Notes: To run a script, use 'python manage.py runscript <name_of_python_script>'

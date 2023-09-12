@@ -415,7 +415,7 @@ def compare_expressions(expression1, expression2):
 
     symbols_union = set(e1) | set(e2)  # Combined set of symbols from both expressions
     symbols_union.update(extract_numbers(e1 + e2))  # Update with extracted numbers
-    symbls = symbols(' '.join(symbols_union))
+    symbls = symbols(' '.join(symbols_union), real=True, positive=True)
     sym_e1 = simplify(e1, symbols=symbls)
     sym_e2 = simplify(e2, symbols=symbls)
     difference = (simplify(sym_e1 - sym_e2, symbols=symbls))

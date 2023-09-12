@@ -183,7 +183,7 @@ function transformExpression(expr) {
       'asin': 'ò', 'acos': 'ë', 'atan': 'à', 'arcsin': 'ê', 'arccos': 'ä',
       'arctan': 'ï', 'sinh': 'ù', 'cosh': 'ô', 'tanh': 'ü', 'sin': 'î', 'cos': 'â', 
       'tan': 'ö', 'log': 'ÿ', 'ln': 'è',
-      'cosec': 'é', 'sec': 'ç', 'cot': 'û'
+      'cosec': 'é', 'sec': 'ç', 'cot': 'û', 'sqrt':'у́', 'pi': 'я',
   };
 
   expression = encode(expression, trigFunctions);
