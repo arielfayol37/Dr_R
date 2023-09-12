@@ -534,4 +534,15 @@ def enrollmentCode(request, course_id, expiring_date):
     return JsonResponse({'code': enrollment_code.code,
                          'ex_date':enrollment_code.expiring_date})
     
+def display_codes(request,course_id):
+    if request.method == "GET":
+         course = Course.objects.get(pk= course_id)
+         codes= EnrollmentCode.objects.filter(course =  course )
+         print(codes,codes == EnrollmentCode.objects.none())
+         usable_codes =[]
+         for code in codes:
+                 if code.expiring_date > date.today():
+                     usable_codes.append({'code':code.code, 
+                                         'ex_date':code.expiring_date})
 
+         return JsonResponse({'codes':usable_codes})    

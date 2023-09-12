@@ -49,13 +49,15 @@ def validate_code(request,course_id,code):
     if request.method == "GET":
          course = Course.objects.get(pk= course_id)
          codes= EnrollmentCode.objects.filter(course =  course ,code = code)
-         print(codes)
+         print(codes,codes == EnrollmentCode.objects.none())
          if codes == EnrollmentCode.objects.none():
              return HttpResponse(json.dumps({'state':False,'response':'Invalid code'}))
          else:
              for code in codes:
-                 if code.expiring_date > date.today():
+                 if code.expiring_date < date.today():
                      return HttpResponse(json.dumps({'state':False,'response':'Expired code'}))
                  else:
                      return HttpResponse(json.dumps({'state':True,'response':'Valide code'}))
          return HttpResponse(json.dumps({'state':False,'response':'unknown error'}))    
+
+

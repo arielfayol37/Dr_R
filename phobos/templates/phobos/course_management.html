@@ -37,8 +37,20 @@
     btn_create = document.createElement('button');
     code_list = document.createElement('li');
  
+    
+    // displaying previous enrollment codes which are still Valid
+    fetch('display_enrollment_codes/{{course.id}}')
+        .then(response => response.json())
+        .then(Code =>{
+            code=Code.codes
+            console.log(code,code.length)
+            for(i=0;i<code.length;i++){
+            code_items = document.createElement('li');
+            code_items.innerHTML =  'code: ' +code[i].code + "  expiring date: "+ code[i].ex_date
+            document.querySelector('.code-list').append(code_items);}
+        })
 
-
+        // generating a new enrollment code
     btn_make_new_code.addEventListener('click',()=>{
         expiring_date_input_feild.style.display= 'block';
         event.target.parentNode.appendChild(btn_create)
@@ -66,10 +78,10 @@
 }
         console.log(expiring_date_input_feild.value, typeof(expiring_date_input_feild.value))
 
-
-
-
     })
+
+
+
     
 </script>
     
