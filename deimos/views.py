@@ -248,6 +248,13 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                         # TODO: Actually, ensure this on the front-end.
                         correct = False
                 elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
+                    # Checking previous attempts
+                    for previous_attempt in question_student.attempts.all():
+                        if compare_floats(previous_attempt.content,submitted_answer):
+                            previously_submitted = True
+                            return JsonResponse({'previously_submitted': previously_submitted})
+                    attempt = QuestionAttempt.objects.create(question_student=question_student)
+                    attempt.content = submitted_answer
                     try:
                         answer_temp = question_student.compute_structural_answer()
                         correct = compare_floats(answer_temp, submitted_answer,

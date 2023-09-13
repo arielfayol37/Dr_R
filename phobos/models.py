@@ -91,6 +91,11 @@ class Course(models.Model):
 
     def __str__(self):
         return f" Course {self.name}, difficulty level - {self.difficulty_level}"
+    def delete(self, *args, **kwargs):
+        # Delete the image file from storage
+        if self.image:
+            self.image.delete(save=False)
+        super(Course, self).delete(*args, **kwargs)
 
 class Professor(User):
     """
@@ -240,6 +245,12 @@ class QuestionImage(models.Model):
 
     def __str__(self):
         return f"{self.label} for {self.question}"
+    
+    def delete(self, *args, **kwargs):
+        # Delete the image file from storage
+        if self.image:
+            self.image.delete(save=False)
+        super(QuestionImage, self).delete(*args, **kwargs)
 
 class Hint(models.Model):
     """
@@ -408,6 +419,11 @@ class MCQImageAnswer(MCQAnswerBase):
 
     def __str__(self):
         return f"Image answer for {self.question} with url {self.image.url}" 
+    def delete(self, *args, **kwargs):
+        # Delete the image file from storage
+        if self.image:
+            self.image.delete(save=False)
+        super(MCQImageAnswer, self).delete(*args, **kwargs)
 class Variable(models.Model):
     """
     A `Question` may have variables associated to it. 

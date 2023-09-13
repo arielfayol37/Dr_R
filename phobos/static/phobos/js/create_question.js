@@ -892,7 +892,7 @@ function checkTopicAndSubtopic() {
 
   function parseDomainInput(input) {
     const boundsArray = [];
-    const groups = input.match(/[(.*?)]/g); // Match text within parentheses
+    const groups = input.match(/\[(.*?)\]/g); // Match text within parentheses
 
     if (groups) {
         groups.forEach(group => {

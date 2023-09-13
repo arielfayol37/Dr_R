@@ -31,6 +31,12 @@ class NoteImage(models.Model):
     """
     note = models.ForeignKey(Note, on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(upload_to='deimos/images/notes_images/', blank=True, null=True)
+    
+    def delete(self, *args, **kwargs):
+        # Delete the image file from storage
+        if self.image:
+            self.image.delete(save=False)
+        super(NoteImage, self).delete(*args, **kwargs)
  
 
 class Resource(models.Model):
@@ -143,6 +149,8 @@ class QuestionStudent(models.Model):
         if self.question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
             assert self.question.variable_float_answers.count() == 1
             answer = self.question.variable_float_answers.first().content
+            assert answer.startswith('@{') and answer.endswith('}@')
+            answer = answer[2:-2]
         # TODO: Add a clause here if the answer type is different
         # TODO: Add another clause here to make sure the answer evaluates to a float.
         # Possible reasons why it won't evaluate:
