@@ -231,6 +231,16 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                     answer = question.expression_answers.first()
                     correct = compare_expressions(answer.content, submitted_answer)
                 elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
+                    # Checking previous attempts (Yes, this should be done after checking with the real answer)
+                    # Because of 'margin_error' in compare_floats(). 
+                    # the submitted answer may be close to a previous answer, however be within 
+                    # the margin error of both the correct answer and previous answer.
+                    # Hence we must check the correct answer first.
+                    try:
+                        # answer.content must come first in the compare_floats()
+                        correct = compare_floats(answer.content, submitted_answer, question.margin_error) 
+                    except ValueError:
+                        correct = False
                     # Checking previous attempts
                     for previous_attempt in question_student.attempts.all():
                         if compare_floats(previous_attempt.content,submitted_answer):
@@ -240,27 +250,21 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                     attempt.content = submitted_answer
                     assert question.float_answers.count() == 1
                     answer = question.float_answers.first()
-                    try:
-                        # answer.content must come first in the compare_floats()
-                        correct = compare_floats(answer.content, submitted_answer, question.margin_error) 
-                    except ValueError:
-                        # TODO: Maybe return a value to the user side that will ask them to enter a float.
-                        # TODO: Actually, ensure this on the front-end.
-                        correct = False
+
                 elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
-                    # Checking previous attempts
-                    for previous_attempt in question_student.attempts.all():
-                        if compare_floats(previous_attempt.content,submitted_answer):
-                            previously_submitted = True
-                            return JsonResponse({'previously_submitted': previously_submitted})
-                    attempt = QuestionAttempt.objects.create(question_student=question_student)
-                    attempt.content = submitted_answer
                     try:
                         answer_temp = question_student.compute_structural_answer()
                         correct = compare_floats(answer_temp, submitted_answer,
                                                     question.margin_error)
                     except ValueError:
                         correct = False
+                    for previous_attempt in question_student.attempts.all():
+                        if compare_floats(previous_attempt.content,submitted_answer):
+                            previously_submitted = True
+                            return JsonResponse({'previously_submitted': previously_submitted})
+                    attempt = QuestionAttempt.objects.create(question_student=question_student)
+                    attempt.content = submitted_answer
+
                 if correct:
                     # Deduct points based on attempts, but ensure it doesn't go negative
                     attempt.num_points = max(0, question.num_points - (question.deduct_per_attempt * question_student.get_num_attempts()))
