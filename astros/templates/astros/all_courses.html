@@ -28,4 +28,62 @@
         {% endif %}
     </ul>
 
+    <script>
+
+        ul= document.querySelector('.course-list');
+        ul.addEventListener('click',(event)=>{
+            parent_ = event.target.parentNode;
+                event.preventDefault();
+                console.log('1',parent_);
+            if(parent_.classList.contains('enrollment')){
+                console.log('2');
+                enrollment_div = parent_;
+        btn_pre_Enroll = enrollment_div.querySelector('.pre-Enroll');
+        btn_Enroll = enrollment_div.querySelector('.co');
+        code_input_field = enrollment_div.querySelector('input[type=number]');
+        btn_valide_code = enrollment_div.querySelector('input[type=button]');
+        
+        
+        //btn_pre_Enroll.addEventListener('click',(event)=>{
+            //event.preventDefault();
+            code_input_field.style.display= 'block';
+            btn_valide_code.style.display= 'block';
+            btn_pre_Enroll.style.display='none';
+          //})
+        
+        code_input_field.addEventListener('change',(event)=>{
+            event.preventDefault();
+            event.target.style.color='black';
+        })
+        
+        btn_valide_code.addEventListener('click',(event)=>{
+            event.preventDefault();
+            console.log(btn_Enroll.dataset.courseId)
+            fetch('Validate_enrollment_code/'+btn_Enroll.dataset.courseId +'/'+ code_input_field.value)
+            .then(response=>response.json())
+            .then(validation =>{
+                console.log(validation)
+                code_input_field.value='';
+                code_input_field.placeholder = validation.response;
+                if(validation.state){
+                    btn_Enroll.style.display ='block';
+                    btn_valide_code.style.display = 'none';
+                    code_input_field.color='green';
+        
+                }
+                else{
+                    code_input_field.style.color='red';
+                }
+            })
+        })
+
+            }
+            
+        }); 
+        
+        
+        // capture inner elements.       
+
+        </script>
+
 {% endblock %}

@@ -485,4 +485,15 @@ class VariableInterval(models.Model):
     def __str__(self):
         return f"Interval {self.lower_bound} - {self.upper_bound} for {self.variable}"
 
-    
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='vector_answers')
+    content = models.FloatField(blank=False, null=False)  # Store the vector as an array of floats
+
+    def __str__(self):
+        return f"Correct Vector Answer for {self.question}: {self.content}"
+
+class EnrollmentCode(models.Model):
+
+    course= models.ForeignKey(Course, on_delete=models.CASCADE, related_name="enrollment_code")
+    code = models.IntegerField(default=0000)
+    creation_date = models.DateField(auto_now_add=True)
+    expiring_date = models.DateField()

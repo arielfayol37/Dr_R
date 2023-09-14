@@ -1,8 +1,10 @@
 from django.shortcuts import render
-from phobos.models import Course, Professor
+from phobos.models import Course, Professor,EnrollmentCode
 from deimos.models import Student, Enrollment
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
+from datetime import date
+import json
 # Create your views here.
 def index(request):
     return render(request, 'astros/index.html')
@@ -45,3 +47,19 @@ def all_courses(request):
         pass
     return render(request, 'astros/all_courses.html', {"courses":courses})
     
+def validate_code(request,course_id,code):
+    if request.method == "GET":
+         course = Course.objects.get(pk= course_id)
+         codes= EnrollmentCode.objects.filter(course =  course ,code = code)
+         print(codes,codes == EnrollmentCode.objects.none())
+         if codes == EnrollmentCode.objects.none():
+             return HttpResponse(json.dumps({'state':False,'response':'Invalid code'}))
+         else:
+             for code in codes:
+                 if code.expiring_date < date.today():
+                     return HttpResponse(json.dumps({'state':False,'response':'Expired code'}))
+                 else:
+                     return HttpResponse(json.dumps({'state':True,'response':'Valide code'}))
+         return HttpResponse(json.dumps({'state':False,'response':'unknown error'}))    
+
+

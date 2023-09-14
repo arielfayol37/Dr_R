@@ -31,5 +31,9 @@ urlpatterns = [
      path('courses/<int:course_id>/<int:student_id>/get_questions/<int:assignment_id>',
           views.get_questions,name='get_questions'),
      path('search_question/', views.search_question, name='search_question'),
-     path('sidebar/', views.sidebar, name='sidebar')
+     path('sidebar/', views.sidebar, name='sidebar'),
+
+     path('courses/enrollment_code/<int:course_id>/<str:expiring_date>',views.enrollmentCode, name = 'enrollment_code'),
+     path('courses/display_enrollment_codes/<int:course_id>',views.display_codes, name='display_codes')
+
 ]

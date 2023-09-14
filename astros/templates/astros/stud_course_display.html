@@ -25,9 +25,14 @@
         </div>
     {% else %}
         <div class="edit-section il">{% csrf_token %}
-            <div><a href="{% url 'deimos:course_enroll' course_id=course.id %}"><button class="btn edit-btn co" data-course-id="{{ course.id}}">Enroll</button></div></a>
-        
+            <div class="enrollment">
+                <button class="btn edit-btn pre-Enroll">Start</button>
+               <input type="number" placeholder="enter the enrollment code" style="display:none"/>
+                <input type = 'button' value = 'validate' style="display: none;"/>
+                <a href="{% url 'deimos:course_enroll' course_id=course.id %}" ><button style="display:none;" class="btn edit-btn co" data-course-id="{{ course.id}}">Enroll</button></a>
+            </div>
         </div>
     {% endif %}
 
 </li>
+
