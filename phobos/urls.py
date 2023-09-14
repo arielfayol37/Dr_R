@@ -33,7 +33,8 @@ urlpatterns = [
      path('search_question/', views.search_question, name='search_question'),
      path('sidebar/', views.sidebar, name='sidebar'),
 
-     path('courses/enrollment_code/<int:course_id>/<str:expiring_date>',views.enrollmentCode, name = 'enrollment_code'),
-     path('courses/display_enrollment_codes/<int:course_id>',views.display_codes, name='display_codes')
+     path('courses/<int:course_id>/enrollment_code/<str:expiring_date>',views.enrollmentCode, name = 'enrollment_code'),
+     path('courses/<int:course_id>/display_enrollment_codes',views.display_codes, name='display_codes'),
+     path('courses/<int:course_id>/manage_enrollment_codes', views.manage_enrollment_codes, name='manage_enrollment_codes')
 
 ]

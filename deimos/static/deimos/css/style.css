@@ -415,6 +415,27 @@ div.c-text {
   border-color: #007bff;
   outline: none;
 }
+
+.field-style {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+  color: #333;
+  resize: vertical;
+  transition: border-color 0.3s ease-in-out;
+}
+
+.field-style:hover {
+  border-color: #999;
+}
+
+.field-style:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
 #answer-question {
   margin-left: 5%;
   width: 80%;

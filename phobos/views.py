@@ -218,6 +218,8 @@ def create_question(request, assignment_id=None, type_int=None):
                                                 upper_bound = vars_dict[var_symbol]['ub'][bound_index])
                 var_interval.save()
         if type_int == 3:
+            new_question.deduct_per_attempt = 0.25 # Deduct 25% of points when it is an mcq
+            new_question.max_num_attempts = 3
             for key, value in request.POST.items():
                 if key.startswith('answer_value_'):
                     option_index_start = len('answer_value_')
@@ -327,12 +329,14 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
         answers.extend(ta)
         fa = question.mcq_float_answers.all()
         answers.extend(fa)
+        fva = question.mcq_variable_float_answers.all()
+        answers.extend(fva)
         ia = question.mcq_image_answers.all()
         answers.extend(ia)
         la = question.mcq_latex_answers.all()
         answers.extend(la)
         # !Important: order matters here. Latex has to be last!
-        is_latex = [0 for _ in range(ea.count()+ta.count()+fa.count()+ia.count())]
+        is_latex = [0 for _ in range(ea.count()+ta.count()+fa.count()+fva.count()+ia.count())]
         is_latex.extend([1 for _ in range(la.count())])
     else:
         if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
@@ -361,7 +365,16 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
                          'answers_is_latex': zip(answers, is_latex) if is_latex else None})
 
 
-       
+@login_required(login_url='astros:login')  
+def manage_enrollment_codes(request, course_id):
+    # Making sure the request is done by a professor.
+    professor = get_object_or_404(Professor, pk=request.user.id)
+    course = get_object_or_404(Course, pk = course_id)
+    if not course.professors.filter(pk=request.user.pk).exists():
+        return HttpResponseForbidden('You are not authorized to manage the enrollments for this course.')
+    return render(request, 'phobos/manage_enrollment_codes.html', {'course':course})
+
+
 
 def calci(request):
     return render(request, 'phobos/calci.html')
@@ -519,18 +532,19 @@ def search_question(request):
 
     return render(request,'phobos/search_question.html')
 
-
+@login_required(login_url='astros:login')
 def enrollmentCode(request, course_id, expiring_date):
+    # Making sure the request is done by a professor.
+    professor = get_object_or_404(Professor, pk=request.user.id)
     min=100000000000
     max=999999999999
     course= Course.objects.get(pk = course_id)
     enrollment_code = EnrollmentCode(course = course, 
                                      code= random.randint(min,max),
-                                      creation_date= date.today(), 
                                       expiring_date= expiring_date)
     enrollment_code.save()
-    print(EnrollmentCode.objects.all())
-    print(EnrollmentCode.objects.none())
+    # print(EnrollmentCode.objects.all())
+    # print(EnrollmentCode.objects.none())
     return JsonResponse({'code': enrollment_code.code,
                          'ex_date':enrollment_code.expiring_date})
     
@@ -538,7 +552,7 @@ def display_codes(request,course_id):
     if request.method == "GET":
          course = Course.objects.get(pk= course_id)
          codes= EnrollmentCode.objects.filter(course =  course )
-         print(codes,codes == EnrollmentCode.objects.none())
+         # print(codes,codes == EnrollmentCode.objects.none())
          usable_codes =[]
          for code in codes:
                  if code.expiring_date > date.today():

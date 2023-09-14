@@ -128,8 +128,10 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
     answers = []
     is_latex = []
     question_type = []
-    question_type_dict = {'ea': 0, 'fa':1, 'la':2, 'ta':3, 'ia':7}
-    question_type_count = {'ea': 0, 'fa': 0, 'la': 0, 'ta': 0, 'ia': 0}
+    # The dictionary question_type_dict is used for answer validation.
+    # So validate_answer() takes the input from the user and kind of compares to this dictionary.
+    question_type_dict = {'ea': 0, 'fa':1, 'fva':8,'la':2, 'ta':3, 'ia':7}
+    question_type_count = {'ea': 0, 'fa': 0, 'fva':0, 'la': 0, 'ta': 0, 'ia': 0}
     if question.answer_type.startswith('MCQ'):
         is_mcq = True
         ea = question.mcq_expression_answers.all()
@@ -141,6 +143,12 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
             answer.content = question_student.evaluate_var_expressions_in_text(answer.content, add_html_style=True)
         fa = question.mcq_float_answers.all()
         answers.extend(fa)
+        fva = question.mcq_variable_float_answers.all()
+        #evaluated_fva = [question_student.evaluate_var_expressions_in_text(mcq_fva.content, add_html_style=True)\
+               #for mcq_fva in fva]
+        for mcq_fva in fva:
+            mcq_fva.content = question_student.evaluate_var_expressions_in_text(mcq_fva.content, add_html_style=True)
+        answers.extend(fva)
         ia = question.mcq_image_answers.all()
         answers.extend(ia)
         la = question.mcq_latex_answers.all()
@@ -148,11 +156,13 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
         
         question_type_count['ea'] = ea.count()
         question_type_count['fa'] = fa.count()
-        question_type_count['la'] = la.count()
+        question_type_count['fva'] = fva.count()
         question_type_count['ta'] = ta.count()
         question_type_count['ia'] = ia.count()
+        question_type_count['la'] = la.count()
+
         # !Important: order matters here. Latex has to be last!
-        is_latex = [0 for _ in range(ea.count()+ta.count()+fa.count()+ia.count())]
+        is_latex = [0 for _ in range(ea.count()+ta.count()+fa.count()+fva.count()+ia.count())]
         is_latex.extend([1 for _ in range(la.count())])
         for q_type in question_type_dict:
             question_type.extend([question_type_dict[q_type] for _ in range(question_type_count[q_type])])
@@ -237,30 +247,32 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                     # the submitted answer may be close to a previous answer, however be within 
                     # the margin error of both the correct answer and previous answer.
                     # Hence we must check the correct answer first.
+                    assert question.float_answers.count() == 1
+                    answer = question.float_answers.first()
                     try:
                         # answer.content must come first in the compare_floats()
-                        correct = compare_floats(answer.content, submitted_answer, question.margin_error) 
+                        correct, feedback_data = compare_floats(answer.content, submitted_answer, question.margin_error) 
                     except ValueError:
                         correct = False
                     # Checking previous attempts
                     for previous_attempt in question_student.attempts.all():
-                        if compare_floats(previous_attempt.content,submitted_answer)[0]:
+                        are_the_same, fake_feedback = compare_floats(previous_attempt.content,submitted_answer, get_feedback=False)
+                        if are_the_same:
                             previously_submitted = True
                             return JsonResponse({'previously_submitted': previously_submitted})
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
                     attempt.content = submitted_answer
-                    assert question.float_answers.count() == 1
-                    answer = question.float_answers.first()
+
                 elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
                     try:
                         answer_temp = question_student.compute_structural_answer()
-                        correct = compare_floats(answer_temp, submitted_answer,
-                                                    question.margin_error)[0]
-                        feedback_data = compare_floats(answer.content, submitted_answer, question.margin_error)
+                        correct, feedback_data = compare_floats(answer_temp, submitted_answer,
+                                                    question.margin_error)
                     except ValueError:
                         correct = False
                     for previous_attempt in question_student.attempts.all():
-                        if compare_floats(previous_attempt.content,submitted_answer):
+                        are_the_same, fake_feedback = compare_floats(previous_attempt.content, submitted_answer, margin_error=0.02, get_feedback=False)
+                        if are_the_same:
                             previously_submitted = True
                             return JsonResponse({'previously_submitted': previously_submitted})
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
@@ -271,10 +283,6 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                     attempt.num_points = max(0, question.num_points - (question.deduct_per_attempt * question_student.get_num_attempts()))
                     question_student.success = True
                     attempt.success = True
-                
-                #feedback_data = compare_floats(answer.content, submitted_answer, question.margin_error)
- 
-                    
                 question_student.save()  # Save the changes to the QuestionStudent instance
                 attempt.save()
             elif data["questionType"] == 'mcq':
@@ -288,7 +296,7 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                         return JsonResponse({'previously_submitted': previously_submitted})
                 attempt = QuestionAttempt.objects.create(question_student=question_student)
                 attempt.content = str(submitted_answer)
-                question_type_dict = {'ea': 0, 'fa':1, 'la':2, 'ta':3, 'ia':7}
+                question_type_dict = {'ea': 0, 'fa':1, 'fva':8,'la':2, 'ta':3, 'ia':7}
                 answers = []
                 ea = list(question.mcq_expression_answers.filter(is_answer=True).values_list('pk', flat=True))
                 ea = [str(pk) + str(question_type_dict['ea']) for pk in ea]
@@ -299,6 +307,9 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                 fa = list(question.mcq_float_answers.filter(is_answer=True).values_list('pk', flat=True))
                 fa = [str(pk) + str(question_type_dict['fa']) for pk in fa]
                 answers.extend(fa)
+                fva = list(question.mcq_variable_float_answers.filter(is_answer=True).values_list('pk', flat=True))
+                fva = [str(pk) + str(question_type_dict['fva']) for pk in fva]
+                answers.extend(fva)
                 la = list(question.mcq_latex_answers.filter(is_answer=True).values_list('pk', flat=True))
                 la = [str(pk)+ str(question_type_dict['la']) for pk in la]
                 answers.extend(la)
@@ -437,7 +448,7 @@ def compare_expressions(expression1, expression2):
     difference = (simplify(sym_e1 - sym_e2, symbols=symbls))
     return True if difference == 0 else False
 
-def compare_floats(correct_answer, submitted_answer, margin_error=0.0):
+def compare_floats(correct_answer, submitted_answer, margin_error=0.0, get_feedback=True):
     """
     Given two floats f1 and f2,
     returns True if they are equal or close,
@@ -445,11 +456,14 @@ def compare_floats(correct_answer, submitted_answer, margin_error=0.0):
     """
     f1 = eval(str(correct_answer))
     f2 = eval(str(submitted_answer))
-
+    feedback_message = "'feedback message function'"
+    if get_feedback:
+        # TODO: Implement the function to compute the feedback message.
+        pass
     if f1 == 0:
-        return (f1-f2 <= margin_error,'feedback message function') 
+        return (f1-f2 <= margin_error, feedback_message) 
     else:
-        return (abs(f1-f2)/f1 <= margin_error,'feedback message function')
+        return (abs(f1-f2)/f1 <= margin_error, feedback_message)
 
     
 def replace_links_with_html(text):

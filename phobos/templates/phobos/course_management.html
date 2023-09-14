@@ -9,80 +9,20 @@
             <li><a href="{% url 'phobos:create_assignment' course_id=course.id %}">Create Assignment</a></li>
             <li><a href="{% url 'phobos:gradebook' course_id=course.id %}">Gradebook</a></li>
             <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
+            <li><a href="{% url 'phobos:manage_enrollment_codes' course_id=course.id %}">Enrollment Codes</a></li>
         </ul>
     </div>
     <div id="sf-container">
         <input  id="search-field" type="text" name="search" placeholder="search assignment"/>
     </div>
     <br/>
+    
     <h4>{{course.name}}</h4><hr/>
-<div class="course code">
-    <input class="expiring_date_input_feild" type= 'date' style="display: none;" name= 'expiring date of the code'/>
-    <button class="btn-enrollment-code"> Create an Enrollment Links</button>
-
-</div>
-    <ul class=" course code-list" style="color: blue;"></ul>
-
     <!-- Display course's assignments -->
     <ul class="courses course-list">
         {% for assignment in assignments %}
             {% include 'phobos/assignment_display.html' with assignment=assignment course=course %}
         {% endfor %}
     </ul>
-<script>
-
-    btn_make_new_code = document.querySelector('.btn-enrollment-code')
-    expiring_date_input_feild= document.querySelector('.expiring_date_input_feild');
-    expiring_date_input_feild.type= 'date';
-    btn_create = document.createElement('button');
-    code_list = document.createElement('li');
- 
-    
-    // displaying previous enrollment codes which are still Valid
-    fetch('display_enrollment_codes/{{course.id}}')
-        .then(response => response.json())
-        .then(Code =>{
-            code=Code.codes
-            console.log(code,code.length)
-            for(i=0;i<code.length;i++){
-            code_items = document.createElement('li');
-            code_items.innerHTML =  'code: ' +code[i].code + "  expiring date: "+ code[i].ex_date
-            document.querySelector('.code-list').append(code_items);}
-        })
-
-        // generating a new enrollment code
-    btn_make_new_code.addEventListener('click',()=>{
-        expiring_date_input_feild.style.display= 'block';
-        event.target.parentNode.appendChild(btn_create)
-        btn_make_new_code.style.display = 'none';
-    })
-
-    btn_create.addEventListener('click',()=>{
-        if (expiring_date_input_feild.value != ''){
-            btn_make_new_code.style.display= 'block';
-            event.target.parentNode.removeChild(btn_create);
-         expiring_date_input_feild.style.display= 'none';
-
-        fetch('enrollment_code/{{course.id}}/'+encodeURIComponent(expiring_date_input_feild.value))
-        .then(response => response.json())
-        .then(code =>{
-            code_items = document.createElement('li');
-            code_items.innerHTML =  'code: ' +code.code + "  expiring date: "+ code.ex_date
-            document.querySelector('.code-list').append(code_items);
-        })
-
-        }
-        else {
-
-            alert('enter an expiring date for the code');
-}
-        console.log(expiring_date_input_feild.value, typeof(expiring_date_input_feild.value))
-
-    })
-
-
-
-    
-</script>
     
 {% endblock %}

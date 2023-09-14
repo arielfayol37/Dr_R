@@ -617,6 +617,11 @@ addQuestionImgBtn.addEventListener('click', (event)=>{
             mainQuestionImagePreview.appendChild(formatted_new_img);
             imgLabelInputField.value = '';
             question_img_counter += 1;
+            questionAddImgBtn.classList.remove('closed');
+            questionAddImgBtn.classList.add('open');
+            uploadedQuestionPreview.innerHTML = '';
+            questionAddImgBtn.innerHTML = 'Upload Image';
+            questionImgUploadSection.style.display = 'none'; 
         }
         catch(error){
             alert('Make sure you entered a label for the image and selected an image file.')

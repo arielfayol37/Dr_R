@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
                     return;
                   }
                   toggleLight(result.correct,result.too_many_attempts,redLight,yellowLight,greenLight);
-                  feedback_message(result.feedback_data)
+                  feedback_message(result.feedback_data);
               });
         } else if( question_type ==='mcq'){
             // TODO make sure some mcqs are selected as true.
