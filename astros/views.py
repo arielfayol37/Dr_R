@@ -1,10 +1,14 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from phobos.models import Course, Professor,EnrollmentCode
 from deimos.models import Student, Enrollment
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
 from datetime import date
 import json
+from django.shortcuts import get_object_or_404
+from django.contrib import messages
+from deimos.models import QuestionStudent, AssignmentStudent
+from django.urls import reverse
 # Create your views here.
 def index(request):
     return render(request, 'astros/index.html')
@@ -46,20 +50,37 @@ def all_courses(request):
     except Student.DoesNotExist:
         pass
     return render(request, 'astros/all_courses.html', {"courses":courses})
+
+@login_required(login_url='astros:login')
+def course_enroll(request, course_id, code):
+    # Making sure the request is done by a Student.
+    student = get_object_or_404(Student, pk=request.user.pk)
+    course = get_object_or_404(Course, pk = course_id)
+    if not Enrollment.objects.filter(student=student, course=course).exists():
+        # Checking whether code is valid.
+        try:
+            code = EnrollmentCode.objects.get(course=course, code=code)
+        except:
+            return HttpResponse(json.dumps({'state':False,'response':'Invalid code'}))
+        if code.expiring_date >= date.today():
+            # If not enrolled, create a new Enrollment instance
+            enrollment = Enrollment.objects.create(student=student, course=course)
+            messages.info(request, message="You were successfully enrolled")
+            # Now assign all the courses assignments to the student. 
+            for assignment in course.assignments.all():
+                assign = AssignmentStudent.objects.create(assignment=assignment, student=student)
+                for question in assignment.questions.all():
+                    quest = QuestionStudent.objects.create(question=question, student=student)
+
+            return HttpResponse(json.dumps({'state': True, 'response':'valid code',\
+                                            'course_management_url':reverse('deimos:course_management', \
+                                                                            kwargs={'course_id':course_id})}))
+        else:
+            return HttpResponse(json.dumps({'state':False,'response':'Expired code'}))
+    else:
+        # Student is already enrolled in the course
+        return HttpResponse(json.dumps({'state': True, 'response':'valid code',\
+                                                'course_management_url':reverse('deimos:course_management', \
+                                                                                kwargs={'course_id':course_id})}))
+
     
-def validate_code(request,course_id,code):
-    if request.method == "GET":
-         course = Course.objects.get(pk= course_id)
-         codes= EnrollmentCode.objects.filter(course=course, code=code)
-         # print(codes,codes == EnrollmentCode.objects.none())
-         if codes == EnrollmentCode.objects.none():
-             return HttpResponse(json.dumps({'state':False,'response':'Invalid code'}))
-         else:
-             for code in codes:
-                 if code.expiring_date < date.today():
-                     return HttpResponse(json.dumps({'state':False,'response':'Expired code'}))
-                 else:
-                     return HttpResponse(json.dumps({'state':True,'response':'Valid code'}))
-         return HttpResponse(json.dumps({'state':False,'response':'unknown error'}))    
-
-

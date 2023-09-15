@@ -26,11 +26,10 @@
     {% else %}
         <div class="edit-section il">{% csrf_token %}
             <div class="enrollment">
-                <button type="button" class="btn edit-btn pre-Enroll">Start</button>
+                <button type="button" class="btn edit-btn pre-Enroll" data-course-id="{{ course.id}}">Enroll</button>
                 <input type="number" placeholder="enter the enrollment code" class="field-style" style="display:none"/>
-                <input type = 'button' value = 'validate' style="display: none;"/>   
+                <button type ="button" class="btn btn-success validate-btn" style="display: none;"> validate </button>   
             </div>
-            <a  style="text-decoration: none; display: none;" class="co-enroll-link" href="{% url 'deimos:course_enroll' course_id=course.id %}" ><button class="btn edit-btn co co-enroll-btn" data-course-id="{{ course.id}}">Enroll</button></a>
         </div>
     {% endif %}
 
