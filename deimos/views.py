@@ -10,7 +10,6 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib import messages
 from .forms import *
 from .models import *
 from django.shortcuts import get_object_or_404
@@ -75,28 +74,6 @@ def assignment_management(request, assignment_id, course_id=None):
     }
     return render(request, "deimos/assignment_management.html", context)
 
-@login_required(login_url='astros:login')
-def course_enroll(request, course_id):
-    # Making sure the request is done by a Student.
-    student = get_object_or_404(Student, pk=request.user.pk)
-    course = get_object_or_404(Course, pk = course_id)
-    if not Enrollment.objects.filter(student=student, course=course).exists():
-        # If not enrolled, create a new Enrollment instance
-        enrollment = Enrollment.objects.create(student=student, course=course)
-        messages.info(request, message="You were successfully enrolled")
-        # Redirect to a success page or course details page
-        
-        # Now assign all the courses assignments to the student. 
-        for assignment in course.assignments.all():
-            assign = AssignmentStudent.objects.create(assignment=assignment, student=student)
-            for question in assignment.questions.all():
-                quest = QuestionStudent.objects.create(question=question, student=student)
-            
-        return redirect('deimos:course_management', course_id=course_id)
-    else:
-        # Student is already enrolled in the course
-        return redirect('deimos:course_management', course_id=course_id)
-    
 # TODO: Add the action link in answer_question.html
 # TODO: Implement question_view as well.
 @login_required(login_url='astros:login')

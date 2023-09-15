@@ -161,6 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 option_counter += 1;
             }
             catch(error){
+                console.log(error)
                 alert('Make sure you enter the correct format of the answer type you selected.')
             }
             
@@ -429,7 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function create_inputed_mcq_div(input_field, answer_type) {
     var answer_value = input_field.value
     var inputedMcqDiv = document.createElement('div'); // to be appended to .inputed-mcq-answers.
-    num_mcq_options_counter += 1;
+   
     var answer_info_encoding = '000' // First character for True or False, second for question type, and third for question_number 
     // The following is a blue print of the information stored about an mcq-option.
     // One of the hidden inputs should store the string value of the answer, as well as the type of answer it is..
@@ -445,7 +446,6 @@ function create_inputed_mcq_div(input_field, answer_type) {
                 display_value = answer_value;
                 answer_value = math.simplify(processString(answer_value)).evaluate();
                 if(typeof(answer_value) != 'number'){
-                    num_mcq_options_counter -= 1
                     alert('You selected float mode but the answer you provided is not a float');
                     return;
                 }
@@ -454,7 +454,7 @@ function create_inputed_mcq_div(input_field, answer_type) {
                 if(validateText(answer_value, varSymbolsArray, isFloat=true)){
                     display_value = answer_value;
                 }else{
-                    num_mcq_options_counter -= 1
+
                     alert('You selected float mode but the answer you provided is not a float');
                     return;
                 }
@@ -495,7 +495,7 @@ function create_inputed_mcq_div(input_field, answer_type) {
             if (answer_type==='l-answer'){// if latex-answer or text-answer
                 userInputLatex = answer_value;
                 formatted_answer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
-            } else if(answer_type==='t-answer'){
+            } else if(answer_type==='t-answer' || answer_type==='i-answer'){
                 userInputLatex = answer_value;
                 formatted_answer = document.createElement('p');
                 formatted_answer.innerHTML = userInputLatex;
@@ -546,6 +546,10 @@ function create_inputed_mcq_div(input_field, answer_type) {
             formattedAnswerDiv.appendChild(formatted_answer);
             if (answer_type === 'i-answer'){
                 formattedAnswerDiv.appendChild(mcqImagePreview.cloneNode(true));
+                if(imageUploadInput.files.length === 0 ){
+                    alert('You must select an image file');
+                    throw 'Image expected to be selected but wasn\'t'
+                }
                 const image_input_field_clone = imageUploadInput.cloneNode(true);
                 image_input_field_clone.name = `answer_value_${option_counter}`;
                 image_input_field_clone.style.display = 'none';
@@ -563,6 +567,7 @@ function create_inputed_mcq_div(input_field, answer_type) {
         }
     });
 
+    num_mcq_options_counter += 1;
 
     return inputedMcqDiv;
 }
@@ -693,75 +698,46 @@ function checkTopicAndSubtopic() {
     return true;
   }
 
+
   function validateText(text, array, isFloat=false) {
-    // Check if "{...}" is present in the text and verifies there are non-numeric strings in {}
-    // in the text are in the list of variables
-
-    //  returns False if string in {} is non-numerice and not in the list of variables
-    // returns true otherwise.
-
-    const match = text.match(/@\{(.+?)\}@/);
-    if (match.length > 1){
-        return false
-    }
-    if(isFloat){
-        if(text.startsWith("@{") && text.endsWith("}@")){
-            // we use - 4 because "@{" and "}@" count as four characters
-            if(text.length - 4 != match[1].length){
-                return false
-            } 
-        }else {
-            return false
-        }
-
-        const contentWithinBraces = match[1];
-        const contentArray = extractSymbols(contentWithinBraces);
-        if (!contentArray){
-          return false;
-        }
-        // Check if all non-numeric strings in contentArray are in the array
-        for (const item of contentArray) {
-          const trimmedItem = item.trim();
-          if (!isNaN(trimmedItem) || array.includes(trimmedItem)) {
-            // Numeric or found in the array
-            continue;
-          } else {
-            // Non-numeric and not found in the array
-            return false;
-          }
-        }
-        
-        return true; // All non-numeric strings are found in the array
-    }
-  
-    else {
-        if (match) {
-            for(const m of match){
-                const contentWithinBraces = m;
-                const contentArray = extractSymbols(contentWithinBraces);
-                if (!contentArray){
+    if (isFloat) {
+        const match = text.match(/@\{(.+?)\}@/);
+        if (text.startsWith("@{") && text.endsWith("}@") && match && match.length === 1) {
+            const contentWithinBraces = match[1];
+            const contentArray = extractSymbols(contentWithinBraces);
+            if (!contentArray) {
+                return false;
+            }
+            for (const item of contentArray) {
+                const trimmedItem = item.trim();
+                if (isNaN(trimmedItem) && !array.includes(trimmedItem)) {
                     return false;
                 }
-                // Check if all non-numeric strings in contentArray are in the array
+            }
+            return true;
+        }
+        return false; 
+    } else {
+        const matches = text.match(/@\{(.+?)\}@/g);
+        if (matches) {
+            for (const m of matches) {
+                const contentWithinBraces = m.slice(2, -2); // Extract content without using another regex
+                const contentArray = extractSymbols(contentWithinBraces);
+                if (!contentArray) {
+                    return false;
+                }
                 for (const item of contentArray) {
                     const trimmedItem = item.trim();
-                    if (!isNaN(trimmedItem) || array.includes(trimmedItem)) {
-                    // Numeric or found in the array
-                    continue;
-                    } else {
-                    // Non-numeric and not found in the array
-                    return false;
+                    if (isNaN(trimmedItem) && !array.includes(trimmedItem)) {
+                        return false;
                     }
                 }
             }
-                            
-            return true; // All non-numeric strings are found in the arrays
-
+        }
+        return true;
     }
-  
-    return true; // No "@{...}@" found in the text
-  }
 }
+
   
 
   function extractSymbols(expr) {
@@ -771,6 +747,7 @@ function checkTopicAndSubtopic() {
     try {
         expression = math.simplify(expr).toString();
     } catch {
+        //console.log(expr)
         alert('Algebraic expression(s) in the variable expression(s) @{..}@ invalid');
         return false;
     }
