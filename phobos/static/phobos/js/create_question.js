@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const mainQuestionImageInput = document.querySelector('.main-question-image-input');
     const mainQuestionImagePreview = document.querySelector('.main-question-image-preview');
+    const createQuestionBtn = document.querySelector('.create-question-btn')
   
 
 /*-----------------------------------------SURVEY QUESTION-----------------------------------*/
@@ -350,22 +351,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     })
     form.addEventListener('submit', (event) => {
+        event.preventDefault();
+    });
+
+    createQuestionBtn.addEventListener('click', (event)=>{
+        event.preventDefault();
         // Make sure question text is valid
         const questionTextArea = form.querySelector('#question-textarea');
         if (questionTextArea.value.length <= 5){
-            event.preventDefault();
             alert('A question cannot be this short!');
             return;
         }
         const valid_textarea = validateText(questionTextArea.value, varSymbolsArray);
         if (!valid_textarea){
-            event.preventDefault();
             alert('The question text has undefined symbol(s) in variable expression(s)');
             return;
         }
         const selected_topic = checkTopicAndSubtopic();
         if (!selected_topic){
-            event.preventDefault();
             alert("Please select both a topic and a subtopic.");
             return;
         }
@@ -379,7 +382,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 screen.value = userInputString;
 
             }catch {
-                event.preventDefault();
                 alert('Expression in answer not valid algebraic expression');
                 return;
             }
@@ -392,34 +394,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 const userInputNode = math.simplify(processString(screen.value));
                 var userInputString = userInputNode.evaluate();
                 if(typeof(userInputString) != 'number'){
-
-                    event.preventDefault();
                     alert('You selected float mode but the answer you provided is not a float');
                     return;
                 }
                 screen.value = userInputString;
             }catch {
                 if(!validateText(screen.value, varSymbolsArray, isFloat=true)){
-
-                    event.preventDefault();
-                    alert('You selected float mode but the answer you provided is not a float');
+                    alert('You selected float mode but the answer you provided is not a float\
+                        \n or You have undefined variable(s) in expression you entered.');
                     return;
-                 }
+                    }
             }
             
             
         } else if (mode=='m-answer'){
             if(num_mcq_options_counter < 2){
-                event.preventDefault();
                 alert('The number of options for an MCQ must be at least 2.');
+                return;
             }
             if(num_true_counter < 1){
-                event.preventDefault();
                 alert('Must select at least one MCQ answer as correct.');
+                return;
             }
         }
-        // Now the form will be submitted
-    });
+        // Now the form will be submitted after all the checks have passed.
+        form.submit();
+    })
 
 
 
@@ -633,6 +633,7 @@ addQuestionImgBtn.addEventListener('click', (event)=>{
 })
 // Deleting an uploaded image
 mainQuestionImagePreview.addEventListener('click', (event)=>{
+    event.preventDefault();
     target = event.target
     if(target.classList.contains('img-delete')){
         mainQuestionImagePreview.removeChild(target.parentNode.parentNode);
@@ -697,6 +698,9 @@ function checkTopicAndSubtopic() {
     // returns true otherwise.
 
     const match = text.match(/@\{(.+?)\}@/);
+    if (match.length > 1){
+        return false
+    }
     if(isFloat){
         if(text.startsWith("@{") && text.endsWith("}@")){
             // we use - 4 because "@{" and "}@" count as four characters
@@ -729,27 +733,30 @@ function checkTopicAndSubtopic() {
   
     else {
         if (match) {
-      const contentWithinBraces = match[1];
-      const contentArray = extractSymbols(contentWithinBraces);
-      if (!contentArray){
-        return false;
-      }
-      // Check if all non-numeric strings in contentArray are in the array
-      for (const item of contentArray) {
-        const trimmedItem = item.trim();
-        if (!isNaN(trimmedItem) || array.includes(trimmedItem)) {
-          // Numeric or found in the array
-          continue;
-        } else {
-          // Non-numeric and not found in the array
-          return false;
-        }
-      }
-      
-      return true; // All non-numeric strings are found in the array
+            for(const m of match){
+                const contentWithinBraces = m;
+                const contentArray = extractSymbols(contentWithinBraces);
+                if (!contentArray){
+                    return false;
+                }
+                // Check if all non-numeric strings in contentArray are in the array
+                for (const item of contentArray) {
+                    const trimmedItem = item.trim();
+                    if (!isNaN(trimmedItem) || array.includes(trimmedItem)) {
+                    // Numeric or found in the array
+                    continue;
+                    } else {
+                    // Non-numeric and not found in the array
+                    return false;
+                    }
+                }
+            }
+                            
+            return true; // All non-numeric strings are found in the arrays
+
     }
   
-    return true; // No "{...}" found in the text
+    return true; // No "@{...}@" found in the text
   }
 }
   
@@ -906,7 +913,13 @@ function checkTopicAndSubtopic() {
                 const lowerBound = parseFloat(bounds[0]);
                 const upperBound = parseFloat(bounds[1]);
                 if (!isNaN(lowerBound) && !isNaN(upperBound)) {
-                    boundsArray.push({ lower: lowerBound, upper: upperBound });
+                    if (lowerBound > upperBound) {
+                        alert("Lower bound is greater than upper bound!");
+                        boundsArray.length = 0; // Clear the array
+                        return boundsArray; // Exit the function
+                    } else {
+                        boundsArray.push({ lower: lowerBound, upper: upperBound });
+                    }
                 }
             }
         });
