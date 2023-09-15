@@ -609,25 +609,28 @@ addQuestionImgBtn.addEventListener('click', (event)=>{
     event.preventDefault();
     if (imgLabelInputField.value === null || imgLabelInputField.value ==='') {
         alert('You must enter a label for the image.')
-        
+        return;
     }
-    else{
-        try{
-            const formatted_new_img = create_img_div(mainQuestionImageInput, imgLabelInputField.value);
-            mainQuestionImagePreview.appendChild(formatted_new_img);
-            imgLabelInputField.value = '';
-            question_img_counter += 1;
-            questionAddImgBtn.classList.remove('closed');
-            questionAddImgBtn.classList.add('open');
-            uploadedQuestionPreview.innerHTML = '';
-            questionAddImgBtn.innerHTML = 'Upload Image';
-            questionImgUploadSection.style.display = 'none'; 
-        }
-        catch(error){
-            alert('Make sure you entered a label for the image and selected an image file.')
-        }
-        
+    if(mainQuestionImageInput.files.length === 0){
+        alert('You must choose an image file.')
+        return
     }
+
+    try{
+        const formatted_new_img = create_img_div(mainQuestionImageInput, imgLabelInputField.value);
+        mainQuestionImagePreview.appendChild(formatted_new_img);
+        imgLabelInputField.value = '';
+        question_img_counter += 1;
+        questionAddImgBtn.classList.remove('closed');
+        questionAddImgBtn.classList.add('open');
+        uploadedQuestionPreview.innerHTML = '';
+        questionAddImgBtn.innerHTML = 'Upload Image';
+        questionImgUploadSection.style.display = 'none'; 
+    }
+    catch(error){
+        alert('Make sure you entered a label for the image and selected an image file.')
+    }
+    
 
 
 })
