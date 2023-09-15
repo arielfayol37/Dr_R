@@ -40,7 +40,7 @@
         .then(Code =>{
             code=Code.codes
             console.log(code,code.length)
-            for(i=0;i<code.length;i++){
+            for(i = 0; i < code.length; i++){
             code_items = document.createElement('li');
             code_items.innerHTML =  `Code: <em style="color: red;">${code[i].code}</em> expiring date: <em style="color: red;">${code[i].ex_date}</em>`
             document.querySelector('.code-list').append(code_items);}
@@ -70,9 +70,8 @@
         }
         else {
 
-            alert('enter an expiring date for the code');
+            alert('Enter an expiring date for the code');
 }
-        console.log(expiring_date_input_feild.value, typeof(expiring_date_input_feild.value))
 
     })
 
