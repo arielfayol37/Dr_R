@@ -381,7 +381,11 @@ def expression_compare_test(request):
         data = json.loads(request.body)
         e1 = data['expression_1']
         e2 = data['expression_2']
-        return JsonResponse({'correct': compare_expressions(e1,e2)})
+        mode = data['mode']
+        if mode == 'units':
+            return JsonResponse({'correct': compare_units(e1,e2)})
+        else:
+            return JsonResponse({'correct': compare_expressions(e1,e2)})
     return render(request, 'deimos/expression_compare_test.html')
 def is_student_enrolled(student_id, course_id):
     # Retrieve the Student and Course instances based on their IDs
@@ -454,7 +458,7 @@ def compare_units(units_1, units_2):
     """
     
     # custom_base_units = ['m', 's', 'cd', 'K', 'mol', 'g', 'A']
-    scales = {'k':'10^3', 'u':'10^-6', 'm_':'10^-3', 'p':'10^-12', 'M':'10^6', 'n':'10^-9'}
+    scales = {'k':'10^3', 'u':'10^-6', 'm_':'10^-3', 'p':'10^-12', 'M':'10^6', 'n':'10^-9','µ':'10^-6'}
     # Important! Hz must come before H, as well as Sv before S, Wb before W etc
     correspondances = {
         'C': 'A*s', 'V': 'k*g*m^2*s^-3*A^-1','Ω': 'k*g m^2*s^-3*A^-2',
@@ -480,6 +484,7 @@ def transform_units_expression(expr):
     expression = remove_extra_spaces_around_operators(expr)
     expression = expression.replace(', ', '')
     expression = expression.replace(' ', '*')
+    expression = re.sub(r'1e\+?(-?\d+)', r'10^\1', expression)
     # replacements are units that are more than 1 character. e.g Hz, Pa, cd, mol
     replacements = {
         'cd': 'ò', 'mol': 'ë', 'Hz': 'à', 'Pa': 'ê','Wb': 'ä',
