@@ -867,7 +867,7 @@ function checkTopicAndSubtopic() {
 
           // Checking if the step size is valid
           if(varStepSize.value.length >= 1 && isNaN(parseFloat(varStepSize.value))){
-                alert('Step size must be a float');
+                alert('Step size must be an int or float');
                 return
           } else if(varStepSize.value.length == 0){
             varStepSize.value = 0 // if no step size is given.
@@ -956,6 +956,10 @@ function checkTopicAndSubtopic() {
                         alert("Lower bound is greater than upper bound!");
                         boundsArray.length = 0; // Clear the array
                         return boundsArray; // Exit the function
+                    }else if (lowerBound < -1000 || upperBound > 1000){
+                        alert('Magnitude of bound must be less than 1000');
+                        boundsArray.length = 0;
+                        return boundsArray;
                     } else {
                         boundsArray.push({ lower: lowerBound, upper: upperBound });
                     }

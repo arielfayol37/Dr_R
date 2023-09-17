@@ -408,17 +408,19 @@ def  extract_numbers(text):
     
     return matches
 
-def compare_expressions(expression1, expression2):
+def compare_expressions(expression1, expression2, for_units=False):
     """
     Given two strings e1 and e2,
     returns True if they are algebraically equivalent,
     returns False otherwise.
     """
-    e1 = transform_expression(expression1)
-    e2 = transform_expression(expression2)
-    if not (isinstance(e1, str) and isinstance(e2, str)):
-        raise ValueError("Both inputs should be strings")
-
+    if not for_units:
+        e1 = transform_expression(expression1)
+        e2 = transform_expression(expression2)
+        if not (isinstance(e1, str) and isinstance(e2, str)):
+            raise ValueError("Both inputs should be strings")
+    else:
+        e1, e2 = expression1, expression2
     symbols_union = set(e1) | set(e2)  # Combined set of symbols from both expressions
     symbols_union.update(extract_numbers(e1 + e2))  # Update with extracted numbers
     symbls = symbols(' '.join(symbols_union), real=True, positive=True)
@@ -429,7 +431,7 @@ def compare_expressions(expression1, expression2):
 
 def compare_floats(correct_answer, submitted_answer, margin_error=0.0, get_feedback=True):
     """
-    Given two floats f1 and f2,
+    Takes two floats f1 and f2,
     returns True if they are equal or close,
     returns False otherwise
     """
@@ -444,6 +446,53 @@ def compare_floats(correct_answer, submitted_answer, margin_error=0.0, get_feedb
     else:
         return (abs(f1-f2)/f1 <= margin_error, feedback_message)
 
+def compare_units(units_1, units_2):
+    """
+    Takes two units units_1 and units_2
+    returns True if they are equivalent
+    returns False otherwise
+    """
+    
+    # custom_base_units = ['m', 's', 'cd', 'K', 'mol', 'g', 'A']
+    scales = {'k':'10^3', 'u':'10^-6', 'm_':'10^-3', 'p':'10^-12', 'M':'10^6', 'n':'10^-9'}
+    # Important! Hz must come before H, as well as Sv before S, Wb before W etc
+    correspondances = {
+        'C': 'A*s', 'V': 'k*g*m^2*s^-3*A^-1','Ω': 'k*g m^2*s^-3*A^-2',
+        'T': 'k*g*s^-2*A^-1','Hz': 's^-1','Pa': 'k*g*m^-1*s^-2','N': 'k*g*m*s^-2','J': 'k*g*m^2*s^-2',
+        'Wb':'k*g*m^2*A*s^-2','W': 'k*g*m^2*s^-3', 'F':'k*g*A^2*s^4*m^-2', 'H':'k*g*m^2*A^2*s^-2',
+        'Sv':'m^2*s^-2','S':'k*g*s^3*A^2*m^-2', 'lx':'cd*m^-2', 'Bq':'s^-1', 'Gy':'m^2*s^-2', 'kat':'mol*s^-1'
+    }
+    # transform_units_expression() must be done before to replacing the correspondances
+    # and scales to reduce runtime.
+    units_1 = transform_units_expression(units_1)
+    units_2 = transform_units_expression(units_2)
+
+    for key, value in correspondances.items():
+        units_1 = units_1.replace(key, value)
+        units_2 = units_2.replace(key, value)
+    for key, value in scales.items():
+        units_1 = units_1.replace(key, value)
+        units_2 = units_2.replace(key, value)
+    return compare_expressions(units_1, units_2, for_units=True)
+
+def transform_units_expression(expr):
+    """Insert multiplication signs between combined characters, except within trig functions."""
+    expression = remove_extra_spaces_around_operators(expr)
+    expression = expression.replace(', ', '')
+    expression = expression.replace(' ', '*')
+    # replacements are units that are more than 1 character. e.g Hz, Pa, cd, mol
+    replacements = {
+        'cd': 'ò', 'mol': 'ë', 'Hz': 'à', 'Pa': 'ê','Wb': 'ä',
+        'lx': 'Bq', 'Gy': 'ù', 'Sv': 'ô', 'kat': 'ü', 
+    }
+
+    expression = encode(expression, replacements)
+    transformed_expression = ''.join(
+        char if index == 0 or not needs_multiplication(expression, index, replacements)
+        else '*' + char for index, char in enumerate(expression)
+    )
+    transformed_expression = transformed_expression.replace('^', '**')
+    return decode(transformed_expression, replacements)
     
 def replace_links_with_html(text):
     """
