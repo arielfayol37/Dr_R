@@ -437,8 +437,9 @@ class Variable(models.Model):
     and the `Student`.
     """
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='variables')
-    symbol = models.CharField(max_length=3, blank=False, null=False)
+    symbol = models.CharField(max_length=10, blank=False, null=False)
     instances_created = models.BooleanField(default=False)
+    step_size = models.FloatField(blank=True, null=True)
     is_integer = models.BooleanField(default=False)
 
     def __str__(self):
@@ -454,10 +455,14 @@ class Variable(models.Model):
                 lower_bound = bounds.lower_bound
                 upper_bound = bounds.upper_bound
                 random_float = random.uniform(lower_bound, upper_bound)
-                if is_int:
+                if self.step_size != 0:
+                    step_count = (random_float - lower_bound) // self.step_size
+                    random_float = lower_bound + step_count * self.step_size
+                if self.is_integer:
                     random_float = float(int(random_float))
                 vi = VariableInstance.objects.create(variable=self, value=random_float)
                 vi.save()
+
             self.instances_created = True
         # TODO: Handle case when intervals are not created.
         else:
