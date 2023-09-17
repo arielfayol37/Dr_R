@@ -261,7 +261,7 @@ def transform_expression(expr):
     expression = remove_extra_spaces_around_operators(expr)
     expression = expression.replace(', ', '')
     expression = expression.replace(' ', '*')
-    
+    expression = re.sub(r'1e\+?(-?\d+)', r'10^\1', expression)
     trig_functions = {
         'asin': 'ò', 'acos': 'ë', 'atan': 'à', 'arcsin': 'ê', 'arccos': 'ä',
         'arctan': 'ï', 'sinh': 'ù', 'cosh': 'ô', 'tanh': 'ü', 'sin': 'î', 'cos': 'â', 'tan': 'ö', 'log': 'ÿ', 'ln': 'è',
