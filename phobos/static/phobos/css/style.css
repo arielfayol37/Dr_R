@@ -412,6 +412,7 @@ div.c-text {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  transition: display 1.1s ease;
 }
 
 .created-vars {

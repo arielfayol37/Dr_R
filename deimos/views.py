@@ -232,11 +232,12 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                     except ValueError:
                         correct = False
                     # Checking previous attempts
-                    for previous_attempt in question_student.attempts.all():
-                        are_the_same, fake_feedback = compare_floats(previous_attempt.content,submitted_answer, get_feedback=False)
-                        if are_the_same:
-                            previously_submitted = True
-                            return JsonResponse({'previously_submitted': previously_submitted})
+                    if not correct:
+                        for previous_attempt in question_student.attempts.all():
+                            are_the_same, fake_feedback = compare_floats(previous_attempt.content,submitted_answer, get_feedback=False)
+                            if are_the_same:
+                                previously_submitted = True
+                                return JsonResponse({'previously_submitted': previously_submitted})
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
                     attempt.content = submitted_answer
 
@@ -247,11 +248,12 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                                                     question.margin_error)
                     except ValueError:
                         correct = False
-                    for previous_attempt in question_student.attempts.all():
-                        are_the_same, fake_feedback = compare_floats(previous_attempt.content, submitted_answer, margin_error=0.02, get_feedback=False)
-                        if are_the_same:
-                            previously_submitted = True
-                            return JsonResponse({'previously_submitted': previously_submitted})
+                    if not correct:
+                        for previous_attempt in question_student.attempts.all():
+                            are_the_same, fake_feedback = compare_floats(previous_attempt.content, submitted_answer, margin_error=0.02, get_feedback=False)
+                            if are_the_same:
+                                previously_submitted = True
+                                return JsonResponse({'previously_submitted': previously_submitted})
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
                     attempt.content = submitted_answer
 

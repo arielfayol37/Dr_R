@@ -157,7 +157,7 @@ class QuestionStudent(models.Model):
             # 1: missing multiplication signs. E.g ab instead of a*b. transform_expression() handles that
             # 2: a symbol/character(s) that is among the variables. Fix: make sure on the frontEnd that
             #    an answer never contains symbols that are not defined variables.
-            return round(eval(transform_expression(answer), self.get_var_value_dict()),3)
+            return eval(transform_expression(answer), self.get_var_value_dict())
     def get_var_value_dict(self):
         """
         Returns a dictionary of variable symbols and the corresponding instance value for
@@ -184,7 +184,9 @@ class QuestionStudent(models.Model):
         def replace_match(match):
             expression = match.group(1)  # Extract the expression within the curly braces
             try:
-                value = round(eval(transform_expression(expression), var_value_dict), 3)
+                value = round(eval(transform_expression(expression), var_value_dict), 3) # 3 decimal places.
+                if str(value).endswith('.0'):
+                    value = int(value)
             except:
                 value = expression
             if add_html_style:
@@ -259,6 +261,7 @@ def transform_expression(expr):
     expression = remove_extra_spaces_around_operators(expr)
     expression = expression.replace(', ', '')
     expression = expression.replace(' ', '*')
+    
     trig_functions = {
         'asin': 'ò', 'acos': 'ë', 'atan': 'à', 'arcsin': 'ê', 'arccos': 'ä',
         'arctan': 'ï', 'sinh': 'ù', 'cosh': 'ô', 'tanh': 'ü', 'sin': 'î', 'cos': 'â', 'tan': 'ö', 'log': 'ÿ', 'ln': 'è',
@@ -270,7 +273,7 @@ def transform_expression(expr):
         char if index == 0 or not needs_multiplication(expression, index, trig_functions)
         else '*' + char for index, char in enumerate(expression)
     )
-    
+    transformed_expression = transformed_expression.replace('^', '**')
     return decode(transformed_expression, trig_functions)
 
 def remove_extra_spaces_around_operators(text):

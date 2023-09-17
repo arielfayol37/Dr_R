@@ -329,12 +329,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Here, each time the value of answer input screen changes,
     // we use mathjax to display the updated content.
     screen.addEventListener('input', ()=> {
-        if(screen.value.length != 0){
+        if(screen.value.length >=1 && screen.value.length < 40){
 
             MathJax.typesetPromise().then(() => {
                 try {
-    
-                const userInputNode = math.simplify(processString(screen.value));
+                if(screen.value.startsWith('@{') && screen.value.endsWith('}@')){
+                    var userInputNode = math.simplify(processString(screen.value.slice(2,-2)));
+                }else{
+                    var userInputNode = math.simplify(processString(screen.value));
+                }
                 var userInputLatex = userInputNode.toTex();
                 const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
                 formattedAnswerDiv.innerHTML = '';
@@ -495,10 +498,14 @@ function create_inputed_mcq_div(input_field, answer_type) {
             if (answer_type==='l-answer'){// if latex-answer or text-answer
                 userInputLatex = answer_value;
                 formatted_answer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
-            } else if(answer_type==='t-answer' || answer_type==='i-answer'){
+            } else if(answer_type==='t-answer'){
                 userInputLatex = answer_value;
                 formatted_answer = document.createElement('p');
                 formatted_answer.innerHTML = userInputLatex;
+            }
+            else if(answer_type==='i-answer'){
+                formatted_answer = document.createElement('p');
+                formatted_answer.innerHTML = display_value;  
             }
             else {
                 try{
@@ -700,9 +707,18 @@ function checkTopicAndSubtopic() {
 
 
   function validateText(text, array, isFloat=false) {
+    // Takes a text and checks the presence of variable expressions.
+    // If there are variable expressions, then it checks whether there are
+    // undefined symbols(variables) within the expression. If all symbols are defined,
+    // it returns true, otherwise false.
+
+    // if isFloat, then it expecting a single variable expression because this function
+    // is called if and only if the user selected float but what he entered is not float.
+    // hence, it returns false if a variable expression is not detected but returns true
+    // if one is detected and all the symbols within are defined. 
     if (isFloat) {
         const match = text.match(/@\{(.+?)\}@/);
-        if (text.startsWith("@{") && text.endsWith("}@") && match && match.length === 1) {
+        if (text.startsWith("@{") && text.endsWith("}@") && match && match[1].length >= 1) {
             const contentWithinBraces = match[1];
             const contentArray = extractSymbols(contentWithinBraces);
             if (!contentArray) {
@@ -736,7 +752,7 @@ function checkTopicAndSubtopic() {
         }
         return true;
     }
-}
+} 
 
   
 
@@ -751,14 +767,14 @@ function checkTopicAndSubtopic() {
         alert('Algebraic expression(s) in the variable expression(s) @{..}@ invalid');
         return false;
     }
-    const symbols = [];
+    var symbols = [];
     var char;
     var run = false;
     var sub_index;
     for (let index = 0; index < expression.length; index++) {
       char = expression.charAt(index);
       
-        if (/[a-zA-Z]/.test(char) && expression.charAt(index-1) != '-') {
+        if (/[a-zA-Z]/.test(char) && expression.charAt(index-1) != '_') {
         run = true
         sub_index = index + 1
         while(run && sub_index <= expression.length){
@@ -776,6 +792,7 @@ function checkTopicAndSubtopic() {
         }
     }
 }
+    symbols = symbols.filter(item => !/^e[+-]?\d+$/.test(item));
     return symbols
   }
 
@@ -799,21 +816,24 @@ function checkTopicAndSubtopic() {
       event.preventDefault();
       if(state==='closed'){
           state = 'open';
-          addVarBtn.innerHTML ='v-';
+          addVarBtn.innerHTML ='X';
           varInfoDiv.style.display = 'block';
       }
       else if(state==='open'){
           state ='closed';
-          addVarBtn.innerHTML = 'v+';
+          addVarBtn.innerHTML = '+';
           varInfoDiv.style.display = 'none';
       }
   })
   
   varInfoDiv.addEventListener('click', (event)=>{
-      event.preventDefault();
+      //event.preventDefault();
       if(event.target.classList.contains('btn-create-var')){
           const varSymbolField = varInfoDiv.querySelector('.var-symbol');
           const varDomainField = varInfoDiv.querySelector('.var-domain');
+          const varStepSize = varInfoDiv.querySelector('.var-step-size');
+          const intRadio = varInfoDiv.querySelector('input[name="varType"][value="int"]');
+          const floatRadio = varInfoDiv.querySelector('input[name="varType"][value="float"]');
           symbol = varSymbolField.value;
           // Checking whether it's a valid symbol
           if (symbol.length === 0 ){
@@ -829,10 +849,13 @@ function checkTopicAndSubtopic() {
                 return;
             }
           }
-          else if ((symbol.length > 3) || (symbol.length === 2) || (/^[a-zA-Z]$/.test(symbol.charAt(0)) === false) || 
-          ((symbol.charAt(1) != '_') && (symbol.length===3))){
+          else if ((symbol.length === 2) || (/^[a-zA-Z]$/.test(symbol.charAt(0)) === false) || 
+          ((symbol.charAt(1) != '_') && (symbol.length>=3))){
               alert('Invalid symbol');
               return;
+          }else if(symbol.length > 10){
+            alert('Symbol cannot be more than 10 characters');
+            return;
           }
           // Checking whether domain entered is valid
           enteredDomain = varDomainField.value;
@@ -841,38 +864,74 @@ function checkTopicAndSubtopic() {
               alert('Invalid domain');
               return;
           }
+
+          // Checking if the step size is valid
+          if(varStepSize.value.length >= 1 && isNaN(parseFloat(varStepSize.value))){
+                alert('Step size must be a float');
+                return
+          } else if(varStepSize.value.length == 0){
+            varStepSize.value = 0 // if no step size is given.
+          }
         
           // passed all the tests
-          varSymbolsArray.push(symbol);
+          varSymbolsArray.push(symbol); // adding the symbol to the list of symbols.
           const newVarDiv = document.createElement('div');
           const newVarBtn = document.createElement('button');
           newVarBtn.type = 'button';
           newVarBtn.classList.add('btn', 'btn-warning'); // Separate the classes
+          if(symbol.length >=3){
+            newVarBtn.innerHTML = `${symbol.charAt(0)}<sub>${symbol.slice(2)}</sub>`
+          }else{
+            newVarBtn.innerHTML = symbol; // if symbol is one character.
+          }
           
-          newVarBtn.innerHTML = symbol;
           newVarDiv.appendChild(newVarBtn);
           newVarDiv.classList.add('variable');
           newVarDiv.setAttribute('data-symbol', symbol);
+          
+          // Putting the variable type and step size in hidden input fields.
+            
+            // Var Type
+          const varTypeHiddenInput = document.createElement('input');
+          varTypeHiddenInput.type = 'hidden';
+          varTypeHiddenInput.name = `var#type#${symbol}`
+          if(intRadio.checked){
+            varTypeHiddenInput.value = '0'
+          } else {
+            varTypeHiddenInput.value = '1'
+          }
+          
+          // Step size
+          const stepSizeHiddenInput = document.createElement('input');
+          stepSizeHiddenInput.type = 'hidden';
+          stepSizeHiddenInput.name = `step#size#${symbol}`
+          stepSizeHiddenInput.value = varStepSize.value
+
+          // appending the hidden inputs to varBtn
+          newVarBtn.appendChild(varTypeHiddenInput);
+          newVarBtn.appendChild(stepSizeHiddenInput);
+
           for (let i = 0; i < parsedDomain.length; i++) {
+              // Getting the variable intervals.
               const domainLbHiddenInput = document.createElement('input');
               domainLbHiddenInput.type = 'hidden';
-              domainLbHiddenInput.name = `domain_lb_${symbol}_${i}`
+              domainLbHiddenInput.name = `domain#lb#${symbol}#${i}`//domain lower bound
               domainLbHiddenInput.value = parsedDomain[i].lower
               
               const domainUbHiddenInput = document.createElement('input');
               domainUbHiddenInput.type = 'hidden';
-              domainUbHiddenInput.name = `domain_ub_${symbol}_${i}`
+              domainUbHiddenInput.name = `domain#ub#${symbol}#${i}`//domain upper bound
               domainUbHiddenInput.value = parsedDomain[i].upper
 
               newVarBtn.appendChild(domainLbHiddenInput);
               newVarBtn.appendChild(domainUbHiddenInput);
           }
-          // TODO: add the hidden input fields.
+          
           createdVarsDiv.appendChild(newVarDiv);
           createdVarsDiv.scrollIntoView({behavior:"smooth"});
           varInfoDiv.style.display = 'none';
-          varSymbolField.value = '';
-          varDomainField.value = '';
+          //varSymbolField.value = '';
+          //varDomainField.value = '';
 
           state ='closed';
           addVarBtn.innerHTML = 'v+';

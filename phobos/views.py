@@ -192,7 +192,7 @@ def create_question(request, assignment_id=None, type_int=None):
         vars_dict = {}
         for key, value in request.POST.items():
             if key.startswith('domain'):
-                _, bound_type, var_symbol, bound_number = key.split('_')
+                _, bound_type, var_symbol, bound_number = key.split('#')
                 bound_value = value
                 if var_symbol not in vars_dict:
                     vars_dict[var_symbol] = {}
@@ -209,7 +209,9 @@ def create_question(request, assignment_id=None, type_int=None):
                 question_image = QuestionImage(question=new_question, image=image, label=label)
                 question_image.save()
         for var_symbol in vars_dict:
-            new_variable = Variable(question=new_question, symbol=var_symbol)
+            step_size = request.POST[f'step#size#{var_symbol}']
+            is_integer = not bool(int(request.POST[f'var#type#{var_symbol}'])) # Front End will return 0 for integer. 
+            new_variable = Variable(question=new_question, symbol=var_symbol, step_size=step_size, is_integer=is_integer)
             new_variable.save()
             assert len(vars_dict[var_symbol]['lb']) == len(vars_dict[var_symbol]['ub'])
             for bound_index in range(len(vars_dict[var_symbol]['lb'])):
