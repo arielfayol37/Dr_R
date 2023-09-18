@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from phobos.models import Course, Professor,EnrollmentCode
+from phobos.models import Course, Professor,EnrollmentCode,CourseInfo
 from deimos.models import Student, Enrollment
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
@@ -83,4 +83,26 @@ def course_enroll(request, course_id, code):
                                                 'course_management_url':reverse('deimos:course_management', \
                                                                                 kwargs={'course_id':course_id})}))
 
+def course_info(request,course_id):
+    course = Course.objects.get(pk = course_id)
+    course_infos= CourseInfo.objects.get(course= course)
+    # TODO: you may *need* to user request.user._wrapped instead
+   
+    try:
+        student = Student.objects.get(pk=request.user.pk)
+        if Enrollment.objects.filter(student=request.user, course=course).exists():
+                             is_student_list = 1 
+        else: is_student_list = 0 
+
+        context = {
+              'course': course,
+              'course_info':course_infos,
+            "is_course_stud":  is_student_list,
+            "is_student": True
+        }
+        return render(request, 'astros/course_info.html', context)
     
+    except Student.DoesNotExist:
+        pass
+  #  return render(request, 'astros/course_info.html', {"course":course})
+       

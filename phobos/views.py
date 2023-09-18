@@ -543,8 +543,6 @@ def enrollmentCode(request, course_id, expiring_date):
                                      code= random.randint(min,max),
                                       expiring_date= expiring_date)
     enrollment_code.save()
-    # print(EnrollmentCode.objects.all())
-    # print(EnrollmentCode.objects.none())
     return JsonResponse({'code': enrollment_code.code,
                          'ex_date':enrollment_code.expiring_date})
     
@@ -552,7 +550,6 @@ def display_codes(request,course_id):
     if request.method == "GET":
          course = Course.objects.get(pk= course_id)
          codes= EnrollmentCode.objects.filter(course =  course )
-         # print(codes,codes == EnrollmentCode.objects.none())
          usable_codes =[]
          for code in codes:
                  if code.expiring_date > date.today():
@@ -560,3 +557,39 @@ def display_codes(request,course_id):
                                          'ex_date':code.expiring_date})
 
          return JsonResponse({'codes':usable_codes})    
+
+def manage_course_info(request,course_id):
+   course = Course.objects.get(pk= course_id) 
+   try:
+        course_info = CourseInfo.objects.get(course= course)
+
+   except CourseInfo.DoesNotExist:
+       course_info = CourseInfo.objects.create(course= course)
+
+   return render(request,'phobos/course_info_management .html',{'course':course,'course_info':course_info})
+
+
+def save_course_info(request,course_id,categorie,info):
+    course = Course.objects.get(pk= course_id) 
+    print(categorie)
+    try:
+        course_info = CourseInfo.objects.get(course= course)
+
+    except CourseInfo.DoesNotExist:
+       course_info = CourseInfo.objects.create(course= course)
+    
+    course_info.serializable_value(categorie)
+
+    if  categorie == 'about_course':
+            course_info.about_course = info
+    elif  categorie == 'course_skill':
+            course_info.course_skills = info
+    elif  categorie == 'course_plan':
+            course_info.course_plan = info
+    elif  categorie == 'course_instructors' :
+            course_info.course_instructors = info
+    else:
+        return HttpResponse('error')
+    
+    course_info.save(update_fields=[categorie])
+    return render(request,'phobos/course_info_management .html',{'course':course,'course_info':course_info})
