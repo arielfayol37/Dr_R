@@ -1,6 +1,7 @@
 import re, os
 import PyPDF2
-os.chdir(r'C:\Users\Noella\Downloads')
+
+os.chdir(r'C:\Users')
 
 def extract_text_from_pdf(pdf_path):
     with open(pdf_path, 'rb') as file:

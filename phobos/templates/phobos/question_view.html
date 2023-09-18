@@ -22,6 +22,22 @@
     </ul>
   </div>
 
+<div class="export_question">
+    <button class=" btn-primary"> Export this question</button>
+    <div style="display: none;"> 
+        <form action="" >
+            {% csrf_token %}
+        <select >
+            {% for assignment in assignments %}
+        <option value="{{assignment.id}}" > {{assignment.name}} </option>
+            {% endfor %}
+        </select>
+        <input type="button" value="Confirm"> 
+    </form>
+    </div>
+    <p class="export_result"></p>
+</div>
+
 <div class="embed">
 <p class="question-number"><strong>Question {{question.number}}</strong></p>
 <hr/>
@@ -78,4 +94,33 @@
 {% block scripts %}
 <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
 <script src="{% static 'phobos/js/question_view.js' %}"></script>
+
+<script>
+    export_question= document.querySelector('.export_question')
+    btn_export_question = export_question.querySelector('button')
+    export_to_assignment = export_question.querySelector('div')
+    export_result= export_question.querySelector('.export_result')
+
+
+    export_question.querySelector('button').addEventListener('click',()=>{
+        console.log('dkfjldkjfkl')
+        export_to_assignment.style.display='block';
+        export_result.style.display= 'none';
+    })
+
+    export_to_assignment.querySelector('input[type=button]').addEventListener('click',()=>{ 
+console.log(export_to_assignment.querySelector('select').value);// if 
+            fetch(window.location.href+ '/export_question_to/'+ export_to_assignment.querySelector('select').value) 
+            .then(response=>response.json())
+            .then(result=>{
+                console.log(result)
+               
+                export_result.innerHTML= result;
+                export_result.style.display= 'block';
+                export_to_assignment.style.display='none';
+            })
+        
+    })
+
+</script>
 {% endblock %}

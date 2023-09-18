@@ -311,6 +311,8 @@ def create_question(request, assignment_id=None, type_int=None):
 def question_view(request, question_id, assignment_id=None, course_id=None):
     # Making sure the request is done by a professor.
     professor = get_object_or_404(Professor, pk=request.user.id)
+    course= Course.objects.get(pk= course_id)
+    assignments = Assignment.objects.filter(course = course)
     question = Question.objects.get(pk=question_id)
     question.text = replace_links_with_html(question.text)
     # replace_image_labels_with_links() should come after replace_links_with_html()
@@ -360,6 +362,7 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
         show_answer = False
     return render(request, 'phobos/question_view.html',
                   {'question':question,\
+                   'assignments':assignments,\
                       'show_answer':show_answer,\
                      'is_mcq':is_mcq, 'is_fr':is_fr,'answers': answers,\
                          'answers_is_latex': zip(answers, is_latex) if is_latex else None})
@@ -558,6 +561,7 @@ def display_codes(request,course_id):
 
          return JsonResponse({'codes':usable_codes})    
 
+@login_required(login_url='astros:login')
 def manage_course_info(request,course_id):
    course = Course.objects.get(pk= course_id) 
    try:
@@ -574,12 +578,9 @@ def save_course_info(request,course_id,categorie,info):
     print(categorie)
     try:
         course_info = CourseInfo.objects.get(course= course)
-
     except CourseInfo.DoesNotExist:
        course_info = CourseInfo.objects.create(course= course)
     
-    course_info.serializable_value(categorie)
-
     if  categorie == 'about_course':
             course_info.about_course = info
     elif  categorie == 'course_skill':
@@ -593,3 +594,17 @@ def save_course_info(request,course_id,categorie,info):
     
     course_info.save(update_fields=[categorie])
     return render(request,'phobos/course_info_management .html',{'course':course,'course_info':course_info})
+
+
+@login_required(login_url='astros:login')
+def export_question_to(request,question_id,exp_assignment_id,course_id=None,assignment_id=None):
+    assignment = Assignment.objects.get(pk = exp_assignment_id)
+    new_question= Question.objects.get(pk = question_id)
+    new_question.pk = None
+    new_question.assignment = assignment
+
+    try:
+        new_question.save()
+        return HttpResponse(json.dumps('Export Succesful'))
+    except:
+        return HttpResponse(json.dumps('Export Failed'))

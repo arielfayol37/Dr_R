@@ -32,9 +32,11 @@
 
         {% if is_course_stud == 1 %}
         <div class="edit-sect" class="row" tabindex="-1" class="pgn__card pgn__card-light card" style="width: 100%;">{% csrf_token %}
+           <center>
             <p><h3> Keep Going</h3></p>
             <div><a href="{% url 'deimos:course_management' course_id=course.id %}"><button class="btn edit-btn co"
                         data-course-id="{{ course.id}}">Resume Course</button></div></a>
+            </center>
         </div>
         {% else %}
         <div class="edit-sect" class="row" tabindex="-1" class="pgn__card pgn__card-light card" style="width: 100%;">{% csrf_token %}
