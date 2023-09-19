@@ -444,22 +444,57 @@ div.c-text {
   align-items: center;
   justify-items: center;
 }
-.formatted-answer 
-{  
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 13px 13px 20px #cbced1,
-              -13px -13px 20px #ffffff; 
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    position: relative;
+
+.question-images {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
 }
+.formatted-answer, .formatted-answer-option {
+  margin-top: 5px;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 13px 13px 20px #cbced1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  resize: both;
+  overflow: auto;
+
+  /* Hide scrollbar for Chrome, Safari, and Opera */
+  ::-webkit-scrollbar {
+      display: none;
+  }
+
+  /* Hide scrollbar for Firefox */
+  scrollbar-width: none;
+
+  /* For Internet Explorer and Edge */
+  -ms-overflow-style: none;
+}
+.formatted-answer {
+  overflow: auto !important;
+}
+
+.formatted-answer::-webkit-scrollbar {
+  display: none !important;
+}
+
+.formatted-answer {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+
+
+
 
 .image-in-formatted {
   max-width: 90%; /* Limit image width to 100% of parent div's width */
-  max-height: 90%; /* Limit image height to 100% of parent div's height */
+  max-height: 300px; /* Limit image height to 100% of parent div's height */
   display: block; /* Remove any extra space below the image */
   border-radius: 10px;
 }

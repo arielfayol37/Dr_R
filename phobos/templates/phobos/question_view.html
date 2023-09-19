@@ -21,7 +21,7 @@
 
     </ul>
   </div>
-
+<!--
 <div class="export_question">
     <button class=" btn-primary"> Export this question</button>
     <div style="display: none;"> 
@@ -37,14 +37,14 @@
     </div>
     <p class="export_result"></p>
 </div>
-
+-->
 <div class="embed">
 <p class="question-number"><strong>Question {{question.number}}</strong></p>
 <hr/>
 <p class="question-content">{{question.text|safe}}</p>
 <div class="question-images">
     {% for question_image in question.images.all %}
-        <div class="formatted-answer" id="{{question_image.image.url}}">
+        <div class="formatted-answer-option" id="{{question_image.image.url}}">
             <p>{{question_image.label}}</p>
             <img src="{{question_image.image.url}}" class="question-image image-in-formatted" alt="{{question_image.label}}"/>
         </div>
@@ -94,7 +94,7 @@
 {% block scripts %}
 <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
 <script src="{% static 'phobos/js/question_view.js' %}"></script>
-
+<!--
 <script>
     export_question= document.querySelector('.export_question')
     btn_export_question = export_question.querySelector('button')
@@ -122,5 +122,5 @@ console.log(export_to_assignment.querySelector('select').value);// if
         
     })
 
-</script>
+</script>-->
 {% endblock %}

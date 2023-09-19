@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.head.appendChild(script);
     
     script.onload = () => {
-        const formattedAnswerDivs = document.querySelectorAll('.formatted-answer');
+        const formattedAnswerDivs = document.querySelectorAll('.formatted-answer-option');
         MathJax.typesetPromise().then(() => {
             formattedAnswerDivs.forEach((formattedAnswerDiv) => {
                 try {

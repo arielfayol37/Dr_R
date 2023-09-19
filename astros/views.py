@@ -87,7 +87,7 @@ def course_enroll(request, course_id, code):
 
 def course_info(request,course_id):
     course = Course.objects.get(pk = course_id)
-    course_infos= CourseInfo.objects.get(course= course)
+    course_infos, created = CourseInfo.objects.get_or_create(course= course)
     course_infos_html_content= {}
     # TODO: you may *need* to user request.user._wrapped instead
 
@@ -99,11 +99,10 @@ def course_info(request,course_id):
     course_infos_html_content.update({'course_skills':markdown(course_infos.course_skills)})
     course_infos_html_content.update({'course_plan':markdown(course_infos.course_plan)})
     course_infos_html_content.update({'course_instructors':markdown(course_infos.course_instructors)})
-    print(course_infos_html_content)
     try:
         student = Student.objects.get(pk=request.user.pk)
         if Enrollment.objects.filter(student=request.user, course=course).exists():
-                             is_student_list = 1 
+            is_student_list = 1 
         else: is_student_list = 0 
 
         context = {
@@ -113,7 +112,7 @@ def course_info(request,course_id):
             "is_student": True
         }
        
-        print(context)
+        # print(context)
         return render(request, 'astros/course_info.html', context)
     
     except Student.DoesNotExist:
