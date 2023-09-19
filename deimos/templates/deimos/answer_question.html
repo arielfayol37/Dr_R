@@ -44,7 +44,7 @@
         </div>
         <div class="question-images">
           {% for question_image in question.images.all %}
-              <div class="formatted-answer" id="{{question_image.image.url}}">
+              <div class="formatted-answer-option" id="{{question_image.image.url}}">
                   <p>{{question_image.label}}</p>
                   <img src="{{question_image.image.url}}" class="question-image image-in-formatted" alt="{{question_image.label}}"/>
               </div>
@@ -55,7 +55,7 @@
               <div class="inputed-mcq-answers">
                 {% for answer, is_latex, question_type in answers_is_latex_question_type %}
                   <div class="mcq-option-answer">
-                    <div class="formatted-answer">
+                    <div class="formatted-answer-option">
                       {% if is_latex %}
                           <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
                       {% else %}

@@ -464,7 +464,8 @@ def compare_units(units_1, units_2):
         'C': 'A*s', 'V': 'k*g*m^2*s^-3*A^-1','Ω': 'k*g m^2*s^-3*A^-2',
         'T': 'k*g*s^-2*A^-1','Hz': 's^-1','Pa': 'k*g*m^-1*s^-2','N': 'k*g*m*s^-2','J': 'k*g*m^2*s^-2',
         'Wb':'k*g*m^2*A*s^-2','W': 'k*g*m^2*s^-3', 'F':'k*g*A^2*s^4*m^-2', 'H':'k*g*m^2*A^2*s^-2',
-        'Sv':'m^2*s^-2','S':'k*g*s^3*A^2*m^-2', 'lx':'cd*m^-2', 'Bq':'s^-1', 'Gy':'m^2*s^-2', 'kat':'mol*s^-1'
+        'Sv':'m^2*s^-2','S':'k*g*s^3*A^2*m^-2', 'lx':'cd*m^-2', 'Bq':'s^-1', 'Gy':'m^2*s^-2', 'kat':'mol*s^-1',
+        'atm':'101325*k*g*m^-1*s^-2'
     }
     # transform_units_expression() must be done before to replacing the correspondances
     # and scales to reduce runtime.
@@ -488,7 +489,7 @@ def transform_units_expression(expr):
     # replacements are units that are more than 1 character. e.g Hz, Pa, cd, mol
     replacements = {
         'cd': 'ò', 'mol': 'ë', 'Hz': 'à', 'Pa': 'ê','Wb': 'ä',
-        'lx': 'Bq', 'Gy': 'ù', 'Sv': 'ô', 'kat': 'ü', 
+        'lx': 'Bq', 'Gy': 'ù', 'Sv': 'ô', 'kat': 'ü', 'atm':'у́'
     }
 
     expression = encode(expression, replacements)

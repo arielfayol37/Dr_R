@@ -152,7 +152,7 @@ function replaceChars(str, charA, charB) {
   }
 
 
-  function processString(str) {
+  function processString(str, is_units=false) {
     let result = str;
   
     for (const charA in replacementDict) {
@@ -161,30 +161,38 @@ function replaceChars(str, charA, charB) {
       result = result.replace(regex, charB);
     }
   
-    return transformExpression(result);
+    return transformExpression(result, is_units);
   }
 
-  function transformExpression(expr) {
+  function transformExpression(expr, is_units=false) {
     let expression = removeExtraSpacesAroundOperators(expr);
     // !Important, the order of these functions is crucial!
-    const trigFunctions = {
+    if(is_units){
+      var trigFunctions = {
+        'cd': 'ò', 'mol': 'ë', 'Hz': 'à', 'Pa': 'ê','Wb': 'ä',
+        'lx': 'Bq', 'Gy': 'ù', 'Sv': 'ô', 'kat': 'ü', 'atm':'у́' 
+      };
+    }else {
+      var trigFunctions = {
         'asin': 'ò', 'acos': 'ë', 'atan': 'à', 'arcsin': 'ê', 'arccos': 'ä',
         'arctan': 'ï', 'sinh': 'ù', 'cosh': 'ô', 'tanh': 'ü', 'sin': 'î', 'cos': 'â', 
         'tan': 'ö', 'log': 'ÿ', 'ln': 'è',
         'cosec': 'é', 'sec': 'ç', 'cot': 'û', 'sqrt':'у́', 'pi': 'я',
     };
-
+    }
+  
+  
     expression = encode(expression, trigFunctions);
-
+  
     let transformedExpression = [...expression].map((char, index) => {
         if (index !== 0 && needsMultiplication(expression, index, trigFunctions)) {
             return '*' + char;
         }
         return char;
     }).join('');
-
+  
     return decode(transformedExpression, trigFunctions);
-}
+  }
 
 function removeExtraSpacesAroundOperators(text) {
     return text.replace(/\s*([-+*/^])\s*/g, '$1');

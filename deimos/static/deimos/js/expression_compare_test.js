@@ -200,7 +200,7 @@ function transformExpression(expr, is_units=false) {
   if(is_units){
     var trigFunctions = {
       'cd': 'ò', 'mol': 'ë', 'Hz': 'à', 'Pa': 'ê','Wb': 'ä',
-        'lx': 'Bq', 'Gy': 'ù', 'Sv': 'ô', 'kat': 'ü', 
+      'lx': 'Bq', 'Gy': 'ù', 'Sv': 'ô', 'kat': 'ü', 'atm':'у́' 
     };
   }else {
     var trigFunctions = {

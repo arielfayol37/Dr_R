@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
 /*----------------------------DISPLAYING LATEX-------------------------*/
 
 function displayLatex(){
-    const formattedAnswerDivs = document.querySelectorAll('.formatted-answer');
+    const formattedAnswerDivs = document.querySelectorAll('.formatted-answer-option');
     MathJax.typesetPromise().then(() => {
         formattedAnswerDivs.forEach((formattedAnswerDiv) => {
             try {

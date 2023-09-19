@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from phobos.models import Course, Professor,EnrollmentCode
+from phobos.models import Course, Professor,EnrollmentCode,CourseInfo
 from deimos.models import Student, Enrollment
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
@@ -9,6 +9,8 @@ from django.shortcuts import get_object_or_404
 from django.contrib import messages
 from deimos.models import QuestionStudent, AssignmentStudent
 from django.urls import reverse
+from markdown2 import markdown
+
 # Create your views here.
 def index(request):
     return render(request, 'astros/index.html')
@@ -83,4 +85,37 @@ def course_enroll(request, course_id, code):
                                                 'course_management_url':reverse('deimos:course_management', \
                                                                                 kwargs={'course_id':course_id})}))
 
+def course_info(request,course_id):
+    course = Course.objects.get(pk = course_id)
+    course_infos, created = CourseInfo.objects.get_or_create(course= course)
+    course_infos_html_content= {}
+    # TODO: you may *need* to user request.user._wrapped instead
+
+    # for categorie,info in course_infos.values():           //THIS WON'T WORK ?
+    #      print(markdown(info))
+    #      course_infos_html_content.update({categorie:markdown(info)})
+
+    course_infos_html_content.update({'about_course':markdown(course_infos.about_course)})
+    course_infos_html_content.update({'course_skills':markdown(course_infos.course_skills)})
+    course_infos_html_content.update({'course_plan':markdown(course_infos.course_plan)})
+    course_infos_html_content.update({'course_instructors':markdown(course_infos.course_instructors)})
+    try:
+        student = Student.objects.get(pk=request.user.pk)
+        if Enrollment.objects.filter(student=request.user, course=course).exists():
+            is_student_list = 1 
+        else: is_student_list = 0 
+
+        context = {
+              'course': course,
+              'course_info':course_infos_html_content,
+            "is_course_stud":  is_student_list,
+            "is_student": True
+        }
+       
+        # print(context)
+        return render(request, 'astros/course_info.html', context)
     
+    except Student.DoesNotExist:
+        pass
+  #  return render(request, 'astros/course_info.html', {"course":course})
+       
