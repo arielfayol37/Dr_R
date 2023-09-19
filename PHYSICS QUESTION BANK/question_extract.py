@@ -50,7 +50,8 @@ def extract_answers(text):
     
     return answers
 
-pdf_path = r"C:\Users\Noella\Downloads\PHYSICS QUESTION BANK\p101tb1q.pdf"  #Replace with your PDF file path
+#pdf_path = r"C:\Users\Noella\Downloads\PHYSICS QUESTION BANK\p101tb1q.pdf"  #Replace with your PDF file path
+pdf_path = r"C:\Users\User\AppData\Local\Programs\Python\Python310\Scripts\env_site\Scripts\Dr_R2\PHYSICS QUESTION BANK\p101tb1q.pdf"
 text = extract_text_from_pdf(pdf_path)
 parsed_questions = parse_questions(text)
 print(parsed_questions[0:10])
@@ -58,6 +59,7 @@ print(parsed_questions[0:10])
 
 
 
-pdf_path = r"C:\Users\Noella\Downloads\PHYSICS QUESTION BANK\p101tb1a.pdf" 
+#pdf_path = r"C:\Users\Noella\Downloads\PHYSICS QUESTION BANK\p101tb1a.pdf" 
+pdf_path = r"C:\Users\User\AppData\Local\Programs\Python\Python310\Scripts\env_site\Scripts\Dr_R2\PHYSICS QUESTION BANK\p101tb1a.pdf"
 answers_dict = extract_answers_from_pdf(pdf_path)
 print(answers_dict)

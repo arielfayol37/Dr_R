@@ -313,6 +313,8 @@ def create_question(request, assignment_id=None, type_int=None):
 def question_view(request, question_id, assignment_id=None, course_id=None):
     # Making sure the request is done by a professor.
     professor = get_object_or_404(Professor, pk=request.user.id)
+    course= Course.objects.get(pk= course_id)
+    assignments = Assignment.objects.filter(course = course)
     question = Question.objects.get(pk=question_id)
     question.text = replace_links_with_html(question.text)
     # replace_image_labels_with_links() should come after replace_links_with_html()
@@ -362,6 +364,7 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
         show_answer = False
     return render(request, 'phobos/question_view.html',
                   {'question':question,\
+                   'assignments':assignments,\
                       'show_answer':show_answer,\
                      'is_mcq':is_mcq, 'is_fr':is_fr,'answers': answers,\
                          'answers_is_latex': zip(answers, is_latex) if is_latex else None})
@@ -545,8 +548,6 @@ def enrollmentCode(request, course_id, expiring_date):
                                      code= random.randint(min,max),
                                       expiring_date= expiring_date)
     enrollment_code.save()
-    # print(EnrollmentCode.objects.all())
-    # print(EnrollmentCode.objects.none())
     return JsonResponse({'code': enrollment_code.code,
                          'ex_date':enrollment_code.expiring_date})
     
@@ -554,7 +555,6 @@ def display_codes(request,course_id):
     if request.method == "GET":
          course = Course.objects.get(pk= course_id)
          codes= EnrollmentCode.objects.filter(course =  course )
-         # print(codes,codes == EnrollmentCode.objects.none())
          usable_codes =[]
          for code in codes:
                  if code.expiring_date > date.today():
@@ -562,3 +562,51 @@ def display_codes(request,course_id):
                                          'ex_date':code.expiring_date})
 
          return JsonResponse({'codes':usable_codes})    
+
+@login_required(login_url='astros:login')
+def manage_course_info(request,course_id):
+   course = Course.objects.get(pk= course_id) 
+   try:
+        course_info = CourseInfo.objects.get(course= course)
+
+   except CourseInfo.DoesNotExist:
+       course_info = CourseInfo.objects.create(course= course)
+
+   return render(request,'phobos/course_info_management .html',{'course':course,'course_info':course_info})
+
+
+def save_course_info(request,course_id,categorie,info):
+    course = Course.objects.get(pk= course_id) 
+    print(categorie)
+    try:
+        course_info = CourseInfo.objects.get(course= course)
+    except CourseInfo.DoesNotExist:
+       course_info = CourseInfo.objects.create(course= course)
+    
+    if  categorie == 'about_course':
+            course_info.about_course = info
+    elif  categorie == 'course_skill':
+            course_info.course_skills = info
+    elif  categorie == 'course_plan':
+            course_info.course_plan = info
+    elif  categorie == 'course_instructors' :
+            course_info.course_instructors = info
+    else:
+        return HttpResponse('error')
+    
+    course_info.save(update_fields=[categorie])
+    return render(request,'phobos/course_info_management .html',{'course':course,'course_info':course_info})
+
+
+@login_required(login_url='astros:login')
+def export_question_to(request,question_id,exp_assignment_id,course_id=None,assignment_id=None):
+    assignment = Assignment.objects.get(pk = exp_assignment_id)
+    new_question= Question.objects.get(pk = question_id)
+    new_question.pk = None
+    new_question.assignment = assignment
+
+    try:
+        new_question.save()
+        return HttpResponse(json.dumps('Export Succesful'))
+    except:
+        return HttpResponse(json.dumps('Export Failed'))
