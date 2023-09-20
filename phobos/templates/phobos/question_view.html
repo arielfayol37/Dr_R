@@ -29,7 +29,10 @@
             {% csrf_token %}
         <select >
             {% for assignment in assignments %}
+            {% if assignment == Assignment %}
+            {% else %}
         <option value="{{assignment.id}}" > {{assignment.name}} </option>
+            {% endif %}
             {% endfor %}
         </select>
         <input type="button" value="Confirm"> 

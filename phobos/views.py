@@ -311,6 +311,7 @@ def create_question(request, assignment_id=None, type_int=None):
 def question_view(request, question_id, assignment_id=None, course_id=None):
     # Making sure the request is done by a professor.
     professor = get_object_or_404(Professor, pk=request.user.id)
+    Assignment_=Assignment.objects.get(pk=assignment_id)      # actual assignment
     course= Course.objects.get(pk= course_id)
     assignments = Assignment.objects.filter(course = course)
     question = Question.objects.get(pk=question_id)
@@ -363,6 +364,7 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
     return render(request, 'phobos/question_view.html',
                   {'question':question,\
                    'assignments':assignments,\
+                   'Assignments':Assignment_,\
                       'show_answer':show_answer,\
                      'is_mcq':is_mcq, 'is_fr':is_fr,'answers': answers,\
                          'answers_is_latex': zip(answers, is_latex) if is_latex else None})
@@ -599,12 +601,86 @@ def save_course_info(request,course_id,categorie,info):
 @login_required(login_url='astros:login')
 def export_question_to(request,question_id,exp_assignment_id,course_id=None,assignment_id=None):
     assignment = Assignment.objects.get(pk = exp_assignment_id)
-    new_question= Question.objects.get(pk = question_id)
-    new_question.pk = None
-    new_question.assignment = assignment
+    question= Question.objects.get(pk = question_id)
+    new_question = Question(
+            number = assignment.questions.count() + 1,
+            text = question.text,
+            topic = question.topic,
+            sub_topic = question.sub_topic,
+            assignment = assignment,
+            answer_type=question.answer_type,
+            deduct_per_attempt = question.deduct_per_attempt, # Deduct 25% of points when it is an mcq
+            max_num_attempts = question.max_num_attempts
+        )
+    new_question.save() 
+    try:
+     question_image = QuestionImage.objects.get(question=question)
+     new_question_image = QuestionImage(question=new_question, image=question_image.image, label=question_image.label)
+     new_question_image.save()
+    except QuestionImage.DoesNotExist:
+        pass
+    
+    for variable in Variable.objects.filter(question=question):
+            new_variable = Variable(question=new_question, symbol=variable.symbol)
+            new_variable.save()
+          
+            for var_interval in  VariableInterval.objects.filter(variable=variable): #range(len(vars_dict[var_symbol]['lb'])):
+                new_var_interval = VariableInterval(variable=new_variable,\
+                                                lower_bound = var_interval.lower_bound,\
+                                                upper_bound = var_interval.upper_bound)
+                new_var_interval.save()
 
+    print(new_question.answer_type)   
+    if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
+            new_answer = ExpressionAnswer(question=new_question, content=question.answer)
+    elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
+                new_answer = FloatAnswer(question=new_question, content=question.answer)
+    elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
+                new_answer = VariableFloatAnswer(question=new_question, content=question.answer)
+    elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:
+            new_answer = LatexAnswer(question=new_question, content=question.answer)
+    elif new_question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
+            # No answer yet, but semantic answer validation coming soon.
+            new_answer = TextAnswer(question=new_question, content='')
+    else:
+            for answerType in [MCQExpressionAnswer.objects.filter(question=question),MCQFloatAnswer.objects.filter(question=question),
+                               MCQVariableFloatAnswer.objects.filter(question=question),MCQLatexAnswer.objects.filter(question=question),
+                               MCQTextAnswer.objects.filter(question=question),MCQImageAnswer.objects.filter(question=question)]:
+                for answer in answerType:
+                    # Really, all thsoe QuestionChoices don't matter for two reasons:
+                        # 1) If there are different types of mcq answers which is often the case
+                        #     the answer_type will end up being just the type of the last answer
+                        # 2) All what the other parts of the programs care about is whether the question
+                        #     is an MCQ or not.
+                    print(question.answer_type)
+                    if question.answer_type == QuestionChoices.MCQ_EXPRESSION:
+                        new_answer = MCQExpressionAnswer(question=new_question, content=answer.content)
+                    elif question.answer_type == QuestionChoices.MCQ_FLOAT:
+                            new_answer = MCQFloatAnswer(question=new_question, content=answer.content)
+                    #elif question.answer_type == QuestionChoices.MCQ_VARIABLE_FLOAT:
+                    #        new_answer = MCQVariableFloatAnswer(question=new_question, content=answer.content)
+                    elif question.answer_type == QuestionChoices.MCQ_LATEX:
+                        new_answer = MCQLatexAnswer(question=new_question, content=answer.content)
+                    elif   new_question.answer_type == QuestionChoices.MCQ_TEXT : # Text Answer
+                        new_answer = MCQTextAnswer(question=new_question, content=answer.content)
+                    else:
+                        return HttpResponseForbidden('Something went wrong')
+                    new_answer.is_answer = answer.is_answer 
+                    new_answer.save() # Needed here.
+
+                    if question.answer_type == QuestionChoices.MCQ_IMAGE:
+                        new_answer = MCQImageAnswer(question=new_question, image=answer.image, label=answer.label)
+                    else:
+                        return HttpResponseForbidden('Something went wrong')
+                    new_answer.is_answer = answer.is_answer 
+                    new_answer.save() # Needed here.   
+        
+        # Needed here too.
+    new_answer.save() 
+    print(new_question.answer_type) 
     try:
         new_question.save()
+        
         return HttpResponse(json.dumps('Export Succesful'))
     except:
         return HttpResponse(json.dumps('Export Failed'))
