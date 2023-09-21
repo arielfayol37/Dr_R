@@ -526,7 +526,7 @@ function create_inputed_mcq_div(input_field, answer_type) {
             if (answer_type != 'i-answer'){
                 mcqAnswerDiv.innerHTML = `
                 <br/>
-                <div class="formatted-answer"></div>
+                <div class="formatted-answer-option"></div>
                 <input value="${answer_value}" type="hidden" name="answer_value_${option_counter}"/>
                 <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="answer_info_${option_counter}"/>
                 <div class="add-delete-btns">
@@ -537,7 +537,7 @@ function create_inputed_mcq_div(input_field, answer_type) {
              }else {
                 mcqAnswerDiv.innerHTML = `
                 <br/>
-                <div class="formatted-answer"></div>
+                <div class="formatted-answer-option"></div>
                 <input value="${display_value}" type="hidden" name="image_label_${option_counter}"/>
                 <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="answer_info_${option_counter}"/>
                 <div class="add-delete-btns">
@@ -549,7 +549,7 @@ function create_inputed_mcq_div(input_field, answer_type) {
              }
            
             // Append the formatted_answer element as a child
-            var formattedAnswerDiv = mcqAnswerDiv.querySelector('.formatted-answer');
+            var formattedAnswerDiv = mcqAnswerDiv.querySelector('.formatted-answer-option');
             formattedAnswerDiv.appendChild(formatted_answer);
             if (answer_type === 'i-answer'){
                 formattedAnswerDiv.appendChild(mcqImagePreview.cloneNode(true));
@@ -662,13 +662,13 @@ function create_img_div(img_input_field, img_label){
     imgDiv.className = 'question-image';
     imgDiv.innerHTML = `
     <br/>
-    <div class="formatted-answer"></div>
+    <div class="formatted-answer-option"></div>
     <input value="${img_label}" type="hidden" name="question_image_label_${question_img_counter}"/>
     <div class="add-delete-btns">
         <button  type="button" class="btn btn-danger img-delete exempt">delete</button>
     </div>
 `;
-    var formattedImgDiv = imgDiv.querySelector('.formatted-answer');
+    var formattedImgDiv = imgDiv.querySelector('.formatted-answer-option');
     formattedImgDiv.appendChild(imgLabel);
     formattedImgDiv.appendChild(uploadedQuestionPreview.cloneNode(true));
     const image_input_field_clone = img_input_field.cloneNode(true);
