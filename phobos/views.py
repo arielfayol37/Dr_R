@@ -305,15 +305,31 @@ def create_question(request, assignment_id=None, type_int=None):
         'assignment_id': assignment_id,
     })
 
+# NOTE: The function below was to be useD for a better front end design of the export question functionality.
+# The function was to enable the prof select a course then select an assignment in that course.
+#this function raises an ATTRIBUTE ERROR. WHY ???  
+# the function work, fix the bug but too late
+
+# def get_assignments(request, question_id, exp_course_id, assignment_id=None, course_id=None):    # #for Export question implementation
+#     course=[] #Course.objects.filter(pk = exp_course_id)
+#     assignments=[] #Assignment.objects.filter(course= course[0])
+#     content=[]
+#     for assignment in assignments:
+#         content.append({'assignment_id':assignment.pk,'assignment_name':assignment.name})
+#     return JsonResponse("{'assignments':content}")
 
 
 @login_required(login_url='astros:login')
 def question_view(request, question_id, assignment_id=None, course_id=None):
     # Making sure the request is done by a professor.
     professor = get_object_or_404(Professor, pk=request.user.id)
-    Assignment_=Assignment.objects.get(pk=assignment_id)      # actual assignment
-    course= Course.objects.get(pk= course_id)
-    assignments = Assignment.objects.filter(course = course)
+    i=0
+    assignments=[]                              # actual assignment for Export question implementation
+    course= Course.objects.get(pk= course_id)                  #for Export question implementation
+    courses= Course.objects.filter( professors=professor)
+    for course in courses:
+        assignments.append(Assignment.objects.filter(course = course))                  #for Export question implementation
+        
     question = Question.objects.get(pk=question_id)
     question.text = replace_links_with_html(question.text)
     # replace_image_labels_with_links() should come after replace_links_with_html()
@@ -364,7 +380,7 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
     return render(request, 'phobos/question_view.html',
                   {'question':question,\
                    'assignments':assignments,\
-                   'Assignments':Assignment_,\
+                   'courses':zip(range(len(courses)),courses),
                       'show_answer':show_answer,\
                      'is_mcq':is_mcq, 'is_fr':is_fr,'answers': answers,\
                          'answers_is_latex': zip(answers, is_latex) if is_latex else None})
@@ -575,14 +591,17 @@ def manage_course_info(request,course_id):
    return render(request,'phobos/course_info_management .html',{'course':course,'course_info':course_info})
 
 
-def save_course_info(request,course_id,categorie,info):
-    course = Course.objects.get(pk= course_id) 
-    print(categorie)
+def save_course_info(request,course_id,categori):
+ course = Course.objects.get(pk= course_id) 
+ if request.method== "POST":
+    print(request.POST.items())
     try:
         course_info = CourseInfo.objects.get(course= course)
     except CourseInfo.DoesNotExist:
        course_info = CourseInfo.objects.create(course= course)
-    
+    info = request.POST.get('text_info')
+    categorie=request.POST.get('categorie')
+    print(request)
     if  categorie == 'about_course':
             course_info.about_course = info
     elif  categorie == 'course_skill':
@@ -595,7 +614,7 @@ def save_course_info(request,course_id,categorie,info):
         return HttpResponse('error')
     
     course_info.save(update_fields=[categorie])
-    return render(request,'phobos/course_info_management .html',{'course':course,'course_info':course_info})
+    return  render(request,'phobos/course_info_management .html',{'course':course,'course_info':course_info})           #(request,'phobos/course_info_management .html',{'course':course,'course_info':course_info})
 
 
 @login_required(login_url='astros:login')
@@ -632,13 +651,17 @@ def export_question_to(request,question_id,exp_assignment_id,course_id=None,assi
 
     print(new_question.answer_type)   
     if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
-            new_answer = ExpressionAnswer(question=new_question, content=question.answer)
+            answer= ExpressionAnswer.objects.get(question=question)
+            new_answer = ExpressionAnswer(question=new_question, content=answer.content)
     elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
-                new_answer = FloatAnswer(question=new_question, content=question.answer)
+                answer= FloatAnswer.objects.get(question=question)
+                new_answer = FloatAnswer(question=new_question, content=answer.content)
     elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
-                new_answer = VariableFloatAnswer(question=new_question, content=question.answer)
+                answer= VariableFloatAnswer.objects.get(question=question)
+                new_answer = VariableFloatAnswer(question=new_question, content=answer.content)
     elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:
-            new_answer = LatexAnswer(question=new_question, content=question.answer)
+            answer= LatexAnswer.objects.get(question=question)
+            new_answer = LatexAnswer(question=new_question, content=answer.content)
     elif new_question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
             # No answer yet, but semantic answer validation coming soon.
             new_answer = TextAnswer(question=new_question, content='')
@@ -652,32 +675,28 @@ def export_question_to(request,question_id,exp_assignment_id,course_id=None,assi
                         #     the answer_type will end up being just the type of the last answer
                         # 2) All what the other parts of the programs care about is whether the question
                         #     is an MCQ or not.
-                    print(question.answer_type)
+                  
                     if question.answer_type == QuestionChoices.MCQ_EXPRESSION:
                         new_answer = MCQExpressionAnswer(question=new_question, content=answer.content)
                     elif question.answer_type == QuestionChoices.MCQ_FLOAT:
                             new_answer = MCQFloatAnswer(question=new_question, content=answer.content)
-                    #elif question.answer_type == QuestionChoices.MCQ_VARIABLE_FLOAT:
-                    #        new_answer = MCQVariableFloatAnswer(question=new_question, content=answer.content)
+                    elif question.answer_type == QuestionChoices.MCQ_VARIABLE_FLOAT:
+                            new_answer = MCQVariableFloatAnswer(question=new_question, content=answer.content)
                     elif question.answer_type == QuestionChoices.MCQ_LATEX:
                         new_answer = MCQLatexAnswer(question=new_question, content=answer.content)
                     elif   new_question.answer_type == QuestionChoices.MCQ_TEXT : # Text Answer
-                        new_answer = MCQTextAnswer(question=new_question, content=answer.content)
+                        new_answer = MCQTextAnswer(question=new_question, content=answer.content)    
+                    elif question.answer_type == QuestionChoices.MCQ_IMAGE:
+                        new_answer = MCQImageAnswer(question=new_question, image=answer.image, label=answer.label)
                     else:
                         return HttpResponseForbidden('Something went wrong')
                     new_answer.is_answer = answer.is_answer 
                     new_answer.save() # Needed here.
 
-                    if question.answer_type == QuestionChoices.MCQ_IMAGE:
-                        new_answer = MCQImageAnswer(question=new_question, image=answer.image, label=answer.label)
-                    else:
-                        return HttpResponseForbidden('Something went wrong')
-                    new_answer.is_answer = answer.is_answer 
-                    new_answer.save() # Needed here.   
-        
+       
         # Needed here too.
     new_answer.save() 
-    print(new_question.answer_type) 
+
     try:
         new_question.save()
         
