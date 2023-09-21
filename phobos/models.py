@@ -97,6 +97,20 @@ class Course(models.Model):
             self.image.delete(save=False)
         super(Course, self).delete(*args, **kwargs)
 
+class CourseInfo(models.Model):
+    """
+    Class to store extra information about a course. 
+    these info is provided by professor and viewed by students.
+    """
+    course= models.ForeignKey(Course, on_delete=models.CASCADE, related_name='course_info')
+    course_skills= models.CharField(max_length=2000, default="")
+    about_course= models.CharField(max_length=2000, default="")
+    course_plan=models.CharField(max_length=2000, default="")
+    course_instructors = models.CharField(max_length=2000, default="")
+    instructors_image= models.ImageField(upload_to='phobos/images/professors', blank=True, null=True)
+    notice = models.CharField(max_length=2000, default="")
+    
+
 class Professor(User):
     """
     Class to store professors on the platform.

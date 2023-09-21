@@ -1,0 +1,64 @@
+<!-- phobos: course_management.html-->
+{% extends 'phobos/layout.html' %}
+{% load static %}
+{% block title %} Course {% endblock %}
+{% block body%}
+    <div class="sidebar" style="display:none">
+        <header class="sidebar-header">X</header>
+        <ul>
+            <li><a href="{% url 'phobos:course_management' course_id=course.id %}">Back</a></li>
+            <li><a href="{% url 'phobos:index' %}">Home</a></li>
+            <li><a href="{% url 'phobos:create_assignment' course_id=course.id %}">Create Assignment</a></li> 
+            <li><a href="{% url 'phobos:gradebook' course_id=course.id %}">Gradebook</a></li>
+            <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
+            <li><a href="{% url 'phobos:manage_enrollment_codes' course_id=course.id %}">Enrollment Codes</a></li>
+        </ul>
+    </div>
+
+    <br/>
+    
+    <h4>{{course.name}}</h4><hr/>
+    
+    <!-- Edit course's information -->
+    <div id="Preview-Section">
+        <div > <h3><u>Preview</u> <button class ="btn btn-primary" type="button" id="Edit" value="" style="position: relative; float: right;">Edit Course Info </button>
+        </h3></div>
+        
+        {% include 'astros/course_info.html' with course=course course_info=course_info %}
+          <br/>
+    </div><hr/>
+             
+    
+    <div id="edit-section" style="display: none;">
+       <t/> <h2>Edit course's information {{course_info.about_course}}</h2>
+        <br/>
+        <div class="sf-container" >
+            <div class="row" >
+                <div class="col-sm-3" >
+                    <button class=" btn btn-primary" data-categorie="about_course" data-info="{{course_info.about_course}}"> about the course</button>
+                </div>
+                <div class="col-sm-3" >
+                    <button class="btn btn-primary" data-categorie="course_skill" data-info="{{course_info.course_skills}}"> what you'll learn</button>
+                </div>
+                <div class="col-sm-3" >
+                    <button class="btn btn-primary" data-categorie="course_plan" data-info="{{course_info.course_plan}}"> Course plan</button>
+                </div>
+                <div class="col-sm-3" >
+                    <button class="btn btn-primary" data-categorie="course_instructors" data-info="{{course_info.course_instructors}}"> about the instructors</button>
+                </div>
+            </div>
+        </div>
+        <br/>
+        <form action="{% url 'phobos:save_course_info' course.id course.name %}" method="post" value="operation">
+            {% csrf_token %}
+        <textarea placeholder="Please write information in markdown format" style="width: 90%; border-radius: 10px;" name="text_info"></textarea>
+        <br/>
+        <input type="submit" value="Save"/>
+        <input type="button" value="Cancel"/>
+        <input type="text" name="categorie" style="display: none;">
+        </form>
+    </div>
+<script src="{% static 'phobos/js/manage_course_info.js' %}"></script>
+
+    
+{% endblock %}

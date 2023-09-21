@@ -307,12 +307,31 @@ def create_question(request, assignment_id=None, type_int=None):
         'assignment_id': assignment_id,
     })
 
+# NOTE: The function below was to be useD for a better front end design of the export question functionality.
+# The function was to enable the prof select a course then select an assignment in that course.
+#this function raises an ATTRIBUTE ERROR. WHY ???  
+# the function work, fix the bug but too late
+
+# def get_assignments(request, question_id, exp_course_id, assignment_id=None, course_id=None):    # #for Export question implementation
+#     course=[] #Course.objects.filter(pk = exp_course_id)
+#     assignments=[] #Assignment.objects.filter(course= course[0])
+#     content=[]
+#     for assignment in assignments:
+#         content.append({'assignment_id':assignment.pk,'assignment_name':assignment.name})
+#     return JsonResponse("{'assignments':content}")
 
 
 @login_required(login_url='astros:login')
 def question_view(request, question_id, assignment_id=None, course_id=None):
     # Making sure the request is done by a professor.
     professor = get_object_or_404(Professor, pk=request.user.id)
+    i=0
+    assignments=[]                              # actual assignment for Export question implementation
+    course= Course.objects.get(pk= course_id)                  #for Export question implementation
+    courses= Course.objects.filter( professors=professor)
+    for course in courses:
+        assignments.append(Assignment.objects.filter(course = course))                  #for Export question implementation
+        
     question = Question.objects.get(pk=question_id)
     question.text = replace_links_with_html(question.text)
     # replace_image_labels_with_links() should come after replace_links_with_html()
@@ -362,6 +381,8 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
         show_answer = False
     return render(request, 'phobos/question_view.html',
                   {'question':question,\
+                   'assignments':assignments,\
+                   'courses':zip(range(len(courses)),courses),
                       'show_answer':show_answer,\
                      'is_mcq':is_mcq, 'is_fr':is_fr,'answers': answers,\
                          'answers_is_latex': zip(answers, is_latex) if is_latex else None})
@@ -545,8 +566,6 @@ def enrollmentCode(request, course_id, expiring_date):
                                      code= random.randint(min,max),
                                       expiring_date= expiring_date)
     enrollment_code.save()
-    # print(EnrollmentCode.objects.all())
-    # print(EnrollmentCode.objects.none())
     return JsonResponse({'code': enrollment_code.code,
                          'ex_date':enrollment_code.expiring_date})
     
@@ -554,7 +573,6 @@ def display_codes(request,course_id):
     if request.method == "GET":
          course = Course.objects.get(pk= course_id)
          codes= EnrollmentCode.objects.filter(course =  course )
-         # print(codes,codes == EnrollmentCode.objects.none())
          usable_codes =[]
          for code in codes:
                  if code.expiring_date > date.today():
@@ -562,3 +580,131 @@ def display_codes(request,course_id):
                                          'ex_date':code.expiring_date})
 
          return JsonResponse({'codes':usable_codes})    
+
+@login_required(login_url='astros:login')
+def manage_course_info(request,course_id):
+   course = Course.objects.get(pk= course_id) 
+   try:
+        course_info = CourseInfo.objects.get(course= course)
+
+   except CourseInfo.DoesNotExist:
+       course_info = CourseInfo.objects.create(course= course)
+
+   return render(request,'phobos/course_info_management .html',{'course':course,'course_info':course_info})
+
+
+def save_course_info(request,course_id,categori):
+ course = Course.objects.get(pk= course_id) 
+ if request.method== "POST":
+    print(request.POST.items())
+    try:
+        course_info = CourseInfo.objects.get(course= course)
+    except CourseInfo.DoesNotExist:
+       course_info = CourseInfo.objects.create(course= course)
+    info = request.POST.get('text_info')
+    categorie=request.POST.get('categorie')
+    print(request)
+    if  categorie == 'about_course':
+            course_info.about_course = info
+    elif  categorie == 'course_skill':
+            course_info.course_skills = info
+    elif  categorie == 'course_plan':
+            course_info.course_plan = info
+    elif  categorie == 'course_instructors' :
+            course_info.course_instructors = info
+    else:
+        return HttpResponse('error')
+    
+    course_info.save(update_fields=[categorie])
+    return  render(request,'phobos/course_info_management .html',{'course':course,'course_info':course_info})           #(request,'phobos/course_info_management .html',{'course':course,'course_info':course_info})
+
+
+@login_required(login_url='astros:login')
+def export_question_to(request,question_id,exp_assignment_id,course_id=None,assignment_id=None):
+    try:
+        assignment = Assignment.objects.get(pk = exp_assignment_id)
+        question= Question.objects.get(pk = question_id)
+        new_question = Question(
+                number = assignment.questions.count() + 1,
+                text = question.text,
+                topic = question.topic,
+                sub_topic = question.sub_topic,
+                assignment = assignment,
+                answer_type=question.answer_type,
+                deduct_per_attempt = question.deduct_per_attempt, # Deduct 25% of points when it is an mcq
+                max_num_attempts = question.max_num_attempts
+            )
+        new_question.save() 
+
+        question_images = QuestionImage.objects.filter(question=question)
+        for question_image in question_images:
+            new_question_image = QuestionImage(question=new_question, image=question_image.image, label=question_image.label)
+            new_question_image.save()
+        for variable in Variable.objects.filter(question=question):
+                new_variable = Variable(question=new_question, symbol=variable.symbol)
+                new_variable.save()
+            
+                for var_interval in  VariableInterval.objects.filter(variable=variable):
+                    new_var_interval = VariableInterval(variable=new_variable,\
+                                                    lower_bound = var_interval.lower_bound,\
+                                                    upper_bound = var_interval.upper_bound)
+                    new_var_interval.save()
+
+        if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
+                answer= ExpressionAnswer.objects.get(question=question)
+                new_answer = ExpressionAnswer(question=new_question, content=answer.content)
+        elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
+                    answer= FloatAnswer.objects.get(question=question)
+                    new_answer = FloatAnswer(question=new_question, content=answer.content)
+        elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
+                    answer= VariableFloatAnswer.objects.get(question=question)
+                    new_answer = VariableFloatAnswer(question=new_question, content=answer.content)
+        elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:
+                answer= LatexAnswer.objects.get(question=question)
+                new_answer = LatexAnswer(question=new_question, content=answer.content)
+        elif new_question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
+                # No answer yet, but semantic answer validation coming soon.
+                new_answer = TextAnswer(question=new_question, content='')
+        else:
+            for answers, answer_type in [(MCQExpressionAnswer.objects.filter(question=question),QuestionChoices.MCQ_EXPRESSION),\
+                            (MCQFloatAnswer.objects.filter(question=question), QuestionChoices.MCQ_FLOAT),\
+                            (MCQVariableFloatAnswer.objects.filter(question=question), QuestionChoices.MCQ_VARIABLE_FLOAT),\
+                                (MCQLatexAnswer.objects.filter(question=question), QuestionChoices.MCQ_LATEX),\
+                            (MCQTextAnswer.objects.filter(question=question), QuestionChoices.MCQ_TEXT),\
+                                (MCQImageAnswer.objects.filter(question=question), QuestionChoices.MCQ_IMAGE)]:
+                if answer_type == QuestionChoices.MCQ_EXPRESSION:
+                    for answer in answers:
+                        new_answer = MCQExpressionAnswer(question=new_question, content=answer.content)
+                        new_answer.is_answer = answer.is_answer 
+                        new_answer.save()
+                elif answer_type == QuestionChoices.MCQ_FLOAT:
+                    for answer in answers:
+                        new_answer = MCQFloatAnswer(question=new_question, content=answer.content)
+                        new_answer.is_answer = answer.is_answer 
+                        new_answer.save()
+                elif answer_type == QuestionChoices.MCQ_VARIABLE_FLOAT:
+                    for answer in answers:    
+                        new_answer = MCQVariableFloatAnswer(question=new_question, content=answer.content)
+                        new_answer.is_answer = answer.is_answer 
+                        new_answer.save()
+                elif answer_type == QuestionChoices.MCQ_LATEX:
+                    for answer in answers:    
+                        new_answer = MCQLatexAnswer(question=new_question, content=answer.content)
+                        new_answer.is_answer = answer.is_answer 
+                        new_answer.save()
+                elif answer_type == QuestionChoices.MCQ_TEXT : # Text Answer
+                    for answer in answers:
+                        new_answer = MCQTextAnswer(question=new_question, content=answer.content)  
+                        new_answer.is_answer = answer.is_answer 
+                        new_answer.save()  
+                elif answer_type == QuestionChoices.MCQ_IMAGE:
+                    for answer in answers:    
+                        new_answer = MCQImageAnswer(question=new_question, image=answer.image, label=answer.label)
+                        new_answer.is_answer = answer.is_answer 
+                        new_answer.save()
+                else:
+                    return HttpResponseForbidden('Something went wrong')
+
+        return HttpResponse(json.dumps('Export Succesful'))
+    except:
+        return HttpResponse(json.dumps('Export Failed'))
