@@ -10,7 +10,6 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib import messages
 from .forms import *
 from .models import *
 from django.shortcuts import get_object_or_404
@@ -75,28 +74,6 @@ def assignment_management(request, assignment_id, course_id=None):
     }
     return render(request, "deimos/assignment_management.html", context)
 
-@login_required(login_url='astros:login')
-def course_enroll(request, course_id):
-    # Making sure the request is done by a Student.
-    student = get_object_or_404(Student, pk=request.user.pk)
-    course = get_object_or_404(Course, pk = course_id)
-    if not Enrollment.objects.filter(student=student, course=course).exists():
-        # If not enrolled, create a new Enrollment instance
-        enrollment = Enrollment.objects.create(student=student, course=course)
-        messages.info(request, message="You were successfully enrolled")
-        # Redirect to a success page or course details page
-        
-        # Now assign all the courses assignments to the student. 
-        for assignment in course.assignments.all():
-            assign = AssignmentStudent.objects.create(assignment=assignment, student=student)
-            for question in assignment.questions.all():
-                quest = QuestionStudent.objects.create(question=question, student=student)
-            
-        return redirect('deimos:course_management', course_id=course_id)
-    else:
-        # Student is already enrolled in the course
-        return redirect('deimos:course_management', course_id=course_id)
-    
 # TODO: Add the action link in answer_question.html
 # TODO: Implement question_view as well.
 @login_required(login_url='astros:login')
@@ -255,11 +232,12 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                     except ValueError:
                         correct = False
                     # Checking previous attempts
-                    for previous_attempt in question_student.attempts.all():
-                        are_the_same, fake_feedback = compare_floats(previous_attempt.content,submitted_answer, get_feedback=False)
-                        if are_the_same:
-                            previously_submitted = True
-                            return JsonResponse({'previously_submitted': previously_submitted})
+                    if not correct:
+                        for previous_attempt in question_student.attempts.all():
+                            are_the_same, fake_feedback = compare_floats(previous_attempt.content,submitted_answer, get_feedback=False)
+                            if are_the_same:
+                                previously_submitted = True
+                                return JsonResponse({'previously_submitted': previously_submitted})
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
                     attempt.content = submitted_answer
 
@@ -270,11 +248,12 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                                                     question.margin_error)
                     except ValueError:
                         correct = False
-                    for previous_attempt in question_student.attempts.all():
-                        are_the_same, fake_feedback = compare_floats(previous_attempt.content, submitted_answer, margin_error=0.02, get_feedback=False)
-                        if are_the_same:
-                            previously_submitted = True
-                            return JsonResponse({'previously_submitted': previously_submitted})
+                    if not correct:
+                        for previous_attempt in question_student.attempts.all():
+                            are_the_same, fake_feedback = compare_floats(previous_attempt.content, submitted_answer, margin_error=0.02, get_feedback=False)
+                            if are_the_same:
+                                previously_submitted = True
+                                return JsonResponse({'previously_submitted': previously_submitted})
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
                     attempt.content = submitted_answer
 
@@ -402,7 +381,11 @@ def expression_compare_test(request):
         data = json.loads(request.body)
         e1 = data['expression_1']
         e2 = data['expression_2']
-        return JsonResponse({'correct': compare_expressions(e1,e2)})
+        mode = data['mode']
+        if mode == 'units':
+            return JsonResponse({'correct': compare_units(e1,e2)})
+        else:
+            return JsonResponse({'correct': compare_expressions(e1,e2)})
     return render(request, 'deimos/expression_compare_test.html')
 def is_student_enrolled(student_id, course_id):
     # Retrieve the Student and Course instances based on their IDs
@@ -429,17 +412,19 @@ def  extract_numbers(text):
     
     return matches
 
-def compare_expressions(expression1, expression2):
+def compare_expressions(expression1, expression2, for_units=False):
     """
     Given two strings e1 and e2,
     returns True if they are algebraically equivalent,
     returns False otherwise.
     """
-    e1 = transform_expression(expression1)
-    e2 = transform_expression(expression2)
-    if not (isinstance(e1, str) and isinstance(e2, str)):
-        raise ValueError("Both inputs should be strings")
-
+    if not for_units:
+        e1 = transform_expression(expression1)
+        e2 = transform_expression(expression2)
+        if not (isinstance(e1, str) and isinstance(e2, str)):
+            raise ValueError("Both inputs should be strings")
+    else:
+        e1, e2 = expression1, expression2
     symbols_union = set(e1) | set(e2)  # Combined set of symbols from both expressions
     symbols_union.update(extract_numbers(e1 + e2))  # Update with extracted numbers
     symbls = symbols(' '.join(symbols_union), real=True, positive=True)
@@ -450,7 +435,7 @@ def compare_expressions(expression1, expression2):
 
 def compare_floats(correct_answer, submitted_answer, margin_error=0.0, get_feedback=True):
     """
-    Given two floats f1 and f2,
+    Takes two floats f1 and f2,
     returns True if they are equal or close,
     returns False otherwise
     """
@@ -465,6 +450,54 @@ def compare_floats(correct_answer, submitted_answer, margin_error=0.0, get_feedb
     else:
         return (abs(f1-f2)/f1 <= margin_error, feedback_message)
 
+def compare_units(units_1, units_2):
+    """
+    Takes two units units_1 and units_2
+    returns True if they are equivalent
+    returns False otherwise
+    """
+    
+    # custom_base_units = ['m', 's', 'cd', 'K', 'mol', 'g', 'A']
+    scales = {'k':'10^3', 'u':'10^-6', 'm_':'10^-3', 'p':'10^-12', 'M':'10^6', 'n':'10^-9','µ':'10^-6'}
+    # Important! Hz must come before H, as well as Sv before S, Wb before W etc
+    correspondances = {
+        'C': 'A*s', 'V': 'k*g*m^2*s^-3*A^-1','Ω': 'k*g m^2*s^-3*A^-2',
+        'T': 'k*g*s^-2*A^-1','Hz': 's^-1','Pa': 'k*g*m^-1*s^-2','N': 'k*g*m*s^-2','J': 'k*g*m^2*s^-2',
+        'Wb':'k*g*m^2*A*s^-2','W': 'k*g*m^2*s^-3', 'F':'k*g*A^2*s^4*m^-2', 'H':'k*g*m^2*A^2*s^-2',
+        'Sv':'m^2*s^-2','S':'k*g*s^3*A^2*m^-2', 'lx':'cd*m^-2', 'Bq':'s^-1', 'Gy':'m^2*s^-2', 'kat':'mol*s^-1'
+    }
+    # transform_units_expression() must be done before to replacing the correspondances
+    # and scales to reduce runtime.
+    units_1 = transform_units_expression(units_1)
+    units_2 = transform_units_expression(units_2)
+
+    for key, value in correspondances.items():
+        units_1 = units_1.replace(key, value)
+        units_2 = units_2.replace(key, value)
+    for key, value in scales.items():
+        units_1 = units_1.replace(key, value)
+        units_2 = units_2.replace(key, value)
+    return compare_expressions(units_1, units_2, for_units=True)
+
+def transform_units_expression(expr):
+    """Insert multiplication signs between combined characters, except within trig functions."""
+    expression = remove_extra_spaces_around_operators(expr)
+    expression = expression.replace(', ', '')
+    expression = expression.replace(' ', '*')
+    expression = re.sub(r'1e\+?(-?\d+)', r'10^\1', expression)
+    # replacements are units that are more than 1 character. e.g Hz, Pa, cd, mol
+    replacements = {
+        'cd': 'ò', 'mol': 'ë', 'Hz': 'à', 'Pa': 'ê','Wb': 'ä',
+        'lx': 'Bq', 'Gy': 'ù', 'Sv': 'ô', 'kat': 'ü', 
+    }
+
+    expression = encode(expression, replacements)
+    transformed_expression = ''.join(
+        char if index == 0 or not needs_multiplication(expression, index, replacements)
+        else '*' + char for index, char in enumerate(expression)
+    )
+    transformed_expression = transformed_expression.replace('^', '**')
+    return decode(transformed_expression, replacements)
     
 def replace_links_with_html(text):
     """

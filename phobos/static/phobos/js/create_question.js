@@ -161,6 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 option_counter += 1;
             }
             catch(error){
+                console.log(error)
                 alert('Make sure you enter the correct format of the answer type you selected.')
             }
             
@@ -328,12 +329,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Here, each time the value of answer input screen changes,
     // we use mathjax to display the updated content.
     screen.addEventListener('input', ()=> {
-        if(screen.value.length != 0){
+        if(screen.value.length >=1 && screen.value.length < 40){
 
             MathJax.typesetPromise().then(() => {
                 try {
-    
-                const userInputNode = math.simplify(processString(screen.value));
+                if(screen.value.startsWith('@{') && screen.value.endsWith('}@')){
+                    var userInputNode = math.simplify(processString(screen.value.slice(2,-2)));
+                }else{
+                    var userInputNode = math.simplify(processString(screen.value));
+                }
                 var userInputLatex = userInputNode.toTex();
                 const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
                 formattedAnswerDiv.innerHTML = '';
@@ -429,7 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function create_inputed_mcq_div(input_field, answer_type) {
     var answer_value = input_field.value
     var inputedMcqDiv = document.createElement('div'); // to be appended to .inputed-mcq-answers.
-    num_mcq_options_counter += 1;
+   
     var answer_info_encoding = '000' // First character for True or False, second for question type, and third for question_number 
     // The following is a blue print of the information stored about an mcq-option.
     // One of the hidden inputs should store the string value of the answer, as well as the type of answer it is..
@@ -445,7 +449,6 @@ function create_inputed_mcq_div(input_field, answer_type) {
                 display_value = answer_value;
                 answer_value = math.simplify(processString(answer_value)).evaluate();
                 if(typeof(answer_value) != 'number'){
-                    num_mcq_options_counter -= 1
                     alert('You selected float mode but the answer you provided is not a float');
                     return;
                 }
@@ -454,7 +457,7 @@ function create_inputed_mcq_div(input_field, answer_type) {
                 if(validateText(answer_value, varSymbolsArray, isFloat=true)){
                     display_value = answer_value;
                 }else{
-                    num_mcq_options_counter -= 1
+
                     alert('You selected float mode but the answer you provided is not a float');
                     return;
                 }
@@ -499,6 +502,10 @@ function create_inputed_mcq_div(input_field, answer_type) {
                 userInputLatex = answer_value;
                 formatted_answer = document.createElement('p');
                 formatted_answer.innerHTML = userInputLatex;
+            }
+            else if(answer_type==='i-answer'){
+                formatted_answer = document.createElement('p');
+                formatted_answer.innerHTML = display_value;  
             }
             else {
                 try{
@@ -546,6 +553,10 @@ function create_inputed_mcq_div(input_field, answer_type) {
             formattedAnswerDiv.appendChild(formatted_answer);
             if (answer_type === 'i-answer'){
                 formattedAnswerDiv.appendChild(mcqImagePreview.cloneNode(true));
+                if(imageUploadInput.files.length === 0 ){
+                    alert('You must select an image file');
+                    throw 'Image expected to be selected but wasn\'t'
+                }
                 const image_input_field_clone = imageUploadInput.cloneNode(true);
                 image_input_field_clone.name = `answer_value_${option_counter}`;
                 image_input_field_clone.style.display = 'none';
@@ -563,6 +574,7 @@ function create_inputed_mcq_div(input_field, answer_type) {
         }
     });
 
+    num_mcq_options_counter += 1;
 
     return inputedMcqDiv;
 }
@@ -693,75 +705,55 @@ function checkTopicAndSubtopic() {
     return true;
   }
 
+
   function validateText(text, array, isFloat=false) {
-    // Check if "{...}" is present in the text and verifies there are non-numeric strings in {}
-    // in the text are in the list of variables
+    // Takes a text and checks the presence of variable expressions.
+    // If there are variable expressions, then it checks whether there are
+    // undefined symbols(variables) within the expression. If all symbols are defined,
+    // it returns true, otherwise false.
 
-    //  returns False if string in {} is non-numerice and not in the list of variables
-    // returns true otherwise.
-
-    const match = text.match(/@\{(.+?)\}@/);
-    if (match.length > 1){
-        return false
-    }
-    if(isFloat){
-        if(text.startsWith("@{") && text.endsWith("}@")){
-            // we use - 4 because "@{" and "}@" count as four characters
-            if(text.length - 4 != match[1].length){
-                return false
-            } 
-        }else {
-            return false
-        }
-
-        const contentWithinBraces = match[1];
-        const contentArray = extractSymbols(contentWithinBraces);
-        if (!contentArray){
-          return false;
-        }
-        // Check if all non-numeric strings in contentArray are in the array
-        for (const item of contentArray) {
-          const trimmedItem = item.trim();
-          if (!isNaN(trimmedItem) || array.includes(trimmedItem)) {
-            // Numeric or found in the array
-            continue;
-          } else {
-            // Non-numeric and not found in the array
-            return false;
-          }
-        }
-        
-        return true; // All non-numeric strings are found in the array
-    }
-  
-    else {
-        if (match) {
-            for(const m of match){
-                const contentWithinBraces = m;
-                const contentArray = extractSymbols(contentWithinBraces);
-                if (!contentArray){
+    // if isFloat, then it expecting a single variable expression because this function
+    // is called if and only if the user selected float but what he entered is not float.
+    // hence, it returns false if a variable expression is not detected but returns true
+    // if one is detected and all the symbols within are defined. 
+    if (isFloat) {
+        const match = text.match(/@\{(.+?)\}@/);
+        if (text.startsWith("@{") && text.endsWith("}@") && match && match[1].length >= 1) {
+            const contentWithinBraces = match[1];
+            const contentArray = extractSymbols(contentWithinBraces);
+            if (!contentArray) {
+                return false;
+            }
+            for (const item of contentArray) {
+                const trimmedItem = item.trim();
+                if (isNaN(trimmedItem) && !array.includes(trimmedItem)) {
                     return false;
                 }
-                // Check if all non-numeric strings in contentArray are in the array
+            }
+            return true;
+        }
+        return false; 
+    } else {
+        const matches = text.match(/@\{(.+?)\}@/g);
+        if (matches) {
+            for (const m of matches) {
+                const contentWithinBraces = m.slice(2, -2); // Extract content without using another regex
+                const contentArray = extractSymbols(contentWithinBraces);
+                if (!contentArray) {
+                    return false;
+                }
                 for (const item of contentArray) {
                     const trimmedItem = item.trim();
-                    if (!isNaN(trimmedItem) || array.includes(trimmedItem)) {
-                    // Numeric or found in the array
-                    continue;
-                    } else {
-                    // Non-numeric and not found in the array
-                    return false;
+                    if (isNaN(trimmedItem) && !array.includes(trimmedItem)) {
+                        return false;
                     }
                 }
             }
-                            
-            return true; // All non-numeric strings are found in the arrays
-
+        }
+        return true;
     }
-  
-    return true; // No "@{...}@" found in the text
-  }
-}
+} 
+
   
 
   function extractSymbols(expr) {
@@ -771,17 +763,18 @@ function checkTopicAndSubtopic() {
     try {
         expression = math.simplify(expr).toString();
     } catch {
+        //console.log(expr)
         alert('Algebraic expression(s) in the variable expression(s) @{..}@ invalid');
         return false;
     }
-    const symbols = [];
+    var symbols = [];
     var char;
     var run = false;
     var sub_index;
     for (let index = 0; index < expression.length; index++) {
       char = expression.charAt(index);
       
-        if (/[a-zA-Z]/.test(char) && expression.charAt(index-1) != '-') {
+        if (/[a-zA-Z]/.test(char) && expression.charAt(index-1) != '_') {
         run = true
         sub_index = index + 1
         while(run && sub_index <= expression.length){
@@ -799,6 +792,7 @@ function checkTopicAndSubtopic() {
         }
     }
 }
+    symbols = symbols.filter(item => !/^e[+-]?\d+$/.test(item));
     return symbols
   }
 
@@ -822,21 +816,24 @@ function checkTopicAndSubtopic() {
       event.preventDefault();
       if(state==='closed'){
           state = 'open';
-          addVarBtn.innerHTML ='v-';
+          addVarBtn.innerHTML ='X';
           varInfoDiv.style.display = 'block';
       }
       else if(state==='open'){
           state ='closed';
-          addVarBtn.innerHTML = 'v+';
+          addVarBtn.innerHTML = '+';
           varInfoDiv.style.display = 'none';
       }
   })
   
   varInfoDiv.addEventListener('click', (event)=>{
-      event.preventDefault();
+      //event.preventDefault();
       if(event.target.classList.contains('btn-create-var')){
           const varSymbolField = varInfoDiv.querySelector('.var-symbol');
           const varDomainField = varInfoDiv.querySelector('.var-domain');
+          const varStepSize = varInfoDiv.querySelector('.var-step-size');
+          const intRadio = varInfoDiv.querySelector('input[name="varType"][value="int"]');
+          const floatRadio = varInfoDiv.querySelector('input[name="varType"][value="float"]');
           symbol = varSymbolField.value;
           // Checking whether it's a valid symbol
           if (symbol.length === 0 ){
@@ -852,10 +849,13 @@ function checkTopicAndSubtopic() {
                 return;
             }
           }
-          else if ((symbol.length > 3) || (symbol.length === 2) || (/^[a-zA-Z]$/.test(symbol.charAt(0)) === false) || 
-          ((symbol.charAt(1) != '_') && (symbol.length===3))){
+          else if ((symbol.length === 2) || (/^[a-zA-Z]$/.test(symbol.charAt(0)) === false) || 
+          ((symbol.charAt(1) != '_') && (symbol.length>=3))){
               alert('Invalid symbol');
               return;
+          }else if(symbol.length > 10){
+            alert('Symbol cannot be more than 10 characters');
+            return;
           }
           // Checking whether domain entered is valid
           enteredDomain = varDomainField.value;
@@ -864,38 +864,74 @@ function checkTopicAndSubtopic() {
               alert('Invalid domain');
               return;
           }
+
+          // Checking if the step size is valid
+          if(varStepSize.value.length >= 1 && isNaN(parseFloat(varStepSize.value))){
+                alert('Step size must be an int or float');
+                return
+          } else if(varStepSize.value.length == 0){
+            varStepSize.value = 0 // if no step size is given.
+          }
         
           // passed all the tests
-          varSymbolsArray.push(symbol);
+          varSymbolsArray.push(symbol); // adding the symbol to the list of symbols.
           const newVarDiv = document.createElement('div');
           const newVarBtn = document.createElement('button');
           newVarBtn.type = 'button';
           newVarBtn.classList.add('btn', 'btn-warning'); // Separate the classes
+          if(symbol.length >=3){
+            newVarBtn.innerHTML = `${symbol.charAt(0)}<sub>${symbol.slice(2)}</sub>`
+          }else{
+            newVarBtn.innerHTML = symbol; // if symbol is one character.
+          }
           
-          newVarBtn.innerHTML = symbol;
           newVarDiv.appendChild(newVarBtn);
           newVarDiv.classList.add('variable');
           newVarDiv.setAttribute('data-symbol', symbol);
+          
+          // Putting the variable type and step size in hidden input fields.
+            
+            // Var Type
+          const varTypeHiddenInput = document.createElement('input');
+          varTypeHiddenInput.type = 'hidden';
+          varTypeHiddenInput.name = `var#type#${symbol}`
+          if(intRadio.checked){
+            varTypeHiddenInput.value = '0'
+          } else {
+            varTypeHiddenInput.value = '1'
+          }
+          
+          // Step size
+          const stepSizeHiddenInput = document.createElement('input');
+          stepSizeHiddenInput.type = 'hidden';
+          stepSizeHiddenInput.name = `step#size#${symbol}`
+          stepSizeHiddenInput.value = varStepSize.value
+
+          // appending the hidden inputs to varBtn
+          newVarBtn.appendChild(varTypeHiddenInput);
+          newVarBtn.appendChild(stepSizeHiddenInput);
+
           for (let i = 0; i < parsedDomain.length; i++) {
+              // Getting the variable intervals.
               const domainLbHiddenInput = document.createElement('input');
               domainLbHiddenInput.type = 'hidden';
-              domainLbHiddenInput.name = `domain_lb_${symbol}_${i}`
+              domainLbHiddenInput.name = `domain#lb#${symbol}#${i}`//domain lower bound
               domainLbHiddenInput.value = parsedDomain[i].lower
               
               const domainUbHiddenInput = document.createElement('input');
               domainUbHiddenInput.type = 'hidden';
-              domainUbHiddenInput.name = `domain_ub_${symbol}_${i}`
+              domainUbHiddenInput.name = `domain#ub#${symbol}#${i}`//domain upper bound
               domainUbHiddenInput.value = parsedDomain[i].upper
 
               newVarBtn.appendChild(domainLbHiddenInput);
               newVarBtn.appendChild(domainUbHiddenInput);
           }
-          // TODO: add the hidden input fields.
+          
           createdVarsDiv.appendChild(newVarDiv);
           createdVarsDiv.scrollIntoView({behavior:"smooth"});
           varInfoDiv.style.display = 'none';
-          varSymbolField.value = '';
-          varDomainField.value = '';
+          //varSymbolField.value = '';
+          //varDomainField.value = '';
 
           state ='closed';
           addVarBtn.innerHTML = 'v+';
@@ -920,6 +956,10 @@ function checkTopicAndSubtopic() {
                         alert("Lower bound is greater than upper bound!");
                         boundsArray.length = 0; // Clear the array
                         return boundsArray; // Exit the function
+                    }else if (lowerBound < -1000 || upperBound > 1000){
+                        alert('Magnitude of bound must be less than 1000');
+                        boundsArray.length = 0;
+                        return boundsArray;
                     } else {
                         boundsArray.push({ lower: lowerBound, upper: upperBound });
                     }

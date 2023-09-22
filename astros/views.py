@@ -107,8 +107,8 @@ def course_info(request,course_id):
         else: is_student_list = 0 
 
         context = {
-              'course': course,
-              'course_info':course_infos_html_content,
+            'course': course,
+            'course_info':course_infos_html_content,
             "is_course_stud":  is_student_list,
             "is_student": True
         }

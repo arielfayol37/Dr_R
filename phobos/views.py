@@ -192,7 +192,7 @@ def create_question(request, assignment_id=None, type_int=None):
         vars_dict = {}
         for key, value in request.POST.items():
             if key.startswith('domain'):
-                _, bound_type, var_symbol, bound_number = key.split('_')
+                _, bound_type, var_symbol, bound_number = key.split('#')
                 bound_value = value
                 if var_symbol not in vars_dict:
                     vars_dict[var_symbol] = {}
@@ -209,7 +209,9 @@ def create_question(request, assignment_id=None, type_int=None):
                 question_image = QuestionImage(question=new_question, image=image, label=label)
                 question_image.save()
         for var_symbol in vars_dict:
-            new_variable = Variable(question=new_question, symbol=var_symbol)
+            step_size = request.POST[f'step#size#{var_symbol}']
+            is_integer = not bool(int(request.POST[f'var#type#{var_symbol}'])) # Front End will return 0 for integer. 
+            new_variable = Variable(question=new_question, symbol=var_symbol, step_size=step_size, is_integer=is_integer)
             new_variable.save()
             assert len(vars_dict[var_symbol]['lb']) == len(vars_dict[var_symbol]['ub'])
             for bound_index in range(len(vars_dict[var_symbol]['lb'])):
@@ -619,87 +621,90 @@ def save_course_info(request,course_id,categori):
 
 @login_required(login_url='astros:login')
 def export_question_to(request,question_id,exp_assignment_id,course_id=None,assignment_id=None):
-    assignment = Assignment.objects.get(pk = exp_assignment_id)
-    question= Question.objects.get(pk = question_id)
-    new_question = Question(
-            number = assignment.questions.count() + 1,
-            text = question.text,
-            topic = question.topic,
-            sub_topic = question.sub_topic,
-            assignment = assignment,
-            answer_type=question.answer_type,
-            deduct_per_attempt = question.deduct_per_attempt, # Deduct 25% of points when it is an mcq
-            max_num_attempts = question.max_num_attempts
-        )
-    new_question.save() 
     try:
-     question_image = QuestionImage.objects.get(question=question)
-     new_question_image = QuestionImage(question=new_question, image=question_image.image, label=question_image.label)
-     new_question_image.save()
-    except QuestionImage.DoesNotExist:
-        pass
-    
-    for variable in Variable.objects.filter(question=question):
-            new_variable = Variable(question=new_question, symbol=variable.symbol)
-            new_variable.save()
-          
-            for var_interval in  VariableInterval.objects.filter(variable=variable): #range(len(vars_dict[var_symbol]['lb'])):
-                new_var_interval = VariableInterval(variable=new_variable,\
-                                                lower_bound = var_interval.lower_bound,\
-                                                upper_bound = var_interval.upper_bound)
-                new_var_interval.save()
+        assignment = Assignment.objects.get(pk = exp_assignment_id)
+        question= Question.objects.get(pk = question_id)
+        new_question = Question(
+                number = assignment.questions.count() + 1,
+                text = question.text,
+                topic = question.topic,
+                sub_topic = question.sub_topic,
+                assignment = assignment,
+                answer_type=question.answer_type,
+                deduct_per_attempt = question.deduct_per_attempt, # Deduct 25% of points when it is an mcq
+                max_num_attempts = question.max_num_attempts
+            )
+        new_question.save() 
 
-    print(new_question.answer_type)   
-    if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
-            answer= ExpressionAnswer.objects.get(question=question)
-            new_answer = ExpressionAnswer(question=new_question, content=answer.content)
-    elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
-                answer= FloatAnswer.objects.get(question=question)
-                new_answer = FloatAnswer(question=new_question, content=answer.content)
-    elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
-                answer= VariableFloatAnswer.objects.get(question=question)
-                new_answer = VariableFloatAnswer(question=new_question, content=answer.content)
-    elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:
-            answer= LatexAnswer.objects.get(question=question)
-            new_answer = LatexAnswer(question=new_question, content=answer.content)
-    elif new_question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
-            # No answer yet, but semantic answer validation coming soon.
-            new_answer = TextAnswer(question=new_question, content='')
-    else:
-            for answerType in [MCQExpressionAnswer.objects.filter(question=question),MCQFloatAnswer.objects.filter(question=question),
-                               MCQVariableFloatAnswer.objects.filter(question=question),MCQLatexAnswer.objects.filter(question=question),
-                               MCQTextAnswer.objects.filter(question=question),MCQImageAnswer.objects.filter(question=question)]:
-                for answer in answerType:
-                    # Really, all thsoe QuestionChoices don't matter for two reasons:
-                        # 1) If there are different types of mcq answers which is often the case
-                        #     the answer_type will end up being just the type of the last answer
-                        # 2) All what the other parts of the programs care about is whether the question
-                        #     is an MCQ or not.
-                  
-                    if question.answer_type == QuestionChoices.MCQ_EXPRESSION:
+        question_images = QuestionImage.objects.filter(question=question)
+        for question_image in question_images:
+            new_question_image = QuestionImage(question=new_question, image=question_image.image, label=question_image.label)
+            new_question_image.save()
+        for variable in Variable.objects.filter(question=question):
+                new_variable = Variable(question=new_question, symbol=variable.symbol)
+                new_variable.save()
+            
+                for var_interval in  VariableInterval.objects.filter(variable=variable):
+                    new_var_interval = VariableInterval(variable=new_variable,\
+                                                    lower_bound = var_interval.lower_bound,\
+                                                    upper_bound = var_interval.upper_bound)
+                    new_var_interval.save()
+
+        if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
+                answer= ExpressionAnswer.objects.get(question=question)
+                new_answer = ExpressionAnswer(question=new_question, content=answer.content)
+        elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
+                    answer= FloatAnswer.objects.get(question=question)
+                    new_answer = FloatAnswer(question=new_question, content=answer.content)
+        elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
+                    answer= VariableFloatAnswer.objects.get(question=question)
+                    new_answer = VariableFloatAnswer(question=new_question, content=answer.content)
+        elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:
+                answer= LatexAnswer.objects.get(question=question)
+                new_answer = LatexAnswer(question=new_question, content=answer.content)
+        elif new_question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
+                # No answer yet, but semantic answer validation coming soon.
+                new_answer = TextAnswer(question=new_question, content='')
+        else:
+            for answers, answer_type in [(MCQExpressionAnswer.objects.filter(question=question),QuestionChoices.MCQ_EXPRESSION),\
+                            (MCQFloatAnswer.objects.filter(question=question), QuestionChoices.MCQ_FLOAT),\
+                            (MCQVariableFloatAnswer.objects.filter(question=question), QuestionChoices.MCQ_VARIABLE_FLOAT),\
+                                (MCQLatexAnswer.objects.filter(question=question), QuestionChoices.MCQ_LATEX),\
+                            (MCQTextAnswer.objects.filter(question=question), QuestionChoices.MCQ_TEXT),\
+                                (MCQImageAnswer.objects.filter(question=question), QuestionChoices.MCQ_IMAGE)]:
+                if answer_type == QuestionChoices.MCQ_EXPRESSION:
+                    for answer in answers:
                         new_answer = MCQExpressionAnswer(question=new_question, content=answer.content)
-                    elif question.answer_type == QuestionChoices.MCQ_FLOAT:
-                            new_answer = MCQFloatAnswer(question=new_question, content=answer.content)
-                    elif question.answer_type == QuestionChoices.MCQ_VARIABLE_FLOAT:
-                            new_answer = MCQVariableFloatAnswer(question=new_question, content=answer.content)
-                    elif question.answer_type == QuestionChoices.MCQ_LATEX:
+                        new_answer.is_answer = answer.is_answer 
+                        new_answer.save()
+                elif answer_type == QuestionChoices.MCQ_FLOAT:
+                    for answer in answers:
+                        new_answer = MCQFloatAnswer(question=new_question, content=answer.content)
+                        new_answer.is_answer = answer.is_answer 
+                        new_answer.save()
+                elif answer_type == QuestionChoices.MCQ_VARIABLE_FLOAT:
+                    for answer in answers:    
+                        new_answer = MCQVariableFloatAnswer(question=new_question, content=answer.content)
+                        new_answer.is_answer = answer.is_answer 
+                        new_answer.save()
+                elif answer_type == QuestionChoices.MCQ_LATEX:
+                    for answer in answers:    
                         new_answer = MCQLatexAnswer(question=new_question, content=answer.content)
-                    elif   new_question.answer_type == QuestionChoices.MCQ_TEXT : # Text Answer
-                        new_answer = MCQTextAnswer(question=new_question, content=answer.content)    
-                    elif question.answer_type == QuestionChoices.MCQ_IMAGE:
+                        new_answer.is_answer = answer.is_answer 
+                        new_answer.save()
+                elif answer_type == QuestionChoices.MCQ_TEXT : # Text Answer
+                    for answer in answers:
+                        new_answer = MCQTextAnswer(question=new_question, content=answer.content)  
+                        new_answer.is_answer = answer.is_answer 
+                        new_answer.save()  
+                elif answer_type == QuestionChoices.MCQ_IMAGE:
+                    for answer in answers:    
                         new_answer = MCQImageAnswer(question=new_question, image=answer.image, label=answer.label)
-                    else:
-                        return HttpResponseForbidden('Something went wrong')
-                    new_answer.is_answer = answer.is_answer 
-                    new_answer.save() # Needed here.
+                        new_answer.is_answer = answer.is_answer 
+                        new_answer.save()
+                else:
+                    return HttpResponseForbidden('Something went wrong')
 
-       
-        # Needed here too.
-    new_answer.save() 
-
-    try:
-        new_question.save()
-        
         return HttpResponse(json.dumps('Export Succesful'))
     except:
         return HttpResponse(json.dumps('Export Failed'))
