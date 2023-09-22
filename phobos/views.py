@@ -308,7 +308,7 @@ def create_question(request, assignment_id=None, type_int=None):
 # NOTE: The function below was to be useD for a better front end design of the export question functionality.
 # The function was to enable the prof select a course then select an assignment in that course.
 #this function raises an ATTRIBUTE ERROR. WHY ???  
-# the function work, fix the bug but too late
+# the function work, fix the bug but too late. Might be useful some other time.
 
 # def get_assignments(request, question_id, exp_course_id, assignment_id=None, course_id=None):    # #for Export question implementation
 #     course=[] #Course.objects.filter(pk = exp_course_id)
@@ -328,7 +328,7 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
     course= Course.objects.get(pk= course_id)                  #for Export question implementation
     courses= Course.objects.filter( professors=professor)
     for course in courses:
-        assignments.append(Assignment.objects.filter(course = course))                  #for Export question implementation
+        assignments.append((course.id,Assignment.objects.filter(course = course)))                  #for front-end Export question implementation
         
     question = Question.objects.get(pk=question_id)
     question.text = replace_links_with_html(question.text)
