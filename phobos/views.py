@@ -651,20 +651,25 @@ def export_question_to(request,question_id,exp_assignment_id,course_id=None,assi
                     new_var_interval.save()
 
         if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
-                answer= ExpressionAnswer.objects.get(question=question)
-                new_answer = ExpressionAnswer(question=new_question, content=answer.content)
+            answer= ExpressionAnswer.objects.get(question=question)
+            new_answer = ExpressionAnswer(question=new_question, content=answer.content)
+            new_answer.save()
         elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
-                    answer= FloatAnswer.objects.get(question=question)
-                    new_answer = FloatAnswer(question=new_question, content=answer.content)
+            answer= FloatAnswer.objects.get(question=question)
+            new_answer = FloatAnswer(question=new_question, content=answer.content)
+            new_answer.save()
         elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
-                    answer= VariableFloatAnswer.objects.get(question=question)
-                    new_answer = VariableFloatAnswer(question=new_question, content=answer.content)
+            answer= VariableFloatAnswer.objects.get(question=question)
+            new_answer = VariableFloatAnswer(question=new_question, content=answer.content)
+            new_answer.save()
         elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:
-                answer= LatexAnswer.objects.get(question=question)
-                new_answer = LatexAnswer(question=new_question, content=answer.content)
+            answer= LatexAnswer.objects.get(question=question)
+            new_answer = LatexAnswer(question=new_question, content=answer.content)
+            new_answer.save()
         elif new_question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
-                # No answer yet, but semantic answer validation coming soon.
-                new_answer = TextAnswer(question=new_question, content='')
+            # No answer yet, but semantic answer validation coming soon.
+            new_answer = TextAnswer(question=new_question, content='')
+            new_answer.save()
         else:
             for answers, answer_type in [(MCQExpressionAnswer.objects.filter(question=question),QuestionChoices.MCQ_EXPRESSION),\
                             (MCQFloatAnswer.objects.filter(question=question), QuestionChoices.MCQ_FLOAT),\
