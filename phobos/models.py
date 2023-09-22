@@ -155,6 +155,7 @@ class Assignment(models.Model):
     )
     category = models.CharField(max_length=25, choices=AssignmentChoices.choices,
                                  default = AssignmentChoices.HOMEWORK)
+    is_assigned = models.BooleanField(default=False)
     def __str__(self):
         return f"Assigment {self.name} ranked {self.difficulty_level} for '{self.course.name.title()}'"
 
