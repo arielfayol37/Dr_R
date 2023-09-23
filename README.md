@@ -82,6 +82,16 @@ python manage.py migrate
 ```bash
 python manage.py runserver
 ```
+8. Credentials:
+  If you want to test the app with some prefilled data,
+  use the following for instructor login
+```bash
+email: andy.richter@valpo.edu password: la
+```
+use the following for student login
+```bash
+email:arielfayol37@gmail.com password:la
+```
 Then copy and paste the url from the terminal to your browser.
 
 ## Contributing
