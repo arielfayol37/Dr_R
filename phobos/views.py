@@ -17,7 +17,7 @@ from .models import *
 from django.shortcuts import get_object_or_404
 from django.middleware import csrf
 from django.utils.timesince import timesince
-from deimos.models import AssignmentStudent, Student, QuestionStudent
+from deimos.models import AssignmentStudent, Student, QuestionStudent, Enrollment
 from datetime import date
 from sklearn.metrics.pairwise import cosine_similarity
 from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
@@ -158,6 +158,23 @@ def create_assignment(request, course_id=None):
         else:
             form = AssignmentForm()
     return render(request, 'phobos/create_assignment.html', {'form': form})
+
+@login_required(login_url='astros:login')
+def assign_assignment(request, assignment_id):
+    assignment = get_object_or_404(Assignment, pk = assignment_id)
+    course = assignment.course
+    if not course.professors.filter(pk=request.user.pk).exists():
+        return JsonResponse({'message': 'You are not authorized to manage this Assignment.', 'success':False})
+    if request.method == 'POST':
+        students = Student.objects.filter(enrollment__course=course)
+        for student in students:
+            assignment_student, created = AssignmentStudent.objects.get_or_create(assignment=assignment, student=student)
+            if created:
+                assignment_student.save()
+        return JsonResponse({
+            'message':'Assignment assigned successfully.', 'success':True
+        })
+    return JsonResponse({'message':'Something went wrong.','success':False})
 
 @login_required(login_url='astros:login')
 def create_question(request, assignment_id=None, type_int=None):

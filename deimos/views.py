@@ -57,7 +57,6 @@ def course_management(request, course_id):
 def assignment_management(request, assignment_id, course_id=None):
     # Making sure the request is done by a Student.
     student = get_object_or_404(Student, pk = request.user.pk)
-    
     assignment = get_object_or_404(Assignment, pk = assignment_id)
     questions = Question.objects.filter(assignment = assignment)
     context = {
