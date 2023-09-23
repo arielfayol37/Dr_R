@@ -15,7 +15,7 @@
 
     </ul>
   </div>
-<!--
+
 <div class="export_question">
     
     <div style="display: none;"> 
@@ -42,7 +42,7 @@
     </div>
     <p class="export_result"></p>
 </div>
--->
+
 <div class="embed">
 <p class="question-number"><strong>Question {{question.number}}</strong></p>
 <hr/>
@@ -60,7 +60,7 @@
 
     {% if is_mcq %}
         {% for answer, is_latex in answers_is_latex %}
-            <div class="formatted-answer">
+            <div class="formatted-answer-option">
                 {% if is_latex %}
                     <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
                 {% else %}   

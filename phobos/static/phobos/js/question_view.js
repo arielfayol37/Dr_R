@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', () => {
     const script = document.createElement('script');
     script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
@@ -10,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const formattedAnswerDivs = document.querySelectorAll('.formatted-answer-option');
         MathJax.typesetPromise().then(() => {
             formattedAnswerDivs.forEach((formattedAnswerDiv) => {
+
                 try {
                     const inputElement = formattedAnswerDiv.querySelector('.latex-answer-question-view');
                     if (inputElement != null) {
