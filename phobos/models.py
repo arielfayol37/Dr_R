@@ -155,6 +155,7 @@ class Assignment(models.Model):
     )
     category = models.CharField(max_length=25, choices=AssignmentChoices.choices,
                                  default = AssignmentChoices.HOMEWORK)
+    is_assigned = models.BooleanField(default=False)
     def __str__(self):
         return f"Assigment {self.name} ranked {self.difficulty_level} for '{self.course.name.title()}'"
 
@@ -453,7 +454,7 @@ class Variable(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='variables')
     symbol = models.CharField(max_length=10, blank=False, null=False)
     instances_created = models.BooleanField(default=False)
-    step_size = models.FloatField(blank=True, null=True)
+    step_size = models.FloatField(blank=True, null=True, default=0.0)
     is_integer = models.BooleanField(default=False)
 
     def __str__(self):
@@ -469,7 +470,7 @@ class Variable(models.Model):
                 lower_bound = bounds.lower_bound
                 upper_bound = bounds.upper_bound
                 random_float = random.uniform(lower_bound, upper_bound)
-                if self.step_size != 0:
+                if self.step_size != 0 and self.step_size is not None:
                     step_count = (random_float - lower_bound) // self.step_size
                     random_float = lower_bound + step_count * self.step_size
                 if self.is_integer:

@@ -2,13 +2,6 @@
 {% extends 'phobos/layout.html' %}
 {% load static %}
 {% block title %} Question {% endblock %}
-
-<!--The following script is included in phobos/question_view.js. It couldn't load properly from here 
-    for a reason I ignore.
--->
-<!--<script id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
--->
-
 {% block body %}
   
 <div class="sidebar" style="display:none">
@@ -18,21 +11,33 @@
         <li><a href="{% url 'phobos:assignment_management' assignment_id=question.assignment.id course_id=question.assignment.course.id %}">Questions</a></li>
         <li><a href="{% url 'phobos:course_management' course_id=question.assignment.course.id %}">Assignments</a></li>
         <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
+        <li id="btn-export_question"> <a>Export this question</a> </li>
 
     </ul>
   </div>
 <!--
 <div class="export_question">
-    <button class=" btn-primary"> Export this question</button>
+    
     <div style="display: none;"> 
         <form action="" >
             {% csrf_token %}
-        <select >
-            {% for assignment in assignments %}
-        <option value="{{assignment.id}}" > {{assignment.name}} </option>
+            <select id="select_course">
+                {% for index, course in courses %}
+                <option value="selected_course_id_{{course.id}}">{{course.name}} </option>
+                {% endfor %}
+            </select>
+
+            {% for course_id,assignment_course in assignments %}
+                <select class="selected_course" id="selected_course_id_{{course_id}}" style="display: none;">
+            {% for assignment in assignment_course %}
+                {% if assignment.name != question.assignment.name %}
+                    <option value="{{assignment.id}}" > {{assignment.name}} </option>
+                {% endif %}
             {% endfor %}
         </select>
-        <input type="button" value="Confirm"> 
+            {% endfor %}
+       
+        <input type="button" value="Confirm" class="export-confirm"> 
     </form>
     </div>
     <p class="export_result"></p>
@@ -92,35 +97,9 @@
 </div>
 {% endblock %}
 {% block scripts %}
+
 <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
 <script src="{% static 'phobos/js/question_view.js' %}"></script>
-<!--
-<script>
-    export_question= document.querySelector('.export_question')
-    btn_export_question = export_question.querySelector('button')
-    export_to_assignment = export_question.querySelector('div')
-    export_result= export_question.querySelector('.export_result')
+<script src="{% static 'phobos/js/export_question.js' %}"></script>
 
-
-    export_question.querySelector('button').addEventListener('click',()=>{
-        console.log('dkfjldkjfkl')
-        export_to_assignment.style.display='block';
-        export_result.style.display= 'none';
-    })
-
-    export_to_assignment.querySelector('input[type=button]').addEventListener('click',()=>{ 
-console.log(export_to_assignment.querySelector('select').value);// if 
-            fetch(window.location.href+ '/export_question_to/'+ export_to_assignment.querySelector('select').value) 
-            .then(response=>response.json())
-            .then(result=>{
-                console.log(result)
-               
-                export_result.innerHTML= result;
-                export_result.style.display= 'block';
-                export_to_assignment.style.display='none';
-            })
-        
-    })
-
-</script>-->
 {% endblock %}

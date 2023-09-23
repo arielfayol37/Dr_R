@@ -20,13 +20,17 @@ urlpatterns = [
     views.create_assignment, name='create_assignment'),
     path('courses/<int:course_id>/assignments/<int:assignment_id>', \
          views.assignment_management, name='assignment_management'),
+    path('courses/<int:course_id>/assignments/<int:assignment_id>/assign', \
+         views.assign_assignment, name='assign_assignment'),     
     path('create_question/get_subtopics/<str:selected_topic>', views.get_subtopics, name='get_subtopics'),
     path('courses/<int:course_id>/assignments/<int:assignment_id>/<int:question_id>',
          views.question_view, name='question_view'),
-         ##
+         ## for export question implementation
      path('courses/<int:course_id>/assignments/<int:assignment_id>/<int:question_id>/export_question_to/<int:exp_assignment_id>',
           views.export_question_to, name='export_question'),
-
+     #path('courses/<int:course_id>/assignments/<int:assignment_id>/<int:question_id>/get_assignments/<int:exp_course_id>', \
+     #   views.get_assignments, name='get_assignments'),
+          ##
      path('calci', views.calci, name='calci'),
      path('create_question/upload-image/', views.upload_image, name='upload_image'),
      path('courses/<int:course_id>/gradebook', views.gradebook, name='gradebook'),
@@ -41,6 +45,6 @@ urlpatterns = [
      path('courses/<int:course_id>/display_enrollment_codes',views.display_codes, name='display_codes'),
      path('courses/<int:course_id>/manage_enrollment_codes', views.manage_enrollment_codes, name='manage_enrollment_codes'),
      path('courses/<int:course_id>/manage_course_info', views.manage_course_info, name='manage_course_info'),
-     path('courses/<int:course_id>/<str:categorie>/<str:info>/save_course_info', views.save_course_info, name='save_course_info'),
+     path('courses/<int:course_id>/<str:categori>/save_course_info', views.save_course_info, name='save_course_info'),
     
 ]

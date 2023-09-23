@@ -59,7 +59,7 @@
                 <h5>About this Course <div class="expand">+</div> </h5>
             </div>
             <div class="body-text">
-                <p>{{course_info.about_course|safe}}</p>
+                <p>{{course_info.about_course | safe}}</p>
             </div>
         </div>
         
@@ -69,7 +69,7 @@
             <h5>what you'll learn <div class="expand">+</div></h5>
             </div>
             <div class="body-text">
-                <p>{{course_info.course_skills|safe}}</p>
+                <p>{{course_info.course_skills | safe}}</p>
             </div>
         </div>
 
@@ -78,7 +78,7 @@
                 <h5>Course Plan <div class="expand">+</div> </h5>
             </div>
             <div class="body-text" class="col-sm-4">
-                <p>{{course_info.course_plan|safe}}</p> 
+                <p>{{course_info.course_plan | safe}}</p> 
             </div>
         </div>
 
@@ -92,7 +92,7 @@
                 <img scr="{{course_info.instructors_image.url}}" alt="instructors-image"/>
                 {% endif %}
             </div>
-                <p>{{course_info.course_instructors|safe}}</p>
+                <p>{{course_info.course_instructors | safe }}</p>
             </div>
         </div>
 
