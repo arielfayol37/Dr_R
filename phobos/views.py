@@ -160,17 +160,20 @@ def create_assignment(request, course_id=None):
     return render(request, 'phobos/create_assignment.html', {'form': form})
 
 @login_required(login_url='astros:login')
-def assign_assignment(request, assignment_id):
+@csrf_exempt
+def assign_assignment(request, assignment_id, course_id=None):
     assignment = get_object_or_404(Assignment, pk = assignment_id)
     course = assignment.course
     if not course.professors.filter(pk=request.user.pk).exists():
         return JsonResponse({'message': 'You are not authorized to manage this Assignment.', 'success':False})
     if request.method == 'POST':
-        students = Student.objects.filter(enrollment__course=course)
+        students = Student.objects.filter(enrollments__course=course)
         for student in students:
             assignment_student, created = AssignmentStudent.objects.get_or_create(assignment=assignment, student=student)
             if created:
                 assignment_student.save()
+        assignment.is_assigned = True
+        assignment.save()
         return JsonResponse({
             'message':'Assignment assigned successfully.', 'success':True
         })

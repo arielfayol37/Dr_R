@@ -44,9 +44,7 @@ def course_management(request, course_id):
 
     if not is_enrolled:
         return HttpResponseForbidden('You are not enrolled in this course.')
-    assignments = Assignment.objects.filter(course=course,\
-                                             #is_assigned=True,\
-                                            assignmentstudent__student=student)
+    assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student)
     context = {
         "assignments": assignments,
         "course": course
