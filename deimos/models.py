@@ -96,6 +96,7 @@ class AssignmentStudent(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='assignments_intermediate')
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
     grade = models.FloatField(validators=[MaxValueValidator(100)], default=0, null=True)
+    due_date = models.DateTimeField(null=True, blank=True)
 
     def get_grade(self):
         """
@@ -116,6 +117,11 @@ class AssignmentStudent(models.Model):
         else:
             self.grade = 0
         return self.grade
+    def save(self, *args, **kwargs):
+        if self.due_date is None:
+            self.due_date = self.assignment.due_date
+        super().save(*args, **kwargs)
+        
 class QuestionStudent(models.Model):
     """
     Used to manage `Question` - `Student` relationship.
