@@ -170,6 +170,8 @@ def assign_assignment(request, assignment_id, course_id=None):
         students = Student.objects.filter(enrollments__course=course)
         for student in students:
             assignment_student, created = AssignmentStudent.objects.get_or_create(assignment=assignment, student=student)
+            for question in assignment.questions.all():
+                    quest = QuestionStudent.objects.create(question=question, student=student)           # ASSINGING EVERY QUESTION IN THE ASSIGNMENT TO STUDENTS
             if created:
                 assignment_student.save()
         assignment.is_assigned = True
@@ -526,7 +528,8 @@ def get_questions(request, student_id, assignment_id, course_id=None):
     assignment= Assignment.objects.get(id=assignment_id)
     questions= Question.objects.filter(assignment= assignment ) 
     student= Student.objects.get(id=student_id)
-    question_details=[{'name':assignment.name,'assignment_id':assignment_id}]
+    assignment_student= AssignmentStudent.objects.get(assignment=assignment, student=student)
+    question_details=[{'name':assignment.name,'assignment_id':assignment_id,'Due_date':str(assignment_student.due_date).split(' ')[0]}]
     for question in questions:
         try:
             question_student = QuestionStudent.objects.get(student= student, question=question)
@@ -733,3 +736,27 @@ def export_question_to(request,question_id,exp_assignment_id,course_id=None,assi
         return HttpResponse(json.dumps('Export Succesful'))
     except:
         return HttpResponse(json.dumps('Export Failed'))
+    
+def change_due_date(assignment,new_date):
+        assignment.due_date=new_date
+        assignment.save()
+
+def edit_assignment_due_date(request,course_id,assignment_id,new_date):
+        assignment= Assignment.objects.get(pk=assignment_id)
+        change_due_date(assignment,new_date)
+        for assignment_student in AssignmentStudent.objects.filter(assignment= assignment):
+            try:
+                change_due_date(assignment_student,new_date)
+            except:
+                return JsonResponse({'message':'something went wrong','success':False})
+        return JsonResponse({'message':'Done','success':True})
+
+def edit_student_assignment_due_date(request,course_id,assignment_id,new_date,student_id=None):
+            assignment = Assignment.objects.get(pk= assignment_id)
+            student= Student.objects.get(pk= student_id)
+            assignment_student= AssignmentStudent.objects.get(assignment=assignment, student=student)
+            try:
+                change_due_date(assignment_student,new_date)
+            except:
+                return JsonResponse({'message':'something went wrong','success':False})
+            return JsonResponse({'message':'Done','success':True})
