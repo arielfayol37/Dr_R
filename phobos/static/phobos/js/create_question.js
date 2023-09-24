@@ -810,21 +810,29 @@ function checkTopicAndSubtopic() {
 
   var symbol = '';
   var enteredDomain = '';
-  varInfoDiv.style.display = 'none';
+  varInfoDiv.style.opacity = '0';
+  varInfoDiv.style.height = '0';
+  varInfoDiv.style.width = '0';
   var state = 'closed';
-  addVarBtn.addEventListener('click', (event)=>{
-      event.preventDefault();
-      if(state==='closed'){
-          state = 'open';
-          addVarBtn.innerHTML ='X';
-          varInfoDiv.style.display = 'block';
-      }
-      else if(state==='open'){
-          state ='closed';
-          addVarBtn.innerHTML = '+';
-          varInfoDiv.style.display = 'none';
-      }
-  })
+  addVarBtn.addEventListener('click', (event) => {
+    event.preventDefault();
+    if (state === 'closed') {
+      state = 'open';
+      addVarBtn.innerHTML = '-';
+      varInfoDiv.style.width = 'auto';
+      varInfoDiv.style.height = 'auto'; // Set height to 'auto' to reveal content
+      varInfoDiv.style.opacity = '1';   // Set opacity to '1' to reveal content
+      varInfoDiv.style.overflow = 'visible'; // Set overflow to 'visible' to reveal content
+    } else if (state === 'open') {
+      state = 'closed';
+      addVarBtn.innerHTML = '+';
+      varInfoDiv.style.width = '0';
+      varInfoDiv.style.height = '0';    // Set height to '0' to hide content
+      varInfoDiv.style.opacity = '0';   // Set opacity to '0' to hide content
+      varInfoDiv.style.overflow = 'hidden'; // Set overflow to 'hidden' to hide content
+    }
+  });
+  
   
   varInfoDiv.addEventListener('click', (event)=>{
       //event.preventDefault();
@@ -929,12 +937,11 @@ function checkTopicAndSubtopic() {
           
           createdVarsDiv.appendChild(newVarDiv);
           createdVarsDiv.scrollIntoView({behavior:"smooth"});
-          varInfoDiv.style.display = 'none';
-          //varSymbolField.value = '';
-          //varDomainField.value = '';
-
+          varInfoDiv.style.opacity = '0';
+          varInfoDiv.style.height = '0';
+          varInfoDiv.style.width = '0';
           state ='closed';
-          addVarBtn.innerHTML = 'v+';
+          addVarBtn.innerHTML = '+';
 
       }
 
