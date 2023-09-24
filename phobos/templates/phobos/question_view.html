@@ -12,7 +12,6 @@
         <li><a href="{% url 'phobos:course_management' course_id=question.assignment.course.id %}">Assignments</a></li>
         <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
         <li id="btn-export_question"> <a>Export this question</a> </li>
-
     </ul>
   </div>
 
@@ -31,7 +30,7 @@
                 <select class="selected_course" id="selected_course_id_{{course_id}}" style="display: none;">
             {% for assignment in assignment_course %}
                 {% if assignment.name != question.assignment.name %}
-                    <option value="{{assignment.id}}" > {{assignment.name}} </option>
+                    <option value="{{assignment.id}}"> {{assignment.name}} </option>
                 {% endif %}
             {% endfor %}
         </select>
@@ -82,11 +81,11 @@
         <p class="question-answer">
             {% for answer in answers %}
             <strong>Answer </strong>
-                <div class="formatted-answer">
+                <div class="formatted-answer-option">
                     {% if not is_fr %}
-                        {{answer.content}}  
+                    <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}"> 
                     {% else %}
-                        *Free reponse question.*
+                    <input type="hidden" class="latex-answer-question-view" value="Free Response Question.">
                     {% endif %}
                 </div>
             {% endfor %}
