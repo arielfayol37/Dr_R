@@ -15,6 +15,8 @@ from django.contrib import messages
 from .forms import *
 from .models import *
 from django.shortcuts import get_object_or_404
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+from django.db import transaction
 from django.middleware import csrf
 from django.utils.timesince import timesince
 from deimos.models import AssignmentStudent, Student, QuestionStudent, Enrollment
@@ -170,6 +172,8 @@ def assign_assignment(request, assignment_id, course_id=None):
         students = Student.objects.filter(enrollments__course=course)
         for student in students:
             assignment_student, created = AssignmentStudent.objects.get_or_create(assignment=assignment, student=student)
+            for question in assignment.questions.all():
+                    quest = QuestionStudent.objects.create(question=question, student=student)           # ASSINGING EVERY QUESTION IN THE ASSIGNMENT TO STUDENTS
             if created:
                 assignment_student.save()
         assignment.is_assigned = True
@@ -381,17 +385,17 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
         is_latex.extend([1 for _ in range(la.count())])
     else:
         if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
-            answers.extend(question.expression_answers.all())
+            answers.extend([question.expression_answer])
         elif question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
-            answers.extend(question.text_answers.all())
+            answers.extend([question.text_answer])
             is_fr = True
         elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
-            answers.extend(question.float_answers.all())
+            answers.extend([question.float_answer])
         elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
-            answers.extend(question.latex_answers.all())
-            is_latex.extend([1 for _ in range(question.latex_answers.all().count())])
+            answers.extend([question.latex_answer])
+            is_latex.extend([1])
         elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
-            answers.extend(question.variable_float_answers.all())
+            answers.extend([question.variable_float_answer])
         else:
             return HttpResponse('Something went wrong.')
     course = Course.objects.get(pk = course_id)
@@ -526,7 +530,8 @@ def get_questions(request, student_id, assignment_id, course_id=None):
     assignment= Assignment.objects.get(id=assignment_id)
     questions= Question.objects.filter(assignment= assignment ) 
     student= Student.objects.get(id=student_id)
-    question_details=[{'name':assignment.name,'assignment_id':assignment_id}]
+    assignment_student= AssignmentStudent.objects.get(assignment=assignment, student=student)
+    question_details=[{'name':assignment.name,'assignment_id':assignment_id,'Due_date':str(assignment_student.due_date).split(' ')[0]}]
     for question in questions:
         try:
             question_student = QuestionStudent.objects.get(student= student, question=question)
@@ -635,97 +640,120 @@ def save_course_info(request,course_id,categori):
     return  render(request,'phobos/course_info_management .html',{'course':course,'course_info':course_info})           #(request,'phobos/course_info_management .html',{'course':course,'course_info':course_info})
 
 
+
+def copy_question_images(old_question, new_question):
+    question_images = QuestionImage.objects.filter(question=old_question)
+    for question_image in question_images:
+        qi = QuestionImage.objects.create(question=new_question, image=question_image.image, label=question_image.label)
+
+def copy_variables(old_question, new_question):
+    for variable in Variable.objects.filter(question=old_question):
+        new_variable = Variable.objects.create(
+            question=new_question,
+            symbol=variable.symbol
+        )
+        for var_interval in VariableInterval.objects.filter(variable=variable):
+            vi = VariableInterval.objects.create(
+                variable=new_variable,
+                lower_bound=var_interval.lower_bound,
+                upper_bound=var_interval.upper_bound
+            )
+        
+
+def copy_answers(old_question, new_question):
+    answer_type_mapping = {
+        QuestionChoices.STRUCTURAL_EXPRESSION: ExpressionAnswer,
+        QuestionChoices.STRUCTURAL_FLOAT: FloatAnswer,
+        QuestionChoices.STRUCTURAL_VARIABLE_FLOAT: VariableFloatAnswer,
+        QuestionChoices.STRUCTURAL_LATEX: LatexAnswer,
+        QuestionChoices.STRUCTURAL_TEXT: TextAnswer,
+        # ... add other mappings ... if created
+    }
+
+    answer_type_class = answer_type_mapping.get(old_question.answer_type)
+    if answer_type_class:
+        answer = answer_type_class.objects.get(question=old_question)
+        answer_type_class.objects.create(
+            question=new_question,
+            content=answer.content
+        )
+    else:
+        # Handle MCQ types separately as they have multiple possible answers
+        mcq_answer_type_mapping = {
+            QuestionChoices.MCQ_EXPRESSION: MCQExpressionAnswer,
+            QuestionChoices.MCQ_FLOAT: MCQFloatAnswer,
+            QuestionChoices.MCQ_VARIABLE_FLOAT: MCQVariableFloatAnswer,
+            QuestionChoices.MCQ_LATEX: MCQLatexAnswer,
+            QuestionChoices.MCQ_TEXT: MCQTextAnswer,
+            QuestionChoices.MCQ_IMAGE: MCQImageAnswer,
+        }
+        for answer_type, AnswerClass in mcq_answer_type_mapping.items():
+            for answer in AnswerClass.objects.filter(question=old_question):
+                new_answer = AnswerClass(
+                    question=new_question,
+                    content=answer.content,
+                    is_answer=answer.is_answer
+                )
+                if isinstance(new_answer, MCQImageAnswer):
+                    new_answer.image = answer.image
+                    new_answer.label = answer.label
+                new_answer.save()
+
+
+@transaction.atomic
 @login_required(login_url='astros:login')
 def export_question_to(request,question_id,exp_assignment_id,course_id=None,assignment_id=None):
     try:
-        assignment = Assignment.objects.get(pk = exp_assignment_id)
-        question= Question.objects.get(pk = question_id)
-        new_question = Question(
-                number = assignment.questions.count() + 1,
-                text = question.text,
-                topic = question.topic,
-                sub_topic = question.sub_topic,
-                assignment = assignment,
-                answer_type=question.answer_type,
-                deduct_per_attempt = question.deduct_per_attempt, # Deduct 25% of points when it is an mcq
-                max_num_attempts = question.max_num_attempts
-            )
-        new_question.save() 
+        assignment = get_object_or_404(Assignment, pk=exp_assignment_id)
+        question = get_object_or_404(Question, pk=question_id)
 
-        question_images = QuestionImage.objects.filter(question=question)
-        for question_image in question_images:
-            new_question_image = QuestionImage(question=new_question, image=question_image.image, label=question_image.label)
-            new_question_image.save()
-        for variable in Variable.objects.filter(question=question):
-                new_variable = Variable(question=new_question, symbol=variable.symbol)
-                new_variable.save()
-            
-                for var_interval in  VariableInterval.objects.filter(variable=variable):
-                    new_var_interval = VariableInterval(variable=new_variable,\
-                                                    lower_bound = var_interval.lower_bound,\
-                                                    upper_bound = var_interval.upper_bound)
-                    new_var_interval.save()
+        new_question_data = {
+            'number': assignment.questions.count() + 1,
+            'text': question.text,
+            'topic': question.topic,
+            'sub_topic': question.sub_topic,
+            'assignment': assignment,
+            'answer_type': question.answer_type,
+            'deduct_per_attempt': question.deduct_per_attempt,
+            'max_num_attempts': question.max_num_attempts,
+        }
 
-        if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
-            answer= ExpressionAnswer.objects.get(question=question)
-            new_answer = ExpressionAnswer(question=new_question, content=answer.content)
-            new_answer.save()
-        elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
-            answer= FloatAnswer.objects.get(question=question)
-            new_answer = FloatAnswer(question=new_question, content=answer.content)
-            new_answer.save()
-        elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
-            answer= VariableFloatAnswer.objects.get(question=question)
-            new_answer = VariableFloatAnswer(question=new_question, content=answer.content)
-            new_answer.save()
-        elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:
-            answer= LatexAnswer.objects.get(question=question)
-            new_answer = LatexAnswer(question=new_question, content=answer.content)
-            new_answer.save()
-        elif new_question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
-            # No answer yet, but semantic answer validation coming soon.
-            new_answer = TextAnswer(question=new_question, content='')
-            new_answer.save()
-        else:
-            for answers, answer_type in [(MCQExpressionAnswer.objects.filter(question=question),QuestionChoices.MCQ_EXPRESSION),\
-                            (MCQFloatAnswer.objects.filter(question=question), QuestionChoices.MCQ_FLOAT),\
-                            (MCQVariableFloatAnswer.objects.filter(question=question), QuestionChoices.MCQ_VARIABLE_FLOAT),\
-                                (MCQLatexAnswer.objects.filter(question=question), QuestionChoices.MCQ_LATEX),\
-                            (MCQTextAnswer.objects.filter(question=question), QuestionChoices.MCQ_TEXT),\
-                                (MCQImageAnswer.objects.filter(question=question), QuestionChoices.MCQ_IMAGE)]:
-                if answer_type == QuestionChoices.MCQ_EXPRESSION:
-                    for answer in answers:
-                        new_answer = MCQExpressionAnswer(question=new_question, content=answer.content)
-                        new_answer.is_answer = answer.is_answer 
-                        new_answer.save()
-                elif answer_type == QuestionChoices.MCQ_FLOAT:
-                    for answer in answers:
-                        new_answer = MCQFloatAnswer(question=new_question, content=answer.content)
-                        new_answer.is_answer = answer.is_answer 
-                        new_answer.save()
-                elif answer_type == QuestionChoices.MCQ_VARIABLE_FLOAT:
-                    for answer in answers:    
-                        new_answer = MCQVariableFloatAnswer(question=new_question, content=answer.content)
-                        new_answer.is_answer = answer.is_answer 
-                        new_answer.save()
-                elif answer_type == QuestionChoices.MCQ_LATEX:
-                    for answer in answers:    
-                        new_answer = MCQLatexAnswer(question=new_question, content=answer.content)
-                        new_answer.is_answer = answer.is_answer 
-                        new_answer.save()
-                elif answer_type == QuestionChoices.MCQ_TEXT : # Text Answer
-                    for answer in answers:
-                        new_answer = MCQTextAnswer(question=new_question, content=answer.content)  
-                        new_answer.is_answer = answer.is_answer 
-                        new_answer.save()  
-                elif answer_type == QuestionChoices.MCQ_IMAGE:
-                    for answer in answers:    
-                        new_answer = MCQImageAnswer(question=new_question, image=answer.image, label=answer.label)
-                        new_answer.is_answer = answer.is_answer 
-                        new_answer.save()
-                else:
-                    return HttpResponseForbidden('Something went wrong')
+        new_question = Question.objects.create(**new_question_data)
+        copy_question_images(question, new_question)
+        copy_variables(question, new_question)
+        copy_answers(question, new_question)
 
-        return HttpResponse(json.dumps('Export Succesful'))
-    except:
-        return HttpResponse(json.dumps('Export Failed'))
+        return JsonResponse({'message': 'Export Successful', 'success': True}, status=200)
+    except ObjectDoesNotExist:
+        return JsonResponse({'message': 'Export Failed: Object does not exist','success':False}, status=400)
+    except MultipleObjectsReturned:
+        return JsonResponse({'message': 'Export Failed: Multiple objects returned', 'success': False}, status=400)
+    except Exception as e:
+        return JsonResponse({'message': f'Export Failed: {str(e)}', 'success': False}, status=500)
+
+    
+def change_due_date(assignment, new_date):
+        assignment.due_date=new_date
+        assignment.save()
+
+def edit_assignment_due_date(request,course_id,assignment_id,new_date):
+        assignment= Assignment.objects.get(pk=assignment_id)
+        if not assignment.course.professors.filter(pk=request.user.pk).exists():
+            return JsonResponse({'message': 'You are not allowed to change the due date', 'success':False})
+        change_due_date(assignment,new_date)
+        for assignment_student in AssignmentStudent.objects.filter(assignment= assignment):
+            try:
+                change_due_date(assignment_student,new_date)
+            except:
+                return JsonResponse({'message':'something went wrong','success':False})
+        return JsonResponse({'message':'Due date successfully edited','success':True})
+
+def edit_student_assignment_due_date(request,course_id,assignment_id,new_date,student_id=None):
+            assignment = Assignment.objects.get(pk= assignment_id)
+            student= Student.objects.get(pk= student_id)
+            assignment_student= AssignmentStudent.objects.get(assignment=assignment, student=student)
+            try:
+                change_due_date(assignment_student,new_date)
+            except:
+                return JsonResponse({'message':'something went wrong','success':False})
+            return JsonResponse({'message':'Due date successfully edited','success':True})

@@ -68,11 +68,12 @@ def course_enroll(request, course_id, code):
             # If not enrolled, create a new Enrollment instance
             enrollment = Enrollment.objects.create(student=student, course=course)
             messages.info(request, message="You were successfully enrolled")
-            # Now assign all the courses assignments to the student. 
-            for assignment in course.assignments.all():
-                assign = AssignmentStudent.objects.create(assignment=assignment, student=student)
-                for question in assignment.questions.all():
-                    quest = QuestionStudent.objects.create(question=question, student=student)
+            # Now assign all the courses assignments to the student. NOTE: CHANGING THIS TO ALLOW PROFS ASSIGN STUDENTS.
+
+            # for assignment in course.assignments.all():
+            #     assign = AssignmentStudent.objects.create(assignment=assignment, student=student)
+            #     for question in assignment.questions.all():
+            #         quest = QuestionStudent.objects.create(question=question, student=student)
 
             return HttpResponse(json.dumps({'state': True, 'response':'valid code',\
                                             'course_management_url':reverse('deimos:course_management', \

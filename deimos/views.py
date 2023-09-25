@@ -141,21 +141,21 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
     # TODO: Subclass all structural answers to a more general class 
     # so that you may use only one if.
     elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
-        answers.extend(question.latex_answers.all())
-        is_latex.extend([1 for _ in range(question.latex_answers.all().count())]) 
+        answers.extend([question.latex_answer])
+        is_latex.extend([1]) 
         question_type = [2]  
     elif question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
-        answers.extend(question.expression_answers.all())
+        answers.extend([question.expression_answer])
         question_type = [0]
     elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
-        answers.extend(question.variable_float_answers.all())
+        answers.extend([question.variable_float_answer])
         question_type = [5]
     elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
-        answers.extend(question.float_answers.all())
+        answers.extend([question.float_answer])
         question_type = [1]
     elif question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
         is_fr = True 
-        answers.extend(question.text_answers.all())
+        answers.extend([question.text_answer])
         question_type = [4]    
     
 
@@ -202,10 +202,9 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                         if compare_expressions(previous_attempt.content, submitted_answer):
                             previously_submitted = True
                             return JsonResponse({'previously_submitted': previously_submitted})
-                    assert question.expression_answers.count() == 1
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
                     attempt.content = submitted_answer
-                    answer = question.expression_answers.first()
+                    answer = question.expression_answer
                     correct = compare_expressions(answer.content, submitted_answer)
                 elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
                     # Checking previous attempts (Yes, this should be done after checking with the real answer)
@@ -213,8 +212,7 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                     # the submitted answer may be close to a previous answer, however be within 
                     # the margin error of both the correct answer and previous answer.
                     # Hence we must check the correct answer first.
-                    assert question.float_answers.count() == 1
-                    answer = question.float_answers.first()
+                    answer = question.float_answer
                     try:
                         # answer.content must come first in the compare_floats()
                         correct, feedback_data = compare_floats(answer.content, submitted_answer, question.margin_error) 

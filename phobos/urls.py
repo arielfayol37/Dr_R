@@ -21,7 +21,7 @@ urlpatterns = [
     path('courses/<int:course_id>/assignments/<int:assignment_id>', \
          views.assignment_management, name='assignment_management'),
     path('courses/<int:course_id>/assignments/<int:assignment_id>/assign', \
-         views.assign_assignment, name='assign_assignment'),     
+         views.assign_assignment, name='assign_assignment'),    
     path('create_question/get_subtopics/<str:selected_topic>', views.get_subtopics, name='get_subtopics'),
     path('courses/<int:course_id>/assignments/<int:assignment_id>/<int:question_id>',
          views.question_view, name='question_view'),
@@ -46,5 +46,10 @@ urlpatterns = [
      path('courses/<int:course_id>/manage_enrollment_codes', views.manage_enrollment_codes, name='manage_enrollment_codes'),
      path('courses/<int:course_id>/manage_course_info', views.manage_course_info, name='manage_course_info'),
      path('courses/<int:course_id>/<str:categori>/save_course_info', views.save_course_info, name='save_course_info'),
+
+         path('courses/<int:course_id>/assignments/<int:assignment_id>/<str:new_date>/edit_assignment_due_date', \
+         views.edit_assignment_due_date, name='assignment_due_date'),
+          path('courses/<int:course_id>/<int:student_id>/student_profile/<int:assignment_id>/<str:new_date>/edit_student_assignment_due_date', \
+         views.edit_student_assignment_due_date, name='assignmentstudent_due_date'),
     
 ]

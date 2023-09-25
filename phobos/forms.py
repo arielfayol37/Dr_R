@@ -30,7 +30,7 @@ class AssignmentForm(forms.ModelForm):
             'name': forms.TextInput(attrs={'class': 'form-control', 'id': 'assignment-name'}),
             'course': forms.Select(attrs={'class': 'form-control', 'id': 'assignment-course'}),
             'difficulty_level': forms.Select(attrs={'class': 'form-control', 'id': 'difficulty-level'}),
-            'due_date': forms.DateInput(attrs={'class': 'form-control datepicker', 'id': 'assignment-due-date'}),
+           # 'due_date': forms.DateInput(attrs={'class': 'form-control datepicker', 'id': 'assignment-due-date'}),
         }
 
 class QuestionForm(forms.ModelForm):
