@@ -118,7 +118,7 @@ class AssignmentStudent(models.Model):
             self.grade = 0
         return self.grade
     def save(self, *args, **kwargs):
-        if self.due_date is None:
+        if not self.due_date:
             self.due_date = self.assignment.due_date
         super().save(*args, **kwargs)
         
@@ -153,8 +153,7 @@ class QuestionStudent(models.Model):
         if not self.instances_created:
             self.create_instances()
         if self.question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
-            assert self.question.variable_float_answers.count() == 1
-            answer = self.question.variable_float_answers.first().content
+            answer = self.question.variable_float_answer.content
             assert answer.startswith('@{') and answer.endswith('}@')
             answer = answer[2:-2]
         # TODO: Add a clause here if the answer type is different

@@ -23,7 +23,7 @@
                 fetch(window.location.href+ '/export_question_to/'+ select_assignment.value) 
                 .then(response=>response.json())
                 .then(result=>{
-                    alert(result);
+                    alert(result.message);
                     export_result.style.display= 'block';
                     export_to_assignment.style.display='none';
                     select_assignment.style.display= 'none';

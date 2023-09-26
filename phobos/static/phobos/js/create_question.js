@@ -977,6 +977,8 @@ function checkTopicAndSubtopic() {
 
     return boundsArray;
 }
+  
+
 });
 
 

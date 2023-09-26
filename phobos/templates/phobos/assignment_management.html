@@ -21,11 +21,19 @@
     <br/>
     <br/>
     <h4>{{assignment.course.name}}: {{assignment.name}}</h4><hr/>
+    <div>
     {% if not assignment.is_assigned %}
-        <div>
-            <button class="btn edit-btn co assign-btn">Assign</button>
-        </div>
+        
+            <button class="btn edit-btn co assign-btn" data-assignment-id="{{assignment.id}}">Assign</button>
     {% endif %}
+<!-- Due Date functionalities-->
+    <button class="btn edit-btn co due_date-btn"  data-assignment-id="{{assignment.id}}">Change Due Date</button>
+        <div  class="due-date-div" style="display: none" >
+            <input type="date"  class="input-new-due-date-field">
+            <input type="button" class="save-new-due-date-field" value="OK">
+        </div>
+    </div>
+
     <ul class="courses course-list">
         {% for question in questions %}
             {% include 'phobos/question_display.html' with question=question assignment_id=assignment.id course_id=assignment.course.id%}
@@ -35,5 +43,9 @@
 {% endblock %}
 {% block scripts%}
 <script src="{% static 'phobos/js/search_question.js' %}"></script>
+{% if not assignment.is_assigned %}
 <script src="{% static 'phobos/js/assign_question.js' %}"></script>
+{% endif %}
+<script src="{% static 'phobos/js/extend_due_date.js' %}"></script>
 {% endblock %}
+

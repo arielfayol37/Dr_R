@@ -90,7 +90,7 @@ class Course(models.Model):
     image = models.ImageField(upload_to='phobos/images/course_covers', blank=True, null=True)
 
     def __str__(self):
-        return f" Course {self.name}, difficulty level - {self.difficulty_level}"
+        return f"{self.name}"
     def delete(self, *args, **kwargs):
         # Delete the image file from storage
         if self.image:
@@ -116,6 +116,8 @@ class Professor(User):
     Class to store professors on the platform.
     """
     department = models.CharField(max_length=50)
+    def __str__(self):
+        return f'{self.first_name} {self.last_name}'
 
 class Topic(models.Model):
 
@@ -278,20 +280,24 @@ class Hint(models.Model):
         return f"Hint {self.id} for {self.question}"
     
 class AnswerBase(models.Model):
+    """
+    Class for structural answers.
+    """
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     content = models.TextField(blank=False, null=False)
     answer_unit = models.CharField(max_length=50, blank=True, null=True) # Optional field for the units of the answer
+    preface = models.CharField(max_length=20, blank=True, null=True)
     class Meta:
         abstract = True
 
     def __str__(self):
-        return f"Answer for {self.question}: {self.content}"
-        
+        return f"Answer for {self.question}: {self.content}" 
+    
 class FloatAnswer(AnswerBase):
     """
     Answer to a `structural Question` may be an algebraic expression, a vector, or a float.
     """
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="float_answers")
+    question = models.OneToOneField(Question, on_delete=models.CASCADE, related_name="float_answer")
     content = models.FloatField(blank=False, null=False)
 
     def __str__(self):
@@ -304,7 +310,7 @@ class VariableFloatAnswer(AnswerBase):
     E.g answer = F/m, where F and m are going to have multiple different values assigned
     to different users.
     """
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='variable_float_answers')
+    question = models.OneToOneField(Question, on_delete=models.CASCADE, related_name='variable_float_answer')
     content = models.CharField(max_length=100, null=False, blank=False)
 
     def __str__(self):
@@ -317,7 +323,7 @@ class ExpressionAnswer(AnswerBase):
     will parse the expression given by the teacher and the resulting text will be stored.
     When a user will input an answer, it will be compared to that text.
     """
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="expression_answers")
+    question = models.OneToOneField(Question, on_delete=models.CASCADE, related_name="expression_answer")
     content = models.CharField(max_length=200) 
     
     def __str__(self):
@@ -329,7 +335,7 @@ class LatexAnswer(AnswerBase):
     An answer may a latex string that will later be rendered in the JavaScript.
     For now, this is only used for MCQ `Questions`.
     """
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='latex_answers')
+    question = models.OneToOneField(Question, on_delete=models.CASCADE, related_name='latex_answer')
     content = models.CharField(max_length=400)
 
     def __str__(self):
@@ -341,7 +347,7 @@ class TextAnswer(AnswerBase):
     Probably less common, but a `Question` may have a text answer.
     Will implement semantic validation for text answers using a transformer later.
     """
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='text_answers')
+    question = models.OneToOneField(Question, on_delete=models.CASCADE, related_name='text_answer')
     content = models.CharField(max_length=1000)
 
     def __str__(self):

@@ -45,7 +45,7 @@ def all_courses(request):
         context = {
             "courses__is_student": zip(courses, is_student_list),
             "is_professor": False,
-            "is_student": True
+            "is_student": True,
         }
         return render(request, "astros/all_courses.html", context)
     
@@ -68,11 +68,12 @@ def course_enroll(request, course_id, code):
             # If not enrolled, create a new Enrollment instance
             enrollment = Enrollment.objects.create(student=student, course=course)
             messages.info(request, message="You were successfully enrolled")
-            # Now assign all the courses assignments to the student. 
-            for assignment in course.assignments.all():
-                assign = AssignmentStudent.objects.create(assignment=assignment, student=student)
-                for question in assignment.questions.all():
-                    quest = QuestionStudent.objects.create(question=question, student=student)
+            # Now assign all the courses assignments to the student. NOTE: CHANGING THIS TO ALLOW PROFS ASSIGN STUDENTS.
+
+            # for assignment in course.assignments.all():
+            #     assign = AssignmentStudent.objects.create(assignment=assignment, student=student)
+            #     for question in assignment.questions.all():
+            #         quest = QuestionStudent.objects.create(question=question, student=student)
 
             return HttpResponse(json.dumps({'state': True, 'response':'valid code',\
                                             'course_management_url':reverse('deimos:course_management', \
@@ -87,7 +88,7 @@ def course_enroll(request, course_id, code):
 
 def course_info(request,course_id):
     course = Course.objects.get(pk = course_id)
-    course_infos, created , created = CourseInfo.objects.get_or_create_or_create(course= course)
+    course_infos, created = CourseInfo.objects.get_or_create(course= course)
     if created:
          course_infos.save()
     course_infos_html_content= {}

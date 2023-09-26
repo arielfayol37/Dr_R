@@ -2,6 +2,13 @@
 {% extends 'phobos/layout.html' %}
 {% block title%} Create Course {% endblock %}
 {% block body %}
+<div class="sidebar" style="display:none">
+    <header class="sidebar-header">X</header>
+    <ul>
+        <li><a href="{% url 'phobos:index' %}">Home</a></li>
+        <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
+    </ul>
+</div>
 <div class="page-container">
 
     
@@ -28,12 +35,12 @@
                 {{ form.description }}
             </div>
             <div class="form-group">
-                <label for="{{ form.topics.id_for_label }}">Topics:</label>
+                <label for="{{ form.topics.id_for_label }}">Topics: <span class="suggestion">(can select multiple, press Ctrl and click on desired topic)</span></label>
                 {{ form.topics }}
             </div>
             
             <div class="form-group">
-                <label for="{{ form.professors.id_for_label }}">Professors:</label>
+                <label for="{{ form.professors.id_for_label }}">Professors: <span class="suggestion">(can select multiple, press Ctrl and click on professor's name)</span></label>
                 {{ form.professors }}
             </div>
             <div id="image-preview">
