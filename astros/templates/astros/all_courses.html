@@ -2,7 +2,18 @@
 {% extends 'astros/layout.html' %}
 {% load static %}
 {% block body%}
-
+<div class="sidebar" style="display:none">
+    <header class="sidebar-header">X</header>
+    <ul>
+        {% if is_professor %}
+            <li><a href="{% url 'phobos:index' %}">Home</a></li>
+            <li><a href="{% url 'phobos:search_question' %}">Search</a></li>
+        {% elif is_student %}
+            <li><a href="{% url 'deimos:index' %}">Home</a></li>
+            <li><a href="{% url 'deimos:search_question' %}">Search</a></li>
+        {% endif %}
+    </ul>
+</div>
     <div id="sf-container">
         <input  id="search-field" type="text" name="search" placeholder="search course"/>
     </div>

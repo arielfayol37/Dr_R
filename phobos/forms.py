@@ -25,13 +25,23 @@ class CourseForm(forms.ModelForm):
 class AssignmentForm(forms.ModelForm):
     class Meta:
         model = Assignment
-        fields = ['name', 'course', 'difficulty_level', 'due_date']
+        fields = ['name', 'difficulty_level', 'due_date']  # Removed 'course' from fields
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'id': 'assignment-name'}),
-            'course': forms.Select(attrs={'class': 'form-control', 'id': 'assignment-course'}),
             'difficulty_level': forms.Select(attrs={'class': 'form-control', 'id': 'difficulty-level'}),
-           # 'due_date': forms.DateInput(attrs={'class': 'form-control datepicker', 'id': 'assignment-due-date'}),
+            # 'due_date': forms.DateInput(attrs={'class': 'form-control datepicker', 'id': 'assignment-due-date'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        course = kwargs.pop('course', None)  # Pop the 'course' argument if it was passed
+        super().__init__(*args, **kwargs)
+        initial_course_value = course if course else ''
+        self.fields['course'] = forms.CharField(
+            initial=initial_course_value,
+            label='Course',
+            widget=forms.TextInput(attrs={'readonly': 'readonly', 'class': 'form-control'}),
+            required=False
+        )
 
 class QuestionForm(forms.ModelForm):
     class Meta:

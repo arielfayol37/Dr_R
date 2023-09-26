@@ -19,6 +19,8 @@ from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.db import transaction
 from django.middleware import csrf
 from django.utils.timesince import timesince
+from django.utils import timezone
+from datetime import datetime
 from deimos.models import AssignmentStudent, Student, QuestionStudent, Enrollment
 from datetime import date
 from sklearn.metrics.pairwise import cosine_similarity
@@ -137,28 +139,27 @@ def create_course(request):
         form = CourseForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
-            messages.info(request=request, message='Course created successfully!')
             return redirect('phobos:index')  
     else:
         form = CourseForm()
     return render(request, 'phobos/create_course.html', {'form': form})
 
+
+
+
 @login_required(login_url='astros:login')    
-def create_assignment(request, course_id=None):
-    # Making sure the request is done by a professor.
-    professor = get_object_or_404(Professor, pk=request.user.id)
+def create_assignment(request, course_id):
+    course = get_object_or_404(Course, pk=course_id)
     if request.method == 'POST':
         form = AssignmentForm(request.POST)
         if form.is_valid():
-            assignment = form.save()
-            messages.info(request=request, message='Assignment created successfully!')
-            return redirect('phobos:course_management', course_id=assignment.course.id)  
+            assignment = form.save(commit=False)  # Don't save to DB yet
+            assignment.course = course  # Set the course field
+            assignment.save()  # Now save to DB
+            return redirect('phobos:course_management', course_id=assignment.course.id)
     else:
-        if course_id is not None:
-            course = Course.objects.get(pk = course_id)
-            form = AssignmentForm({'course': course})
-        else:
-            form = AssignmentForm()
+        form = AssignmentForm(course=course)
+
     return render(request, 'phobos/create_assignment.html', {'form': form})
 
 @login_required(login_url='astros:login')
@@ -198,6 +199,10 @@ def create_question(request, assignment_id=None, type_int=None):
         topic = Topic.objects.get(name=request.POST.get('topic'))
         sub_topic = SubTopic.objects.get(name=request.POST.get('sub_topic'))
         text = request.POST.get('question_text')
+        answer_unit = request.POST.get('answer_unit')
+        num_points = request.POST.get('num_points')
+        if answer_unit == '':
+            answer_unit = None
         if type_int != 3 and type_int != 4:
             question_answer = request.POST.get('answer')
             if len(text)==0 or len(question_answer) == 0:
@@ -210,9 +215,10 @@ def create_question(request, assignment_id=None, type_int=None):
             text = text,
             topic = topic,
             sub_topic = sub_topic,
-            assignment = assignment
+            assignment = assignment,
+            num_points = num_points
         )
-        new_question.save() # Needed here. Before saving answer'
+        new_question.save() # Needed here. Before saving answer
         vars_dict = {}
         for key, value in request.POST.items():
             if key.startswith('domain'):
@@ -296,14 +302,14 @@ def create_question(request, assignment_id=None, type_int=None):
                     answer.save() # Needed here.                
         elif type_int == 0:
             new_question.answer_type = QuestionChoices.STRUCTURAL_EXPRESSION
-            answer = ExpressionAnswer(question=new_question, content=question_answer)
+            answer = ExpressionAnswer(question=new_question, content=question_answer, answer_unit=answer_unit)
         elif type_int == 1:
             if not vars_dict:
                 new_question.answer_type = QuestionChoices.STRUCTURAL_FLOAT
-                answer = FloatAnswer(question=new_question, content=question_answer)
+                answer = FloatAnswer(question=new_question, content=question_answer, answer_unit=answer_unit)
             else:
                 new_question.answer_type = QuestionChoices.STRUCTURAL_VARIABLE_FLOAT
-                answer = VariableFloatAnswer(question=new_question, content=question_answer)
+                answer = VariableFloatAnswer(question=new_question, content=question_answer, answer_unit=answer_unit)
         elif type_int == 2:
             new_question.answer_type = QuestionChoices.STRUCTURAL_LATEX
             answer = LatexAnswer(question=new_question, content=question_answer)
@@ -733,8 +739,16 @@ def export_question_to(request,question_id,exp_assignment_id,course_id=None,assi
 
     
 def change_due_date(assignment, new_date):
-        assignment.due_date=new_date
-        assignment.save()
+    # Assuming new_date is a string in the format 'YYYY-MM-DD',
+    # convert it to a datetime object.
+    # If new_date is already a datetime object, this step is not necessary.
+    naive_datetime = datetime.strptime(new_date, "%Y-%m-%d")
+    # Now make the datetime object timezone-aware
+    aware_datetime = timezone.make_aware(naive_datetime)
+
+    # Assign the timezone-aware datetime to assignment.due_date and save
+    assignment.due_date = aware_datetime
+    assignment.save()
 
 def edit_assignment_due_date(request,course_id,assignment_id,new_date):
         assignment= Assignment.objects.get(pk=assignment_id)
@@ -751,7 +765,11 @@ def edit_assignment_due_date(request,course_id,assignment_id,new_date):
 def edit_student_assignment_due_date(request,course_id,assignment_id,new_date,student_id=None):
             assignment = Assignment.objects.get(pk= assignment_id)
             student= Student.objects.get(pk= student_id)
-            assignment_student= AssignmentStudent.objects.get(assignment=assignment, student=student)
+            # If a professor takes time to go extend someone's assignment
+            # then it's worth creating the AssignmentStudent.
+            assignment_student, created = AssignmentStudent.objects.get_or_create(assignment=assignment, student=student)
+            if created:
+                assignment_student.save()
             try:
                 change_due_date(assignment_student,new_date)
             except:

@@ -90,7 +90,7 @@ class Course(models.Model):
     image = models.ImageField(upload_to='phobos/images/course_covers', blank=True, null=True)
 
     def __str__(self):
-        return f" Course {self.name}, difficulty level - {self.difficulty_level}"
+        return f"{self.name}"
     def delete(self, *args, **kwargs):
         # Delete the image file from storage
         if self.image:
@@ -116,6 +116,8 @@ class Professor(User):
     Class to store professors on the platform.
     """
     department = models.CharField(max_length=50)
+    def __str__(self):
+        return f'{self.first_name} {self.last_name}'
 
 class Topic(models.Model):
 
