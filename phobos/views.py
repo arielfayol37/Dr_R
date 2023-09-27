@@ -590,62 +590,64 @@ def search_question(request):
 def enrollmentCode(request, course_id, expiring_date):
     # Making sure the request is done by a professor.
     professor = get_object_or_404(Professor, pk=request.user.id)
+    course= Course.objects.get(pk = course_id)
+    if not course.professors.filter(pk=request.user.pk).exists():
+        return JsonResponse({'message': 'You are not allowed to ceate enrollment codes for this course.'})
     min=100000000000
     max=999999999999
-    course= Course.objects.get(pk = course_id)
     enrollment_code = EnrollmentCode(course = course, 
                                      code= random.randint(min,max),
                                       expiring_date= expiring_date)
     enrollment_code.save()
     return JsonResponse({'code': enrollment_code.code,
-                         'ex_date':enrollment_code.expiring_date})
+                         'ex_date':enrollment_code.expiring_date,
+                         'message':'enrollment code created successfully'})
     
 def display_codes(request,course_id):
     if request.method == "GET":
-         course = Course.objects.get(pk= course_id)
-         codes= EnrollmentCode.objects.filter(course =  course )
-         usable_codes =[]
-         for code in codes:
-                 if code.expiring_date > date.today():
-                     usable_codes.append({'code':code.code, 
-                                         'ex_date':code.expiring_date})
+        course = Course.objects.get(pk= course_id)
+        codes= EnrollmentCode.objects.filter(course =  course )
+        usable_codes =[]
+        for code in codes:
+            if code.expiring_date > date.today():
+                usable_codes.append({'code':code.code, 
+                                    'ex_date':code.expiring_date})
+            else:
+                code.delete()
 
-         return JsonResponse({'codes':usable_codes})    
+        return JsonResponse({'codes':usable_codes})    
 
 @login_required(login_url='astros:login')
 def manage_course_info(request,course_id):
-   course = Course.objects.get(pk= course_id) 
-   course_info = CourseInfo.objects.get_or_create(course=course)
+   course = Course.objects.get(pk = course_id) 
+   course_info, created = CourseInfo.objects.get_or_create(course=course)
+   return render(request,'phobos/course_info_management.html',{'course': course, 'course_info':course_info})
 
-   return render(request,'phobos/course_info_management .html',{'course':course,'course_info':course_info})
-
-
-def save_course_info(request,course_id,categori):
+@login_required(login_url='astros:login')
+@csrf_exempt
+def save_course_info(request, course_id):
  course = Course.objects.get(pk= course_id) 
- if request.method== "POST":
-    print(request.POST.items())
-    try:
-        course_info = CourseInfo.objects.get(course= course)
-    except CourseInfo.DoesNotExist:
-       course_info = CourseInfo.objects.create(course= course)
-    info = request.POST.get('text_info')
-    categorie=request.POST.get('categorie')
-    print(request)
-    if  categorie == 'about_course':
-            course_info.about_course = info
-    elif  categorie == 'course_skills':
-            course_info.course_skills = info
-    elif  categorie == 'course_plan':
-            course_info.course_plan = info
-    elif  categorie == 'course_instructors' :
-            course_info.course_instructors = info
+ if request.method == "POST":
+    data = json.loads(request.body.decode("utf-8"))
+    info = data.get('text_info')
+    category = data.get('category')
+    course_info, created = CourseInfo.objects.get_or_create(course=course)
+
+    if category == 'about_course':
+        course_info.about_course = info
+    elif category == 'course_skills':
+        course_info.course_skills = info
+    elif category == 'course_plan':
+        course_info.course_plan = info
+    elif category == 'course_instructors':
+        course_info.course_instructors = info
     else:
-        return HttpResponse('error')
-    
-    course_info.save(update_fields=[categorie])
-    return  render(request,'phobos/course_info_management .html',{'course':course,'course_info':course_info})           #(request,'phobos/course_info_management .html',{'course':course,'course_info':course_info})
+        return JsonResponse({'error': 'Invalid category'}, status=400)
 
-
+    course_info.save(update_fields=[category])
+    return JsonResponse({'message': f'{category} updated successfully'})
+ else:
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 def copy_question_images(old_question, new_question):
     question_images = QuestionImage.objects.filter(question=old_question)

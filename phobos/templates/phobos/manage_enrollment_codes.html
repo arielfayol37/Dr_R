@@ -39,7 +39,7 @@
         .then(response => response.json())
         .then(Code =>{
             code=Code.codes
-            console.log(code,code.length)
+            //console.log(code,code.length)
             for(i = 0; i < code.length; i++){
             code_items = document.createElement('li');
             code_items.innerHTML =  `Code: <em style="color: red;">${code[i].code}</em> expiring date: <em style="color: red;">${code[i].ex_date}</em>`
