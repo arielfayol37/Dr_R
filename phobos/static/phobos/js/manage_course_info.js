@@ -5,7 +5,8 @@
         const textInfo = form.querySelector('textarea[name="text_info"]');  
         const category = form.querySelector('input[name="category"]');
         const infoEditBtn = document.querySelector('.info-edit-btn');
-        const formattedInfo = document.querySelector('.formatted-answer-option')
+        const formattedInfo = document.querySelector('.formatted-answer-option');
+        const cancelBtn = document.querySelector('.cancel-btn');
         var previousBtn = document.querySelector('.abc-btn');
 
         infoEditBtn.addEventListener('click', (event)=>{
@@ -14,14 +15,21 @@
             formattedInfo.style.display = 'none'
             form.style.display = 'block';
             textInfo.value = previousBtn.dataset.info;
+            textInfo.scrollIntoView({ behavior:"smooth" })
         })
 
+        cancelBtn.addEventListener('click', (event)=>{
+            event.preventDefault();
+            formattedInfo.style.display = 'block';
+            infoEditBtn.style.display = 'block';
+            form.style.display = 'none';
+        })
         textInfo.value = previousBtn.dataset.info
         categoryBtns.forEach((btn)=>{
             btn.addEventListener('click', (event)=>{
                 event.preventDefault();
                 formattedInfo.style.display = 'block';
-                formattedInfo.innerHTML = btn.dataset.info;
+                formattedInfo.innerHTML = btn.dataset.md;
                 category.value = btn.dataset.category;
                 btn.classList.add('active');
                 previousBtn.classList.remove('active');
@@ -51,8 +59,9 @@
                 } else {
                     infoEditBtn.style.display = 'block';
                     form.style.display = 'none';
-                    previousBtn.dataset.info = textInfo.value;
-                    formattedInfo.innerHTML = textInfo.value;
+                    previousBtn.dataset.md = data.md;
+                    previousBtn.dataset.info = textInfo.value
+                    formattedInfo.innerHTML = data.md;
                     formattedInfo.style.display = 'block';
                     alert(data.message);
                 }

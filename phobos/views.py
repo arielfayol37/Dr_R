@@ -26,7 +26,7 @@ from datetime import date
 from sklearn.metrics.pairwise import cosine_similarity
 from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
 import heapq
-
+from markdown2 import markdown
 
 # Create your views here.
 @login_required(login_url='astros:login') 
@@ -619,9 +619,26 @@ def display_codes(request,course_id):
 
 @login_required(login_url='astros:login')
 def manage_course_info(request,course_id):
-   course = Course.objects.get(pk = course_id) 
-   course_info, created = CourseInfo.objects.get_or_create(course=course)
-   return render(request,'phobos/course_info_management.html',{'course': course, 'course_info':course_info})
+    try:
+        course = Course.objects.get(pk=course_id)
+    except Course.DoesNotExist:
+        return HttpResponseForbidden('COURSE DOES NOT EXIST')
+    
+    if not course.professors.filter(pk = request.user.pk).exists():
+        return HttpResponseForbidden('YOU ARE NOT AUTHORIZED TO MANAGE THIS COURSE')
+    course_info, created = CourseInfo.objects.get_or_create(course=course)
+    
+    def markdown_convert(field):
+        return markdown(getattr(course_info, field))
+
+    course_info_markdown_html= {
+        'about_course': markdown_convert('about_course'),
+        'course_skills': markdown_convert('course_skills'),
+        'course_plan': markdown_convert('course_plan'),
+        'course_instructors': markdown_convert('course_instructors'),
+    }
+    return render(request,'phobos/course_info_management.html',{'markdown':course_info_markdown_html ,\
+                                                                 'course': course, 'course_info':course_info})
 
 @login_required(login_url='astros:login')
 @csrf_exempt
@@ -645,7 +662,8 @@ def save_course_info(request, course_id):
         return JsonResponse({'error': 'Invalid category'}, status=400)
 
     course_info.save(update_fields=[category])
-    return JsonResponse({'message': f'{category} updated successfully'})
+    markdown_content = markdown(info)
+    return JsonResponse({'message': f'{category} updated successfully', 'md':markdown_content})
  else:
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
