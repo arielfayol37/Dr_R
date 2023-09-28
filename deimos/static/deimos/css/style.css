@@ -528,6 +528,19 @@ more than assignment display */
   padding:5px;
   border-radius: 3px;
 }
+
+/*General styling */
+.suggestion {
+  color: gray;
+  /*white-space: nowrap;*/
+  font-size: small;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 30%;
+  margin-left: 10px;
+
+}
+
 @keyframes blink {
   0%, 100% {
     opacity: 1;

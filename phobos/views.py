@@ -183,7 +183,7 @@ def assign_assignment(request, assignment_id, course_id=None):
             'message':'Assignment assigned successfully.', 'success':True
         })
     return JsonResponse({'message':'Something went wrong.','success':False})
-
+@transaction.atomic
 @login_required(login_url='astros:login')
 def create_question(request, assignment_id=None, type_int=None):
     """
@@ -216,7 +216,7 @@ def create_question(request, assignment_id=None, type_int=None):
             topic = topic,
             sub_topic = sub_topic,
             assignment = assignment,
-            num_points = num_points
+            num_points = num_points if num_points else 10
         )
         new_question.save() # Needed here. Before saving answer
         vars_dict = {}
@@ -515,7 +515,7 @@ def student_profile(request,course_id,student_id):
         grades.append(grade)
     
     return render(request,'phobos/student_profile.html',\
-                {'student_grade': zip(assignments,grades),\
+                {'student_grade': zip(assignments, grades),\
                  'student':student, 'course':course})
 
 def student_search(request,course_id):
@@ -536,17 +536,17 @@ def get_questions(request, student_id, assignment_id, course_id=None):
     assignment= Assignment.objects.get(id=assignment_id)
     questions= Question.objects.filter(assignment= assignment ) 
     student= Student.objects.get(id=student_id)
-    assignment_student= AssignmentStudent.objects.get(assignment=assignment, student=student)
+    assignment_student, created = AssignmentStudent.objects.get_or_create(assignment=assignment, student=student)
     question_details=[{'name':assignment.name,'assignment_id':assignment_id,'Due_date':str(assignment_student.due_date).split(' ')[0]}]
     for question in questions:
         try:
             question_student = QuestionStudent.objects.get(student= student, question=question)
             question_details.append({'Question_number':'Question ' + question.number,\
-                                 'score':question_student.get_num_points(), \
+                                 'score':f"{question_student.get_num_points()} / {question.num_points}", \
                                     'num_attempts': question_student.get_num_attempts()})
         except QuestionStudent.DoesNotExist:
-            question_details.append({'Question_number':'Question' + question.number,\
-                                     'score':"0",'num_attempts': "0"})    
+            question_details.append({'Question_number':'Question ' + question.number,\
+                                     'score':f"0 / {question.num_points}",'num_attempts': "0"})    
         
     question_details= json.dumps(question_details)
     return HttpResponse(question_details)
@@ -693,7 +693,7 @@ def copy_answers(old_question, new_question):
         QuestionChoices.STRUCTURAL_VARIABLE_FLOAT: VariableFloatAnswer,
         QuestionChoices.STRUCTURAL_LATEX: LatexAnswer,
         QuestionChoices.STRUCTURAL_TEXT: TextAnswer,
-        # ... add other mappings ... if created
+        # ... add other mappings for structural questions... if created
     }
 
     answer_type_class = answer_type_mapping.get(old_question.answer_type)
@@ -723,6 +723,7 @@ def copy_answers(old_question, new_question):
                 if isinstance(new_answer, MCQImageAnswer):
                     new_answer.image = answer.image
                     new_answer.label = answer.label
+                
                 new_answer.save()
 
 

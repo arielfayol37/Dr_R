@@ -433,6 +433,19 @@ div.c-text {
   border-radius: 10px;
 }
 
+/* General styling */
+.suggestion {
+  color: gray;
+  /*white-space: nowrap;*/
+  font-size: small;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 30%;
+  margin-left: 10px;
+
+}
+
+
   /* Mobile styling*/
 
   @media screen and (max-width: 1200px){

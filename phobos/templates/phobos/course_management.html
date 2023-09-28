@@ -7,9 +7,9 @@
         <ul>
             <li><a href="{% url 'phobos:index' %}">Home</a></li>
             <li><a href="{% url 'phobos:create_assignment' course_id=course.id %}">Create Assignment</a></li>
-            <li><a href="{% url 'phobos:manage_course_info' course_id=course.id %}">Add Course Details</a></li> 
+            <li><a href="{% url 'phobos:manage_course_info' course_id=course.id %}">Course Info</a></li> 
             <li><a href="{% url 'phobos:gradebook' course_id=course.id %}">Gradebook</a></li>
-            <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
+            <li><a href="{% url 'phobos:search_question' %}">Search</a></li>
             <li><a href="{% url 'phobos:manage_enrollment_codes' course_id=course.id %}">Enrollment Codes</a></li>
         </ul>
     </div>

@@ -145,14 +145,14 @@ displayLatex();
             target.classList.add('mcq-true', 'btn-info');
             target.innerHTML = 'True';
             num_true_counter += 1;
-            const answer_info_input = target.parentNode.querySelector('.formatted-answer').querySelector('.answer_info');
+            const answer_info_input = target.parentNode.querySelector('.formatted-answer-option').querySelector('.answer_info');
             answer_info_input.value = rep(answer_info_input.value, 0, '1');
         } else if(target.classList.contains('mcq-true')){
             target.classList.add('mcq-false','btn-warning');
             target.classList.remove('mcq-true', 'btn-info');
             target.innerHTML = 'False'; 
             num_true_counter -= 1;    
-            const answer_info_input = target.parentNode.querySelector('.formatted-answer').querySelector('.answer_info');
+            const answer_info_input = target.parentNode.querySelector('.formatted-answer-option').querySelector('.answer_info');
             answer_info_input.value = rep(answer_info_input.value, 0, '0');
         }
     })
@@ -303,7 +303,7 @@ function getCookie(name) {
         selectedAnswerIds.push(answerIdInput.value);
       }
     });
-  
+    //console.log(selectedAnswerIds);
     return selectedAnswerIds;
   }
 
