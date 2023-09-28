@@ -11,7 +11,7 @@ function table_generator(question,assignment_id){
    <br/>
    <b class='Due-date-display'>Due by: ${question[0].Due_date} </b> <button class="btn edit-btn co due_date-btn"  data-assignmentId="${assignment_id}" style="display: inline; position:relative; float: right">Extend Due Date</button>
    <div  class="due-date-div" style="display: none; position:relative; float: right" >
-       <input type="date"  class="input-new-due-date-field">
+       <input type="datetime-local"  class="input-new-due-date-field">
        <input type="button" class="save-new-due-date-field" value="OK">
        </div>
    </div>`;
@@ -44,7 +44,8 @@ function table_generator(question,assignment_id){
        tr = document.createElement('tr');
        for(j=0; j< column.length; j++){
            td = document.createElement('td');
-           td.innerHTML = question[i][column[j]];
+
+           td.innerHTML = `${question[i][column[j]]} <button style="position: relative; float: rigth; bottom: 0%; size: 10%"> edit </button>`;
            tr.appendChild(td);
        }
        tbody.appendChild(tr);

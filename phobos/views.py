@@ -529,7 +529,7 @@ def get_questions(request, student_id, assignment_id, course_id=None):
     questions= Question.objects.filter(assignment= assignment ) 
     student= Student.objects.get(id=student_id)
     assignment_student= AssignmentStudent.objects.get(assignment=assignment, student=student)
-    question_details=[{'name':assignment.name,'assignment_id':assignment_id,'Due_date':str(assignment_student.due_date).split(' ')[0]}]
+    question_details=[{'name':assignment.name,'assignment_id':assignment_id,'Due_date':str(assignment_student.due_date)}]
     for question in questions:
         try:
             question_student = QuestionStudent.objects.get(student= student, question=question)
