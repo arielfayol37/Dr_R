@@ -629,6 +629,13 @@ more than assignment display */
   margin-left: 10px;
 
 }
+
+
+/* phobos: question_view.html, specifically question import*/
+.q-import-field {
+  width:30%;
+}
+
   /* Mobile styling*/
 
   @media screen and (max-width: 1200px){
@@ -696,5 +703,8 @@ more than assignment display */
       }
       #m2 {
         transform: translate(0, -95%);
+      }
+      .q-import-field {
+        width:80%;
       }
     } 

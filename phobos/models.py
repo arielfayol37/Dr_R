@@ -110,7 +110,8 @@ class CourseInfo(models.Model):
     instructors_image= models.ImageField(upload_to='phobos/images/professors', blank=True, null=True)
     notice = models.CharField(max_length=2000, default="")
     
-
+    def __str__(self):
+        return f'Course info for {self.course}'
 class Professor(User):
     """
     Class to store professors on the platform.

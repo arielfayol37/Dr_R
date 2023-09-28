@@ -1,61 +1,72 @@
 
-    text= document.querySelector('textarea');
-    text.value='';
-    a_tag= "document.querySelector('#save_link')";
-    button_data='';
-    document.querySelector('#edit-section').addEventListener('click',(event)=>{
-        
-        parent_= event.target.parentNode;
-        if(parent_.classList.contains('col-sm-3')){
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('.info-form');
+        const categoryBtns = document.querySelectorAll('.c-btn');
+        const textInfo = form.querySelector('textarea[name="text_info"]');  
+        const category = form.querySelector('input[name="category"]');
+        const infoEditBtn = document.querySelector('.info-edit-btn');
+        const formattedInfo = document.querySelector('.formatted-answer-option');
+        const cancelBtn = document.querySelector('.cancel-btn');
+        var previousBtn = document.querySelector('.abc-btn');
 
-            button_data = event.target.dataset.categorie
-            text.value= event.target.dataset.info;
-            original_content=text.value;
-            document.querySelector('input[name=categorie]').value= button_data;
-            text.scrollIntoView({behaviour:'smooth'});
-            text.style.height='500px';
-           
-        }
-    })
+        infoEditBtn.addEventListener('click', (event)=>{
+            event.preventDefault();
+            infoEditBtn.style.display = 'none';
+            formattedInfo.style.display = 'none'
+            form.style.display = 'block';
+            textInfo.value = previousBtn.dataset.info;
+            textInfo.scrollIntoView({ behavior:"smooth" })
+        })
 
-    document.querySelector('input[value=Cancel]').addEventListener('click',(event)=>{
-        event.preventDefault();
-        text.value=original_content;
-        a_tag.href= "#"
-        
-    })
+        cancelBtn.addEventListener('click', (event)=>{
+            event.preventDefault();
+            formattedInfo.style.display = 'block';
+            infoEditBtn.style.display = 'block';
+            form.style.display = 'none';
+        })
+        textInfo.value = previousBtn.dataset.info
+        categoryBtns.forEach((btn)=>{
+            btn.addEventListener('click', (event)=>{
+                event.preventDefault();
+                formattedInfo.style.display = 'block';
+                formattedInfo.innerHTML = btn.dataset.md;
+                category.value = btn.dataset.category;
+                btn.classList.add('active');
+                previousBtn.classList.remove('active');
+                previousBtn = btn;
+                textInfo.value = previousBtn.dataset.info
+            })
+        })
 
-    // document.querySelector('input[name=categorie]').addEventListener('click',(event)=>{
-    //     event.preventDefault();
-    //     if(button_data === ''){
-    //         a_tag.href= "#";
-    //     }
-    //     else{
-    //         a_tag.href= button_data + '/'+ text.value +'/save_course_info'; // useless  code
-    //     csrf_token = document.querySelector('input[name="csrfmiddlewaretoken"]')
-    //     fetch( button_data +'/save_course_info',{
-    //         method: "POST",
-    //         body: JSON.stringify({
-    //             "title": "foo",
-    //             "body": "bar",
-    //             "userId": 1
-    //         }),
-    //         credentials: 'same-origin',
-    //         headers: {"X-CSRFToken": csrf_token.value,
-    //         "Content-type": "application/json; charset=UTF-8"}
-    //     }).then(response=>response.json())
-    //     .then(result=>{
-    //         if(result){
-    //             window.location.replace(window.location.href);
-    //         }
-    //     })
-    //     }
-    // })
-
-    document.querySelector('button[id=Edit]').addEventListener('click',(event)=>{
-        edit_section =document.querySelector('#edit-section')
-        edit_section.style.display='block';
-        edit_section.scrollIntoView({behaviour:'smooth'})
-    })
-
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+                  
+            fetch('save_course_info', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                   // 'X-CSRFToken': '{{ csrf_token }}',
+                },
+                body: JSON.stringify({
+                    text_info: textInfo.value,
+                    category: category.value,
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    infoEditBtn.style.display = 'block';
+                    form.style.display = 'none';
+                    previousBtn.dataset.md = data.md;
+                    previousBtn.dataset.info = textInfo.value
+                    formattedInfo.innerHTML = data.md;
+                    formattedInfo.style.display = 'block';
+                    alert(data.message);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    });
 

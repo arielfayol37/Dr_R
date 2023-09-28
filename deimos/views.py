@@ -44,7 +44,8 @@ def course_management(request, course_id):
 
     if not is_enrolled:
         return HttpResponseForbidden('You are not enrolled in this course.')
-    assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student)
+    assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student, \
+                                            is_assigned=True)
     context = {
         "assignments": assignments,
         "course": course
@@ -120,12 +121,10 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
         la = question.mcq_latex_answers.all()
         answers.extend(la)
         
-        question_type_count['ea'] = ea.count()
-        question_type_count['fa'] = fa.count()
-        question_type_count['fva'] = fva.count()
-        question_type_count['ta'] = ta.count()
-        question_type_count['ia'] = ia.count()
-        question_type_count['la'] = la.count()
+        question_type_keys = ['ea', 'fa', 'fva', 'ta', 'ia', 'la']
+
+        for key in question_type_keys:
+            question_type_count[key] = getattr(locals()[key], 'count')()
 
         # !Important: order matters here. Latex has to be last!
         is_latex = [0 for _ in range(ea.count()+ta.count()+fa.count()+fva.count()+ia.count())]
@@ -283,7 +282,8 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                 ia = [str(pk) + str(question_type_dict['ia']) for pk in ia]
                 answers.extend(ia)
                 if len(submitted_answer) == len(answers):
-                    if set(submitted_answer) == set(answers):
+                    s1, s2 = set(submitted_answer), set(answers)
+                    if s1 == s2:
                         correct = True
                         attempt.num_points = max(0, question.num_points * (1 - (question.deduct_per_attempt * question_student.get_num_attempts())))
                         question_student.success = True

@@ -6,99 +6,113 @@
 <link rel="stylesheet" href="{% static 'astros/css/course_info.css' %}"/>
 {% endblock %}
 
+
+
 {% block body %}
-<div class="course-info" class="pgn__card-grid__card-item col-xl-3 col-md-4 col-sm-12" style="height: auto;  padding: 2%;">
-    <div class="coure-section" class="sf-container" class="jumbotron text-center" >
-        <div class="row" >
-            <div class="c-txt" class="col-sm-4" style="padding-right: 100px;">
-                <span class="c-name">
+<div class="sidebar" style="display:none">
+    <header class="sidebar-header">X</header>
+    <ul>
+        <li><a href="{% url 'astros:all_courses' %}">All courses</a></li>
+        <li><a href="{% url 'deimos:index' %}">Home</a></li>
+        <li><a href="{% url 'deimos:search_question' %}">Search</a></li>
+    </ul>
+</div>
+
+<div class="course-info-container">
+
+<div class="course-info">
+    <div class="course-section">
+        <div>
+            <div>
+                <span>
                     <h1>{{course.name}}</h1>
                 </span>
 
-                <p class="c-description">
+                <p>
                     {{ course.description }}
-                    </p>
+                </p>
 
-                <p class="timestamp" style="display: none;">Created on {{ course.timestamp|date:"m/d/Y" }}</p>
-            </div>
-            <div class="image-content" class="col-sm-4" >
-                {% if course.image %}
-                <img src="{{ course.image.url }}" alt="Course Image" class="c-image"
-                    style="height: 200px; width: 200px;">
-
-                {% endif %}
+                <p style="display: none;">Created on {{ course.timestamp|date:"m/d/Y" }}</p>
             </div>
         </div>
+        <div class="image-content formatted-answer-option">
+            {% if course.image %}
+            <img src="{{ course.image.url }}" alt="Course Image" class="c-image image-in-formatted">
+
+            {% endif %}
+        </div>
+        <hr/>
 
         {% if is_course_stud == 1 %}
-        <div class="edit-sect" class="row" tabindex="-1" class="pgn__card pgn__card-light card" style="width: 100%;">{% csrf_token %}
-           <center>
-            <p><h3> Keep Going</h3></p>
-            <div><a href="{% url 'deimos:course_management' course_id=course.id %}"><button class="btn edit-btn co"
-                        data-course-id="{{ course.id}}">Resume Course</button></div></a>
-            </center>
-        </div>
-        {% else %}
-        <div class="edit-sect" class="row" tabindex="-1" class="pgn__card pgn__card-light card" style="width: 100%;">{% csrf_token %}
+            <div>{% csrf_token %}
             <center>
-            <p><h3> Start Learning Now</h3></p>
-            <div class="enrollment">
-                <button type="button" class="btn edit-btn pre-Enroll" data-course-id="{{ course.id}}">Enroll</button>
-                <input type="number" placeholder="enter the enrollment code" class="field-style" style="display:none; width:70%;" />
-                <button type="button" class="btn btn-success validate-btn" style="display: none;"> validate </button>
+
+                <div><a href="{% url 'deimos:course_management' course_id=course.id %}"><button class="btn edit-btn co"
+                            data-course-id="{{ course.id}}">Resume Course</button></div></a>
+                </center>
             </div>
-            </center>
-        </div>
+        {% else %}
+            <div>{% csrf_token %}
+                <center>
+                <div class="enrollment">
+                    <button type="button" class="btn edit-btn pre-Enroll" data-course-id="{{ course.id}}">Enroll</button>
+                    <input type="number" placeholder="enter the enrollment code" class="field-style" style="display:none" />
+                    <button type="button" class="btn btn-success validate-btn" style="display: none;"> validate </button>
+                </div>
+                </center>
+            </div>
         {% endif %}
 
     </div>
 
-    <div class="sf-container info_body" >
-        <div class="dropdown" class=" c-about" >
+    <div class="info_body" >
+        <div class="dropdown">
             <div class="head" >
-                <h5>About this Course <div class="expand">+</div> </h5>
+                <h5>About this Course <span class="expand"></span> </h5>
             </div>
             <div class="body-text">
-                <p>{{course_info.about_course | safe}}</p>
+                <div class="formatted-answer-option">{{course_info.about_course | safe}}</div>
             </div>
         </div>
         
 
-        <div class="dropdown" class=" c-skill" >
-            <div class="head" class="col-sm-4"  style=" width: 100%; border: solid 1px black; ">
-            <h5>what you'll learn <div class="expand">+</div></h5>
+        <div class="dropdown">
+            <div class="head">
+            <h5>what you'll learn <span class="expand"></span></h5>
             </div>
             <div class="body-text">
-                <p>{{course_info.course_skills | safe}}</p>
+                <div class="formatted-answer-option">{{course_info.course_skills | safe}}</div>
             </div>
         </div>
 
-        <div class="dropdown" class="c-plan">
-            <div class="head" class="col-sm-4">
-                <h5>Course Plan <div class="expand">+</div> </h5>
+        <div class="dropdown">
+            <div class="head">
+                <h5>Course Plan <span class="expand"></span> </h5>
             </div>
-            <div class="body-text" class="col-sm-4">
-                <p>{{course_info.course_plan | safe}}</p> 
+            <div class="body-text">
+                <div class="formatted-answer-option">{{course_info.course_plan | safe}}</div> 
             </div>
         </div>
 
-        <div class="dropdown" class="c-professor">
-            <div class="head" class="col-sm-4">
-                <h5>About the instructors <div class="expand">+</div> </h5>
+        <div class="dropdown">
+            <div class="head" >
+                <h5>About the instructors <span class="expand"></span> </h5>
             </div>
             <div class="body-text">
-            <div class="instructors-image">
-                {% if course_info.instructors_image %}
-                <img scr="{{course_info.instructors_image.url}}" alt="instructors-image"/>
-                {% endif %}
-            </div>
-                <p>{{course_info.course_instructors | safe }}</p>
+            {% if course_info.instructors_image %}
+                <div class="instructors-image formatted-answer-option">
+                    <img scr="{{course_info.instructors_image.url}}" alt="instructors-image" class="image-in-formatted"/>
+                </div>
+            {% endif %}
+            <div class="formatted-answer-option">{{course_info.course_instructors | safe }}</div>
             </div>
         </div>
 
     </div>
 
 
+</div>
+    
 </div>
 
 <script src="{% static 'astros/js/course_enroll.js' %}"></script>

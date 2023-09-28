@@ -85,31 +85,38 @@ def course_enroll(request, course_id, code):
         return HttpResponse(json.dumps({'state': True, 'response':'valid code',\
                                                 'course_management_url':reverse('deimos:course_management', \
                                                                                 kwargs={'course_id':course_id})}))
-
-def course_info(request,course_id):
-    course = Course.objects.get(pk = course_id)
-    course_infos, created = CourseInfo.objects.get_or_create(course= course)
-    if created:
-         course_infos.save()
-    course_infos_html_content= {}
-    course_infos_html_content.update({'about_course':markdown(course_infos.about_course)})
-    course_infos_html_content.update({'course_skills':markdown(course_infos.course_skills)})
-    course_infos_html_content.update({'course_plan':markdown(course_infos.course_plan)})
-    course_infos_html_content.update({'course_instructors':markdown(course_infos.course_instructors)})
+@login_required(login_url="astros:login")
+def course_info(request, course_id):
     try:
-        student = get_object_or_404(Student, pk=request.user.id)
-        if Enrollment.objects.filter(student=student, course=course).exists():
-            is_student_list = 1 
-        else: is_student_list = 0 
-
-        context = {
-            'course': course,
-            'course_info':course_infos_html_content,
-            "is_course_stud":  is_student_list,
-            "is_student": True
-        }
-        return render(request, 'astros/course_info.html', context)
+        course = Course.objects.get(pk=course_id)
+    except Course.DoesNotExist:
+        return HttpResponseForbidden('COURSE DOES NOT EXIST')
     
+    try:
+        student = Student.objects.get(pk=request.user.id)
     except Student.DoesNotExist:
         return HttpResponseForbidden('STUDENT PROFILE DOES NOT EXIST')
-       
+
+    course_infos, created = CourseInfo.objects.get_or_create(course=course)
+    if created:
+        course_infos.save()
+
+    def markdown_convert(field):
+        return markdown(getattr(course_infos, field))
+
+    course_infos_html_content = {
+        'about_course': markdown_convert('about_course'),
+        'course_skills': markdown_convert('course_skills'),
+        'course_plan': markdown_convert('course_plan'),
+        'course_instructors': markdown_convert('course_instructors'),
+    }
+    is_student_list = Enrollment.objects.filter(student=student, course=course).exists()
+
+    context = {
+        'course': course,
+        'course_info': course_infos_html_content,
+        'is_course_stud': is_student_list,
+        'is_student': True,
+    }
+
+    return render(request, 'astros/course_info.html', context)

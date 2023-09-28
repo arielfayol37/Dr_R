@@ -20,7 +20,7 @@
 </form>
     <br/>
     <br/>
-    <h4>{{assignment.course.name}}: {{assignment.name}}</h4><hr/>
+    <h4 class="suggestion" style="font-size: large;">{{assignment.course.name}} - {{assignment.name}}</h4><hr/>
     <div>
     {% if not assignment.is_assigned %}
         
@@ -30,7 +30,7 @@
     <button class="btn edit-btn co due_date-btn"  data-assignment-id="{{assignment.id}}">Change Due Date</button>
         <div  class="due-date-div" style="display: none" >
             <input type="date"  class="input-new-due-date-field">
-            <input type="button" class="save-new-due-date-field" value="OK">
+            <input type="button" class="save-new-due-date-field btn btn-outline-info" value="OK">
         </div>
     </div>
 

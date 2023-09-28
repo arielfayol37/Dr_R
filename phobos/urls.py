@@ -45,7 +45,7 @@ urlpatterns = [
      path('courses/<int:course_id>/display_enrollment_codes',views.display_codes, name='display_codes'),
      path('courses/<int:course_id>/manage_enrollment_codes', views.manage_enrollment_codes, name='manage_enrollment_codes'),
      path('courses/<int:course_id>/manage_course_info', views.manage_course_info, name='manage_course_info'),
-     path('courses/<int:course_id>/<str:categori>/save_course_info', views.save_course_info, name='save_course_info'),
+     path('courses/<int:course_id>/save_course_info', views.save_course_info, name='save_course_info'),
 
          path('courses/<int:course_id>/assignments/<int:assignment_id>/<str:new_date>/edit_assignment_due_date', \
          views.edit_assignment_due_date, name='assignment_due_date'),
