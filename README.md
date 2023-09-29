@@ -47,6 +47,7 @@ python manage.py migrate
 python manage.py runserver
 ```
 Then copy and paste the url from the terminal to your browser.
+
 8. Credentials:
   If you want to test the app with some prefilled data,
   use the following for instructor login
