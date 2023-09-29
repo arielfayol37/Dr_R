@@ -174,9 +174,13 @@ def assign_assignment(request, assignment_id, course_id=None):
         for student in students:
             assignment_student, created = AssignmentStudent.objects.get_or_create(assignment=assignment, student=student)
             for question in assignment.questions.all():
-                    quest = QuestionStudent.objects.create(question=question, student=student)           # ASSINGING EVERY QUESTION IN THE ASSIGNMENT TO STUDENTS
-            if created:
-                assignment_student.save()
+                    # ASSINGING EVERY QUESTION IN THE ASSIGNMENT TO STUDENTS
+                    # If QuestionStudent already exists, we delete it (just in case).
+                    quest, created = QuestionStudent.objects.get_or_create(question=question, student=student)
+                    if not created:
+                        quest.delete()
+                        quest = QuestionStudent.objects.create(question=question, student=student)
+                    quest.save()
         assignment.is_assigned = True
         assignment.save()
         return JsonResponse({
