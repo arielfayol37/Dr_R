@@ -245,7 +245,7 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
 
                 if correct:
                     # Deduct points based on attempts, but ensure it doesn't go negative
-                    attempt.num_points = max(0, question.num_points - (question.deduct_per_attempt * max(0, question_student.get_num_attempts()-1)))
+                    attempt.num_points = max(0, question.num_points * (1 - (question.deduct_per_attempt * question.num_points * max(0, question_student.get_num_attempts()-1))))
                     question_student.success = True
                     attempt.success = True
                 question_student.save()  # Save the changes to the QuestionStudent instance
@@ -285,7 +285,7 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                     s1, s2 = set(submitted_answer), set(answers)
                     if s1 == s2:
                         correct = True
-                        attempt.num_points = max(0, question.num_points * (1 - (question.deduct_per_attempt * question_student.get_num_attempts())))
+                        attempt.num_points = max(0, question.num_points * (1 - (question.deduct_per_attempt * question.num_points * max(0, question_student.get_num_attempts()-1))))
                         question_student.success = True
                         attempt.success = True
                 question_student.save()

@@ -412,6 +412,7 @@ div.c-text {
   color:red !important;
   box-shadow: 0px 0px 10px #cbced1 !important;
 }
+
 .var-info-div {
   display: flex;
   flex-direction: column;

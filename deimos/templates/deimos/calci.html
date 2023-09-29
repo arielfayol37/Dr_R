@@ -12,9 +12,17 @@
             <div class="calculator">
 
             
-            <div class="display">
-                <input id="screen" type="text" placeholder="0" name="answer">
-            </div>
+                <div class="display calc-display-div">
+                    <div class="preface-section">
+                        <span class="preface-content">{{preface}}</span> <span style="margin-right: 5px;">  =   </span>
+                    </div>
+                    <input id="screen" type="text" placeholder="0" name="answer"/>
+                    <div class="units-section">
+                        {% if show_units %}
+                            <input class="units-screen" type="text" placeholder="units" name="answer_unit"/>
+                        {% endif %}
+                    </div>
+                </div>
 
             <div class="btns">
                 <div class="row">

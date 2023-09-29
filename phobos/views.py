@@ -204,6 +204,7 @@ def create_question(request, assignment_id=None, type_int=None):
         sub_topic = SubTopic.objects.get(name=request.POST.get('sub_topic'))
         text = request.POST.get('question_text')
         answer_unit = request.POST.get('answer_unit')
+        answer_preface = request.POST.get('answer_preface')
         num_points = request.POST.get('num_points')
         if answer_unit == '':
             answer_unit = None
@@ -306,14 +307,17 @@ def create_question(request, assignment_id=None, type_int=None):
                     answer.save() # Needed here.                
         elif type_int == 0:
             new_question.answer_type = QuestionChoices.STRUCTURAL_EXPRESSION
-            answer = ExpressionAnswer(question=new_question, content=question_answer, answer_unit=answer_unit)
+            answer = ExpressionAnswer(question=new_question, content=question_answer,\
+                                       answer_unit=answer_unit, preface=answer_preface)
         elif type_int == 1:
             if not vars_dict:
                 new_question.answer_type = QuestionChoices.STRUCTURAL_FLOAT
-                answer = FloatAnswer(question=new_question, content=question_answer, answer_unit=answer_unit)
+                answer = FloatAnswer(question=new_question, content=question_answer, \
+                                     answer_unit=answer_unit, preface=answer_preface)
             else:
                 new_question.answer_type = QuestionChoices.STRUCTURAL_VARIABLE_FLOAT
-                answer = VariableFloatAnswer(question=new_question, content=question_answer, answer_unit=answer_unit)
+                answer = VariableFloatAnswer(question=new_question, content=question_answer,\
+                                              answer_unit=answer_unit, preface=answer_preface)
         elif type_int == 2:
             new_question.answer_type = QuestionChoices.STRUCTURAL_LATEX
             answer = LatexAnswer(question=new_question, content=question_answer)
@@ -408,6 +412,8 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
             answers.extend([question.variable_float_answer])
         else:
             return HttpResponse('Something went wrong.')
+        answers[0].preface = '' if not answers[0].preface else answers[0].preface # This is to display well in the front end.
+        answers[0].answer_unit = '' if not answers[0].preface else answers[0].answer_unit
     course = Course.objects.get(pk = course_id)
     if course.professors.filter(pk=request.user.pk).exists() or course.name=='Question Bank':
        show_answer = True

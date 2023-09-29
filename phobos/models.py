@@ -470,9 +470,10 @@ class Variable(models.Model):
         """
         Creates num number of random variable instances.
         """
+        num = min(5, num) # making sure num is never greater than 5
         intervals = self.intervals.all()
         if intervals:
-            for _ in range(num):
+            for _ in range(min(num, self.get_num_possible_values())):
                 bounds = random.choice(intervals)
                 lower_bound = bounds.lower_bound
                 upper_bound = bounds.upper_bound
@@ -493,6 +494,16 @@ class Variable(models.Model):
         if not self.instances_created:
             self.create_instances()
         return random.choice(self.instances.all())
+    def get_num_possible_values(self):
+        if self.step_size != 0 and self.step_size is not None:
+            intervals_counts = []
+            for interval in self.intervals.all():
+                num_possible_values = (interval.upper_bound-interval.lower_bound)//self.step_size
+                intervals_counts.append(num_possible_values)
+            return sum(intervals_counts)
+        else:
+            return 1000 # Just a replacement for "infinity"
+        
     
 class VariableInstance(models.Model):
     """
