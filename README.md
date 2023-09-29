@@ -3,42 +3,6 @@ Web platform for Physics Assigments System.
 
 This is the README file for the Dr_R web application built using Django. The application is designed to provide different functionalities for students (Deimos), instructors (Phobos), and general users (Astros).
 
-## Impressive Features
-- Algebraic expressions symbolic comparisons
-- Semantic search engine
-- Ability to take Notes for any question and come back to the later
-- Supports latex input for equations
-- Randomized variables for both multiple choice and structural questions
-- High precision calculator
-- Supports images in question body and mcq input
-- Coming soon: customized automated practice tests
-### Deimos (Student Interface)
-
-- Students can access various courses.
-- View course details, including name, description, subject, number of students, and difficulty level.
-- Enroll in courses.
-- View assignments and questions.
-- Submit answers to questions.
-- Receive hints for questions.
-- View their progress and grades.
-
-### Phobos (Instructor Interface)
-
-- Instructors can manage courses.
-- Create, edit, and delete courses.
-- Assign professors to courses.
-- Add topics and subtopics to courses.
-- Create assignments with different categories (quiz, homework, practice test).
-- Add questions to assignments, with various answer types (float, variable float, expression, etc.).
-- Set due dates for assignments.
-- Assign weights to questions for grading purposes.
-- View student progress and grades.
-
-### Astros (General Interface)
-
-- General users can browse courses and their details.
-- No login is required to access these features.
-
 ## Installation
 
 1. Clone the repository:
@@ -82,6 +46,7 @@ python manage.py migrate
 ```bash
 python manage.py runserver
 ```
+Then copy and paste the url from the terminal to your browser.
 8. Credentials:
   If you want to test the app with some prefilled data,
   use the following for instructor login
@@ -92,8 +57,44 @@ use the following for student login
 ```bash
 email:arielfayol37@gmail.com password:la
 ```
-Then copy and paste the url from the terminal to your browser.
 
+
+
+## Impressive Features
+- Algebraic expressions symbolic comparisons
+- Semantic search engine
+- Ability to take Notes for any question and come back to the later
+- Supports latex input for equations
+- Randomized variables for both multiple choice and structural questions
+- High precision calculator
+- Supports images in question body and mcq input
+- Coming soon: customized automated practice tests
+### Deimos (Student Interface)
+
+- Students can access various courses.
+- View course details, including name, description, subject, number of students, and difficulty level.
+- Enroll in courses.
+- View assignments and questions.
+- Submit answers to questions.
+- Receive hints for questions.
+- View their progress and grades.
+
+### Phobos (Instructor Interface)
+
+- Instructors can manage courses.
+- Create, edit, and delete courses.
+- Assign professors to courses.
+- Add topics and subtopics to courses.
+- Create assignments with different categories (quiz, homework, practice test).
+- Add questions to assignments, with various answer types (float, variable float, expression, etc.).
+- Set due dates for assignments.
+- Assign weights to questions for grading purposes.
+- View student progress and grades.
+
+### Astros (General Interface)
+
+- General users can browse courses and their details.
+- No login is required to access these features.
 ## Contributing
 
 Contributions are welcome! If you'd like to contribute to the project, please follow these steps:
