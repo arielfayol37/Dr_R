@@ -92,7 +92,11 @@
               {% endfor %}
               <input type="submit" class="btn btn-success exempt" id="submit-btn" value="Submit Answer">
               <div class="formatted-answer"></div>
-              {% include 'deimos/calci.html' %}
+              {% if answer.answer_unit %}
+                {% include 'deimos/calci.html' with preface=answer.preface show_units=True %}
+              {% else %}
+                {% include 'deimos/calci.html' with preface=answer.preface %}
+              {% endif %}
               <br/>
         {% endif %}
   

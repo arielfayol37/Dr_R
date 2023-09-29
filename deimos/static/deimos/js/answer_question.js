@@ -330,6 +330,22 @@ MathJax.typesetPromise().then(() => {
     })
 })
 
+const prefaces = document.querySelectorAll('.preface-content');
+if (prefaces !=null){
+
+  MathJax.typesetPromise().then(() => {
+
+    prefaces.forEach((preface) => {
+        try{
+            preface.innerHTML = MathJax.tex2chtml(preface.innerHTML).innerHTML;
+            MathJax.typesetPromise();
+        } catch(error){
+            console.log(error)
+        }
+    })
+  })
+}
+
 
 function parseLatex(text) {
   const latexPattern = /#{(.*?)}#/g;

@@ -245,10 +245,10 @@ document.addEventListener('DOMContentLoaded', () => {
         mcqOptionBtnsDiv.style.display = 'none';
         mcqInputDiv.style.display = 'none';
         mcqImagePreview.style.display = 'none';
-        calculatorDiv.style.display = 'block';
+        calculatorDiv.style.display = 'flex';
         answerFieldsDiv.innerHTML = '';
         screen.value = ''
-        screen.placeholder = 'Algebraic expression';
+        screen.placeholder = 'Expression';
         formattedAnswerDiv.innerHTML = ''
 
         answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
@@ -269,10 +269,10 @@ document.addEventListener('DOMContentLoaded', () => {
         mcqOptionBtnsDiv.style.display = 'none';
         mcqInputDiv.style.display = 'none';
         mcqImagePreview.style.display = 'none';
-        calculatorDiv.style.display = 'block';
+        calculatorDiv.style.display = 'flex';
         answerFieldsDiv.innerHTML = '';
         screen.value = ''
-        screen.placeholder = 'Enter real number';
+        screen.placeholder = 'Real number';
         formattedAnswerDiv.innerHTML = ''
 
         answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
@@ -978,6 +978,31 @@ function checkTopicAndSubtopic() {
     return boundsArray;
 }
   
+
+
+
+
+
+
+
+// ---------------------------------PREFACE AND UNITS ---------------------------//
+
+const prefaceUnitsBtns = document.querySelectorAll('.plus-sign')
+
+prefaceUnitsBtns.forEach((btn)=>{
+    btn.addEventListener('click', ()=>{
+        if(!btn.classList.contains('open')){ // closed state
+            btn.parentNode.querySelector('input').style.display = 'block';
+            btn.textContent = '-'
+            btn.classList.add('open');
+        }else { // open state
+            btn.parentNode.querySelector('input').style.display = 'none';
+            btn.textContent = '+'
+            btn.classList.remove('open');
+        }
+
+    })
+})
 
 });
 
