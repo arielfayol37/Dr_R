@@ -1,5 +1,5 @@
 const screen=document.querySelector('#screen');
-var btn=document.querySelectorAll('.btn');
+var btn=document.querySelectorAll('.calc-btn');
 var previousActiveElement = document.activeElement;
 var trigMode = 'deg'; //deg by default
 const degModeBtn = document.querySelector('#deg-mode');

@@ -499,7 +499,7 @@ class Variable(models.Model):
             intervals_counts = []
             for interval in self.intervals.all():
                 num_possible_values = (interval.upper_bound-interval.lower_bound)//self.step_size
-                intervals_counts.append(num_possible_values)
+                intervals_counts.append(int(num_possible_values))
             return sum(intervals_counts)
         else:
             return 1000 # Just a replacement for "infinity"
