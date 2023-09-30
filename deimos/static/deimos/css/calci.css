@@ -1,17 +1,5 @@
-/*
-body 
-{
-    padding: 0;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    user-select: none;
-    background: #ecf0f3;
-}
-*/
-.container 
+
+#calc-container 
 {   
     padding: 20px;
     border-radius: 8px;
@@ -23,6 +11,13 @@ body
     justify-content: center;
  
 }
+#calc-container .calculator{
+    display: flex;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
 
 .content 
 {
@@ -54,11 +49,16 @@ body
                  inset -5px -5px 8px #fff;
     background: #fff;
 }
-
-.display #screen 
+.display {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+.display #screen, .display .units-screen, .display .preface-screen 
 {
     margin-bottom: .5em;
-    width: 100%;
+    width: 60%;
     height: 70px;
     font-size: 25px;
     outline: none;
@@ -69,6 +69,15 @@ body
     border-radius: 6px;
     box-shadow: inset 8px 8px 8px #cbced1,
                 inset -8px -8px 8px #ffffff;
+}
+.display .units-screen {
+    width:90%;
+    margin:1%;
+}
+
+.display .preface-section {
+    width: 20%;
+    margin: 1%;
 }
 
 #eval 
@@ -139,45 +148,4 @@ body
 }
 .disabled {
     opacity: 0.5;
-}
-
-/*================= Heading Css =================*/
-h2
-
-{
-    font-size: 40px;
-    position: relative;  
-    bottom: 1em; 
-    margin-left: 1.2em;
-    font-family: sans-serif;
-    color: #fff;
-    text-transform: uppercase;
-    text-shadow: 1px 1px 1px #d1d9e6,
-                    1px 1px 2px #d1d9e6,
-                    3px 3px 3px #d1d9e6,
-                    4px 4px 4px #d1d9e6,
-                    5px 5px 5px #d1d9e6, 
-                    6px 6px 6px #d1d9e6,
-                    7px 7px 7px #d1d9e6,
-                    8px 8px 8px #d1d9e6;
-                    letter-spacing: 6px;
-}
-
-h2 span
-{
-color: #33cc33;
-font-size: 45px;
-text-shadow: 1px 1px 1px #d1d9e6,
-                1px 1px 2px #d1d9e6,
-                3px 3px 3px #d1d9e6,
-                4px 4px 4px #d1d9e6,
-                5px 5px 5px #d1d9e6, 
-                6px 6px 6px #d1d9e6 ;    
-}
-
-h2 .fa
-{
-    position: absolute; 
-    top: 1.5em;
-    color: #33ccff;
 }

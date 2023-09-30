@@ -17,6 +17,12 @@
 
     </ul>
   </div>
+  <div class="note-pencil">
+    <li style="--i:0.1s; width:30px; height:30px">
+      <ion-icon name="pencil-outline"></ion-icon>
+    </li>
+  </div>
+
 
     <h3>Question {{question.number}}</h3>
     <div class="page-container" id="answer-question">
@@ -44,7 +50,7 @@
         </div>
         <div class="question-images">
           {% for question_image in question.images.all %}
-              <div class="formatted-answer" id="{{question_image.image.url}}">
+              <div class="formatted-answer-option" id="{{question_image.image.url}}">
                   <p>{{question_image.label}}</p>
                   <img src="{{question_image.image.url}}" class="question-image image-in-formatted" alt="{{question_image.label}}"/>
               </div>
@@ -55,7 +61,7 @@
               <div class="inputed-mcq-answers">
                 {% for answer, is_latex, question_type in answers_is_latex_question_type %}
                   <div class="mcq-option-answer">
-                    <div class="formatted-answer">
+                    <div class="formatted-answer-option">
                       {% if is_latex %}
                           <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
                       {% else %}
@@ -92,16 +98,18 @@
               {% endfor %}
               <input type="submit" class="btn btn-success exempt" id="submit-btn" value="Submit Answer">
               <div class="formatted-answer"></div>
-              {% include 'deimos/calci.html' %}
+              {% if answer.answer_unit %}
+                {% include 'deimos/calci.html' with preface=answer.preface show_units=True %}
+              {% else %}
+                {% include 'deimos/calci.html' with preface=answer.preface %}
+              {% endif %}
               <br/>
         {% endif %}
   
       
       <br/>
       </form>
-
-
-
+      
 
       <div class="navigation">
         <ul>
@@ -123,7 +131,44 @@
 
   
     </div>
-  
+    <div class="note-section hide">
+      <span id="close-x-note">X</span><br/>
+      <button type="button" class="btn btn-outline-success note-edit-btn" style="position:absolute; right:2%;"> {{note_comment}} </button><br/><br/>
+      <div class="suggestion note-last-edited">Last edited on {{note.last_edited}}</div>
+      <div class="previous-notes">
+        <div class="note-content formatted-answer-option">
+          {{note_md|safe}}
+        </div>
+        <textarea placeholder="Enter notes (markdown supported)" class="field-style note-textarea" style="display: none;">{{note.content}}</textarea>
+
+        <div class="main-question-image-preview">
+          {% for image_object in note.images.all %}
+              {% if image_object.image %}
+              <div class="question-image ">
+                <div class="formatted-answer-option">
+                  <img src="{{image_object.image.url}}" class="image-in-formatted"/>
+                  <input type="hidden" class="note-image-pk" value="{{image_object.pk}}">
+                </div>
+                <div class="add-delete-btns" style="display:none;">
+                  <button  type="button" class="btn btn-danger img-delete exempt">delete</button>
+                </div>
+              </div>
+              {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      <div class="edit-handling-section" style="display: none;">
+        <div class="uploaded-question-preview"></div><br/>
+        <button type="button" class="main-question-add-image-btn btn btn-light open">Upload Image</button>
+        <div class="question-image-upload-section" style="display: none;">
+          <input type="file" accept="image/*" class="main-question-image-input">
+          <button type="button" class="btn btn-success question-image-add">add</button>
+        </div>
+      <br/><br/>
+      <button type="button" class="btn btn-outline-success save-note-btn"> Save </button>
+      </div>
+
+    </div>
 
 
 {% endblock %}
@@ -140,7 +185,6 @@
 <script src="{% static 'deimos/js/question_nav.js' %}"></script>
 <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
 <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
-<script src="{% static 'deimos/js/action_menu.js' %}"></script>
 
 
 

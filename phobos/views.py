@@ -15,14 +15,18 @@ from django.contrib import messages
 from .forms import *
 from .models import *
 from django.shortcuts import get_object_or_404
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+from django.db import transaction
 from django.middleware import csrf
 from django.utils.timesince import timesince
-from deimos.models import AssignmentStudent, Student, QuestionStudent
+from django.utils import timezone
+from datetime import datetime
+from deimos.models import AssignmentStudent, Student, QuestionStudent, Enrollment
 from datetime import date
 from sklearn.metrics.pairwise import cosine_similarity
 from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
 import heapq
-
+from markdown2 import markdown
 
 # Create your views here.
 @login_required(login_url='astros:login') 
@@ -135,30 +139,55 @@ def create_course(request):
         form = CourseForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
-            messages.info(request=request, message='Course created successfully!')
             return redirect('phobos:index')  
     else:
         form = CourseForm()
     return render(request, 'phobos/create_course.html', {'form': form})
 
+
+
+
 @login_required(login_url='astros:login')    
-def create_assignment(request, course_id=None):
-    # Making sure the request is done by a professor.
-    professor = get_object_or_404(Professor, pk=request.user.id)
+def create_assignment(request, course_id):
+    course = get_object_or_404(Course, pk=course_id)
     if request.method == 'POST':
         form = AssignmentForm(request.POST)
         if form.is_valid():
-            assignment = form.save()
-            messages.info(request=request, message='Assignment created successfully!')
-            return redirect('phobos:course_management', course_id=assignment.course.id)  
+            assignment = form.save(commit=False)  # Don't save to DB yet
+            assignment.course = course  # Set the course field
+            assignment.save()  # Now save to DB
+            return redirect('phobos:course_management', course_id=assignment.course.id)
     else:
-        if course_id is not None:
-            course = Course.objects.get(pk = course_id)
-            form = AssignmentForm({'course': course})
-        else:
-            form = AssignmentForm()
+        form = AssignmentForm(course=course)
+
     return render(request, 'phobos/create_assignment.html', {'form': form})
 
+@login_required(login_url='astros:login')
+@csrf_exempt
+def assign_assignment(request, assignment_id, course_id=None):
+    assignment = get_object_or_404(Assignment, pk = assignment_id)
+    course = assignment.course
+    if not course.professors.filter(pk=request.user.pk).exists():
+        return JsonResponse({'message': 'You are not authorized to manage this Assignment.', 'success':False})
+    if request.method == 'POST':
+        students = Student.objects.filter(enrollments__course=course)
+        for student in students:
+            assignment_student, created = AssignmentStudent.objects.get_or_create(assignment=assignment, student=student)
+            for question in assignment.questions.all():
+                    # ASSINGING EVERY QUESTION IN THE ASSIGNMENT TO STUDENTS
+                    # If QuestionStudent already exists, we delete it (just in case).
+                    quest, created = QuestionStudent.objects.get_or_create(question=question, student=student)
+                    if not created:
+                        quest.delete()
+                        quest = QuestionStudent.objects.create(question=question, student=student)
+                    quest.save()
+        assignment.is_assigned = True
+        assignment.save()
+        return JsonResponse({
+            'message':'Assignment assigned successfully.', 'success':True
+        })
+    return JsonResponse({'message':'Something went wrong.','success':False})
+@transaction.atomic
 @login_required(login_url='astros:login')
 def create_question(request, assignment_id=None, type_int=None):
     """
@@ -174,6 +203,11 @@ def create_question(request, assignment_id=None, type_int=None):
         topic = Topic.objects.get(name=request.POST.get('topic'))
         sub_topic = SubTopic.objects.get(name=request.POST.get('sub_topic'))
         text = request.POST.get('question_text')
+        answer_unit = request.POST.get('answer_unit')
+        answer_preface = request.POST.get('answer_preface')
+        num_points = request.POST.get('num_points')
+        if answer_unit == '':
+            answer_unit = None
         if type_int != 3 and type_int != 4:
             question_answer = request.POST.get('answer')
             if len(text)==0 or len(question_answer) == 0:
@@ -186,13 +220,14 @@ def create_question(request, assignment_id=None, type_int=None):
             text = text,
             topic = topic,
             sub_topic = sub_topic,
-            assignment = assignment
+            assignment = assignment,
+            num_points = num_points if num_points else 10
         )
-        new_question.save() # Needed here. Before saving answer'
+        new_question.save() # Needed here. Before saving answer
         vars_dict = {}
         for key, value in request.POST.items():
             if key.startswith('domain'):
-                _, bound_type, var_symbol, bound_number = key.split('_')
+                _, bound_type, var_symbol, bound_number = key.split('#')
                 bound_value = value
                 if var_symbol not in vars_dict:
                     vars_dict[var_symbol] = {}
@@ -209,7 +244,9 @@ def create_question(request, assignment_id=None, type_int=None):
                 question_image = QuestionImage(question=new_question, image=image, label=label)
                 question_image.save()
         for var_symbol in vars_dict:
-            new_variable = Variable(question=new_question, symbol=var_symbol)
+            step_size = request.POST[f'step#size#{var_symbol}']
+            is_integer = not bool(int(request.POST[f'var#type#{var_symbol}'])) # Front End will return 0 for integer. 
+            new_variable = Variable(question=new_question, symbol=var_symbol, step_size=step_size, is_integer=is_integer)
             new_variable.save()
             assert len(vars_dict[var_symbol]['lb']) == len(vars_dict[var_symbol]['ub'])
             for bound_index in range(len(vars_dict[var_symbol]['lb'])):
@@ -270,14 +307,17 @@ def create_question(request, assignment_id=None, type_int=None):
                     answer.save() # Needed here.                
         elif type_int == 0:
             new_question.answer_type = QuestionChoices.STRUCTURAL_EXPRESSION
-            answer = ExpressionAnswer(question=new_question, content=question_answer)
+            answer = ExpressionAnswer(question=new_question, content=question_answer,\
+                                       answer_unit=answer_unit, preface=answer_preface)
         elif type_int == 1:
             if not vars_dict:
                 new_question.answer_type = QuestionChoices.STRUCTURAL_FLOAT
-                answer = FloatAnswer(question=new_question, content=question_answer)
+                answer = FloatAnswer(question=new_question, content=question_answer, \
+                                     answer_unit=answer_unit, preface=answer_preface)
             else:
                 new_question.answer_type = QuestionChoices.STRUCTURAL_VARIABLE_FLOAT
-                answer = VariableFloatAnswer(question=new_question, content=question_answer)
+                answer = VariableFloatAnswer(question=new_question, content=question_answer,\
+                                              answer_unit=answer_unit, preface=answer_preface)
         elif type_int == 2:
             new_question.answer_type = QuestionChoices.STRUCTURAL_LATEX
             answer = LatexAnswer(question=new_question, content=question_answer)
@@ -305,12 +345,30 @@ def create_question(request, assignment_id=None, type_int=None):
         'assignment_id': assignment_id,
     })
 
+# NOTE: The function below was to be useD for a better front end design of the export question functionality.
+# The function was to enable the prof select a course then select an assignment in that course.
+#this function raises an ATTRIBUTE ERROR. WHY ???  
+# the function work, fix the bug but too late. Might be useful some other time.
+
+# def get_assignments(request, question_id, exp_course_id, assignment_id=None, course_id=None):    # #for Export question implementation
+#     course=[] #Course.objects.filter(pk = exp_course_id)
+#     assignments=[] #Assignment.objects.filter(course= course[0])
+#     content=[]
+#     for assignment in assignments:
+#         content.append({'assignment_id':assignment.pk,'assignment_name':assignment.name})
+#     return JsonResponse("{'assignments':content}")
 
 
 @login_required(login_url='astros:login')
 def question_view(request, question_id, assignment_id=None, course_id=None):
     # Making sure the request is done by a professor.
     professor = get_object_or_404(Professor, pk=request.user.id)
+    assignments=[]                              # actual assignment for Export question implementation
+    course= Course.objects.get(pk= course_id)                  #for Export question implementation
+    courses= Course.objects.filter( professors=professor)
+    for course in courses:
+        assignments.append((course.id,Assignment.objects.filter(course = course)))                  #for front-end Export question implementation
+        
     question = Question.objects.get(pk=question_id)
     question.text = replace_links_with_html(question.text)
     # replace_image_labels_with_links() should come after replace_links_with_html()
@@ -340,19 +398,21 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
         is_latex.extend([1 for _ in range(la.count())])
     else:
         if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
-            answers.extend(question.expression_answers.all())
+            answers.extend([question.expression_answer])
         elif question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
-            answers.extend(question.text_answers.all())
+            answers.extend([question.text_answer])
             is_fr = True
         elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
-            answers.extend(question.float_answers.all())
+            answers.extend([question.float_answer])
         elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
-            answers.extend(question.latex_answers.all())
-            is_latex.extend([1 for _ in range(question.latex_answers.all().count())])
+            answers.extend([question.latex_answer])
+            is_latex.extend([1])
         elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
-            answers.extend(question.variable_float_answers.all())
+            answers.extend([question.variable_float_answer])
         else:
             return HttpResponse('Something went wrong.')
+        answers[0].preface = '' if not answers[0].preface else answers[0].preface + "\quad = \quad"# This is to display well in the front end.
+        answers[0].answer_unit = '' if not answers[0].preface else answers[0].answer_unit
     course = Course.objects.get(pk = course_id)
     if course.professors.filter(pk=request.user.pk).exists() or course.name=='Question Bank':
        show_answer = True
@@ -360,6 +420,8 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
         show_answer = False
     return render(request, 'phobos/question_view.html',
                   {'question':question,\
+                   'assignments':assignments,\
+                   'courses':zip(range(len(courses)),courses),
                       'show_answer':show_answer,\
                      'is_mcq':is_mcq, 'is_fr':is_fr,'answers': answers,\
                          'answers_is_latex': zip(answers, is_latex) if is_latex else None})
@@ -462,7 +524,7 @@ def student_profile(request,course_id,student_id):
         grades.append(grade)
     
     return render(request,'phobos/student_profile.html',\
-                {'student_grade': zip(assignments,grades),\
+                {'student_grade': zip(assignments, grades),\
                  'student':student, 'course':course})
 
 def student_search(request,course_id):
@@ -483,16 +545,17 @@ def get_questions(request, student_id, assignment_id, course_id=None):
     assignment= Assignment.objects.get(id=assignment_id)
     questions= Question.objects.filter(assignment= assignment ) 
     student= Student.objects.get(id=student_id)
-    question_details=[{'name':assignment.name,'assignment_id':assignment_id}]
+    assignment_student, created = AssignmentStudent.objects.get_or_create(assignment=assignment, student=student)
+    question_details=[{'name':assignment.name,'assignment_id':assignment_id,'Due_date':str(assignment_student.due_date).split(' ')[0]}]
     for question in questions:
         try:
             question_student = QuestionStudent.objects.get(student= student, question=question)
             question_details.append({'Question_number':'Question ' + question.number,\
-                                 'score':question_student.get_num_points(), \
+                                 'score':f"{question_student.get_num_points()} / {question.num_points}", \
                                     'num_attempts': question_student.get_num_attempts()})
         except QuestionStudent.DoesNotExist:
-            question_details.append({'Question_number':'Question' + question.number,\
-                                     'score':"0",'num_attempts': "0"})    
+            question_details.append({'Question_number':'Question ' + question.number,\
+                                     'score':f"0 / {question.num_points}",'num_attempts': "0"})    
         
     question_details= json.dumps(question_details)
     return HttpResponse(question_details)
@@ -536,27 +599,210 @@ def search_question(request):
 def enrollmentCode(request, course_id, expiring_date):
     # Making sure the request is done by a professor.
     professor = get_object_or_404(Professor, pk=request.user.id)
+    course= Course.objects.get(pk = course_id)
+    if not course.professors.filter(pk=request.user.pk).exists():
+        return JsonResponse({'message': 'You are not allowed to ceate enrollment codes for this course.'})
     min=100000000000
     max=999999999999
-    course= Course.objects.get(pk = course_id)
     enrollment_code = EnrollmentCode(course = course, 
                                      code= random.randint(min,max),
                                       expiring_date= expiring_date)
     enrollment_code.save()
-    # print(EnrollmentCode.objects.all())
-    # print(EnrollmentCode.objects.none())
     return JsonResponse({'code': enrollment_code.code,
-                         'ex_date':enrollment_code.expiring_date})
+                         'ex_date':enrollment_code.expiring_date,
+                         'message':'enrollment code created successfully'})
     
 def display_codes(request,course_id):
     if request.method == "GET":
-         course = Course.objects.get(pk= course_id)
-         codes= EnrollmentCode.objects.filter(course =  course )
-         # print(codes,codes == EnrollmentCode.objects.none())
-         usable_codes =[]
-         for code in codes:
-                 if code.expiring_date > date.today():
-                     usable_codes.append({'code':code.code, 
-                                         'ex_date':code.expiring_date})
+        course = Course.objects.get(pk= course_id)
+        codes= EnrollmentCode.objects.filter(course =  course )
+        usable_codes =[]
+        for code in codes:
+            if code.expiring_date > date.today():
+                usable_codes.append({'code':code.code, 
+                                    'ex_date':code.expiring_date})
+            else:
+                code.delete()
 
-         return JsonResponse({'codes':usable_codes})    
+        return JsonResponse({'codes':usable_codes})    
+
+@login_required(login_url='astros:login')
+def manage_course_info(request,course_id):
+    try:
+        course = Course.objects.get(pk=course_id)
+    except Course.DoesNotExist:
+        return HttpResponseForbidden('COURSE DOES NOT EXIST')
+    
+    if not course.professors.filter(pk = request.user.pk).exists():
+        return HttpResponseForbidden('YOU ARE NOT AUTHORIZED TO MANAGE THIS COURSE')
+    course_info, created = CourseInfo.objects.get_or_create(course=course)
+    
+    def markdown_convert(field):
+        return markdown(getattr(course_info, field))
+
+    course_info_markdown_html= {
+        'about_course': markdown_convert('about_course'),
+        'course_skills': markdown_convert('course_skills'),
+        'course_plan': markdown_convert('course_plan'),
+        'course_instructors': markdown_convert('course_instructors'),
+    }
+    return render(request,'phobos/course_info_management.html',{'markdown':course_info_markdown_html ,\
+                                                                 'course': course, 'course_info':course_info})
+
+@login_required(login_url='astros:login')
+@csrf_exempt
+def save_course_info(request, course_id):
+ course = Course.objects.get(pk= course_id) 
+ if request.method == "POST":
+    data = json.loads(request.body.decode("utf-8"))
+    info = data.get('text_info')
+    category = data.get('category')
+    course_info, created = CourseInfo.objects.get_or_create(course=course)
+
+    if category == 'about_course':
+        course_info.about_course = info
+    elif category == 'course_skills':
+        course_info.course_skills = info
+    elif category == 'course_plan':
+        course_info.course_plan = info
+    elif category == 'course_instructors':
+        course_info.course_instructors = info
+    else:
+        return JsonResponse({'error': 'Invalid category'}, status=400)
+
+    course_info.save(update_fields=[category])
+    markdown_content = markdown(info)
+    return JsonResponse({'message': f'{category} updated successfully', 'md':markdown_content})
+ else:
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+def copy_question_images(old_question, new_question):
+    question_images = QuestionImage.objects.filter(question=old_question)
+    for question_image in question_images:
+        qi = QuestionImage.objects.create(question=new_question, image=question_image.image, label=question_image.label)
+
+def copy_variables(old_question, new_question):
+    for variable in Variable.objects.filter(question=old_question):
+        new_variable = Variable.objects.create(
+            question=new_question,
+            symbol=variable.symbol
+        )
+        for var_interval in VariableInterval.objects.filter(variable=variable):
+            vi = VariableInterval.objects.create(
+                variable=new_variable,
+                lower_bound=var_interval.lower_bound,
+                upper_bound=var_interval.upper_bound
+            )
+        
+
+def copy_answers(old_question, new_question):
+    answer_type_mapping = {
+        QuestionChoices.STRUCTURAL_EXPRESSION: ExpressionAnswer,
+        QuestionChoices.STRUCTURAL_FLOAT: FloatAnswer,
+        QuestionChoices.STRUCTURAL_VARIABLE_FLOAT: VariableFloatAnswer,
+        QuestionChoices.STRUCTURAL_LATEX: LatexAnswer,
+        QuestionChoices.STRUCTURAL_TEXT: TextAnswer,
+        # ... add other mappings for structural questions... if created
+    }
+
+    answer_type_class = answer_type_mapping.get(old_question.answer_type)
+    if answer_type_class:
+        answer = answer_type_class.objects.get(question=old_question)
+        answer_type_class.objects.create(
+            question=new_question,
+            content=answer.content
+        )
+    else:
+        # Handle MCQ types separately as they have multiple possible answers
+        mcq_answer_type_mapping = {
+            QuestionChoices.MCQ_EXPRESSION: MCQExpressionAnswer,
+            QuestionChoices.MCQ_FLOAT: MCQFloatAnswer,
+            QuestionChoices.MCQ_VARIABLE_FLOAT: MCQVariableFloatAnswer,
+            QuestionChoices.MCQ_LATEX: MCQLatexAnswer,
+            QuestionChoices.MCQ_TEXT: MCQTextAnswer,
+            QuestionChoices.MCQ_IMAGE: MCQImageAnswer,
+        }
+        for answer_type, AnswerClass in mcq_answer_type_mapping.items():
+            for answer in AnswerClass.objects.filter(question=old_question):
+                new_answer = AnswerClass(
+                    question=new_question,
+                    content=answer.content,
+                    is_answer=answer.is_answer
+                )
+                if isinstance(new_answer, MCQImageAnswer):
+                    new_answer.image = answer.image
+                    new_answer.label = answer.label
+                
+                new_answer.save()
+
+
+@transaction.atomic
+@login_required(login_url='astros:login')
+def export_question_to(request,question_id,exp_assignment_id,course_id=None,assignment_id=None):
+    try:
+        assignment = get_object_or_404(Assignment, pk=exp_assignment_id)
+        question = get_object_or_404(Question, pk=question_id)
+
+        new_question_data = {
+            'number': assignment.questions.count() + 1,
+            'text': question.text,
+            'topic': question.topic,
+            'sub_topic': question.sub_topic,
+            'assignment': assignment,
+            'answer_type': question.answer_type,
+            'deduct_per_attempt': question.deduct_per_attempt,
+            'max_num_attempts': question.max_num_attempts,
+        }
+
+        new_question = Question.objects.create(**new_question_data)
+        copy_question_images(question, new_question)
+        copy_variables(question, new_question)
+        copy_answers(question, new_question)
+
+        return JsonResponse({'message': 'Export Successful', 'success': True}, status=200)
+    except ObjectDoesNotExist:
+        return JsonResponse({'message': 'Export Failed: Object does not exist','success':False}, status=400)
+    except MultipleObjectsReturned:
+        return JsonResponse({'message': 'Export Failed: Multiple objects returned', 'success': False}, status=400)
+    except Exception as e:
+        return JsonResponse({'message': f'Export Failed: {str(e)}', 'success': False}, status=500)
+
+    
+def change_due_date(assignment, new_date):
+    # Assuming new_date is a string in the format 'YYYY-MM-DD',
+    # convert it to a datetime object.
+    # If new_date is already a datetime object, this step is not necessary.
+    naive_datetime = datetime.strptime(new_date, "%Y-%m-%d")
+    # Now make the datetime object timezone-aware
+    aware_datetime = timezone.make_aware(naive_datetime)
+
+    # Assign the timezone-aware datetime to assignment.due_date and save
+    assignment.due_date = aware_datetime
+    assignment.save()
+
+def edit_assignment_due_date(request,course_id,assignment_id,new_date):
+        assignment= Assignment.objects.get(pk=assignment_id)
+        if not assignment.course.professors.filter(pk=request.user.pk).exists():
+            return JsonResponse({'message': 'You are not allowed to change the due date', 'success':False})
+        change_due_date(assignment,new_date)
+        for assignment_student in AssignmentStudent.objects.filter(assignment= assignment):
+            try:
+                change_due_date(assignment_student,new_date)
+            except:
+                return JsonResponse({'message':'something went wrong','success':False})
+        return JsonResponse({'message':'Due date successfully edited','success':True})
+
+def edit_student_assignment_due_date(request,course_id,assignment_id,new_date,student_id=None):
+            assignment = Assignment.objects.get(pk= assignment_id)
+            student= Student.objects.get(pk= student_id)
+            # If a professor takes time to go extend someone's assignment
+            # then it's worth creating the AssignmentStudent.
+            assignment_student, created = AssignmentStudent.objects.get_or_create(assignment=assignment, student=student)
+            if created:
+                assignment_student.save()
+            try:
+                change_due_date(assignment_student,new_date)
+            except:
+                return JsonResponse({'message':'something went wrong','success':False})
+            return JsonResponse({'message':'Due date successfully edited','success':True})
+

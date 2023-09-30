@@ -6,13 +6,29 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const compareBtn = document.querySelector('.compare-btn');
     const e1Field = document.querySelector('.e1-field');
     const e2Field = document.querySelector('.e2-field');
+    const modeBtn = document.querySelector('.mode-btn');
     const formattedDiv1 = document.querySelector('#e1');
     const formattedDiv2 = document.querySelector('#e2');
     const replacementDict = {
         'π':'pi',
         '√':'sqrt'
     }
-    var e1_toBeCompared, e2_toBeCompared, e1_simplified, e2_simplified, e1_latex, e2_latex;
+    var e1_toBeCompared, e2_toBeCompared, e1_simplified, e2_simplified, e1_latex, e2_latex, is_units;
+    is_units = false;
+    modeBtn.addEventListener('click', ()=>{
+      if(modeBtn.innerHTML==='expressions'){
+        modeBtn.innerHTML = 'units'
+        is_units = true
+        e1Field.placeholder = 'Enter units 1 here';
+        e2Field.placeholder = 'Enter units 2 here';
+      }else{
+        modeBtn.innerHTML = 'expressions'
+        e1Field.placeholder = 'Enter expression 1 here';
+        e2Field.placeholder = 'Enter expression 2 here';
+        is_units = false
+      }
+      
+    })
     compareBtn.addEventListener('click', (event)=>{
         event.preventDefault();
         if(e1Field.value.length === 0 || e2Field.value.length ===0){
@@ -20,8 +36,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
             return;
         }else{
             try{
-                e1_simplified =  math.simplify(processString(e1Field.value))
-                e2_simplified = math.simplify(processString(e2Field.value))
+                console.log(is_units)
+                e1_simplified =  math.simplify(processString(e1Field.value, is_units))
+                e2_simplified = math.simplify(processString(e2Field.value, is_units))
                 e1_toBeCompared = e1_simplified.toString();
                 e2_toBeCompared = e2_simplified.toString();
 
@@ -42,7 +59,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
             headers: { 'X-CSRFToken': getCookie('csrftoken') },
             body: JSON.stringify({
                     expression_1: e1_toBeCompared,
-                    expression_2: e2_toBeCompared   
+                    expression_2: e2_toBeCompared,
+                    mode: modeBtn.innerHTML
             })
           })
           .then(response => response.json())
@@ -59,7 +77,7 @@ e1Field.addEventListener('input', ()=>{
   if(e1Field.value.length != 0){
     MathJax.typesetPromise().then(() => {
       try {
-      e1_simplified = math.simplify(processString(e1Field.value))  
+      e1_simplified = math.simplify(processString(e1Field.value, is_units))  
       e1_latex = e1_simplified.toTex();
       const formattedAnswer = MathJax.tex2chtml(e1_latex + '\\phantom{}');
       formattedDiv1.innerHTML = '';
@@ -81,7 +99,7 @@ e2Field.addEventListener('input', ()=>{
 
     MathJax.typesetPromise().then(() => {
       try {
-      e2_simplified = math.simplify(processString(e2Field.value))  
+      e2_simplified = math.simplify(processString(e2Field.value, is_units))  
       e2_latex = e2_simplified.toTex();
       const formattedAnswer = MathJax.tex2chtml(e2_latex + '\\phantom{}');
       formattedDiv2.innerHTML = '';
@@ -164,7 +182,7 @@ return decodeURIComponent(csrfCookie.split('=')[1]);
 
 
 
-function processString(str) {
+function processString(str, is_units=false) {
   let result = str;
 
   for (const charA in replacementDict) {
@@ -173,18 +191,26 @@ function processString(str) {
     result = result.replace(regex, charB);
   }
 
-  return transformExpression(result);
+  return transformExpression(result, is_units);
 }
 
-function transformExpression(expr) {
+function transformExpression(expr, is_units=false) {
   let expression = removeExtraSpacesAroundOperators(expr);
   // !Important, the order of these functions is crucial!
-  const trigFunctions = {
+  if(is_units){
+    var trigFunctions = {
+      'cd': 'ò', 'mol': 'ë', 'Hz': 'à', 'Pa': 'ê','Wb': 'ä',
+      'lx': 'Bq', 'Gy': 'ù', 'Sv': 'ô', 'kat': 'ü', 'atm':'у́' 
+    };
+  }else {
+    var trigFunctions = {
       'asin': 'ò', 'acos': 'ë', 'atan': 'à', 'arcsin': 'ê', 'arccos': 'ä',
       'arctan': 'ï', 'sinh': 'ù', 'cosh': 'ô', 'tanh': 'ü', 'sin': 'î', 'cos': 'â', 
       'tan': 'ö', 'log': 'ÿ', 'ln': 'è',
       'cosec': 'é', 'sec': 'ç', 'cot': 'û', 'sqrt':'у́', 'pi': 'я',
   };
+  }
+
 
   expression = encode(expression, trigFunctions);
 
@@ -206,7 +232,8 @@ function needsMultiplication(expr, index, trigFunctions) {
   const char = expr[index];
   const prevChar = expr[index - 1];
   return (
-      (/[a-zA-Z]/.test(char) || Object.values(trigFunctions).includes(char)) && /\w/.test(prevChar) ||
+      (/[a-zA-Z]/.test(char) || Object.values(trigFunctions).includes(char)) && (/\w/.test(prevChar) || 
+      Object.values(trigFunctions).includes(prevChar))||
       /\d/.test(char) && /[a-zA-Z]/.test(prevChar) ||
       char === '(' && (/[a-zA-Z]/.test(prevChar) && !Object.values(trigFunctions).includes(prevChar))
   );

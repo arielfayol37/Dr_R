@@ -2,11 +2,18 @@
 {% extends 'phobos/layout.html' %}
 {% block title%} Create Assignment {% endblock %}
 {% block body %}
+<div class="sidebar" style="display:none">
+    <header class="sidebar-header">X</header>
+    <ul>
+        <li><a href="{% url 'phobos:index' %}">Home</a></li>
+        <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
+    </ul>
+</div>
 <div class="page-container">
 
     
     <div class="course-form">
-        <h1>Create a New Assignment</h1>
+        <h1>Create a new Assignment</h1>
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="form-group">
@@ -15,7 +22,7 @@
             </div>
             <div class="form-group">
                 <label for="{{ form.due_date.id_for_label }}">Due date:</label>
-                {{ form.due_date }}
+                <input type="date" name="due_date" />
             </div>
             
             <div class="form-group">
@@ -35,13 +42,4 @@
 
 
 {% endblock %}
-{% block scripts %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-<script>
-    $(document).ready(function() {
-        $(".datepicker").datepicker();
-    });
-</script>
-{% endblock %}
+

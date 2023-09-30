@@ -18,20 +18,10 @@
         </div>
     </div>
 
-    {% if is_course_stud == 1 %}
         <div class="edit-section il">{% csrf_token %}
-            <div><a href="{% url 'deimos:course_management' course_id=course.id %}"><button class="btn edit-btn co" data-course-id="{{ course.id}}">View</button></div></a>
+            <div><a href="{% url 'astros:course_info' course_id=course.id %}"><button class="btn edit-btn co" data-course-id="{{ course.id}}">View Course</button></div></a>
         
         </div>
-    {% else %}
-        <div class="edit-section il">{% csrf_token %}
-            <div class="enrollment">
-                <button type="button" class="btn edit-btn pre-Enroll" data-course-id="{{ course.id}}">Enroll</button>
-                <input type="number" placeholder="enter the enrollment code" class="field-style" style="display:none"/>
-                <button type ="button" class="btn btn-success validate-btn" style="display: none;"> validate </button>   
-            </div>
-        </div>
-    {% endif %}
 
 </li>
 

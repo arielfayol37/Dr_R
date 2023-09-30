@@ -1,0 +1,44 @@
+.course-info-container{
+   display: flex;
+   flex-direction: column;
+   justify-content: center;
+   align-items: center;
+   position:absolute;
+   width: 90vw;
+   padding: 3%;
+}
+.course-info-container > *{
+   width:90%;
+}
+.course-section {
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+}
+.head{
+
+    width: 100%; 
+    border: solid 1px rgb(239, 237, 237); 
+    background-color: #ebeee8;
+    border-radius: 5px;
+
+}
+.head:hover{
+   font-size: larger;
+   color:blue;
+   text-decoration: underline;   
+}
+.expand{
+   position: relative;
+   float: right;
+   right: 10px;
+   top: 0%;
+   font-size: 20px;
+   color: blue;
+}
+.body-text{
+   display: none;
+}
+.dropdown{
+   margin: 10px;
+}

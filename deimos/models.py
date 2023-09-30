@@ -13,30 +13,6 @@ class Student(User):
     assignments = models.ManyToManyField(Assignment, through='AssignmentStudent')
     questions = models.ManyToManyField(Question, through='QuestionStudent')
 
-class Note(models.Model):
-    """
-    For any particular question, the Student should have the option to 
-    write text and/orupload pictures for their own personal use whenever 
-    they are viewing the question in the future. 
-    This may be helpful when they are preparing for exams.
-    """
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="notes")
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    content = models.TextField()
-
-class NoteImage(models.Model):
-    """
-    Stored in `Student`'s Note in case the student upload pictures for notes on a
-    particular question.
-    """
-    note = models.ForeignKey(Note, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='deimos/images/notes_images/', blank=True, null=True)
-    
-    def delete(self, *args, **kwargs):
-        # Delete the image file from storage
-        if self.image:
-            self.image.delete(save=False)
-        super(NoteImage, self).delete(*args, **kwargs)
  
 
 class Resource(models.Model):
@@ -96,6 +72,7 @@ class AssignmentStudent(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='assignments_intermediate')
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
     grade = models.FloatField(validators=[MaxValueValidator(100)], default=0, null=True)
+    due_date = models.DateTimeField(null=True, blank=True)
 
     def get_grade(self):
         """
@@ -116,6 +93,11 @@ class AssignmentStudent(models.Model):
         else:
             self.grade = 0
         return self.grade
+    def save(self, *args, **kwargs):
+        if not self.due_date:
+            self.due_date = self.assignment.due_date
+        super().save(*args, **kwargs)
+        
 class QuestionStudent(models.Model):
     """
     Used to manage `Question` - `Student` relationship.
@@ -147,8 +129,7 @@ class QuestionStudent(models.Model):
         if not self.instances_created:
             self.create_instances()
         if self.question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
-            assert self.question.variable_float_answers.count() == 1
-            answer = self.question.variable_float_answers.first().content
+            answer = self.question.variable_float_answer.content
             assert answer.startswith('@{') and answer.endswith('}@')
             answer = answer[2:-2]
         # TODO: Add a clause here if the answer type is different
@@ -157,7 +138,7 @@ class QuestionStudent(models.Model):
             # 1: missing multiplication signs. E.g ab instead of a*b. transform_expression() handles that
             # 2: a symbol/character(s) that is among the variables. Fix: make sure on the frontEnd that
             #    an answer never contains symbols that are not defined variables.
-            return round(eval(transform_expression(answer), self.get_var_value_dict()),3)
+            return eval(transform_expression(answer), self.get_var_value_dict())
     def get_var_value_dict(self):
         """
         Returns a dictionary of variable symbols and the corresponding instance value for
@@ -184,7 +165,9 @@ class QuestionStudent(models.Model):
         def replace_match(match):
             expression = match.group(1)  # Extract the expression within the curly braces
             try:
-                value = round(eval(transform_expression(expression), var_value_dict), 3)
+                value = round(eval(transform_expression(expression), var_value_dict), 3) # 3 decimal places.
+                if str(value).endswith('.0'):
+                    value = int(value)
             except:
                 value = expression
             if add_html_style:
@@ -239,6 +222,31 @@ class QuestionStudent(models.Model):
     def __str__(self):
         return f"Question-Student:{self.question} {self.student.username}"
     
+class Note(models.Model):
+    """
+    For any particular question, the Student should have the option to 
+    write text and/or upload pictures for their own personal use whenever 
+    they are viewing the question in the future. 
+    This may be helpful when they are preparing for exams.
+    """
+    question_student = models.OneToOneField(QuestionStudent, on_delete=models.CASCADE, related_name="note")
+    content = models.TextField()
+    last_edited = models.DateField(auto_now=True)
+
+class NoteImage(models.Model):
+    """
+    Stored in `Student`'s Note in case the student upload pictures for notes on a
+    particular question.
+    """
+    note = models.ForeignKey(Note, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='deimos/images/notes_images/', blank=True, null=True)
+    
+    def delete(self, *args, **kwargs):
+        # Delete the image file from storage
+        if self.image:
+            self.image.delete(save=False)
+        super(NoteImage, self).delete(*args, **kwargs)
+    
     
 class QuestionAttempt(models.Model):
     """
@@ -259,6 +267,7 @@ def transform_expression(expr):
     expression = remove_extra_spaces_around_operators(expr)
     expression = expression.replace(', ', '')
     expression = expression.replace(' ', '*')
+    expression = re.sub(r'1e\+?(-?\d+)', r'10^\1', expression)
     trig_functions = {
         'asin': 'ò', 'acos': 'ë', 'atan': 'à', 'arcsin': 'ê', 'arccos': 'ä',
         'arctan': 'ï', 'sinh': 'ù', 'cosh': 'ô', 'tanh': 'ü', 'sin': 'î', 'cos': 'â', 'tan': 'ö', 'log': 'ÿ', 'ln': 'è',
@@ -270,7 +279,7 @@ def transform_expression(expr):
         char if index == 0 or not needs_multiplication(expression, index, trig_functions)
         else '*' + char for index, char in enumerate(expression)
     )
-    
+    transformed_expression = transformed_expression.replace('^', '**')
     return decode(transformed_expression, trig_functions)
 
 def remove_extra_spaces_around_operators(text):

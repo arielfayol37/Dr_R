@@ -1,0 +1,69 @@
+<!-- phobos: course_management.html-->
+{% extends 'phobos/layout.html' %}
+{% load static %}
+{% block title %} Course {% endblock %}
+{% block body%}
+    <div class="sidebar" style="display:none">
+        <header class="sidebar-header">X</header>
+        <ul>
+            <li><a href="{% url 'phobos:course_management' course_id=course.id %}">Back</a></li>
+            <li><a href="{% url 'phobos:index' %}">Home</a></li>
+            <li><a href="{% url 'phobos:create_assignment' course_id=course.id %}">Create Assignment</a></li> 
+            <li><a href="{% url 'phobos:gradebook' course_id=course.id %}">Gradebook</a></li>
+            <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
+            <li><a href="{% url 'phobos:manage_enrollment_codes' course_id=course.id %}">Enrollment Codes</a></li>
+        </ul>
+    </div>
+
+    <br/>
+    
+    <h4>{{course.name}}</h4><hr/>
+    
+    <!-- Edit course's information 
+    <div id="Preview-Section">
+        <div > <h3><u>Preview</u> <button class ="btn btn-primary" type="button" id="Edit" value="" style="position: relative; float: right;">Edit Course Info </button>
+        </h3>
+    </div>
+          <br/>
+    </div><hr/>-->
+             
+    
+    <div id="edit-section" style="margin-left: 1%; width: 95%;">
+       <t/> <h4 class="suggestion" style="font-size: large;">Edit course's information</h4>
+        <br/>
+        <div class="sf-container" >
+            <div class="row" >
+                <div class="col-sm-3" >
+                    <button type="button" class="c-btn btn btn-outline-primary abc-btn active" data-category="about_course" data-info="{{course_info.about_course}}" data-md="{{markdown.about_course}}"> about the course</button>
+                </div>
+                <div class="col-sm-3" >
+                    <button type="button" class="c-btn btn btn-outline-secondary" data-category="course_skills" data-info="{{course_info.course_skills}}" data-md="{{markdown.course_skills}}"> what you'll learn</button>
+                </div>
+                <div class="col-sm-3" >
+                    <button type="button" class="c-btn btn btn-outline-info" data-category="course_plan" data-info="{{course_info.course_plan}}" data-md="{{markdown.course_plan}}"> Course plan</button>
+                </div>
+                <div class="col-sm-3" >
+                    <button type="button" class="c-btn btn btn-outline-success" data-category="course_instructors" data-info="{{course_info.course_instructors}}" data-md="{{markdown.course_instructors}}"> about the instructors</button>
+                </div>
+            </div>
+        </div>
+        <br/>
+        <div class="formatted-answer-option">
+            {{markdown.about_course | safe}}
+        </div><br/>
+        <button type="button" class="btn btn-outline-primary info-edit-btn">Edit</button>
+        <br/>
+        <form class="info-form" action="{% url 'phobos:save_course_info' course.id %}" method="post" value="operation" style="display: none;">
+                {% csrf_token %}
+            <textarea class="field-style text-info" placeholder="Write content (markdown supported)" style="width: 90%; border-radius: 10px;" name="text_info"></textarea>
+            <br/>
+
+            <input type="submit" class="btn btn-success" value="Save"/>
+            <input type="button" class="btn btn-danger cancel-btn" value="Cancel"/>
+            <input type="hidden" name="category" value="about_course">
+        </form>
+    </div>
+<script src="{% static 'phobos/js/manage_course_info.js' %}"></script>
+
+    
+{% endblock %}

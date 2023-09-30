@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', () => {
     const script = document.createElement('script');
     script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
@@ -7,9 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.head.appendChild(script);
     
     script.onload = () => {
-        const formattedAnswerDivs = document.querySelectorAll('.formatted-answer');
+        const formattedAnswerDivs = document.querySelectorAll('.formatted-answer-option');
         MathJax.typesetPromise().then(() => {
             formattedAnswerDivs.forEach((formattedAnswerDiv) => {
+
                 try {
                     const inputElement = formattedAnswerDiv.querySelector('.latex-answer-question-view');
                     if (inputElement != null) {
@@ -22,6 +22,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
+    
+    
+    const questionContentPs = document.querySelectorAll(".question-content");
+    MathJax.typesetPromise().then(() => {
+
+        questionContentPs.forEach((questionContentP) => {
+            try{
+                questionContentP.innerHTML = parseLatex(questionContentP.innerHTML);
+                MathJax.typesetPromise();
+            } catch(error){
+                console.log(error)
+            }
+        })
+
+    })
+        
+    function parseLatex(text) {
+        const latexPattern = /#{(.*?)}#/g;
+        
+        var formattedText = text.replace(latexPattern, (_, latexCode) => {
+            try {
+                const mathJaxHTML = MathJax.tex2chtml(latexCode + '\\phantom{}');
+                return mathJaxHTML.innerHTML;
+            } catch (error) {
+                console.log(error);
+                return ''; // Return an empty string if MathJax conversion fails.
+            }
+        });
+    
+        return formattedText;
+    }
+
     };
 });
 
