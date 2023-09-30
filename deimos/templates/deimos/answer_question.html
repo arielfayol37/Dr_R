@@ -17,6 +17,12 @@
 
     </ul>
   </div>
+  <div class="note-pencil">
+    <li style="--i:0.1s; width:30px; height:30px">
+      <ion-icon name="pencil-outline"></ion-icon>
+    </li>
+  </div>
+
 
     <h3>Question {{question.number}}</h3>
     <div class="page-container" id="answer-question">
@@ -103,9 +109,7 @@
       
       <br/>
       </form>
-
-
-
+      
 
       <div class="navigation">
         <ul>
@@ -127,7 +131,44 @@
 
   
     </div>
-  
+    <div class="note-section hide">
+      <span id="close-x-note">X</span><br/>
+      <button type="button" class="btn btn-outline-success note-edit-btn" style="position:absolute; right:2%;"> {{note_comment}} </button><br/><br/>
+      <div class="suggestion note-last-edited">Last edited on {{note.last_edited}}</div>
+      <div class="previous-notes">
+        <div class="note-content formatted-answer-option">
+          {{note_md|safe}}
+        </div>
+        <textarea placeholder="Enter notes (markdown supported)" class="field-style note-textarea" style="display: none;">{{note.content}}</textarea>
+
+        <div class="main-question-image-preview">
+          {% for image_object in note.images.all %}
+              {% if image_object.image %}
+              <div class="question-image ">
+                <div class="formatted-answer-option">
+                  <img src="{{image_object.image.url}}" class="image-in-formatted"/>
+                  <input type="hidden" class="note-image-pk" value="{{image_object.pk}}">
+                </div>
+                <div class="add-delete-btns" style="display:none;">
+                  <button  type="button" class="btn btn-danger img-delete exempt">delete</button>
+                </div>
+              </div>
+              {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      <div class="edit-handling-section" style="display: none;">
+        <div class="uploaded-question-preview"></div><br/>
+        <button type="button" class="main-question-add-image-btn btn btn-light open">Upload Image</button>
+        <div class="question-image-upload-section" style="display: none;">
+          <input type="file" accept="image/*" class="main-question-image-input">
+          <button type="button" class="btn btn-success question-image-add">add</button>
+        </div>
+      <br/><br/>
+      <button type="button" class="btn btn-outline-success save-note-btn"> Save </button>
+      </div>
+
+    </div>
 
 
 {% endblock %}
@@ -144,7 +185,6 @@
 <script src="{% static 'deimos/js/question_nav.js' %}"></script>
 <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
 <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
-<script src="{% static 'deimos/js/action_menu.js' %}"></script>
 
 
 

@@ -541,6 +541,54 @@ more than assignment display */
 
 }
 
+.note-section {
+  background-color: white;
+  width:90vw;
+  position:absolute;
+  min-height: 300vh;
+  margin: auto;
+  overflow-y: auto; /* Add a scrollbar if the content overflows */
+  top:4%;
+  right:0%;
+  border-radius: 1%;
+  z-index:4;
+  padding:1%;
+  transition: width 1s ease, height 1s ease, display 1.1s ease;
+}
+.note-section #close-x-note{
+  color:#007bff;
+
+}
+.note-section #close-x-note:hover{
+  font-size: larger;
+  cursor:pointer;
+}
+.note-section.hide {
+  width: 0px;
+  /*height: 0px;*/
+  display: none;
+}
+
+.note-pencil {
+  background-color: white;
+  border-radius: 30%;
+  position: absolute;
+  right: 1%;
+  top: 70%;
+  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.1);  /* Horizontal offset, Vertical offset, Blur radius, Color */
+}
+
+.note-pencil:hover {
+  cursor: pointer;
+  transform: scale(1.5);
+}
+
+.note-pencil li{
+  display:flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
 @keyframes blink {
   0%, 100% {
     opacity: 1;

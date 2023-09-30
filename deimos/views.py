@@ -23,7 +23,8 @@ import torch
 from sklearn.metrics.pairwise import cosine_similarity
 from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
 import heapq
-
+from django.db import transaction
+from markdown2 import markdown
 # Create your views here.
 @login_required(login_url='astros:login') 
 def index(request):
@@ -136,28 +137,29 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
         random.shuffle(shuffler)  
         is_latex = [is_latex[i] for i in shuffler]
         answers = [answers[i] for i in shuffler]
-
-    # TODO: Subclass all structural answers to a more general class 
-    # so that you may use only one if.
-    elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
-        answers.extend([question.latex_answer])
-        is_latex.extend([1]) 
-        question_type = [2]  
-    elif question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
-        answers.extend([question.expression_answer])
-        question_type = [0]
-    elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
-        answers.extend([question.variable_float_answer])
-        question_type = [5]
-    elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
-        answers.extend([question.float_answer])
-        question_type = [1]
-    elif question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
-        is_fr = True 
-        answers.extend([question.text_answer])
-        question_type = [4]    
-    
-
+    else:
+        # TODO: Subclass all structural answers to a more general class 
+        # so that you may use only one if.
+        if question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
+            answers.extend([question.latex_answer])
+            is_latex.extend([1]) 
+            question_type = [2]  
+        elif question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
+            answers.extend([question.expression_answer])
+            question_type = [0]
+        elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
+            answers.extend([question.variable_float_answer])
+            question_type = [5]
+        elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
+            answers.extend([question.float_answer])
+            question_type = [1]
+        elif question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
+            is_fr = True 
+            answers.extend([question.text_answer])
+            question_type = [4]    
+        answers[0].preface = '' if answers[0].preface is None else answers[0].preface + " = "
+    note, note_created = Note.objects.get_or_create(question_student=question_student)
+    note_md = markdown(note.content)
     context = {
         'question':question,
         'question_ids_nums':zip(question_ids, question_nums),
@@ -171,6 +173,9 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
         'success':question_student.success,
         'too_many_attempts':too_many_attempts,
         'sq_type':question_type[0], # structural question type used in js.
+        'note':note,
+        'note_md':note_md,
+        'note_comment': 'Edit Notes' if note.content else 'Add Notes'
     }
     return render(request, 'deimos/answer_question.html',
                   context)
@@ -577,3 +582,50 @@ def search_question(request):
                                        
 
     return render(request,'deimos/search_question.html')
+
+
+@login_required(login_url='astros:login')
+@csrf_exempt
+def save_note(request, question_id, course_id=None, assignment_id=None):
+    if request.method == "POST":
+        requester_id = request.user.pk 
+        student = get_object_or_404(Student, pk = requester_id)
+        question = get_object_or_404(Question, pk = question_id)
+        question_student = get_object_or_404(QuestionStudent, student=student, question=question)
+        if question_student.student.pk != requester_id:
+            return JsonResponse({'message': "You are not allowed to manage these notes", "success":False})
+        with transaction.atomic():
+            note, created = Note.objects.get_or_create(question_student=question_student)
+            content = request.POST.get('content')
+            note.content = content
+            note.save()
+            
+            # DELETING UNKEPT IMAGES
+
+            # Get a list of kept image primary keys from the request.
+            kept_images_pk_list = request.POST.get('kept_images_pk').split(',')
+            if kept_images_pk_list[0] == '':
+                kept_images_pk_list = []
+            kept_images_pk_list = [int(pk) for pk in kept_images_pk_list]
+            # Get a list of all current NoteImage primary keys.
+            note_images_pk_list = list(NoteImage.objects.all().values_list('pk', flat=True))
+
+            # Compute the difference.
+            difference = set(note_images_pk_list) - set(kept_images_pk_list)
+            # If there are any primary keys in the difference, delete the corresponding NoteImage objects.
+            if difference:
+                NoteImage.objects.filter(pk__in=difference).delete()
+
+
+            # SAVING NEW IMAGES
+
+            for key, value in request.FILES.items():
+                if key.startswith('question_image'):
+                    note_image = NoteImage.objects.create(image=value, note=note)
+                    note_image.save()
+            md = markdown(content)
+                
+        return JsonResponse({'message': 'Notes successfully saved', 'success': True, 'md':md,\
+                             'last_edited':note.last_edited})
+    else:
+        return JsonResponse({'message': f'Error: Expected POST method, not {request.method}', 'success':False})

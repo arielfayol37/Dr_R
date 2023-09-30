@@ -18,5 +18,7 @@ urlpatterns = [
     path('question_nav', views.question_nav, name='question_nav'),
     path('action_menu', views.action_menu, name='action_menu'),
     path('search_question/', views.search_question, name='search_question'),
-    path('compare_expressions', views.expression_compare_test, name='compare_expressions')
+    path('compare_expressions', views.expression_compare_test, name='compare_expressions'),
+    path('courses/<int:course_id>/assignments/<int:assignment_id>/questions/<int:question_id>/save_note',\
+         views.save_note, name='save_note'), 
 ]

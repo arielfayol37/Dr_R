@@ -363,7 +363,6 @@ def create_question(request, assignment_id=None, type_int=None):
 def question_view(request, question_id, assignment_id=None, course_id=None):
     # Making sure the request is done by a professor.
     professor = get_object_or_404(Professor, pk=request.user.id)
-    i=0
     assignments=[]                              # actual assignment for Export question implementation
     course= Course.objects.get(pk= course_id)                  #for Export question implementation
     courses= Course.objects.filter( professors=professor)
@@ -412,7 +411,7 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
             answers.extend([question.variable_float_answer])
         else:
             return HttpResponse('Something went wrong.')
-        answers[0].preface = '' if not answers[0].preface else answers[0].preface # This is to display well in the front end.
+        answers[0].preface = '' if not answers[0].preface else answers[0].preface + "\quad = \quad"# This is to display well in the front end.
         answers[0].answer_unit = '' if not answers[0].preface else answers[0].answer_unit
     course = Course.objects.get(pk = course_id)
     if course.professors.filter(pk=request.user.pk).exists() or course.name=='Question Bank':
@@ -806,3 +805,4 @@ def edit_student_assignment_due_date(request,course_id,assignment_id,new_date,st
             except:
                 return JsonResponse({'message':'something went wrong','success':False})
             return JsonResponse({'message':'Due date successfully edited','success':True})
+

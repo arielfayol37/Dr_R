@@ -83,7 +83,7 @@
             <strong>Answer </strong>
                 <div class="formatted-answer-option">
                     {% if not is_fr %}
-                    <input type="hidden" class="latex-answer-question-view" value="{{answer.preface}} = \quad {{answer.content}}\quad {{answer.answer_unit}}"> 
+                    <input type="hidden" class="latex-answer-question-view" value="{{answer.preface}} {{answer.content}}\quad {{answer.answer_unit}}"> 
                     {% else %}
                     <input type="hidden" class="latex-answer-question-view" value="Free Response Question.">
                     {% endif %}
