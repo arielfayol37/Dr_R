@@ -403,6 +403,7 @@ div.c-text {
   position:absolute;
   right: 2%;
   transform: translateY(-100%);
+  z-index:4;
 }
 .add-var-section button {
   border-radius: 15px;
@@ -510,7 +511,7 @@ textarea {
 }
 
 .topics_dropdown,
-.sub_topics_dropdown {
+.sub_topics_dropdown, .question_difficulty {
   display: flex;
   align-items: center; /* Align items vertically */
   margin-right: 20px; /* Adjust this value based on your preference */

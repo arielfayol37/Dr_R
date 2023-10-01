@@ -157,7 +157,7 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
             is_fr = True 
             answers.extend([question.text_answer])
             question_type = [4]    
-        answers[0].preface = '' if answers[0].preface is None else answers[0].preface + " = "
+        answers[0].preface = '' if answers[0].preface is None else answers[0].preface
     note, note_created = Note.objects.get_or_create(question_student=question_student)
     note_md = markdown(note.content)
     context = {

@@ -58,14 +58,25 @@
               <label for="sub topic" class="option-label">Subtopic: </label>
               <select title="select subtopic" name="sub_topic" id="subTopicSelect" class="option-field">
                 <option value selected disabled>Choose subtopic</option>
-            </select>
+              </select>
 
+            </div>
+            <div class="question_difficulty option-section">
+              <label for="difficulty" class="option-label">Difficulty: </label>
+              <select title="Difficulty" name="question_difficulty" class="option-field">
+                {% for question_difficulty in question_difficulties %}
+                  <option value="{{question_difficulty}}">
+                    {{question_difficulty}}
+                  </option>
+                {% endfor %}
+              </select>
             </div>
 
         </div>
-        <input type="number" name="num_points" placeholder="Num points e.g 10" class="field-style" style="width: 30%;"/>
-         <br/> 
+        <input type="number" value="10" name="num_points" placeholder="Num points e.g 10" class="field-style" style="width: 30%;"/>
+         <br/>
          <div class="question-content form-group">
+            <br/>
             <div class="created-vars"></div>
             <br/>
               <label>Question:</label><br/>
