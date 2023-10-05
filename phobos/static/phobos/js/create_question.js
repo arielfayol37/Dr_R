@@ -1,12 +1,12 @@
 
 document.addEventListener('DOMContentLoaded', () => {
-
-    const expressionBtn = document.querySelector('#expression-btn');
+    
+    const expressionBtn = document.querySelector('.expression-btn');
     const answerFieldsDiv = document.querySelector('.answer-fields');
     const mcqAnswersDiv = document.querySelector('.mcq-answers');
     const form = document.querySelector('#question-form');
     let currentAction = form.getAttribute('action');
-    const mcqBtn = document.querySelector('#mcq-btn');
+    const mcqBtn = document.querySelector('.mcq-btn');
     const mcqOptionBtnsDiv = mcqAnswersDiv.querySelector('.mcq-options-button');
     const inputedMcqAnswersDiv = document.querySelector('.inputed-mcq-answers');
     const imgLabelInputField = document.querySelector('.image-label-input-field');
@@ -26,12 +26,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const mcqInputField = mcqInputDiv.querySelector('.mcq-input-field');
     const mcqImagePreview = document.querySelector('.mcq-image-preview');
     const imageUploadInput = document.querySelector('.image-upload-input-field');
-    const floatBtn = document.querySelector('#float-btn');
-    const latexBtn = document.querySelector('#latex-btn');
-    const frBtn = document.querySelector('#fr-btn');
-    const surveyBtn = document.querySelector('#survey-btn');
+    const floatBtn = document.querySelector('.float-btn');
+    const latexBtn = document.querySelector('.latex-btn');
+    const frBtn = document.querySelector('.fr-btn');
+    const surveyBtn = document.querySelector('.survey-btn');
     latexBtn.style.display = 'none';
-    const formattedAnswerDiv = document.querySelector('#structural-formatted-answer');
+    const formattedAnswerDiv = document.querySelector('.structural-formatted-answer');
     const screen = document.querySelector('#screen'); 
     const calculatorDiv = document.querySelector('.calculator');
     calculatorDiv.style.display = 'none';
@@ -74,6 +74,19 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.readAsDataURL(imageFile);
     }
 })
+mainQuestionImageInput.addEventListener('change', function () {
+    // Reads the uploaded image and renders on the page.
+    uploadedQuestionPreview.innerHTML = '';
+    for (const file of mainQuestionImageInput.files) {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '200px';
+        img.style.borderRadius = '15px';
+        img.classList.add('preview-image');
+        uploadedQuestionPreview.appendChild(img);
+    }
+});
 
     mcqBtn.addEventListener('click', (event)=>{
     // If the instructor chooses mcq as the answer option.
@@ -334,17 +347,21 @@ document.addEventListener('DOMContentLoaded', () => {
             MathJax.typesetPromise().then(() => {
                 try {
                 if(screen.value.startsWith('@{') && screen.value.endsWith('}@')){
-                    var userInputNode = math.simplify(processString(screen.value.slice(2,-2)));
+                    var processed = processString(screen.value.slice(2,-2))
+                    var userInputNode = math.simplify(processed);
+                    var parsedNode = math.parse(processed);
                 }else{
-                    var userInputNode = math.simplify(processString(screen.value));
+                    var processed = processString(screen.value)
+                    var userInputNode = math.simplify(processed);
+                    var parsedNode = math.parse(processed);
                 }
-                var userInputLatex = userInputNode.toTex();
+                var userInputLatex = parsedNode.toTex() + '\\quad = \\quad' + userInputNode.toTex();
                 const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
                 formattedAnswerDiv.innerHTML = '';
                 formattedAnswerDiv.appendChild(formattedAnswer);
                 MathJax.typesetPromise();
                 } catch (error) {
-                   // console.log(error);
+                   //console.log(error);
                 }
                 
                 }); 
@@ -603,19 +620,7 @@ questionAddImgBtn.addEventListener('click', (event)=>{
     }
 })
 
-mainQuestionImageInput.addEventListener('change', function () {
-    // Reads the uploaded image and renders on the page.
-    uploadedQuestionPreview.innerHTML = '';
-    for (const file of mainQuestionImageInput.files) {
-        const img = document.createElement('img');
-        img.src = URL.createObjectURL(file);
-        img.style.maxWidth = '100%';
-        img.style.maxHeight = '200px';
-        img.style.borderRadius = '15px';
-        img.classList.add('preview-image');
-        uploadedQuestionPreview.appendChild(img);
-    }
-});
+
 
 addQuestionImgBtn.addEventListener('click', (event)=>{
     event.preventDefault();
@@ -1003,6 +1008,77 @@ prefaceUnitsBtns.forEach((btn)=>{
 
     })
 })
+
+
+
+
+
+
+
+
+
+
+// ---------------------------------MAKING THE QUESTION MULTIPART------------------------------------------//
+
+
+const questionBluePrint = `
+<br/>
+<div class="question-content form-group">
+   <br/>
+     <label>Question:</label><br/>
+     <!--!Important: this question must be here!-->
+     <textarea placeholder="Enter the content of the question" id="question-textarea" class="w-100 question-input-field" name="question_text"></textarea>
+ </div>
+ <div class="main-question-image-preview"></div>
+ <div class="uploaded-question-preview"></div>
+ <button type="button" class="main-question-add-image-btn btn btn-light open">Upload Image</button>
+ <div class="question-image-upload-section" style="display: none;">
+   <input type="text" placeholder="Enter image label" class="image-label-input-field field-style"/>
+   <input type="file" accept="image/*" class="main-question-image-input">
+   <button type="button" class="btn btn-success question-image-add">add</button>
+ </div>
+ <br/>
+
+ <div class="answer-options">
+   <!--TODO: Change the colors here to fit the overall design-->
+   
+   <label>Select answer type</label><br/>
+   <button type="button" id="expression-btn" class="btn btn-primary exempt">Expression</button>
+   <button type="button" id="float-btn" class="btn btn-info exempt">Float</button>
+   <button type="button" id="mcq-btn" class="btn btn-light exempt">MCQ</button>
+   <button type="button" id="fr-btn" class="btn btn-secondary exempt">Free Response</button>
+   <button type="button" id="survey-btn" class="btn btn-dark exempt" style="display: none;">Survey</button>
+   <button type="button" id="latex-btn" class="btn btn-secondary exempt"  style="display: none;">Latex</button>
+   
+ </div>
+
+ <div class="mcq-answers">
+   <div class="mcq-options-button" style="display: none;">
+     <label>Select MCQ type</label><br/>
+     <button type="button" id="mcq-expression-btn" class="btn btn-primary exempt">Expression mode</button>
+     <button type="button" id="mcq-float-btn" class="btn btn-info exempt">Float mode</button>
+     <button type="button" id="mcq-text-btn" class="btn btn-light exempt">Text mode</button>
+     <button type="button" id="mcq-latex-btn" class="btn btn-secondary exempt">Latex mode</button>
+     <button type="button" id="mcq-image-btn" class="btn btn-dark exempt">Image mode</button>
+   </div>
+   <div class="inputed-mcq-answers">
+
+   </div>
+   <br/>
+   <div class="mcq-image-preview"></div>
+   <br/>
+   <div class="mcq-input-div" style="display: none;">
+     <input style="width: 100%; box-sizing: border-box;" type="text" class="mcq-input-field field-style"/>
+     <input type="file" accept="image/*" class="image-upload-input-field" style="display:none;"/>
+     <button type="button" class="btn btn-success mcq-add">add</button>
+   </div>
+
+ </div>
+ 
+ <div class="answer-fields">
+     
+ </div>
+`
 
 });
 

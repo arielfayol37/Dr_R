@@ -2,8 +2,7 @@
 {% extends 'deimos/layout.html' %}
 {% load static %}
 {% block title%} Answer Question {% endblock %}
-{% block style%} <link rel="stylesheet" href="{% static 'deimos/css/question_nav.css' %}"/> 
-<link rel="stylesheet" href="{% static 'deimos/css/action_menu.css' %}"/> 
+{% block style%} <link rel="stylesheet" href="{% static 'deimos/css/question_nav.css' %}"/>  
 {% endblock %}
 {% block body %}
     
@@ -24,8 +23,9 @@
   </div>
 
 
-    <h3>Question {{question.number}}</h3>
+    
     <div class="page-container" id="answer-question">
+      <h3 class="suggestion original-size">Question {{question.number}}</h3>
       <br/>
       <form method="post" enctype="multipart/form-data" id="question-form">
         {% csrf_token %}

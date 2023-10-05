@@ -589,6 +589,9 @@ more than assignment display */
   justify-content: center;
   align-items: center;
 }
+.original-size {
+  font-size: initial;
+}
 @keyframes blink {
   0%, 100% {
     opacity: 1;

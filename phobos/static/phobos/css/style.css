@@ -554,7 +554,7 @@ textarea {
 .question-content label {
   font-weight: bold;
 }
-.question-input-field #question-textarea {
+.question-input-field .question-textarea {
   height: 100px;
 }
 .question-input-field {
@@ -668,6 +668,9 @@ more than assignment display */
     }
 
   } 
+  .original-size {
+    font-size: initial;
+  }
 
   @media screen and (max-width: 768px) {
     .course-li {
