@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const calculatorDiv = document.querySelector('.calculator');
     calculatorDiv.style.display = 'none';
     const createQuestionBtn = document.querySelector('.create-question-btn');
-
+    var num_questions = 1;
 
     allQuestionBlocks.appendChild(addQuestionBlock());
   
@@ -403,8 +403,8 @@ function addQuestionBlock(){
 
     const questionBluePrint = `
     <div class="question-content form-group">
-         <label>Question:</label><br/>
-         <textarea placeholder="Enter the content of the question" class="question-textarea w-100 question-input-field" name="question_text"></textarea>
+         <label class="q-label-title">Question ${String.fromCharCode(64 + num_questions)}:</label><br/>
+         <textarea placeholder="Enter the content of the question" class="question-textarea w-100 question-input-field" name="${num_questions}_question_text"></textarea>
      </div>
      <div class="main-question-image-preview" data-counter="0"></div>
      <div class="uploaded-question-preview"></div>
@@ -457,7 +457,7 @@ function addQuestionBlock(){
      </div>
      <div class="formatted-answer structural-formatted-answer"></div>
      <br/>
-     <button class="btn btn-outline-success check-question-btn"> Confirm </button>
+     <button class="btn btn-outline-success check-question-btn">Add Part ${String.fromCharCode(64 + num_questions + 1)}</button>
      <br/><br/>
      
     `
@@ -502,70 +502,34 @@ function addQuestionBlock(){
 
 ///
 
+/// ATTENTION! WARNING! IMPORTANT! Recursion here.
 checkButton.addEventListener('click', (event)=>{
     event.preventDefault();
-    // Make sure question text is valid
-    const questionTextArea = form.querySelector('#question-textarea');
-    if (questionTextArea.value.length <= 5){
-        alert('A question cannot be this short!');
-        return;
-    }
-    const valid_textarea = validateText(questionTextArea.value, varSymbolsArray);
-    if (!valid_textarea){
-        alert('The question text has undefined symbol(s) in variable expression(s)');
-        return;
-    }
-    const selected_topic = checkTopicAndSubtopic();
-    if (!selected_topic){
-        alert("Please select both a topic and a subtopic.");
-        return;
-    }
-    if (hiddenQuestionType.value==='e-answer'){
-        try{
-            const userInputNode = math.simplify(processString(screen.value));
-            var userInputString = userInputNode.toString();
-            // The following is in case we don't want to change the domain of the algebraic expression
-            // for example, if we don't want (x+1)(x-1)/(x-1) to simplify to just (x+1)
-            //var userInputString = math.simplify(userInputNode, {}, {context: math.simplify.realContext}).toString()
-            screen.value = userInputString;
-
-        }catch {
-            alert('Expression in answer not valid algebraic expression');
-            return;
+    if(checkButton.classList.contains('btn-outline-success')){
+        if(checkQuestionBlock(questionBlock)){
+            allQuestionBlocks.appendChild(addQuestionBlock());
+            checkButton.classList.remove('btn-outline-success');
+            checkButton.classList.add('btn-outline-danger');
+            checkButton.innerHTML = 'Delete Part ' + String.fromCharCode(checkButton.innerHTML.charCodeAt(checkButton.innerHTML.length - 1) - 1);
         }
-
-    }
-    else if(
-        hiddenQuestionType.value==='f-answer'
-    ) {
-        try{
-            const userInputNode = math.simplify(processString(screen.value));
-            var userInputString = userInputNode.evaluate();
-            if(typeof(userInputString) != 'number'){
-                alert('You selected float mode but the answer you provided is not a float');
-                return;
-            }
-            screen.value = userInputString;
-        }catch {
-            if(!validateText(screen.value, varSymbolsArray, isFloat=true)){
-                alert('You selected float mode but the answer you provided is not a float\
-                    \n or You have undefined variable(s) in expression you entered.');
-                return;
-                }
-        }
+    }else{// Delete block;
+        questionBlock.parentNode.removeChild(questionBlock);
+        num_questions -= 1;
+        // Renaming the question titles.
+        const allqBlocks = document.querySelectorAll('.question-block');
+        let counter = 1;
         
+        allqBlocks.forEach(qBlock => {
+            const labelTitle = qBlock.querySelector('.q-label-title');
+            const checkBtn = qBlock.querySelector('.check-question-btn');
         
-    } else if (hiddenQuestionType.value=='m-answer'){
-        if(inputedMcqAnswersDiv.dataset.counter  < 2){
-            alert('The number of options for an MCQ must be at least 2.');
-            return;
-        }
-        if(inputedMcqAnswersDiv.dataset.trueCounter  < 1){
-            alert('Must select at least one MCQ answer as correct.');
-            return;
-        }
+            labelTitle.textContent = labelTitle.textContent.slice(0, -2) + String.fromCharCode(64 + counter) + labelTitle.textContent.slice(-1);
+            checkBtn.textContent = checkBtn.textContent.slice(0, -2) + String.fromCharCode(64 + counter + 1) + checkBtn.textContent.slice(-1);
+        
+            counter++;
+        });
+        
     }
-
 
     // TODO: Implement what happens when all the checks have passed.
 })
@@ -699,7 +663,8 @@ addMcqOptionBtn.addEventListener('click', (event)=>{
             const formatted_new_answer = create_inputed_mcq_div(mcqInputField, mcqInputField.dataset.answerType);
             inputedMcqAnswersDiv.appendChild(formatted_new_answer);
             mcqInputField.value = '';
-            inputedMcqAnswersDiv.dataset.counter += 1;
+            const holder = parseInt(inputedMcqAnswersDiv.dataset.counter)
+            inputedMcqAnswersDiv.dataset.counter = `${holder + 1}`;
         }
         catch(error){
             console.log(error)
@@ -721,7 +686,8 @@ inputedMcqAnswersDiv.addEventListener('click', (event)=>{
         target.classList.remove('mcq-false','btn-warning');
         target.classList.add('mcq-true', 'btn-info');
         target.innerHTML = 'True';
-        inputedMcqAnswersDiv.dataset.trueCounter += 1;
+        const holder =  parseInt(inputedMcqAnswersDiv.dataset.trueCounter)
+        inputedMcqAnswersDiv.dataset.trueCounter = `${holder + 1}`;
         const answer_info_input = target.closest('.inputed-mcq-answer').querySelector('.answer_info');
         answer_info_input.value = rep(answer_info_input.value, 0, '1');
     } else if(target.classList.contains('mcq-true')){
@@ -729,14 +695,17 @@ inputedMcqAnswersDiv.addEventListener('click', (event)=>{
         target.classList.add('mcq-false','btn-warning');
         target.classList.remove('mcq-true', 'btn-info');
         target.innerHTML = 'False'; 
-        inputedMcqAnswersDiv.dataset.trueCounter -= 1;    
+        const holder = parseInt(inputedMcqAnswersDiv.dataset.trueCounter);
+        inputedMcqAnswersDiv.dataset.trueCounter = `${holder - 1}`;    
         const answer_info_input = target.closest('.inputed-mcq-answer').querySelector('.answer_info');
         answer_info_input.value = rep(answer_info_input.value, 0, '0');
     } else if (target.classList.contains('mcq-delete')){
         // deleting an mcq option.
-        inputedMcqAnswersDiv.dataset.counter  -= 1;
+        const holder = parseInt(inputedMcqAnswersDiv.dataset.counter)
+        inputedMcqAnswersDiv.dataset.counter  = `${holder-1}`;
         if (target.classList.contains('mcq-true')){
-            inputedMcqAnswersDiv.dataset.trueCounter -= 1;
+            const holder = parseInt(inputedMcqAnswersDiv.dataset.trueCounter)
+            inputedMcqAnswersDiv.dataset.trueCounter = `${holder-1}`;
         }
         inputedMcqAnswersDiv.removeChild(target.closest('.inputed-mcq-answer'));//TODO: Can probably make this something better.
     }
@@ -754,7 +723,7 @@ inputedMcqAnswersDiv.addEventListener('click', (event)=>{
 const latexAnswerDiv = `
 <div class="l-answer"><br/>
 <label>Latex Answer:</label>
-    <input style="width: 100%; box-sizing: border-box;" class="question-input-field" placeholder="Enter LaTex" type="text" class="latex-answer-input" name="answer"/>
+    <input style="width: 100%; box-sizing: border-box;" class="question-input-field" placeholder="Enter LaTex" type="text" class="latex-answer-input" name="${num_questions}_answer"/>
     </div>
 `
 // Free response button selected.
@@ -910,7 +879,8 @@ addQuestionImgBtn.addEventListener('click', (event)=>{
         const formatted_new_img = create_img_div(mainQuestionImageInput, imgLabelInputField.value);
         mainQuestionImagePreview.appendChild(formatted_new_img);
         imgLabelInputField.value = '';
-        mainQuestionImagePreview.counter += 1;
+        const holder = parseInt(mainQuestionImagePreview.counter)
+        mainQuestionImagePreview.counter =  `${holder - 1}`;
         questionAddImgBtn.classList.remove('closed');
         questionAddImgBtn.classList.add('open');
         uploadedQuestionPreview.innerHTML = '';
@@ -943,7 +913,7 @@ function create_img_div(img_input_field, img_label){
     imgDiv.innerHTML = `
     <br/>
     <div class="formatted-answer-option"></div>
-    <input value="${img_label}" type="hidden" name="question_image_label_${mainQuestionImagePreview.counter}"/>
+    <input value="${img_label}" type="hidden" name="${num_questions}_question_image_label_${mainQuestionImagePreview.counter}"/>
     <div class="add-delete-btns">
         <button  type="button" class="btn btn-danger img-delete exempt">delete</button>
     </div>
@@ -952,7 +922,7 @@ function create_img_div(img_input_field, img_label){
     formattedImgDiv.appendChild(imgLabel);
     formattedImgDiv.appendChild(uploadedQuestionPreview.cloneNode(true));
     const image_input_field_clone = img_input_field.cloneNode(true);
-    image_input_field_clone.name = `question_image_file_${mainQuestionImagePreview.counter}`;
+    image_input_field_clone.name = `${num_questions}_question_image_file_${mainQuestionImagePreview.counter}`;
     image_input_field_clone.style.display = 'none';
     formattedImgDiv.appendChild(image_input_field_clone);
     uploadedQuestionPreview.innerHTML = '';
@@ -1017,7 +987,8 @@ function create_inputed_mcq_div(input_field, answer_type) {
                 display_value = answer_value;
             }
             catch{
-                inputedMcqAnswersDiv.dataset.counter  -= 1
+                const holder = parseInt(inputedMcqAnswersDiv.dataset.counter)
+                inputedMcqAnswersDiv.dataset.counter  = `${holder - 1}`;
                 alert('Expression(s) not valid algebraic expression');   
                 return;
             }
@@ -1064,8 +1035,8 @@ function create_inputed_mcq_div(input_field, answer_type) {
                 mcqAnswerDiv.innerHTML = `
                 <br/>
                 <div class="formatted-answer-option"></div>
-                <input value="${answer_value}" type="hidden" name="answer_value_${inputedMcqAnswersDiv.counter}"/>
-                <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="answer_info_${inputedMcqAnswersDiv.counter}"/>
+                <input value="${answer_value}" type="hidden" name="${num_questions}_answer_value_${inputedMcqAnswersDiv.counter}"/>
+                <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="${num_questions}_answer_info_${inputedMcqAnswersDiv.counter}"/>
                 <div class="add-delete-btns">
                     <button type="button" class="btn btn-warning mcq-status mcq-false exempt">False</button>
                     <button  type="button" class="btn btn-danger mcq-delete exempt">delete</button>
@@ -1075,8 +1046,8 @@ function create_inputed_mcq_div(input_field, answer_type) {
                 mcqAnswerDiv.innerHTML = `
                 <br/>
                 <div class="formatted-answer-option"></div>
-                <input value="${display_value}" type="hidden" name="image_label_${inputedMcqAnswersDiv.counter}"/>
-                <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="answer_info_${inputedMcqAnswersDiv.counter}"/>
+                <input value="${display_value}" type="hidden" name="${num_questions}_image_label_${inputedMcqAnswersDiv.counter}"/>
+                <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="${num_questions}_answer_info_${inputedMcqAnswersDiv.counter}"/>
                 <div class="add-delete-btns">
                     <button type="button" class="btn btn-warning mcq-status mcq-false exempt">False</button>
                     <button  type="button" class="btn btn-danger mcq-delete exempt">delete</button>
@@ -1095,7 +1066,7 @@ function create_inputed_mcq_div(input_field, answer_type) {
                     throw 'Image expected to be selected but wasn\'t'
                 }
                 const image_input_field_clone = imageUploadInput.cloneNode(true);
-                image_input_field_clone.name = `answer_value_${inputedMcqAnswersDiv.counter}`;
+                image_input_field_clone.name = `${num_questions}_answer_value_${inputedMcqAnswersDiv.counter}`;
                 image_input_field_clone.style.display = 'none';
                 formattedAnswerDiv.appendChild(image_input_field_clone);
                 imageUploadInput.value = '';
@@ -1110,8 +1081,8 @@ function create_inputed_mcq_div(input_field, answer_type) {
             console.log(error);
         }
     });
-
-    inputedMcqAnswersDiv.dataset.counter  += 1;
+    //const holder =  parseInt(inputedMcqAnswersDiv.dataset.counter)
+//     inputedMcqAnswersDiv.dataset.counter  = `${holder+1}`;
 
     return inputedMcqDiv;
 }
@@ -1119,7 +1090,7 @@ function create_inputed_mcq_div(input_field, answer_type) {
 
 
 
-
+num_questions += 1;
 
 return questionBlock;
 
@@ -1128,7 +1099,76 @@ return questionBlock;
 
 
 
-
+function checkQuestionBlock(questionBlock){
+        // Make sure question text is valid
+        const questionTextArea = questionBlock.querySelector('.question-textarea');
+        const hiddenQuestionType = questionBlock.querySelector('.hidden-q-type');
+        const inputedMcqAnswersDiv = questionBlock.querySelector('.inputed-mcq-answers');
+        if (questionTextArea.value.length <= 5){
+            alert('A question cannot be this short!');
+            return false;
+        }
+        const valid_textarea = validateText(questionTextArea.value, varSymbolsArray);
+        if (!valid_textarea){
+            alert('The question text has undefined symbol(s) in variable expression(s)');
+            return false;
+        }
+        const selected_topic = checkTopicAndSubtopic();
+        if (!selected_topic){
+            alert("Please select both a topic and a subtopic.");
+            return false;
+        }
+        if (hiddenQuestionType.value==='e-answer'){
+            try{
+                const userInputNode = math.simplify(processString(screen.value));
+                var userInputString = userInputNode.toString();
+                // The following is in case we don't want to change the domain of the algebraic expression
+                // for example, if we don't want (x+1)(x-1)/(x-1) to simplify to just (x+1)
+                //var userInputString = math.simplify(userInputNode, {}, {context: math.simplify.realContext}).toString()
+                screen.value = userInputString;
+    
+            }catch {
+                alert('Expression in answer not valid algebraic expression');
+                return false;
+            }
+    
+        }
+        else if(
+            hiddenQuestionType.value==='f-answer'
+        ) {
+            try{
+                const userInputNode = math.simplify(processString(screen.value));
+                var userInputString = userInputNode.evaluate();
+                if(typeof(userInputString) != 'number'){
+                    alert('You selected float mode but the answer you provided is not a float');
+                    return false;
+                }
+                screen.value = userInputString;
+            }catch {
+                if(!validateText(screen.value, varSymbolsArray, isFloat=true)){
+                    alert('You selected float mode but the answer you provided is not a float\
+                        \n or You have undefined variable(s) in expression you entered.');
+                    return false;
+                    }
+            }
+            
+            
+        } else if (hiddenQuestionType.value=='m-answer'){
+            if(inputedMcqAnswersDiv.dataset.counter  < 2){
+                alert('The number of options for an MCQ must be at least 2.');
+                return false;
+            }
+            if(inputedMcqAnswersDiv.dataset.trueCounter  < 1){
+                alert('Must select at least one MCQ answer as correct.');
+                return false;
+            }
+        }else if(hiddenQuestionType.value==='none'){
+            alert('You must enter an answer');
+            return false;
+        }
+    
+    return true
+}
 
 
 
