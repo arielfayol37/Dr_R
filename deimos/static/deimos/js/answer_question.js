@@ -173,9 +173,10 @@ displayLatex();
 
               MathJax.typesetPromise().then(() => {
                 try {
-        
-                const userInputNode = math.simplify(processString(screen.value));
-                var userInputLatex = userInputNode.toTex();
+                var processed = processString(screen.value)
+                var userInputNode = math.simplify(processed);
+                var parsedNode = math.parse(processed);
+                var userInputLatex = parsedNode.toTex() + '\\quad = \\quad' + userInputNode.toTex();
                 const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
                 formattedAnswerDiv.innerHTML = '';
                 formattedAnswerDiv.appendChild(formattedAnswer);

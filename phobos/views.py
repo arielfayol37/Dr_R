@@ -338,12 +338,14 @@ def create_question(request, assignment_id=None, type_int=None):
     if assignment_id is not None:
         assignment = Assignment.objects.get(pk = assignment_id)
         topics = assignment.course.topics.all()
-
+        # question_difficulties = DifficultyChoices.choices
+        question_difficulties = ['EASY', 'MEDIUM', 'DIFFICULT']
     return render(request, 'phobos/create_question.html', {
  
         'topics': topics if topics else '',
         'assignment_id': assignment_id,
-    })
+        'question_difficulties': question_difficulties
+    })  
 
 # NOTE: The function below was to be useD for a better front end design of the export question functionality.
 # The function was to enable the prof select a course then select an assignment in that course.
@@ -412,7 +414,7 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
         else:
             return HttpResponse('Something went wrong.')
         answers[0].preface = '' if not answers[0].preface else answers[0].preface + "\quad = \quad"# This is to display well in the front end.
-        answers[0].answer_unit = '' if not answers[0].preface else answers[0].answer_unit
+        answers[0].answer_unit = '' if not answers[0].answer_unit else answers[0].answer_unit
     course = Course.objects.get(pk = course_id)
     if course.professors.filter(pk=request.user.pk).exists() or course.name=='Question Bank':
        show_answer = True

@@ -1,350 +1,43 @@
 
 document.addEventListener('DOMContentLoaded', () => {
-
-    const expressionBtn = document.querySelector('#expression-btn');
-    const answerFieldsDiv = document.querySelector('.answer-fields');
-    const mcqAnswersDiv = document.querySelector('.mcq-answers');
     const form = document.querySelector('#question-form');
+    const allQuestionBlocks = form.querySelector("#all-question-blocks");
     let currentAction = form.getAttribute('action');
-    const mcqBtn = document.querySelector('#mcq-btn');
-    const mcqOptionBtnsDiv = mcqAnswersDiv.querySelector('.mcq-options-button');
-    const inputedMcqAnswersDiv = document.querySelector('.inputed-mcq-answers');
-    const imgLabelInputField = document.querySelector('.image-label-input-field');
-    const questionAddImgBtn = document.querySelector('.main-question-add-image-btn');
-    const questionImgUploadSection = document.querySelector('.question-image-upload-section');
-    const uploadedQuestionPreview = document.querySelector('.uploaded-question-preview');
-    var num_mcq_options_counter = 2;
-    var num_true_counter = 0;
-    var option_counter = 0;
-    var question_img_counter = 0;
     const varSymbolsArray = [];
-
-    const addQuestionImgBtn = document.querySelector('.question-image-add');
-    const addMcqOptionBtn = document.querySelector('.mcq-add');
-    
-    const mcqInputDiv = document.querySelector('.mcq-input-div');
-    const mcqInputField = mcqInputDiv.querySelector('.mcq-input-field');
-    const mcqImagePreview = document.querySelector('.mcq-image-preview');
-    const imageUploadInput = document.querySelector('.image-upload-input-field');
-    const floatBtn = document.querySelector('#float-btn');
-    const latexBtn = document.querySelector('#latex-btn');
-    const frBtn = document.querySelector('#fr-btn');
-    const surveyBtn = document.querySelector('#survey-btn');
-    latexBtn.style.display = 'none';
-    const formattedAnswerDiv = document.querySelector('#structural-formatted-answer');
     const screen = document.querySelector('#screen'); 
     const calculatorDiv = document.querySelector('.calculator');
     calculatorDiv.style.display = 'none';
-    let mode = '';
+    const createQuestionBtn = document.querySelector('.create-question-btn');
+    var num_questions = 1;
 
-    const mainQuestionImageInput = document.querySelector('.main-question-image-input');
-    const mainQuestionImagePreview = document.querySelector('.main-question-image-preview');
-    const createQuestionBtn = document.querySelector('.create-question-btn')
+    allQuestionBlocks.appendChild(addQuestionBlock());
   
 
-/*-----------------------------------------SURVEY QUESTION-----------------------------------*/
-    surveyBtn.addEventListener('click', (event)=> {
-        event.preventDefault();
-        mode = 's-answer';
-        // NOT A HIGH PRIORITY FOR NOW. TO BE IMPLEMENTED LATER
-    })
-
- /*------------------------------------------MCQ QUESTION --------------------------------- */
- 
-
- imageUploadInput.addEventListener('change', ()=>{
-    // Reads the uploaded image and renders on the page.
-    // THERE is another way to do this at the bottom of this file which might be better
-    // Ctrl + F and seatch 'image and renders' on page.
-    const reader = new FileReader();
-    const imageFile = imageUploadInput.files[0];
-    reader.onload = function(event) {
-        const imageElement = document.createElement('img');
-        imageElement.src = event.target.result;
-        imageElement.style.maxWidth = '100%';
-        imageElement.style.maxHeight = '200px';
-        imageElement.style.borderRadius = '15px';
-        //console.log(imagePreview.src);
-        
-        mcqImagePreview.style.display = 'block';
-        mcqImagePreview.innerHTML = '';
-        mcqImagePreview.appendChild(imageElement);
-    };
-    if(imageFile){
-        reader.readAsDataURL(imageFile);
-    }
-})
-
-    mcqBtn.addEventListener('click', (event)=>{
-    // If the instructor chooses mcq as the answer option.
-    event.preventDefault();
-        inputedMcqAnswersDiv.style.display = 'block';
-        mcqImagePreview.style.display = 'block';
-        mode = 'm-answer'
-        num_mcq_options_counter = 0; // TODO: change this in case you want store the already inputed mcqs when the user 
-                                    // changes answer type options. For example he may click on expression then come back to mcq.
-        formattedAnswerDiv.style.display = 'none';
-        calculatorDiv.style.display = 'none';
-        mcqOptionBtnsDiv.style.display = 'block';
-        // Append '/3' at the end of the URL
-        const newAction = currentAction + '/3';
-        // Update the form's action attribute
-        form.setAttribute('action', newAction);
-        
-
-    });
-    
-    mcqOptionBtnsDiv.addEventListener('click', (event)=> {
-        event.preventDefault();
-        // Selecting different MCQ modes.
-        mcqInputDiv.style.display = 'block';
-        switch (event.target.id) {
-            case 'mcq-expression-btn':
-                imageUploadInput.style.display ='none';
-                mcqImagePreview.style.display = 'none';
-                mcqInputField.value = '';
-                mcqInputField.placeholder = 'Enter expression and click add';
-                mcqInputField.setAttribute('data-answer-type', 'e-answer');
-                break;
-            case 'mcq-float-btn':
-                imageUploadInput.style.display ='none';
-                mcqImagePreview.style.display = 'none';
-                mcqInputField.value = '';
-                mcqInputField.placeholder = 'Enter float and click add';
-                mcqInputField.setAttribute('data-answer-type', 'f-answer');
-                break;
-            case 'mcq-text-btn':
-                imageUploadInput.style.display ='none';
-                mcqImagePreview.style.display = 'none';
-                mcqInputField.value = '';
-                mcqInputField.placeholder = 'Enter text and click add';
-                mcqInputField.setAttribute('data-answer-type', 't-answer');
-                break;
-            case 'mcq-latex-btn':
-                imageUploadInput.style.display ='none';
-                mcqImagePreview.style.display = 'none';
-                mcqInputField.value = '';
-                mcqInputField.placeholder = 'Enter latex and click add';
-                mcqInputField.setAttribute('data-answer-type', 'l-answer');
-                break;
-            case 'mcq-image-btn':
-                mcqInputField.value = '';
-                mcqInputField.placeholder = 'Enter image label and click add';
-                mcqInputField.setAttribute('data-answer-type', 'i-answer');
-                imageUploadInput.style.display ='block';
-                mcqImagePreview.style.display = 'block';
-            default:
-                // Nothing yet
-        }
-    })
-
-    
-    addMcqOptionBtn.addEventListener('click', (event)=>{
-        event.preventDefault();
-        // Adding an mcq option after filling the input field.
-        // This may look small but it's the most dense function in this file
-        // Checkout create_inputed_mcq_div() to see what I mean.
-        if (mcqInputField.value === null || mcqInputField.value ==='') {
-            alert('Cannot create an empty mcq option.')
-            
-        }
-        else{
-            try{
-                const validText = validateText(mcqInputField.value, varSymbolsArray);
-                if(!validText){
-                    alert('Undefined symbol(s) in variable expression(s)');
-                    return;
-                }
-                const formatted_new_answer = create_inputed_mcq_div(mcqInputField, mcqInputField.dataset.answerType);
-                inputedMcqAnswersDiv.appendChild(formatted_new_answer);
-                mcqInputField.value = '';
-                option_counter += 1;
-            }
-            catch(error){
-                console.log(error)
-                alert('Make sure you enter the correct format of the answer type you selected.')
-            }
-            
-        }
-
-
-    })
-
-    inputedMcqAnswersDiv.addEventListener('click', (event)=>{
-        event.preventDefault();
-        // Here adding the ability to change the status of an mcq option as true or false
-        // Also, there's a delete button.
-        target = event.target
-        if(target.classList.contains('mcq-false')){
-            // changing an mcq option from false to true.
-            target.classList.remove('mcq-false','btn-warning');
-            target.classList.add('mcq-true', 'btn-info');
-            target.innerHTML = 'True';
-            num_true_counter += 1;
-            const answer_info_input = target.parentNode.parentNode.querySelector('.answer_info');
-            answer_info_input.value = rep(answer_info_input.value, 0, '1');
-        } else if(target.classList.contains('mcq-true')){
-            // changing an mcq option from true to false.
-            target.classList.add('mcq-false','btn-warning');
-            target.classList.remove('mcq-true', 'btn-info');
-            target.innerHTML = 'False'; 
-            num_true_counter -= 1;    
-            const answer_info_input = target.parentNode.parentNode.querySelector('.answer_info');
-            answer_info_input.value = rep(answer_info_input.value, 0, '0');
-        } else if (target.classList.contains('mcq-delete')){
-            // deleting an mcq option.
-            num_mcq_options_counter -= 1;
-            if (target.classList.contains('mcq-true')){
-                num_true_counter -= 1;
-            }
-            inputedMcqAnswersDiv.removeChild(target.parentNode.parentNode.parentNode);//TODO: Can probably make this something better.
-        }
-    })
-
-
-
-
-
-
-
-
-    /*------------------------------------------STRUCTURAL QUESTION --------------------------------- */
-    // latexAnswerDiv is never used but just keeping it here.
-    const latexAnswerDiv = `
-    <div class="l-answer"><br/>
-    <label>Latex Answer:</label>
-        <input style="width: 100%; box-sizing: border-box;" class="question-input-field" placeholder="Enter LaTex" type="text" class="latex-answer-input" name="answer"/>
-        </div>
-    `
-    // Free response button selected.
-    frBtn.addEventListener('click', (event)=>{
-        event.preventDefault();
-        mode = 'fr-answer';  
-        inputedMcqAnswersDiv.style.display = 'none';
-        formattedAnswerDiv.innerHTML = 'Free response mode selected.'
-        formattedAnswerDiv.style.display = 'block';
-        mcqOptionBtnsDiv.style.display = 'none';
-        mcqInputDiv.style.display = 'none';
-        mcqImagePreview.style.display = 'none';
-        calculatorDiv.style.display = 'none';
-        answerFieldsDiv.innerHTML = '';
-        
-        formattedAnswerDiv.scrollIntoView({behavior: 'smooth'});
-        // Append '/4' at the end of the URL
-        const newAction = currentAction + '/4';
-        // Update the form's action attribute
-        form.setAttribute('action', newAction);      
-    })
-
-    // Expression answer button selected.
-    expressionBtn.addEventListener('click', (event)=> {
-        event.preventDefault();
-        mode = 'e-answer';
-        inputedMcqAnswersDiv.style.display = 'none';
-        formattedAnswerDiv.style.display = 'block';
-        mcqOptionBtnsDiv.style.display = 'none';
-        mcqInputDiv.style.display = 'none';
-        mcqImagePreview.style.display = 'none';
-        calculatorDiv.style.display = 'flex';
-        answerFieldsDiv.innerHTML = '';
-        screen.value = ''
-        screen.placeholder = 'Expression';
-        formattedAnswerDiv.innerHTML = ''
-
-        answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
-    
-        // Append '/0' at the end of the URL
-        const newAction = currentAction + '/0';
-        // Update the form's action attribute
-        form.setAttribute('action', newAction);
-
-    });
-
-    // Float button selected.
-    floatBtn.addEventListener('click', function(event) { 
-        event.preventDefault();
-        mode = 'f-answer';
-        inputedMcqAnswersDiv.style.display = 'none';
-        formattedAnswerDiv.style.display = 'block';
-        mcqOptionBtnsDiv.style.display = 'none';
-        mcqInputDiv.style.display = 'none';
-        mcqImagePreview.style.display = 'none';
-        calculatorDiv.style.display = 'flex';
-        answerFieldsDiv.innerHTML = '';
-        screen.value = ''
-        screen.placeholder = 'Real number';
-        formattedAnswerDiv.innerHTML = ''
-
-        answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
-        // Append '/1' at the end of the URL
-        const newAction = currentAction + '/1';
-        // Update the form's action attribute
-        form.setAttribute('action', newAction);
-    });
-
-    // Latex button selected. Probably never used.
-    latexBtn.addEventListener('click', (event)=> {
-        event.preventDefault();
-        mode = 'l-answer'
-        inputedMcqAnswersDiv.style.display = 'none';
-        formattedAnswerDiv.style.display = 'block';
-        mcqOptionBtnsDiv.style.display = 'none';
-        mcqInputDiv.style.display = 'none';
-        mcqImagePreview.style.display = 'none';
-        calculatorDiv.style.display = 'none';
-        screen.value = ''
-        formattedAnswerDiv.innerHTML = ''
-        answerFieldsDiv.innerHTML = latexAnswerDiv;
-        answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
-    
-        // Append '/2' at the end of the URL
-        const newAction = currentAction + '/2';
-        // Update the form's action attribute
-        form.setAttribute('action', newAction);
-
-
-
-        // Adding event listener to the input field.
-        const latexInput = answerFieldsDiv.querySelector('input');
-        latexInput.addEventListener('input', ()=>{
-            var answerFieldDiv = answerFieldsDiv.querySelector('div');
-            var latexInputField = answerFieldDiv.querySelector('input');
-            const userInputLatex = latexInputField.value;
-           
-            MathJax.typesetPromise().then(() => {
-                try{
-                    const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
-                    formattedAnswerDiv.innerHTML = '';
-                    formattedAnswerDiv.appendChild(formattedAnswer);
-                    MathJax.typesetPromise();
-                } catch(error){
-                    //console.log(error);
-                }
-
-              });
-
-
-        })
-    });
     // Here, each time the value of answer input screen changes,
     // we use mathjax to display the updated content.
     screen.addEventListener('input', ()=> {
+        const formattedAnswerDiv = screen.closest('.question-block').querySelector('.structural-formatted-answer');
         if(screen.value.length >=1 && screen.value.length < 40){
-
+            
             MathJax.typesetPromise().then(() => {
                 try {
                 if(screen.value.startsWith('@{') && screen.value.endsWith('}@')){
-                    var userInputNode = math.simplify(processString(screen.value.slice(2,-2)));
+                    var processed = processString(screen.value.slice(2,-2))
+                    var userInputNode = math.simplify(processed);
+                    var parsedNode = math.parse(processed);
                 }else{
-                    var userInputNode = math.simplify(processString(screen.value));
+                    var processed = processString(screen.value)
+                    var userInputNode = math.simplify(processed);
+                    var parsedNode = math.parse(processed);
                 }
-                var userInputLatex = userInputNode.toTex();
+                var userInputLatex = parsedNode.toTex() + '\\quad = \\quad' + userInputNode.toTex();
                 const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
+                
                 formattedAnswerDiv.innerHTML = '';
                 formattedAnswerDiv.appendChild(formattedAnswer);
                 MathJax.typesetPromise();
                 } catch (error) {
-                   // console.log(error);
+                   //console.log(error);
                 }
                 
                 }); 
@@ -360,69 +53,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     createQuestionBtn.addEventListener('click', (event)=>{
         event.preventDefault();
-        // Make sure question text is valid
-        const questionTextArea = form.querySelector('#question-textarea');
-        if (questionTextArea.value.length <= 5){
-            alert('A question cannot be this short!');
-            return;
+        // Create a click event and dispatch it on the answer-options of the
+        // question block containing the screen so that the hidden answer input 
+        // fields are filled.
+        let clickEvent = new Event('click', {
+            'bubbles': true,
+            'cancelable': true
+        });
+        const lastQB = screen.closest('.question-block');
+        if(lastQB != null){
+            lastQB.querySelector('.answer-options').dispatchEvent(clickEvent);
         }
-        const valid_textarea = validateText(questionTextArea.value, varSymbolsArray);
-        if (!valid_textarea){
-            alert('The question text has undefined symbol(s) in variable expression(s)');
-            return;
-        }
-        const selected_topic = checkTopicAndSubtopic();
-        if (!selected_topic){
-            alert("Please select both a topic and a subtopic.");
-            return;
-        }
-        if (mode==='e-answer'){
-            try{
-                const userInputNode = math.simplify(processString(screen.value));
-                var userInputString = userInputNode.toString();
-                // The following is in case we don't want to change the domain of the algebraic expression
-                // for example, if we don't want (x+1)(x-1)/(x-1) to simplify to just (x+1)
-                //var userInputString = math.simplify(userInputNode, {}, {context: math.simplify.realContext}).toString()
-                screen.value = userInputString;
 
-            }catch {
-                alert('Expression in answer not valid algebraic expression');
-                return;
-            }
-
-        }
-        else if(
-            mode==='f-answer'
-        ) {
-            try{
-                const userInputNode = math.simplify(processString(screen.value));
-                var userInputString = userInputNode.evaluate();
-                if(typeof(userInputString) != 'number'){
-                    alert('You selected float mode but the answer you provided is not a float');
-                    return;
-                }
-                screen.value = userInputString;
-            }catch {
-                if(!validateText(screen.value, varSymbolsArray, isFloat=true)){
-                    alert('You selected float mode but the answer you provided is not a float\
-                        \n or You have undefined variable(s) in expression you entered.');
-                    return;
-                    }
-            }
-            
-            
-        } else if (mode=='m-answer'){
-            if(num_mcq_options_counter < 2){
-                alert('The number of options for an MCQ must be at least 2.');
-                return;
-            }
-            if(num_true_counter < 1){
-                alert('Must select at least one MCQ answer as correct.');
-                return;
+        
+        const questionBlocks = allQuestionBlocks.querySelectorAll('.question-block');
+        for (let i = 0; i < questionBlocks.length; i++) {
+        
+            let okay = checkQuestionBlock(questionBlocks[i]);
+            if (!okay) {
+                alert(`Problem found on part ${String.fromCharCode(64 + i + 1)}`);
+                return;  // Exit the loop
             }
         }
         // Now the form will be submitted after all the checks have passed.
-        form.submit();
+        //form.submit();
     })
 
 
@@ -430,256 +84,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-function create_inputed_mcq_div(input_field, answer_type) {
-    var answer_value = input_field.value
-    var inputedMcqDiv = document.createElement('div'); // to be appended to .inputed-mcq-answers.
-   
-    var answer_info_encoding = '000' // First character for True or False, second for question type, and third for question_number 
-    // The following is a blue print of the information stored about an mcq-option.
-    // One of the hidden inputs should store the string value of the answer, as well as the type of answer it is..
-    // The other hidden input will store the reference question.i.e 0 = 'main', 1 = 'a', 2 = 'b', 4 = 'c' etc. 
-    //     so 0 may mean it is an mcq option for the main question. while 'b' means it is sub question.
-   // May add an edit button later, but I don't think it is useful.
-    var formatted_answer = '';
-    switch (answer_type) {
-        case 'f-answer':
-            // TODO: the float may have variables, so improve the condition below by testing
-            // whether the string contains variables or not.
-            try{
-                display_value = answer_value;
-                answer_value = math.simplify(processString(answer_value)).evaluate();
-                if(typeof(answer_value) != 'number'){
-                    alert('You selected float mode but the answer you provided is not a float');
-                    return;
-                }
-                
-            }catch {
-                if(validateText(answer_value, varSymbolsArray, isFloat=true)){
-                    display_value = answer_value;
-                }else{
-
-                    alert('You selected float mode but the answer you provided is not a float');
-                    return;
-                }
-                
-            }
-            answer_info_encoding = rep(answer_info_encoding, 1, '1');
-            break;
-        case 't-answer':
-            display_value = answer_value;
-            answer_info_encoding = rep(answer_info_encoding, 1, '3');
-            break;
-        case 'l-answer':
-            display_value = answer_value; // Actually doesn't do anything because we don't use Latex as a direct answer yet.
-            answer_info_encoding = rep(answer_info_encoding, 1, '2');
-            break;
-        case 'e-answer':
-            try{
-                answer_value = math.simplify(processString(answer_value)).toString();
-                display_value = answer_value;
-            }
-            catch{
-                num_mcq_options_counter -= 1
-                alert('Expression(s) not valid algebraic expression');   
-                return;
-            }
-            answer_info_encoding = rep(answer_info_encoding, 1, '0');
-            break;
-        case 'i-answer':
-            display_value = answer_value;
-            answer_value = 'image_' + answer_value; 
-            answer_info_encoding = rep(answer_info_encoding, 1, '7');
-        default:
-            //
-    }
-    MathJax.typesetPromise().then(() => {
-        var userInputLatex = '';
-        try {
-            if (answer_type==='l-answer'){// if latex-answer or text-answer
-                userInputLatex = answer_value;
-                formatted_answer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
-            } else if(answer_type==='t-answer'){
-                userInputLatex = answer_value;
-                formatted_answer = document.createElement('p');
-                formatted_answer.innerHTML = userInputLatex;
-            }
-            else if(answer_type==='i-answer'){
-                formatted_answer = document.createElement('p');
-                formatted_answer.innerHTML = display_value;  
-            }
-            else {
-                try{
-                    const userInputNode = math.simplify(processString(display_value));
-                    userInputLatex = userInputNode.toTex();
-                    formatted_answer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
-                }catch{
-                    formatted_answer = document.createElement('p');
-                    formatted_answer.innerHTML = display_value;
-                }
-                
-            }
-            
-
-            // Now that the formatted_answer is ready, create the necessary HTML structure
-            var mcqAnswerDiv = document.createElement('div');
-            mcqAnswerDiv.className = 'inputed-mcq-answer';
-            if (answer_type != 'i-answer'){
-                mcqAnswerDiv.innerHTML = `
-                <br/>
-                <div class="formatted-answer-option"></div>
-                <input value="${answer_value}" type="hidden" name="answer_value_${option_counter}"/>
-                <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="answer_info_${option_counter}"/>
-                <div class="add-delete-btns">
-                    <button type="button" class="btn btn-warning mcq-status mcq-false exempt">False</button>
-                    <button  type="button" class="btn btn-danger mcq-delete exempt">delete</button>
-                </div>
-            `;
-             }else {
-                mcqAnswerDiv.innerHTML = `
-                <br/>
-                <div class="formatted-answer-option"></div>
-                <input value="${display_value}" type="hidden" name="image_label_${option_counter}"/>
-                <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="answer_info_${option_counter}"/>
-                <div class="add-delete-btns">
-                    <button type="button" class="btn btn-warning mcq-status mcq-false exempt">False</button>
-                    <button  type="button" class="btn btn-danger mcq-delete exempt">delete</button>
-                </div>
-            `;
-            
-             }
-           
-            // Append the formatted_answer element as a child
-            var formattedAnswerDiv = mcqAnswerDiv.querySelector('.formatted-answer-option');
-            formattedAnswerDiv.appendChild(formatted_answer);
-            if (answer_type === 'i-answer'){
-                formattedAnswerDiv.appendChild(mcqImagePreview.cloneNode(true));
-                if(imageUploadInput.files.length === 0 ){
-                    alert('You must select an image file');
-                    throw 'Image expected to be selected but wasn\'t'
-                }
-                const image_input_field_clone = imageUploadInput.cloneNode(true);
-                image_input_field_clone.name = `answer_value_${option_counter}`;
-                image_input_field_clone.style.display = 'none';
-                formattedAnswerDiv.appendChild(image_input_field_clone);
-                imageUploadInput.value = '';
-                mcqImagePreview.innerHTML = '';
-            }
-            formattedAnswerDiv.scrollIntoView({behavior:'smooth'});
-
-            // Append mcqAnswerDiv to inputedMcqDiv
-            inputedMcqDiv.appendChild(mcqAnswerDiv);
-            MathJax.typesetPromise();
-        } catch (error) {
-            console.log(error);
-        }
-    });
-
-    num_mcq_options_counter += 1;
-
-    return inputedMcqDiv;
-}
 
 
 
-
-
-//------------------------------------IMAGE UPLOAD HANDLING FOR MAIN QUESTION-------------------
-// Expanding image upload section
-questionAddImgBtn.addEventListener('click', (event)=>{
-    event.preventDefault();
-    if(questionAddImgBtn.classList.contains('open')){
-        questionAddImgBtn.classList.remove('open');
-        questionAddImgBtn.classList.add('closed');
-        questionAddImgBtn.innerHTML = '-collapse-'
-        questionImgUploadSection.style.display = 'block';
-        questionImgUploadSection.scrollIntoView({behavior:'smooth'});
-    }
-    else{
-        questionAddImgBtn.classList.remove('closed');
-        questionAddImgBtn.classList.add('open');
-        uploadedQuestionPreview.innerHTML = '';
-        questionAddImgBtn.innerHTML = 'Upload Image';
-        questionImgUploadSection.style.display = 'none'; 
-    }
-})
-
-mainQuestionImageInput.addEventListener('change', function () {
-    // Reads the uploaded image and renders on the page.
-    uploadedQuestionPreview.innerHTML = '';
-    for (const file of mainQuestionImageInput.files) {
-        const img = document.createElement('img');
-        img.src = URL.createObjectURL(file);
-        img.style.maxWidth = '100%';
-        img.style.maxHeight = '200px';
-        img.style.borderRadius = '15px';
-        img.classList.add('preview-image');
-        uploadedQuestionPreview.appendChild(img);
-    }
-});
-
-addQuestionImgBtn.addEventListener('click', (event)=>{
-    event.preventDefault();
-    if (imgLabelInputField.value === null || imgLabelInputField.value ==='') {
-        alert('You must enter a label for the image.')
-        return;
-    }
-    if(mainQuestionImageInput.files.length === 0){
-        alert('You must choose an image file.')
-        return
-    }
-
-    try{
-        const formatted_new_img = create_img_div(mainQuestionImageInput, imgLabelInputField.value);
-        mainQuestionImagePreview.appendChild(formatted_new_img);
-        imgLabelInputField.value = '';
-        question_img_counter += 1;
-        questionAddImgBtn.classList.remove('closed');
-        questionAddImgBtn.classList.add('open');
-        uploadedQuestionPreview.innerHTML = '';
-        questionAddImgBtn.innerHTML = 'Upload Image';
-        questionImgUploadSection.style.display = 'none'; 
-    }
-    catch(error){
-        alert('Make sure you entered a label for the image and selected an image file.')
-    }
-    
-
-
-})
-// Deleting an uploaded image
-mainQuestionImagePreview.addEventListener('click', (event)=>{
-    event.preventDefault();
-    target = event.target
-    if(target.classList.contains('img-delete')){
-        mainQuestionImagePreview.removeChild(target.parentNode.parentNode);
-    }
-})
-
-function create_img_div(img_input_field, img_label){
-    var imgDiv = document.createElement('div');
-    var imgLabel = document.createElement('p');
-    imgLabel.innerHTML = img_label;
-    imgDiv.className = 'question-image';
-    imgDiv.innerHTML = `
-    <br/>
-    <div class="formatted-answer-option"></div>
-    <input value="${img_label}" type="hidden" name="question_image_label_${question_img_counter}"/>
-    <div class="add-delete-btns">
-        <button  type="button" class="btn btn-danger img-delete exempt">delete</button>
-    </div>
-`;
-    var formattedImgDiv = imgDiv.querySelector('.formatted-answer-option');
-    formattedImgDiv.appendChild(imgLabel);
-    formattedImgDiv.appendChild(uploadedQuestionPreview.cloneNode(true));
-    const image_input_field_clone = img_input_field.cloneNode(true);
-    image_input_field_clone.name = `question_image_file_${question_img_counter}`;
-    image_input_field_clone.style.display = 'none';
-    formattedImgDiv.appendChild(image_input_field_clone);
-    uploadedQuestionPreview.innerHTML = '';
-    img_input_field.value = '';
-
-    return imgDiv;
-}
 
 /*------------------------------UTILITY FUNCTIONS ----------------------------*/
 function rep(str, index, char) {
@@ -1003,6 +410,861 @@ prefaceUnitsBtns.forEach((btn)=>{
 
     })
 })
+
+
+
+
+
+
+
+
+
+
+// ---------------------------------MAKING THE QUESTION MULTIPART------------------------------------------//
+
+function addQuestionBlock(){
+
+
+    const questionBluePrint = `
+    <div class="question-content form-group">
+         <label class="q-label-title">Question ${String.fromCharCode(64 + num_questions)}:</label><br/>
+         <textarea placeholder="Enter the content of the question" class="question-textarea w-100 question-input-field" name="${num_questions}_question_text"></textarea>
+     </div>
+     <div class="main-question-image-preview" data-counter="0"></div>
+     <div class="uploaded-question-preview"></div>
+     <button type="button" class="main-question-add-image-btn btn btn-light open">Upload Image</button>
+     <div class="question-image-upload-section" style="display: none;">
+       <input type="text" placeholder="Enter image label" class="image-label-input-field field-style"/>
+       <input type="file" accept="image/*" class="main-question-image-input">
+       <button type="button" class="btn btn-success question-image-add">add</button>
+     </div>
+     <br/>
+    
+     <div class="answer-options">
+       
+       <label>Select answer type</label><br/>
+       <input type="hidden" value="none" class="hidden-q-type"/>
+       <input type="hidden" placeholder="0" name="${num_questions}_answer" class="q-answer-hidden"/>
+       <input type="hidden" placeholder="units" name="${num_questions}_answer_unit" class="q-answer-units-hidden"/>
+       <input type="hidden" placeholder="latex preface" name="${num_questions}_answer_preface" class="q-answer-preface-hidden"/>
+       <button type="button" id="expression-btn" class="expression-btn btn btn-primary exempt">Expression</button>
+       <button type="button" id="float-btn" class="float-btn btn btn-info exempt">Float</button>
+       <button type="button" id="mcq-btn" class="mcq-btn btn btn-light exempt">MCQ</button>
+       <button type="button" id="fr-btn" class="fr-btn btn btn-secondary exempt">Free Response</button>
+       <button type="button" id="survey-btn" class="survey-btn btn btn-dark exempt" style="display: none;">Survey</button>
+       <button type="button" id="latex-btn" class="latex-btn btn btn-secondary exempt"  style="display: none;">Latex</button>
+       
+     </div>
+    
+     <div class="mcq-answers">
+       <div class="mcq-options-button" style="display: none;">
+         <label>Select MCQ type</label><br/>
+         <button type="button" data-qid="mcq-expression-btn" class="mcq-expression-btn btn-primary exempt">Expression mode</button>
+         <button type="button" data-qid="mcq-float-btn" class="mcq-float-btn btn-info exempt">Float mode</button>
+         <button type="button" data-qid="mcq-text-btn" class="mcq-text-btn btn-light exempt">Text mode</button>
+         <button type="button" data-qid="mcq-latex-btn" class="mcq-latex-btn btn-secondary exempt">Latex mode</button>
+         <button type="button" data-qid="mcq-image-btn" class="mcq-image-btn btn-dark exempt">Image mode</button>
+       </div>
+       <div class="inputed-mcq-answers" data-counter="0" data-true-counter="0">
+    
+       </div>
+       <br/>
+       <div class="mcq-image-preview"></div>
+       <br/>
+       <div class="mcq-input-div" style="display: none;">
+         <input style="width: 100%; box-sizing: border-box;" type="text" class="mcq-input-field field-style"/>
+         <input type="file" accept="image/*" class="image-upload-input-field" style="display:none;"/>
+         <button type="button" class="btn btn-success mcq-add">add</button>
+       </div>
+    
+     </div>
+     
+     <div class="answer-fields">
+         
+     </div>
+     <div class="formatted-answer structural-formatted-answer"></div>
+     <br/>
+     <div class="calculator-area-div"></div><br/>
+     <button class="btn btn-outline-success check-question-btn">Add Part ${String.fromCharCode(64 + num_questions + 1)}</button>
+     <br/><br/>
+     
+    `
+
+
+
+    const questionBlock = document.createElement('div');
+    questionBlock.classList.add('question-block');
+    questionBlock.innerHTML = questionBluePrint;
+    const answerOptionsDiv = questionBlock.querySelector('.answer-options');
+    const expressionBtn = questionBlock.querySelector('.expression-btn');
+    const answerFieldsDiv = questionBlock.querySelector('.answer-fields');
+    const mcqAnswersDiv = questionBlock.querySelector('.mcq-answers');
+    const mcqBtn = questionBlock.querySelector('.mcq-btn');
+    const mcqOptionBtnsDiv = mcqAnswersDiv.querySelector('.mcq-options-button');
+    const inputedMcqAnswersDiv = questionBlock.querySelector('.inputed-mcq-answers');
+    const imgLabelInputField = questionBlock.querySelector('.image-label-input-field');
+    const questionAddImgBtn = questionBlock.querySelector('.main-question-add-image-btn');
+    const questionImgUploadSection = questionBlock.querySelector('.question-image-upload-section');
+    const uploadedQuestionPreview = questionBlock.querySelector('.uploaded-question-preview');
+
+
+
+    const addQuestionImgBtn = questionBlock.querySelector('.question-image-add');
+    const addMcqOptionBtn = questionBlock.querySelector('.mcq-add');
+    
+    const mcqInputDiv = questionBlock.querySelector('.mcq-input-div');
+    const mcqInputField = mcqInputDiv.querySelector('.mcq-input-field');
+    const mcqImagePreview = questionBlock.querySelector('.mcq-image-preview');
+    const imageUploadInput = questionBlock.querySelector('.image-upload-input-field');
+    const floatBtn = questionBlock.querySelector('.float-btn');
+    const latexBtn = questionBlock.querySelector('.latex-btn');
+    const frBtn = questionBlock.querySelector('.fr-btn');
+    const surveyBtn = questionBlock.querySelector('.survey-btn');
+    latexBtn.style.display = 'none';
+    const formattedAnswerDiv = questionBlock.querySelector('.structural-formatted-answer');
+
+    const mainQuestionImageInput = questionBlock.querySelector('.main-question-image-input');
+    const mainQuestionImagePreview = questionBlock.querySelector('.main-question-image-preview');
+    const checkButton = questionBlock.querySelector('.check-question-btn');
+    const hiddenQuestionType = questionBlock.querySelector('.hidden-q-type');
+    const calculatorAreaDiv = questionBlock.querySelector('.calculator-area-div');
+
+    answerOptionsDiv.addEventListener('click', () => {
+        const displayDiv = screen.closest('.calc-display-div');
+        const previousQuestionBlock = screen.closest('.question-block');
+        const mappings = [
+            { source: '.q-answer-preface-hidden', target: '.preface-screen' },
+            { source: '.q-answer-hidden', target: '#screen' },
+            { source: '.q-answer-units-hidden', target: '.units-screen' }
+        ];
+        // if previousQuestionBlock and current block are different
+        if(previousQuestionBlock){
+            if(previousQuestionBlock != questionBlock){
+                mappings.forEach((mapping)=>{
+                    // update the previous block hidden inputs
+                    const calcField = displayDiv.querySelector(mapping.target);
+                    previousQuestionBlock.querySelector(mapping.source).value = calcField.value;
+                    // Now change the calculator fields
+                    const newfield = questionBlock.querySelector(mapping.source) 
+                    calcField.value = newfield.value
+                    calcField.placeholder = newfield.placeholder;
+
+                })
+            } else {
+                // in case the previous block is the same as the current block, 
+                // update the hidden fields of the current block.
+                mappings.forEach((mapping)=>{
+                // update the previous block hidden inputs
+                const calcField = displayDiv.querySelector(mapping.target);
+                previousQuestionBlock.querySelector(mapping.source).value = calcField.value;
+                })
+            }
+        }
+
+    
+        calculatorAreaDiv.innerHTML = '';
+        calculatorAreaDiv.appendChild(displayDiv.closest('#calc-container'));
+    });
+    
+
+
+///
+
+/// ATTENTION! WARNING! IMPORTANT! Recursion here.
+checkButton.addEventListener('click', (event)=>{
+    event.preventDefault();
+
+    const displayDiv = screen.closest('.calc-display-div');
+    const previousQuestionBlock = screen.closest('.question-block');
+    const mappings = [
+        { source: '.q-answer-preface-hidden', target: '.preface-screen' },
+        { source: '.q-answer-hidden', target: '#screen' },
+        { source: '.q-answer-units-hidden', target: '.units-screen' }
+    ];
+    if(previousQuestionBlock == questionBlock){ // if the screen is in the current question block.
+        mappings.forEach(mapping=>{
+            questionBlock.querySelector(mapping.source).value = displayDiv.querySelector(mapping.target).value;
+        })
+    }
+
+
+    if(checkButton.classList.contains('btn-outline-success')){
+        if(checkQuestionBlock(questionBlock)){
+            const newQuestionBlock = addQuestionBlock()
+            allQuestionBlocks.appendChild(newQuestionBlock);
+            checkButton.classList.remove('btn-outline-success');
+            checkButton.classList.add('btn-outline-danger');
+            checkButton.innerHTML = 'Delete Part ' + String.fromCharCode(checkButton.innerHTML.charCodeAt(checkButton.innerHTML.length - 1) - 1);
+            newQuestionBlock.scrollIntoView({behavior: "smooth"});
+        }
+    }else{// Delete block;
+        questionBlock.parentNode.removeChild(questionBlock);
+        num_questions -= 1;
+        // Renaming the question titles.
+        const allqBlocks = document.querySelectorAll('.question-block');
+        let count = 1;
+        
+        allqBlocks.forEach((qBlock) => {
+            const labelTitle = qBlock.querySelector('.q-label-title');
+            const checkBtn = qBlock.querySelector('.check-question-btn');
+            // 'Question B:' -> 'Question A:'
+            labelTitle.textContent = labelTitle.textContent.slice(0, -2) + String.fromCharCode(64 + count) + labelTitle.textContent.slice(-1);
+            if(checkBtn.classList.contains('btn-outline-success')){
+             checkBtn.textContent = checkBtn.textContent.slice(0, -1) + String.fromCharCode(64 + count + 1);
+            }else{
+            checkBtn.textContent = checkBtn.textContent.slice(0, -1) + String.fromCharCode(64 + count);
+            }
+
+            count = count + 1;
+        });
+    }
+
+    // TODO: Implement what happens when all the checks have passed.
+})
+
+
+/*-----------------------------------------SURVEY QUESTION-----------------------------------*/
+surveyBtn.addEventListener('click', (event)=> {
+    event.preventDefault();
+    hiddenQuestionType.value = 's-answer';
+    // NOT A HIGH PRIORITY FOR NOW. TO BE IMPLEMENTED LATER
+})
+
+/*------------------------------------------MCQ QUESTION --------------------------------- */
+
+
+imageUploadInput.addEventListener('change', ()=>{
+// Reads the uploaded image and renders on the page.
+// THERE is another way to do this at the bottom of this file which might be better
+// Ctrl + F and seatch 'image and renders' on page.
+const reader = new FileReader();
+const imageFile = imageUploadInput.files[0];
+reader.onload = function(event) {
+    const imageElement = document.createElement('img');
+    imageElement.src = event.target.result;
+    imageElement.style.maxWidth = '100%';
+    imageElement.style.maxHeight = '200px';
+    imageElement.style.borderRadius = '15px';
+    //console.log(imagePreview.src);
+    
+    mcqImagePreview.style.display = 'block';
+    mcqImagePreview.innerHTML = '';
+    mcqImagePreview.appendChild(imageElement);
+};
+if(imageFile){
+    reader.readAsDataURL(imageFile);
+}
+})
+mainQuestionImageInput.addEventListener('change', function () {
+// Reads the uploaded image and renders on the page.
+uploadedQuestionPreview.innerHTML = '';
+for (const file of mainQuestionImageInput.files) {
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(file);
+    img.style.maxWidth = '100%';
+    img.style.maxHeight = '200px';
+    img.style.borderRadius = '15px';
+    img.classList.add('preview-image');
+    uploadedQuestionPreview.appendChild(img);
+}
+});
+
+mcqBtn.addEventListener('click', (event)=>{
+// If the instructor chooses mcq as the answer option.
+event.preventDefault();
+    inputedMcqAnswersDiv.style.display = 'block';
+    mcqImagePreview.style.display = 'block';
+    hiddenQuestionType.value = 'm-answer'
+    formattedAnswerDiv.style.display = 'none';
+    calculatorDiv.style.display = 'none';
+    mcqOptionBtnsDiv.style.display = 'block';
+    // Append '/3' at the end of the URL
+    const newAction = currentAction + '/3';
+    // Update the form's action attribute
+    form.setAttribute('action', newAction);
+    
+
+});
+
+mcqOptionBtnsDiv.addEventListener('click', (event) => {
+    event.preventDefault();
+
+    mcqInputDiv.style.display = 'block';
+    imageUploadInput.style.display = 'none';
+    mcqImagePreview.style.display = 'none';
+    mcqInputField.value = '';
+
+    const config = {
+        'mcq-expression-btn': {
+            placeholder: 'Enter expression and click add',
+            answerType: 'e-answer'
+        },
+        'mcq-float-btn': {
+            placeholder: 'Enter float and click add',
+            answerType: 'f-answer'
+        },
+        'mcq-text-btn': {
+            placeholder: 'Enter text and click add',
+            answerType: 't-answer'
+        },
+        'mcq-latex-btn': {
+            placeholder: 'Enter latex and click add',
+            answerType: 'l-answer'
+        },
+        'mcq-image-btn': {
+            placeholder: 'Enter image label and click add',
+            answerType: 'i-answer',
+            displayImageUpload: true
+        }
+    };
+
+    const btnConfig = config[event.target.dataset.qid];
+    
+    if (btnConfig) {
+        mcqInputField.placeholder = btnConfig.placeholder;
+        mcqInputField.setAttribute('data-answer-type', btnConfig.answerType);
+
+        if (btnConfig.displayImageUpload) {
+            imageUploadInput.style.display = 'block';
+            mcqImagePreview.style.display = 'block';
+        }
+    }
+});
+
+
+addMcqOptionBtn.addEventListener('click', (event)=>{
+    event.preventDefault();
+    // Adding an mcq option after filling the input field.
+    // This may look small but it's the most dense function in this file
+    // Checkout create_inputed_mcq_div() to see what I mean.
+    if (mcqInputField.value === null || mcqInputField.value ==='') {
+        alert('Cannot create an empty mcq option.')
+        
+    }
+    else{
+        try{
+            const validText = validateText(mcqInputField.value, varSymbolsArray);
+            if(!validText){
+                alert('Undefined symbol(s) in variable expression(s)');
+                return;
+            }
+            const formatted_new_answer = create_inputed_mcq_div(mcqInputField, mcqInputField.dataset.answerType);
+            inputedMcqAnswersDiv.appendChild(formatted_new_answer);
+            mcqInputField.value = '';
+            const holder = parseInt(inputedMcqAnswersDiv.dataset.counter)
+            inputedMcqAnswersDiv.dataset.counter = `${holder + 1}`;
+        }
+        catch(error){
+            console.log(error)
+            alert('Make sure you enter the correct format of the answer type you selected.')
+        }
+        
+    }
+
+
+})
+
+inputedMcqAnswersDiv.addEventListener('click', (event)=>{
+    event.preventDefault();
+    // Here adding the ability to change the status of an mcq option as true or false
+    // Also, there's a delete button.
+    target = event.target
+    if(target.classList.contains('mcq-false')){
+        // changing an mcq option from false to true.
+        target.classList.remove('mcq-false','btn-warning');
+        target.classList.add('mcq-true', 'btn-info');
+        target.innerHTML = 'True';
+        const holder =  parseInt(inputedMcqAnswersDiv.dataset.trueCounter)
+        inputedMcqAnswersDiv.dataset.trueCounter = `${holder + 1}`;
+        const answer_info_input = target.closest('.inputed-mcq-answer').querySelector('.answer_info');
+        answer_info_input.value = rep(answer_info_input.value, 0, '1');
+    } else if(target.classList.contains('mcq-true')){
+        // changing an mcq option from true to false.
+        target.classList.add('mcq-false','btn-warning');
+        target.classList.remove('mcq-true', 'btn-info');
+        target.innerHTML = 'False'; 
+        const holder = parseInt(inputedMcqAnswersDiv.dataset.trueCounter);
+        inputedMcqAnswersDiv.dataset.trueCounter = `${holder - 1}`;    
+        const answer_info_input = target.closest('.inputed-mcq-answer').querySelector('.answer_info');
+        answer_info_input.value = rep(answer_info_input.value, 0, '0');
+    } else if (target.classList.contains('mcq-delete')){
+        // deleting an mcq option.
+        const holder = parseInt(inputedMcqAnswersDiv.dataset.counter)
+        inputedMcqAnswersDiv.dataset.counter  = `${holder-1}`;
+        if (target.classList.contains('mcq-true')){
+            const holder = parseInt(inputedMcqAnswersDiv.dataset.trueCounter)
+            inputedMcqAnswersDiv.dataset.trueCounter = `${holder-1}`;
+        }
+        inputedMcqAnswersDiv.removeChild(target.closest('.inputed-mcq-answer'));//TODO: Can probably make this something better.
+    }
+})
+
+
+
+///EVENT LISTENERS ////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+/*------------------------------------------STRUCTURAL QUESTION --------------------------------- */
+// latexAnswerDiv is never used but just keeping it here.
+const latexAnswerDiv = `
+<div class="l-answer"><br/>
+<label>Latex Answer:</label>
+    <input style="width: 100%; box-sizing: border-box;" class="question-input-field" placeholder="Enter LaTex" type="text" class="latex-answer-input" name="${num_questions}_answer"/>
+    </div>
+`
+// Free response button selected.
+frBtn.addEventListener('click', (event)=>{
+    event.preventDefault();
+    hiddenQuestionType.value = 'fr-answer';  
+    inputedMcqAnswersDiv.style.display = 'none';
+    formattedAnswerDiv.innerHTML = 'Free response mode selected.'
+    formattedAnswerDiv.style.display = 'block';
+    mcqOptionBtnsDiv.style.display = 'none';
+    mcqInputDiv.style.display = 'none';
+    mcqImagePreview.style.display = 'none';
+    calculatorDiv.style.display = 'none';
+    answerFieldsDiv.innerHTML = '';
+    
+    formattedAnswerDiv.scrollIntoView({behavior: 'smooth'});
+    // Append '/4' at the end of the URL
+    const newAction = currentAction + '/4';
+    // Update the form's action attribute
+    form.setAttribute('action', newAction);      
+})
+
+// Expression answer button selected.
+expressionBtn.addEventListener('click', (event)=> {
+    event.preventDefault();
+    hiddenQuestionType.value = 'e-answer';
+    inputedMcqAnswersDiv.style.display = 'none';
+    formattedAnswerDiv.style.display = 'block';
+    mcqOptionBtnsDiv.style.display = 'none';
+    mcqInputDiv.style.display = 'none';
+    mcqImagePreview.style.display = 'none';
+    calculatorDiv.style.display = 'flex';
+    answerFieldsDiv.innerHTML = '';
+    screen.placeholder = 'Expression';
+
+    answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
+
+    // Append '/0' at the end of the URL
+    const newAction = currentAction + '/0';
+    // Update the form's action attribute
+    form.setAttribute('action', newAction);
+
+});
+
+// Float button selected.
+floatBtn.addEventListener('click', function(event) { 
+    event.preventDefault();
+    hiddenQuestionType.value = 'f-answer';
+    inputedMcqAnswersDiv.style.display = 'none';
+    formattedAnswerDiv.style.display = 'block';
+    mcqOptionBtnsDiv.style.display = 'none';
+    mcqInputDiv.style.display = 'none';
+    mcqImagePreview.style.display = 'none';
+    calculatorDiv.style.display = 'flex';
+    answerFieldsDiv.innerHTML = '';
+    screen.placeholder = 'Real number';
+
+    answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
+    // Append '/1' at the end of the URL
+    const newAction = currentAction + '/1';
+    // Update the form's action attribute
+    form.setAttribute('action', newAction);
+});
+
+// Latex button selected. Probably never used.
+latexBtn.addEventListener('click', (event)=> {
+    event.preventDefault();
+    hiddenQuestionType.value = 'l-answer'
+    inputedMcqAnswersDiv.style.display = 'none';
+    formattedAnswerDiv.style.display = 'block';
+    mcqOptionBtnsDiv.style.display = 'none';
+    mcqInputDiv.style.display = 'none';
+    mcqImagePreview.style.display = 'none';
+    calculatorDiv.style.display = 'none';
+    answerFieldsDiv.innerHTML = latexAnswerDiv;
+    answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
+
+    // Append '/2' at the end of the URL
+    const newAction = currentAction + '/2';
+    // Update the form's action attribute
+    form.setAttribute('action', newAction);
+
+
+
+    // Adding event listener to the input field.
+    const latexInput = answerFieldsDiv.querySelector('input');
+    latexInput.addEventListener('input', ()=>{
+        var answerFieldDiv = answerFieldsDiv.querySelector('div');
+        var latexInputField = answerFieldDiv.querySelector('input');
+        const userInputLatex = latexInputField.value;
+       
+        MathJax.typesetPromise().then(() => {
+            try{
+                const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
+                formattedAnswerDiv.innerHTML = '';
+                formattedAnswerDiv.appendChild(formattedAnswer);
+                MathJax.typesetPromise();
+            } catch(error){
+                //console.log(error);
+            }
+
+          });
+
+
+    })
+});
+
+
+
+
+
+
+//------------------------------------IMAGE UPLOAD HANDLING FOR MAIN QUESTION-------------------
+// Expanding image upload section
+questionAddImgBtn.addEventListener('click', (event)=>{
+    event.preventDefault();
+    if(questionAddImgBtn.classList.contains('open')){
+        questionAddImgBtn.classList.remove('open');
+        questionAddImgBtn.classList.add('closed');
+        questionAddImgBtn.innerHTML = '-collapse-';
+        questionImgUploadSection.style.display = 'block';
+        questionImgUploadSection.scrollIntoView({behavior:'smooth'});
+    }
+    else{
+        questionAddImgBtn.classList.remove('closed');
+        questionAddImgBtn.classList.add('open');
+        uploadedQuestionPreview.innerHTML = '';
+        questionAddImgBtn.innerHTML = 'Upload Image';
+        questionImgUploadSection.style.display = 'none'; 
+    }
+})
+
+
+
+addQuestionImgBtn.addEventListener('click', (event)=>{
+    event.preventDefault();
+    if (imgLabelInputField.value === null || imgLabelInputField.value ==='') {
+        alert('You must enter a label for the image.');
+        return;
+    }
+    if(mainQuestionImageInput.files.length === 0){
+        alert('You must choose an image file.');
+        return
+    }
+
+    try{
+        const formatted_new_img = create_img_div(mainQuestionImageInput, imgLabelInputField.value);
+        mainQuestionImagePreview.appendChild(formatted_new_img);
+        imgLabelInputField.value = '';
+        const holder = parseInt(mainQuestionImagePreview.counter)
+        mainQuestionImagePreview.counter =  `${holder - 1}`;
+        questionAddImgBtn.classList.remove('closed');
+        questionAddImgBtn.classList.add('open');
+        uploadedQuestionPreview.innerHTML = '';
+        questionAddImgBtn.innerHTML = 'Upload Image';
+        questionImgUploadSection.style.display = 'none'; 
+    }
+    catch(error){
+        alert('Make sure you entered a label for the image and selected an image file.')
+    }
+    
+
+
+})
+// Deleting an uploaded image
+mainQuestionImagePreview.addEventListener('click', (event)=>{
+    event.preventDefault();
+    target = event.target
+    if(target.classList.contains('img-delete')){
+        mainQuestionImagePreview.removeChild(target.closest('.question-image'));
+    }
+})
+
+
+
+function create_img_div(img_input_field, img_label){
+    var imgDiv = document.createElement('div');
+    var imgLabel = document.createElement('p');
+    imgLabel.innerHTML = img_label;
+    imgDiv.className = 'question-image';
+    imgDiv.innerHTML = `
+    <br/>
+    <div class="formatted-answer-option"></div>
+    <input value="${img_label}" type="hidden" name="${num_questions}_question_image_label_${mainQuestionImagePreview.counter}"/>
+    <div class="add-delete-btns">
+        <button  type="button" class="btn btn-danger img-delete exempt">delete</button>
+    </div>
+`;
+    var formattedImgDiv = imgDiv.querySelector('.formatted-answer-option');
+    formattedImgDiv.appendChild(imgLabel);
+    formattedImgDiv.appendChild(uploadedQuestionPreview.cloneNode(true));
+    const image_input_field_clone = img_input_field.cloneNode(true);
+    image_input_field_clone.name = `${num_questions}_question_image_file_${mainQuestionImagePreview.counter}`;
+    image_input_field_clone.style.display = 'none';
+    formattedImgDiv.appendChild(image_input_field_clone);
+    uploadedQuestionPreview.innerHTML = '';
+    img_input_field.value = '';
+
+    return imgDiv;
+}
+
+
+
+
+
+
+
+function create_inputed_mcq_div(input_field, answer_type) {
+    var answer_value = input_field.value
+    var inputedMcqDiv = document.createElement('div'); // to be appended to .inputed-mcq-answers.
+    inputedMcqDiv.className = 'inputed-mcq-answer';
+    var processedString, simplifiedString;
+    var answer_info_encoding = '000' // First character for True or False, second for question type, and third for question_number 
+    // The following is a blue print of the information stored about an mcq-option.
+    // One of the hidden inputs should store the string value of the answer, as well as the type of answer it is..
+    // The other hidden input will store the reference question.i.e 0 = 'main', 1 = 'a', 2 = 'b', 4 = 'c' etc. 
+    //     so 0 may mean it is an mcq option for the main question. while 'b' means it is sub question.
+   // May add an edit button later, but I don't think it is useful.
+    var formatted_answer = '';
+    switch (answer_type) {
+        case 'f-answer':
+            // TODO: the float may have variables, so improve the condition below by testing
+            // whether the string contains variables or not.
+            try{
+                display_value = answer_value;
+                processedString = processString(answer_value)
+                simplifiedString = math.simplify(processedString)
+                answer_value = simplifiedString.evaluate();
+                if(typeof(answer_value) != 'number'){
+                    alert('You selected float mode but the answer you provided is not a float');
+                    return;
+                }
+                
+            }catch {
+                if(validateText(answer_value, varSymbolsArray, isFloat=true)){
+                    display_value = answer_value;
+                }else{
+
+                    alert('You selected float mode but the answer you provided is not a float');
+                    return;
+                }
+                
+            }
+            answer_info_encoding = rep(answer_info_encoding, 1, '1');
+            break;
+        case 't-answer':
+            display_value = answer_value;
+            answer_info_encoding = rep(answer_info_encoding, 1, '3');
+            break;
+        case 'l-answer':
+            display_value = answer_value; // Actually doesn't do anything because we don't use Latex as a direct answer yet.
+            answer_info_encoding = rep(answer_info_encoding, 1, '2');
+            break;
+        case 'e-answer':
+            try{
+                processedString = processString(answer_value)
+                simplifiedString = math.simplify(processedString)
+                answer_value = simplifiedString.toString();
+                display_value = answer_value;
+            }
+            catch{
+                const holder = parseInt(inputedMcqAnswersDiv.dataset.counter)
+                inputedMcqAnswersDiv.dataset.counter  = `${holder - 1}`;
+                alert('Expression(s) not valid algebraic expression');   
+                return;
+            }
+            answer_info_encoding = rep(answer_info_encoding, 1, '0');
+            break;
+        case 'i-answer':
+            display_value = answer_value;
+            answer_value = 'image_' + answer_value; 
+            answer_info_encoding = rep(answer_info_encoding, 1, '7');
+        default:
+            //
+    }
+    MathJax.typesetPromise().then(() => {
+        var userInputLatex = '';
+        try {
+            if (answer_type==='l-answer'){// if latex-answer or text-answer
+                userInputLatex = answer_value;
+                formatted_answer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
+            } else if(answer_type==='t-answer'){
+                userInputLatex = answer_value;
+                formatted_answer = document.createElement('p');
+                formatted_answer.innerHTML = userInputLatex;
+            }
+            else if(answer_type==='i-answer'){
+                formatted_answer = document.createElement('p');
+                formatted_answer.innerHTML = display_value;  
+            }
+            else {
+                try{
+                    //const userInputNode = math.simplify(processedString);
+                    userInputLatex = math.parse(processedString).toTex();
+                    formatted_answer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
+                }catch{
+                    formatted_answer = document.createElement('p');
+                    formatted_answer.innerHTML = display_value;
+                }
+                
+            }
+            
+
+            // Now that the formatted_answer is ready, create the necessary HTML structure
+            var mcqAnswerDiv = document.createElement('div');
+            if (answer_type != 'i-answer'){
+                mcqAnswerDiv.innerHTML = `
+                <br/>
+                <div class="formatted-answer-option"></div>
+                <input value="${answer_value}" type="hidden" name="${num_questions}_answer_value_${inputedMcqAnswersDiv.counter}"/>
+                <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="${num_questions}_answer_info_${inputedMcqAnswersDiv.counter}"/>
+                <div class="add-delete-btns">
+                    <button type="button" class="btn btn-warning mcq-status mcq-false exempt">False</button>
+                    <button  type="button" class="btn btn-danger mcq-delete exempt">delete</button>
+                </div>
+            `;
+             }else {
+                mcqAnswerDiv.innerHTML = `
+                <br/>
+                <div class="formatted-answer-option"></div>
+                <input value="${display_value}" type="hidden" name="${num_questions}_image_label_${inputedMcqAnswersDiv.counter}"/>
+                <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="${num_questions}_answer_info_${inputedMcqAnswersDiv.counter}"/>
+                <div class="add-delete-btns">
+                    <button type="button" class="btn btn-warning mcq-status mcq-false exempt">False</button>
+                    <button  type="button" class="btn btn-danger mcq-delete exempt">delete</button>
+                </div>
+            `;
+            
+             }
+           
+            // Append the formatted_answer element as a child
+            var formattedAnswerDiv = mcqAnswerDiv.querySelector('.formatted-answer-option');
+            formattedAnswerDiv.appendChild(formatted_answer);
+            if (answer_type === 'i-answer'){
+                formattedAnswerDiv.appendChild(mcqImagePreview.cloneNode(true));
+                if(imageUploadInput.files.length === 0 ){
+                    alert('You must select an image file');
+                    throw 'Image expected to be selected but wasn\'t'
+                }
+                const image_input_field_clone = imageUploadInput.cloneNode(true);
+                image_input_field_clone.name = `${num_questions}_answer_value_${inputedMcqAnswersDiv.counter}`;
+                image_input_field_clone.style.display = 'none';
+                formattedAnswerDiv.appendChild(image_input_field_clone);
+                imageUploadInput.value = '';
+                mcqImagePreview.innerHTML = '';
+            }
+            formattedAnswerDiv.scrollIntoView({behavior:'smooth'});
+
+            // Append mcqAnswerDiv to inputedMcqDiv
+            inputedMcqDiv.appendChild(mcqAnswerDiv);
+            MathJax.typesetPromise();
+        } catch (error) {
+            console.log(error);
+        }
+    });
+    //const holder =  parseInt(inputedMcqAnswersDiv.dataset.counter)
+//     inputedMcqAnswersDiv.dataset.counter  = `${holder+1}`;
+
+    return inputedMcqDiv;
+}
+
+
+
+
+num_questions += 1;
+
+return questionBlock;
+
+}
+
+
+
+
+function checkQuestionBlock(questionBlock){
+        // Make sure question text is valid
+        const questionTextArea = questionBlock.querySelector('.question-textarea');
+        const hiddenQuestionType = questionBlock.querySelector('.hidden-q-type');
+        const inputedMcqAnswersDiv = questionBlock.querySelector('.inputed-mcq-answers');
+        const structuralAnswerInput = questionBlock.querySelector('.q-answer-hidden');
+        if (questionTextArea.value.length <= 5){
+            alert('A question cannot be this short!');
+            return false;
+        }
+        const valid_textarea = validateText(questionTextArea.value, varSymbolsArray);
+        if (!valid_textarea){
+            alert('The question text has undefined symbol(s) in variable expression(s)');
+            return false;
+        }
+        const selected_topic = checkTopicAndSubtopic();
+        if (!selected_topic){
+            alert("Please select both a topic and a subtopic.");
+            return false;
+        }
+        if (hiddenQuestionType.value==='e-answer'){
+            try{
+                if(structuralAnswerInput.value.length < 1){
+                    alert('You must provide an answer');
+                    return false;
+                }
+                const userInputNode = math.simplify(processString(structuralAnswerInput.value));
+                var userInputString = userInputNode.toString();
+                // The following is in case we don't want to change the domain of the algebraic expression
+                // for example, if we don't want (x+1)(x-1)/(x-1) to simplify to just (x+1)
+                //var userInputString = math.simplify(userInputNode, {}, {context: math.simplify.realContext}).toString()
+                structuralAnswerInput.value = userInputString;
+    
+            }catch {
+                alert('Expression in answer not valid algebraic expression');
+                return false;
+            }
+    
+        }
+        else if(
+            hiddenQuestionType.value==='f-answer'
+        ) {
+            try{
+                const userInputNode = math.simplify(processString(structuralAnswerInput.value));
+                var userInputString = userInputNode.evaluate();
+                if(typeof(userInputString) != 'number'){
+                    alert('You selected float mode but the answer you provided is not a float');
+                    return false;
+                }
+                structuralAnswerInput.value = userInputString;
+            }catch {
+                if(!validateText(structuralAnswerInput.value, varSymbolsArray, isFloat=true)){
+                    alert('You selected float mode but the answer you provided is not a float\
+                        \n or You have undefined variable(s) in expression you entered.');
+                    return false;
+                    }
+            }
+            
+            
+        } else if (hiddenQuestionType.value=='m-answer'){
+            if(inputedMcqAnswersDiv.dataset.counter  < 2){
+                alert('The number of options for an MCQ must be at least 2.');
+                return false;
+            }
+            if(inputedMcqAnswersDiv.dataset.trueCounter  < 1){
+                alert('Must select at least one MCQ answer as correct.');
+                return false;
+            }
+        }else if(hiddenQuestionType.value==='none'){
+            alert('You must enter an answer');
+            return false;
+        }
+    
+    return true
+}
+
+
+
+
+
 
 });
 
