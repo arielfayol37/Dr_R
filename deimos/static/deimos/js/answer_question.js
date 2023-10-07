@@ -227,7 +227,7 @@ displayLatex();
               yellowLight.classList.remove('activated');
               yellowLight.classList.remove('blinking');
               greenLight.classList.add('activated');
-            }, 1600);
+            }, 1000);
         
           } else {
             setTimeout(function () {
@@ -242,7 +242,7 @@ displayLatex();
                 redLight.classList.add('activated');
               }
               
-            }, 1600);
+            }, 1000);
         
           }
 
@@ -369,6 +369,13 @@ function parseLatex(text) {
   
   return formattedText;
 }
+
+
+
+
+
+
+
 
 //------------------------NOTES FEATURE----------------------//
 const notePencil = document.querySelector('.note-pencil');

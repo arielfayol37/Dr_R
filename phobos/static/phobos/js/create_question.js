@@ -567,6 +567,8 @@ function addQuestionBlock(){
                     calcField.placeholder = newfield.placeholder;
                     if(calcField.value.length > 1){
                         calcField.style.display = 'block';
+                    }else if(mapping.target != "#screen"){
+                        calcField.style.display = 'none';
                     }
 
                 })
@@ -577,9 +579,10 @@ function addQuestionBlock(){
                 // update the previous block hidden inputs
                 const calcField = displayDiv.querySelector(mapping.target);
                 previousQuestionBlock.querySelector(mapping.source).value = calcField.value;
-
                 if(calcField.value.length > 1){
                     calcField.style.display = 'block';
+                }else if(mapping.target != "#screen"){
+                    calcField.style.display = 'none';
                 }
 
                 })

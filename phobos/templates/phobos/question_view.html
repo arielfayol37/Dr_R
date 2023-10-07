@@ -46,7 +46,6 @@
     {% for index, question_dict in questions_dict.items %}
 
             <p class="question-number"><strong>Question {{question_dict.question.number}}</strong></p>
-            <hr/>
             <p class="question-content">{{question_dict.question.text|safe}}</p>
             <div class="question-images">
                 {% for question_image in question_dict.question.images.all %}

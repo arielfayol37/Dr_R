@@ -208,6 +208,7 @@ def create_question(request, assignment_id=None, question_nums_types=None):
         quest_num = assignment.questions.count() + 1
         parent_question = None
         counter = 0
+        vars_dict = {}
         for q_num, q_type in num_type_pairs:
             counter += 1
             type_int = int(q_type)
@@ -231,7 +232,7 @@ def create_question(request, assignment_id=None, question_nums_types=None):
                 parent_question = parent_question 
             )
             new_question.save() # Needed here. Before saving answer
-            vars_dict = {}
+            
             for key, value in request.POST.items():
                 if key.startswith('domain') and counter==1: # Creating the variables
                     # variables will be associated only to the parent question.
@@ -387,8 +388,14 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
         assignments.append((course.id, Assignment.objects.filter(course = course)))                  #for front-end Export question implementation
         
     question_0 = Question.objects.get(pk=question_id)
-    questions = list(Question.objects.filter(parent_question=question_0))
-    questions.insert(0, question_0)
+    if not question_0.parent_question: # if question has no parent question(the question itself 
+        #is the parent question)
+        questions = list(Question.objects.filter(parent_question=question_0))
+        questions.insert(0, question_0)
+    else:
+        question_0 = question_0.parent_question
+        questions = list(Question.objects.filter(parent_question=question_0))
+        questions.insert(0, question_0)
 
     questions_dictionary = {}
     for index, question in enumerate(questions):
@@ -761,23 +768,32 @@ def copy_answers(old_question, new_question):
 def export_question_to(request,question_id,exp_assignment_id,course_id=None,assignment_id=None):
     try:
         assignment = get_object_or_404(Assignment, pk=exp_assignment_id)
-        question = get_object_or_404(Question, pk=question_id)
+        question_0 = Question.objects.get(pk=question_id)
+        if not question_0.parent_question: # if question has no parent question(the question itself 
+            #is the parent question)
+            questions = list(Question.objects.filter(parent_question=question_0))
+            questions.insert(0, question_0)
+        else:
+            question_0 = question_0.parent_question
+            questions = list(Question.objects.filter(parent_question=question_0))
+            questions.insert(0, question_0)
+        q_count = assignment.questions.count()
+        for index, question in enumerate(questions):    
+            new_question_data = {
+                'number': str(q_count) + chr(65 + index) if index > 0 else str(q_count),
+                'text': question.text,
+                'topic': question.topic,
+                'sub_topic': question.sub_topic,
+                'assignment': assignment,
+                'answer_type': question.answer_type,
+                'deduct_per_attempt': question.deduct_per_attempt,
+                'max_num_attempts': question.max_num_attempts,
+            }
 
-        new_question_data = {
-            'number': assignment.questions.count() + 1,
-            'text': question.text,
-            'topic': question.topic,
-            'sub_topic': question.sub_topic,
-            'assignment': assignment,
-            'answer_type': question.answer_type,
-            'deduct_per_attempt': question.deduct_per_attempt,
-            'max_num_attempts': question.max_num_attempts,
-        }
-
-        new_question = Question.objects.create(**new_question_data)
-        copy_question_images(question, new_question)
-        copy_variables(question, new_question)
-        copy_answers(question, new_question)
+            new_question = Question.objects.create(**new_question_data)
+            copy_question_images(question, new_question)
+            copy_variables(question, new_question)
+            copy_answers(question, new_question)
 
         return JsonResponse({'message': 'Export Successful', 'success': True}, status=200)
     except ObjectDoesNotExist:

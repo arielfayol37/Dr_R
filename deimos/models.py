@@ -112,11 +112,11 @@ class QuestionStudent(models.Model):
         """
         Get variable instances from the variables associated to the question.
         """
-        if not self.question.parent_question:
+        if not self.question.parent_question: # If parent question.
             self.var_instances.clear()
             for var in self.question.variables.all():
                 self.var_instances.add(var.get_instance())
-        else:
+        else: # if not parent question.
             parent_question_student = QuestionStudent.objects.get(question=self.question.parent_question,\
                                                                    student=self.student)
             if not parent_question_student.instances_created:
@@ -150,10 +150,14 @@ class QuestionStudent(models.Model):
 
         # TODO: !important Alternatively, we could just update the permanent dictionary whenever the professor
         # makes changes to question.
-        var_value_dict = {}
-        for var_instance in self.var_instances.all():
-            var_value_dict[var_instance.variable.symbol] = var_instance.value
-        return var_value_dict
+        if not self.question.parent_question:# if parent question
+            var_value_dict = {}
+            for var_instance in self.var_instances.all():
+                var_value_dict[var_instance.variable.symbol] = var_instance.value
+            return var_value_dict
+        else:
+            parent_question_student = QuestionStudent.objects.get(student=self.student, question=self.question.parent_question)
+            return parent_question_student.get_var_value_dict()
     
 
 
