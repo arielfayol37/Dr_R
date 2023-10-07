@@ -28,9 +28,7 @@ urlpatterns = [
          ## for export question implementation
      path('courses/<int:course_id>/assignments/<int:assignment_id>/<int:question_id>/export_question_to/<int:exp_assignment_id>',
           views.export_question_to, name='export_question'),
-     #path('courses/<int:course_id>/assignments/<int:assignment_id>/<int:question_id>/get_assignments/<int:exp_course_id>', \
-     #   views.get_assignments, name='get_assignments'),
-          ##
+
      path('calci', views.calci, name='calci'),
      path('create_question/upload-image/', views.upload_image, name='upload_image'),
      path('courses/<int:course_id>/gradebook', views.gradebook, name='gradebook'),

@@ -25,6 +25,7 @@ from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
 import heapq
 from django.db import transaction
 from markdown2 import markdown
+import string
 # Create your views here.
 @login_required(login_url='astros:login') 
 def index(request):
@@ -47,9 +48,15 @@ def course_management(request, course_id):
         return HttpResponseForbidden('You are not enrolled in this course.')
     assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student, \
                                             is_assigned=True)
+    Notes = Note.objects.all()
+    notes=[]
+    for note in Notes:
+        if note.question_student.student == student:
+             notes.append({'Note':note,"note_md":markdown(note.content)})
     context = {
         "assignments": assignments,
-        "course": course
+        "course": course,
+        "notes": notes
     }
     return render(request, "deimos/course_management.html", context)
 
@@ -340,15 +347,36 @@ def register(request):
         username = request.POST["username"]
         email = request.POST["email"]
 
-        # Ensure password matches confirmation
+        letters= string.ascii_uppercase
+
         password = request.POST["password"]
         confirmation = request.POST["confirmation"]
         first_name = request.POST["first_name"]
         last_name = request.POST["last_name"]
         
+        # Ensure password matches confirmation
         if password != confirmation:
             return render(request, "astros/register.html", {
-                "message": "Passwords must match."
+                "message_deimos": "Passwords must match."
+            })
+        # Ensure password standards are met
+        if len(password)<8:
+            return render(request, "astros/register.html", {
+                "message_deimos": "Passwords must be at least 8 character long."
+            })
+        for i in letters:
+            if i in password:
+                break
+            if(i == letters[len(letters)-1]):
+                return render(request, "astros/register.html", {
+                "message_deimos": "Passwords must include altleast one lower case and one Upper case letter."
+            })
+        for i in letters:
+            if i.lower in password:
+                break
+            if(i.lower == letters[len(letters)-1].lower):
+                return render(request, "astros/register.html", {
+                "message_deimos": "Passwords must include altleast one lower case and one Upper case letter."
             })
 
         # Attempt to create new student

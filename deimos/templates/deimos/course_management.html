@@ -6,21 +6,73 @@
     <header class="sidebar-header">X</header>
     <ul>
         <li><a href="{% url 'deimos:index' %}">Home</a></li>
-        <li><a href="{% url 'astros:course_info' course_id=course.id %}">Course Info</a></li> 
+        <li><a href="{% url 'astros:course_info' course_id=course.id %}">Course Info</a></li>
         <li><a href="{% url 'deimos:search_question' %}">Search Question</a></li>
     </ul>
 </div>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light" >
+    <div class="container-fluid">
+      <ul class="navbar-nav mr-auto" style="list-style: none; display:flex;">
+        <li class="nav-item " style="display:inline;">
+          <a class="nav-link home-btn" >Home </a>
+        </li>
+        <li class="nav-item" style="display:inline;">
+          <a class="nav-link view-notes-btn" >View notes</a>
+        </li>
+        </div>
+  </nav>
+
+  <div class="home">
     <div id="sf-container">
-        <input  id="search-field" type="text" name="search" placeholder="search assignment"/>
+        <input id="search-field" type="text" name="search" placeholder="search assignment" />
     </div>
-    <br/>
-    <h4>{{course.name}}</h4><hr/>
-    
+    <br />
+    <h4>{{course.name}}</h4>
+    <hr />
+
     <!-- Display course's assignments -->
     <ul class="courses course-list">
         {% for assignment in assignments %}
-            {% include 'deimos/assignment_display.html' with assignment=assignment course=course %}
+        {% include 'deimos/assignment_display.html' with assignment=assignment course=course %}
         {% endfor %}
     </ul>
+</div>
+<div class="notes" style="display: none;">
+    {% for assignment in assignments %}
+    <h4>{{assignment.name}}</h4>
+    <ol>
+        {% for note in notes %}
+        {% if note.Note.question_student.question.assignment.id == assignment.id %}
+        {% include 'deimos/notes_course_display.html' with note=note.Note note_md=note.note_md %}
+        {% endif %}
+        {% endfor %}
+    </ol>
+    {% endfor %}
+</div>
 
+<script>
+    const navigation = document.querySelector('.navigation');
+    const homeDiv = document.querySelector('.home');
+    const noteDiv = document.querySelector('.notes');
+
+    function initial_view() {
+        homeDiv.style.display = 'none';
+        noteDiv.style.display = 'none';
+    }
+
+    document.addEventListener('click', () => {
+        target = event.target;
+        if (target.classList.contains('home-btn')) {
+            initial_view();
+            homeDiv.style.display = 'block';
+        }
+        if (target.classList.contains('view-notes-btn')) {
+            initial_view();
+            noteDiv.style.display = 'block';
+        }
+
+    })
+</script>
 {% endblock %}
+
