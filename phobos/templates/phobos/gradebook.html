@@ -21,23 +21,25 @@
     </div>
     <br/>
     <button id="export-button" class="btn btn-info">Export as Excel</button>
-    <!-- extra functionalities-->
-    
-    <button class="select-button" class="btn btn-info" style="position: relative; float: right">Select Students</button>
+
+<!-- extra functionalities-->    
+    <button class="select-button" class="btn btn-primary" style="position: relative; float: right">Select Students</button>
 <br/>
 <br/>
 
 <div class="extra-functions">
 
-    <button class="action-button" class="btn btn-info" style="display: none;">Bulk Action</button>
-    <select class="selected-action" style="display:none"> <!-- Add actions here-->
+    <button class="action-button" class="btn btn-primary" style="display: none;">Bulk Action</button>
+
+    <select class="selected-action" style="display:none"> 
         <option value="action-1">Extend Due Date</option>
+        <!-- Add actions here. use option tag-->
     </select>
+    <br/>
+    <br/>
 
 <!-- Due Date functionalities-->
-    <br/>
-    <br/>
-<div  class="due-date-div" style="display: none" >     <!-- Add elements associated with an action here-->
+<div  class="due-date-div" style="display: none" >     
     <select class="selected-assignments">
         {% for assignment in assignments %}
         <option  value="{{assignment.id}}">{{assignment.name}} </option>
@@ -47,7 +49,9 @@
     <input type="button" class="save-new-due-date-field" value="OK">
 </div>
 
-</div>
+<!-- Add elements associated with an action here-->
+
+</div> <!-- END OF extra-functionalities-->
     <br/>
     
         <table class="table table-striped table-bordered table-hover">

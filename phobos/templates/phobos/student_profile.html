@@ -36,6 +36,23 @@
     {% endfor %}
     </tbody>
 </table>
+<!-- edit score implementation-->
+</br>
+<div class="edit_questions_details sf-container" style="display: none; width: 70%;">
+    <div>
+        <b style="color: blueviolet;">MODIFYING: <div class="question-num" style="display: inline;"></div></b>
+    </div>
+    <div class="row">
+        <div class="col-sm-4"><b> original score: </b><div class="original-score"></div></div>
+        <div class="col-sm-4"><b> actual score:</b><div class="actual-score"></div></div>
+        <div class="col-sm-4"><b>new score:</b> <input class='new-score-input-field' type='text'> </div>
+    </div>
+    <br>
+    <button class="apply-btn">apply</button>
+    <button class="cancel-btn"> cancel</button>
+    <br>
+</div>
+<!-- end -->
 
 {% block script %}
 <script src="{% static 'phobos/js/student_profile.js' %}"></script>  
