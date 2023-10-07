@@ -60,7 +60,7 @@ def assignment_management(request, assignment_id, course_id=None):
     course = assignment.course
     if not course.professors.filter(pk=request.user.pk).exists() and course.name != 'Question Bank':
         return HttpResponseForbidden('You are not authorized to manage this Assignment.')
-    questions = Question.objects.filter(assignment = assignment)
+    questions = Question.objects.filter(assignment = assignment, parent_question=None)
     for question in questions:
         question.text = replace_links_with_html(question.text)
     context = {
@@ -189,7 +189,7 @@ def assign_assignment(request, assignment_id, course_id=None):
     return JsonResponse({'message':'Something went wrong.','success':False})
 @transaction.atomic
 @login_required(login_url='astros:login')
-def create_question(request, assignment_id=None, type_int=None):
+def create_question(request, assignment_id=None, question_nums_types=None):
     """
     creates a `Question` object.
     Will usually require the assignment id, and sometimes
@@ -197,139 +197,150 @@ def create_question(request, assignment_id=None, type_int=None):
     """
     # Making sure the request is done by a professor.
     professor = get_object_or_404(Professor, pk=request.user.id)
+    
     if request.method == 'POST':
+        # Getting the question pairs.
+        num_type_pairs = []
+        for string_pair in question_nums_types.split("$")[1:]: # From the JS, the first item will be empty
+            question_num, question_type = string_pair.split("-")
+            num_type_pairs.append((question_num, question_type))
         assignment = Assignment.objects.get(pk = assignment_id)
         quest_num = assignment.questions.count() + 1
-        topic = Topic.objects.get(name=request.POST.get('topic'))
-        sub_topic = SubTopic.objects.get(name=request.POST.get('sub_topic'))
-        text = request.POST.get('question_text')
-        answer_unit = request.POST.get('answer_unit')
-        answer_preface = request.POST.get('answer_preface')
-        num_points = request.POST.get('num_points')
-        if answer_unit == '':
-            answer_unit = None
-        if type_int != 3 and type_int != 4:
-            question_answer = request.POST.get('answer')
-            if len(text)==0 or len(question_answer) == 0:
-                return HttpResponseForbidden('You cannot create a question without content/answer.')
-        else:
-            if len(text) == 0:
-                return HttpResponseForbidden('You cannot create a question without content')
-        new_question = Question(
-            number = quest_num,
-            text = text,
-            topic = topic,
-            sub_topic = sub_topic,
-            assignment = assignment,
-            num_points = num_points if num_points else 10
-        )
-        new_question.save() # Needed here. Before saving answer
-        vars_dict = {}
-        for key, value in request.POST.items():
-            if key.startswith('domain'):
-                _, bound_type, var_symbol, bound_number = key.split('#')
-                bound_value = value
-                if var_symbol not in vars_dict:
-                    vars_dict[var_symbol] = {}
-                if bound_type not in vars_dict[var_symbol]:
-                    vars_dict[var_symbol][bound_type] = []
-                vars_dict[var_symbol][bound_type].append(bound_value)
-            
-            elif key.startswith('question_image_label_'):
-                image_number = key[len('question_image_label_'):]
-                label_name = 'question_image_label_' + image_number
-                image_name = 'question_image_file_' + image_number
-                image = request.FILES.get(image_name)
-                label = request.POST.get(label_name)
-                question_image = QuestionImage(question=new_question, image=image, label=label)
-                question_image.save()
-        for var_symbol in vars_dict:
-            step_size = request.POST[f'step#size#{var_symbol}']
-            is_integer = not bool(int(request.POST[f'var#type#{var_symbol}'])) # Front End will return 0 for integer. 
-            new_variable = Variable(question=new_question, symbol=var_symbol, step_size=step_size, is_integer=is_integer)
-            new_variable.save()
-            assert len(vars_dict[var_symbol]['lb']) == len(vars_dict[var_symbol]['ub'])
-            for bound_index in range(len(vars_dict[var_symbol]['lb'])):
-                var_interval = VariableInterval(variable=new_variable, \
-                                                lower_bound = vars_dict[var_symbol]['lb'][bound_index],\
-                                                upper_bound = vars_dict[var_symbol]['ub'][bound_index])
-                var_interval.save()
-        if type_int == 3:
-            new_question.deduct_per_attempt = 0.25 # Deduct 25% of points when it is an mcq
-            new_question.max_num_attempts = 3
+        parent_question = None
+        counter = 0
+        for q_num, q_type in num_type_pairs:
+            counter += 1
+            type_int = int(q_type)
+            topic = Topic.objects.get(name=request.POST.get('topic'))
+            sub_topic = SubTopic.objects.get(name=request.POST.get('sub_topic'))
+            text = request.POST.get(q_num + '_question_text')
+            answer_unit = request.POST.get(q_num + '_answer_unit')
+            answer_preface = request.POST.get(q_num + '_answer_preface')
+            num_points = request.POST.get(q_num + '_num_points', 10/(len(num_type_pairs)))
+            if answer_unit == '':
+                answer_unit = None
+            if type_int != 3 and type_int != 4:
+                question_answer = request.POST.get(q_num + '_answer')
+            new_question = Question(
+                number = quest_num if counter == 1 else str(quest_num) + chr(64 + counter),
+                text = text,
+                topic = topic,
+                sub_topic = sub_topic,
+                assignment = assignment,
+                num_points = num_points,
+                parent_question = parent_question 
+            )
+            new_question.save() # Needed here. Before saving answer
+            vars_dict = {}
             for key, value in request.POST.items():
-                if key.startswith('answer_value_'):
-                    option_index_start = len('answer_value_')
-                    info_key = 'answer_info_' + key[option_index_start:]
-                    answer_info_encoding = request.POST.get(info_key)
-                    answer_content = value
-                    # Really, all thsoe QuestionChoices don't matter for two reasons:
-                        # 1) If there are different types of mcq answers which is often the case
-                        #     the answer_type will end up being just the type of the last answer
-                        # 2) All what the other parts of the programs care about is whether the question
-                        #     is an MCQ or not.
-                    if answer_info_encoding[1] == "0": # Expression Answer
-                        new_question.answer_type = QuestionChoices.MCQ_EXPRESSION
-                        answer = MCQExpressionAnswer(question=new_question, content=answer_content)
-                    elif answer_info_encoding[1] == "1": # Float Answer
-                        if not vars_dict:
-                            new_question.answer_type = QuestionChoices.MCQ_FLOAT
-                            answer = MCQFloatAnswer(question=new_question, content=answer_content)
+                if key.startswith('domain') and counter==1: # Creating the variables
+                    # variables will be associated only to the parent question.
+                    _, bound_type, var_symbol, bound_number = key.split('#')
+                    bound_value = value
+                    if var_symbol not in vars_dict:
+                        vars_dict[var_symbol] = {}
+                    if bound_type not in vars_dict[var_symbol]:
+                        vars_dict[var_symbol][bound_type] = []
+                    vars_dict[var_symbol][bound_type].append(bound_value)
+                
+                elif key.startswith(q_num + '_question_image_label_'):
+                    image_number = key[len(q_num + '_question_image_label_'):]
+                    label_name = q_num + '_question_image_label_' + image_number
+                    image_name = q_num + '_question_image_file_' + image_number
+                    image = request.FILES.get(image_name)
+                    label = request.POST.get(label_name)
+                    question_image = QuestionImage(question=new_question, image=image, label=label)
+                    question_image.save()
+            if counter == 1:
+                for var_symbol in vars_dict:
+                    step_size = request.POST[f'step#size#{var_symbol}']
+                    is_integer = not bool(int(request.POST[f'var#type#{var_symbol}'])) # Front End will return 0 for integer. 
+                    new_variable = Variable(question=new_question, symbol=var_symbol, step_size=step_size, is_integer=is_integer)
+                    new_variable.save()
+                    assert len(vars_dict[var_symbol]['lb']) == len(vars_dict[var_symbol]['ub'])
+                    for bound_index in range(len(vars_dict[var_symbol]['lb'])):
+                        var_interval = VariableInterval(variable=new_variable, \
+                                                        lower_bound = vars_dict[var_symbol]['lb'][bound_index],\
+                                                        upper_bound = vars_dict[var_symbol]['ub'][bound_index])
+                        var_interval.save()
+            if type_int == 3:
+                new_question.deduct_per_attempt = 0.25 # Deduct 25% of points when it is an mcq
+                new_question.max_num_attempts = 3
+                for key, value in request.POST.items():
+                    if key.startswith(q_num + '_answer_value_'):
+                        option_index_start = len(q_num + '_answer_value_')
+                        info_key = q_num + '_answer_info_' + key[option_index_start:]
+                        answer_info_encoding = request.POST.get(info_key)
+                        answer_content = value
+                        # Really, all thsoe QuestionChoices don't matter for two reasons:
+                            # 1) If there are different types of mcq answers which is often the case
+                            #     the answer_type will end up being just the type of the last answer
+                            # 2) All what the other parts of the programs care about is whether the question
+                            #     is an MCQ or not.
+                        if answer_info_encoding[1] == "0": # Expression Answer
+                            new_question.answer_type = QuestionChoices.MCQ_EXPRESSION
+                            answer = MCQExpressionAnswer(question=new_question, content=answer_content)
+                        elif answer_info_encoding[1] == "1": # Float Answer
+                            if not vars_dict:
+                                new_question.answer_type = QuestionChoices.MCQ_FLOAT
+                                answer = MCQFloatAnswer(question=new_question, content=answer_content)
+                            else:
+                                new_question.answer_type = QuestionChoices.MCQ_VARIABLE_FLOAT
+                                answer = MCQVariableFloatAnswer(question=new_question, content=answer_content)
+                        elif answer_info_encoding[1] == "2": # Latex Answer
+                            new_question.answer_type = QuestionChoices.MCQ_LATEX
+                            answer = MCQLatexAnswer(question=new_question, content=answer_content)
+                        elif answer_info_encoding[1] == "3": # Text Answer
+                            new_question.answer_type = QuestionChoices.MCQ_TEXT
+                            answer = MCQTextAnswer(question=new_question, content=answer_content)
                         else:
-                            new_question.answer_type = QuestionChoices.MCQ_VARIABLE_FLOAT
-                            answer = MCQVariableFloatAnswer(question=new_question, content=answer_content)
-                    elif answer_info_encoding[1] == "2": # Latex Answer
-                        new_question.answer_type = QuestionChoices.MCQ_LATEX
-                        answer = MCQLatexAnswer(question=new_question, content=answer_content)
-                    elif answer_info_encoding[1] == "3": # Text Answer
-                        new_question.answer_type = QuestionChoices.MCQ_TEXT
-                        answer = MCQTextAnswer(question=new_question, content=answer_content)
-                    else:
-                        return HttpResponseForbidden('Something went wrong')
-                    answer.is_answer = True if answer_info_encoding[0] == '1' else False
-                    answer.save() # Needed here.
-            
-            # Getting the MCQ images
-            for key, value in request.FILES.items():
-                if key.startswith('answer_value_'):
-                    option_index_start = len('answer_value_')
-                    info_key = 'answer_info_' + key[option_index_start:]
-                    answer_info_encoding = request.POST.get(info_key)
-                    image = value
-                    if answer_info_encoding[1] == '7': # Image answer
-                        new_question.answer_type = QuestionChoices.MCQ_IMAGE
-                        # image = request.FILES.get(info_key)
-                        label = request.POST.get('image_label_' + key[option_index_start:])
-                        answer = MCQImageAnswer(question=new_question, image=image, label=label)
-                    else:
-                        return HttpResponseForbidden('Something went wrong')
-                    answer.is_answer = True if answer_info_encoding[0] == '1' else False
-                    answer.save() # Needed here.                
-        elif type_int == 0:
-            new_question.answer_type = QuestionChoices.STRUCTURAL_EXPRESSION
-            answer = ExpressionAnswer(question=new_question, content=question_answer,\
-                                       answer_unit=answer_unit, preface=answer_preface)
-        elif type_int == 1:
-            if not vars_dict:
-                new_question.answer_type = QuestionChoices.STRUCTURAL_FLOAT
-                answer = FloatAnswer(question=new_question, content=question_answer, \
-                                     answer_unit=answer_unit, preface=answer_preface)
+                            return HttpResponseForbidden('Something went wrong: unexpected mcq encoding')
+                        answer.is_answer = True if answer_info_encoding[0] == '1' else False
+                        answer.save() # Needed here.
+                
+                # Getting the MCQ images
+                for key, value in request.FILES.items():
+                    if key.startswith(q_num + '_answer_value_'):
+                        option_index_start = len(q_num + '_answer_value_')
+                        info_key = q_num + '_answer_info_' + key[option_index_start:]
+                        answer_info_encoding = request.POST.get(info_key)
+                        image = value
+                        if answer_info_encoding[1] == '7': # Image answer
+                            new_question.answer_type = QuestionChoices.MCQ_IMAGE
+                            # image = request.FILES.get(info_key)
+                            label = request.POST.get(q_num + '_image_label_' + key[option_index_start:])
+                            answer = MCQImageAnswer(question=new_question, image=image, label=label)
+                        else:
+                            return HttpResponseForbidden('Something went wrong: unexpected encoding for mcq image answer')
+                        answer.is_answer = True if answer_info_encoding[0] == '1' else False
+                        answer.save() # Needed here.                
+            elif type_int == 0:
+                new_question.answer_type = QuestionChoices.STRUCTURAL_EXPRESSION
+                answer = ExpressionAnswer(question=new_question, content=question_answer,\
+                                        answer_unit=answer_unit, preface=answer_preface)
+            elif type_int == 1:
+                if not vars_dict:
+                    new_question.answer_type = QuestionChoices.STRUCTURAL_FLOAT
+                    answer = FloatAnswer(question=new_question, content=question_answer, \
+                                        answer_unit=answer_unit, preface=answer_preface)
+                else:
+                    new_question.answer_type = QuestionChoices.STRUCTURAL_VARIABLE_FLOAT
+                    answer = VariableFloatAnswer(question=new_question, content=question_answer,\
+                                                answer_unit=answer_unit, preface=answer_preface)
+            elif type_int == 2:
+                new_question.answer_type = QuestionChoices.STRUCTURAL_LATEX
+                answer = LatexAnswer(question=new_question, content=question_answer)
+            elif type_int == 4:
+                # 'Free' response question
+                new_question.answer_type = QuestionChoices.STRUCTURAL_TEXT
+                # No answer yet, but semantic answer validation coming soon.
+                answer = TextAnswer(question=new_question, content='')
             else:
-                new_question.answer_type = QuestionChoices.STRUCTURAL_VARIABLE_FLOAT
-                answer = VariableFloatAnswer(question=new_question, content=question_answer,\
-                                              answer_unit=answer_unit, preface=answer_preface)
-        elif type_int == 2:
-            new_question.answer_type = QuestionChoices.STRUCTURAL_LATEX
-            answer = LatexAnswer(question=new_question, content=question_answer)
-        elif type_int == 4:
-            # 'Free' response question
-            new_question.answer_type = QuestionChoices.STRUCTURAL_TEXT
-            # No answer yet, but semantic answer validation coming soon.
-            answer = TextAnswer(question=new_question, content='')
-        else:
-            return HttpResponseForbidden('Something went wrong')
-        new_question.save()
-        answer.save() # Needed here too.
+                return HttpResponseForbidden('Something went wrong: unexpected question type_int')
+            new_question.save()
+            if counter == 1:
+                parent_question = new_question
+            answer.save() # Needed here too.
         messages.info(request=request, message="Question created successfully!")
         return HttpResponseRedirect(reverse("phobos:assignment_management",\
                                             kwargs={'course_id':assignment.course.id,\
@@ -367,66 +378,73 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
     professor = get_object_or_404(Professor, pk=request.user.id)
     assignments=[]                              # actual assignment for Export question implementation
     course= Course.objects.get(pk= course_id)                  #for Export question implementation
-    courses= Course.objects.filter( professors=professor)
-    for course in courses:
-        assignments.append((course.id,Assignment.objects.filter(course = course)))                  #for front-end Export question implementation
-        
-    question = Question.objects.get(pk=question_id)
-    question.text = replace_links_with_html(question.text)
-    # replace_image_labels_with_links() should come after replace_links_with_html()
-    labels_urls_list = [(question_image.label, question_image.image.url) for question_image in \
-                         question.images.all()]
-    question.text = replace_image_labels_with_links(question.text, labels_urls_list)
-    answers = []
-    is_latex = []
-    is_mcq = False
-    is_fr = False # is free response
-    if question.answer_type.startswith('MCQ'):
-        is_mcq = True
-        ea = question.mcq_expression_answers.all()
-        answers.extend(ea)
-        ta = question.mcq_text_answers.all()
-        answers.extend(ta)
-        fa = question.mcq_float_answers.all()
-        answers.extend(fa)
-        fva = question.mcq_variable_float_answers.all()
-        answers.extend(fva)
-        ia = question.mcq_image_answers.all()
-        answers.extend(ia)
-        la = question.mcq_latex_answers.all()
-        answers.extend(la)
-        # !Important: order matters here. Latex has to be last!
-        is_latex = [0 for _ in range(ea.count()+ta.count()+fa.count()+fva.count()+ia.count())]
-        is_latex.extend([1 for _ in range(la.count())])
-    else:
-        if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
-            answers.extend([question.expression_answer])
-        elif question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
-            answers.extend([question.text_answer])
-            is_fr = True
-        elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
-            answers.extend([question.float_answer])
-        elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
-            answers.extend([question.latex_answer])
-            is_latex.extend([1])
-        elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
-            answers.extend([question.variable_float_answer])
-        else:
-            return HttpResponse('Something went wrong.')
-        answers[0].preface = '' if not answers[0].preface else answers[0].preface + "\quad = \quad"# This is to display well in the front end.
-        answers[0].answer_unit = '' if not answers[0].answer_unit else answers[0].answer_unit
-    course = Course.objects.get(pk = course_id)
+    courses= Course.objects.filter(professors=professor)
     if course.professors.filter(pk=request.user.pk).exists() or course.name=='Question Bank':
        show_answer = True
     else:
         show_answer = False
-    return render(request, 'phobos/question_view.html',
-                  {'question':question,\
+    for course in courses:
+        assignments.append((course.id, Assignment.objects.filter(course = course)))                  #for front-end Export question implementation
+        
+    question_0 = Question.objects.get(pk=question_id)
+    questions = list(Question.objects.filter(parent_question=question_0))
+    questions.insert(0, question_0)
+
+    questions_dictionary = {}
+    for index, question in enumerate(questions):
+        question.text = replace_links_with_html(question.text)
+        # replace_image_labels_with_links() should come after replace_links_with_html()
+        labels_urls_list = [(question_image.label, question_image.image.url) for question_image in \
+                            question.images.all()]
+        question.text = replace_image_labels_with_links(question.text, labels_urls_list)
+        answers = []
+        is_latex = []
+        is_mcq = False
+        is_fr = False # is free response
+        if question.answer_type.startswith('MCQ'):
+            is_mcq = True
+            ea = question.mcq_expression_answers.all()
+            answers.extend(ea)
+            ta = question.mcq_text_answers.all()
+            answers.extend(ta)
+            fa = question.mcq_float_answers.all()
+            answers.extend(fa)
+            fva = question.mcq_variable_float_answers.all()
+            answers.extend(fva)
+            ia = question.mcq_image_answers.all()
+            answers.extend(ia)
+            la = question.mcq_latex_answers.all()
+            answers.extend(la)
+            # !Important: order matters here. Latex has to be last!
+            is_latex = [0 for _ in range(ea.count()+ta.count()+fa.count()+fva.count()+ia.count())]
+            is_latex.extend([1 for _ in range(la.count())])
+        else:
+            if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
+                answers.extend([question.expression_answer])
+            elif question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
+                answers.extend([question.text_answer])
+                is_fr = True
+            elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
+                answers.extend([question.float_answer])
+            elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
+                answers.extend([question.latex_answer])
+                is_latex.extend([1])
+            elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
+                answers.extend([question.variable_float_answer])
+            else:
+                return HttpResponse('Something went wrong.')
+            answers[0].preface = '' if not answers[0].preface else answers[0].preface + "\quad = \quad"# This is to display well in the front end.
+            answers[0].answer_unit = '' if not answers[0].answer_unit else answers[0].answer_unit
+        
+        questions_dictionary[index] = {'question':question,\
                    'assignments':assignments,\
-                   'courses':zip(range(len(courses)),courses),
                       'show_answer':show_answer,\
                      'is_mcq':is_mcq, 'is_fr':is_fr,'answers': answers,\
-                         'answers_is_latex': zip(answers, is_latex) if is_latex else None})
+                         'answers_is_latex': zip(answers, is_latex) if is_latex else None}
+
+    return render(request, 'phobos/question_view.html', {'courses':zip(range(len(courses)),courses),\
+                                                         'questions_dict':questions_dictionary, \
+                                                         'question':questions[0]})
 
 
 @login_required(login_url='astros:login')  

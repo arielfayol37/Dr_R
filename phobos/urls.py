@@ -10,7 +10,7 @@ urlpatterns = [
     path('register', views.register, name='register'),
     path('create_course', views.create_course, name='create_course'),
     path('create_question/<int:assignment_id>', views.create_question, name='create_question'),
-    path('create_question/<int:assignment_id>/<int:type_int>',views.create_question,
+    path('create_question/<int:assignment_id>/<str:question_nums_types>',views.create_question,
          name='create_question'
     ),
     path('courses/<int:course_id>', views.course_management, name='course_management'),
