@@ -58,7 +58,7 @@ def assignment_management(request, assignment_id, course_id=None):
     # Making sure the request is done by a Student.
     student = get_object_or_404(Student, pk = request.user.pk)
     assignment = get_object_or_404(Assignment, pk = assignment_id)
-    questions = Question.objects.filter(assignment = assignment)
+    questions = Question.objects.filter(assignment = assignment, parent_question=None)
     context = {
         "questions": questions,
         "assignment": assignment
@@ -72,115 +72,130 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
     # Making sure the request is done by a Student.
     student = get_object_or_404(Student, pk=request.user.pk)
     assignment = get_object_or_404(Assignment, pk=assignment_id)
-    question_ids = assignment.questions.values_list('id', flat=True)
-    question_nums = assignment.questions.values_list('number', flat=True)
-    question = Question.objects.get(pk=question_id)
-    
-    question_student, created = QuestionStudent.objects.get_or_create(question=question, student=student)
-    too_many_attempts = question_student.get_num_attempts() >= question.max_num_attempts
-    if created:
-        question_student.create_instances()
+    if assignment.course.name != 'Question Bank':
+        question_ids = assignment.questions.filter(parent_question=None).values_list('id', flat=True)
+        question_nums = assignment.questions.filter(parent_question=None).values_list('number', flat=True)
+    question_0 = Question.objects.get(pk=question_id)
+    if not question_0.parent_question: # if question has no parent question(the question itself 
+        #is the parent question)
+        questions = list(Question.objects.filter(parent_question=question_0))
+        questions.insert(0, question_0)
     else:
-        if not question_student.instances_created:
+        question_0 = question_0.parent_question
+        questions = list(Question.objects.filter(parent_question=question_0))
+        questions.insert(0, question_0)
+
+    questions_dictionary = {}
+    for index, question in enumerate(questions):
+        question_student, created = QuestionStudent.objects.get_or_create(question=question, student=student)
+        if index==0:
+            note, note_created = Note.objects.get_or_create(question_student=question_student)
+            note_md = markdown(note.content)
+        too_many_attempts = question_student.get_num_attempts() >= question.max_num_attempts
+        if created:
             question_student.create_instances()
-    question_student.save() 
-    # Detect links and replace with html a-tags
-    question.text = replace_links_with_html(question.text)
-    labels_urls_list = [(question_image.label, question_image.image.url) for question_image in \
-                    question.images.all()]
-    question.text = replace_image_labels_with_links(question.text,labels_urls_list)
-    # Replace vars with values in colored tags.
-    question.text = question_student.evaluate_var_expressions_in_text(question.text, add_html_style=True)
-    is_mcq = False #nis mcq
-    is_fr = False # is free response
-    answers = []
-    is_latex = []
-    question_type = []
-    # The dictionary question_type_dict is used for answer validation.
-    # So validate_answer() takes the input from the user and kind of compares to this dictionary.
-    question_type_dict = {'ea': 0, 'fa':1, 'fva':8,'la':2, 'ta':3, 'ia':7}
-    question_type_count = {'ea': 0, 'fa': 0, 'fva':0, 'la': 0, 'ta': 0, 'ia': 0}
-    if question.answer_type.startswith('MCQ'):
-        is_mcq = True
-        ea = question.mcq_expression_answers.all()
-        answers.extend(ea)
-        ta = question.mcq_text_answers.all()
-        answers.extend(ta)
-        # Putting before floats because they are not a django character field.
-        for answer in answers:
-            answer.content = question_student.evaluate_var_expressions_in_text(answer.content, add_html_style=True)
-        fa = question.mcq_float_answers.all()
-        answers.extend(fa)
-        fva = question.mcq_variable_float_answers.all()
-        #evaluated_fva = [question_student.evaluate_var_expressions_in_text(mcq_fva.content, add_html_style=True)\
-               #for mcq_fva in fva]
-        for mcq_fva in fva:
-            mcq_fva.content = question_student.evaluate_var_expressions_in_text(mcq_fva.content, add_html_style=True)
-        answers.extend(fva)
-        ia = question.mcq_image_answers.all()
-        answers.extend(ia)
-        la = question.mcq_latex_answers.all()
-        answers.extend(la)
-        
-        question_type_keys = ['ea', 'fa', 'fva', 'ta', 'ia', 'la']
+        else:
+            if not question_student.instances_created:
+                question_student.create_instances()
+        question_student.save() 
+        # Detect links and replace with html a-tags
+        question.text = replace_links_with_html(question.text)
+        labels_urls_list = [(question_image.label, question_image.image.url) for question_image in \
+                        question.images.all()]
+        question.text = replace_image_labels_with_links(question.text,labels_urls_list)
+        # Replace vars with values in colored tags.
+        question.text = question_student.evaluate_var_expressions_in_text(question.text, add_html_style=True)
+        is_mcq = False #nis mcq
+        is_fr = False # is free response
+        answers = []
+        is_latex = []
+        question_type = []
+        # The dictionary question_type_dict is used for answer validation.
+        # So validate_answer() takes the input from the user and kind of compares to this dictionary.
+        question_type_dict = {'ea': 0, 'fa':1, 'fva':8,'la':2, 'ta':3, 'ia':7}
+        question_type_count = {'ea': 0, 'fa': 0, 'fva':0, 'la': 0, 'ta': 0, 'ia': 0}
+        if question.answer_type.startswith('MCQ'):
+            is_mcq = True
+            ea = question.mcq_expression_answers.all()
+            answers.extend(ea)
+            ta = question.mcq_text_answers.all()
+            answers.extend(ta)
+            # Putting before floats because they are not a django character field.
+            for answer in answers:
+                answer.content = question_student.evaluate_var_expressions_in_text(answer.content, add_html_style=True)
+            fa = question.mcq_float_answers.all()
+            answers.extend(fa)
+            fva = question.mcq_variable_float_answers.all()
+            #evaluated_fva = [question_student.evaluate_var_expressions_in_text(mcq_fva.content, add_html_style=True)\
+                #for mcq_fva in fva]
+            for mcq_fva in fva:
+                mcq_fva.content = question_student.evaluate_var_expressions_in_text(mcq_fva.content, add_html_style=True)
+            answers.extend(fva)
+            ia = question.mcq_image_answers.all()
+            answers.extend(ia)
+            la = question.mcq_latex_answers.all()
+            answers.extend(la)
+            
+            question_type_keys = ['ea', 'fa', 'fva', 'ta', 'ia', 'la']
 
-        for key in question_type_keys:
-            question_type_count[key] = getattr(locals()[key], 'count')()
+            for key in question_type_keys:
+                question_type_count[key] = getattr(locals()[key], 'count')()
 
-        # !Important: order matters here. Latex has to be last!
-        is_latex = [0 for _ in range(ea.count()+ta.count()+fa.count()+fva.count()+ia.count())]
-        is_latex.extend([1 for _ in range(la.count())])
-        for q_type in question_type_dict:
-            question_type.extend([question_type_dict[q_type] for _ in range(question_type_count[q_type])])
-        assert len(is_latex) == len(answers)
-        shuffler = [counter for counter in range(len(answers))]
-        random.shuffle(shuffler)  
-        is_latex = [is_latex[i] for i in shuffler]
-        answers = [answers[i] for i in shuffler]
-    else:
-        # TODO: Subclass all structural answers to a more general class 
-        # so that you may use only one if.
-        if question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
-            answers.extend([question.latex_answer])
-            is_latex.extend([1]) 
-            question_type = [2]  
-        elif question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
-            answers.extend([question.expression_answer])
-            question_type = [0]
-        elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
-            answers.extend([question.variable_float_answer])
-            question_type = [5]
-        elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
-            answers.extend([question.float_answer])
-            question_type = [1]
-        elif question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
-            is_fr = True 
-            answers.extend([question.text_answer])
-            question_type = [4]    
-        answers[0].preface = '' if answers[0].preface is None else answers[0].preface
-    note, note_created = Note.objects.get_or_create(question_student=question_student)
-    note_md = markdown(note.content)
-    context = {
-        'question':question,
-        'question_ids_nums':zip(question_ids, question_nums),
-        'assignment_id': assignment_id,
-        'course_id': course_id,
-        "is_mcq": is_mcq,
-        "is_fr": is_fr, 
-        "answers_is_latex_question_type": zip(answers, is_latex, question_type),
-        'question_type': question_type, # For structural
-        'answer': answers[0],
-        'success':question_student.success,
-        'too_many_attempts':too_many_attempts,
-        'sq_type':question_type[0], # structural question type used in js.
-        'note':note,
-        'note_md':note_md,
-        'note_comment': 'Edit Notes' if note.content else 'Add Notes'
-    }
+            # !Important: order matters here. Latex has to be last!
+            is_latex = [0 for _ in range(ea.count()+ta.count()+fa.count()+fva.count()+ia.count())]
+            is_latex.extend([1 for _ in range(la.count())])
+            for q_type in question_type_dict:
+                question_type.extend([question_type_dict[q_type] for _ in range(question_type_count[q_type])])
+            assert len(is_latex) == len(answers)
+            shuffler = [counter for counter in range(len(answers))]
+            random.shuffle(shuffler)  
+            is_latex = [is_latex[i] for i in shuffler]
+            answers = [answers[i] for i in shuffler]
+        else:
+            # TODO: Subclass all structural answers to a more general class 
+            # so that you may use only one if.
+            if question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
+                answers.extend([question.latex_answer])
+                is_latex.extend([1]) 
+                question_type = [2]  
+            elif question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
+                answers.extend([question.expression_answer])
+                question_type = [0]
+            elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
+                answers.extend([question.variable_float_answer])
+                question_type = [5]
+            elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
+                answers.extend([question.float_answer])
+                question_type = [1]
+            elif question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
+                is_fr = True 
+                answers.extend([question.text_answer])
+                question_type = [4]    
+            answers[0].preface = '' if answers[0].preface is None else answers[0].preface
+
+        context = {
+            'question':question,
+            "is_mcq": is_mcq,
+            "is_fr": is_fr, 
+            "answers_is_latex_question_type": zip(answers, is_latex, question_type),
+            'question_type': question_type, # For structural
+            'answer': answers[0],
+            'success':question_student.success,
+            'too_many_attempts':too_many_attempts,
+            'sq_type':question_type[0], # structural question type used in js.
+
+        }
+        questions_dictionary[index] = context
     return render(request, 'deimos/answer_question.html',
-                  context)
+                  {'questions_dict':questions_dictionary, 'course_id': course_id,
+                   'assignment_id': assignment_id,'main_question_id':question_0.id,
+                    'note':note, 'question_ids_nums':zip(question_ids, question_nums),
+                    'note_md':note_md,
+                    'note_comment': 'Edit Notes' if note.content else 'Add Notes'})
 @login_required(login_url='astros:login')
-def validate_answer(request, question_id, assignment_id=None, course_id=None):
+def validate_answer(request, question_id, landed_question_id=None,assignment_id=None, course_id=None):
+    # landed_question_id is just the id of the question used to get to the page
+    # to answer questions. Could have been the id of the main question or other sub questions.
     student = get_object_or_404(Student, pk=request.user.pk)
     
     if request.method == 'POST':
@@ -591,7 +606,12 @@ def save_note(request, question_id, course_id=None, assignment_id=None):
         requester_id = request.user.pk 
         student = get_object_or_404(Student, pk = requester_id)
         question = get_object_or_404(Question, pk = question_id)
-        question_student = get_object_or_404(QuestionStudent, student=student, question=question)
+        print(question.parent_question)
+        if question.parent_question is None: # Notes should be related only to the parent question.
+            main_question = question
+        else:
+            main_question = question.parent_question
+        question_student = get_object_or_404(QuestionStudent, student=student, question=main_question)
         if question_student.student.pk != requester_id:
             return JsonResponse({'message': "You are not allowed to manage these notes", "success":False})
         with transaction.atomic():

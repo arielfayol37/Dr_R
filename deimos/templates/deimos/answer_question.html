@@ -10,8 +10,8 @@
     <header class="sidebar-header">X</header>
     <ul>
         <li><a href="{% url 'deimos:index' %}">Home</a></li>
-        <li><a href="{% url 'deimos:assignment_management' assignment_id=question.assignment.id course_id=question.assignment.course.id %}">Questions</a></li>
-        <li><a href="{% url 'deimos:course_management' course_id=question.assignment.course.id %}">Assignments</a></li>
+        <li><a href="{% url 'deimos:assignment_management' assignment_id=assignment_id course_id=course_id %}">Questions</a></li>
+        <li><a href="{% url 'deimos:course_management' course_id=course_id %}">Assignments</a></li>
         <li><a href="{% url 'deimos:search_question' %}">Search Question</a></li>
 
     </ul>
@@ -25,96 +25,107 @@
 
     
     <div class="page-container" id="answer-question">
-      <h3 class="suggestion original-size">Question {{question.number}}</h3>
-      <br/>
-      <form method="post" enctype="multipart/form-data" id="question-form">
-        {% csrf_token %}
-        <input type="hidden" value="{{question.id}}" name="question-id"/>
-        <p class="question-content">{{question.text | safe}}</p>
-        <div class="question-status">
-          {% if success %}
-            <div class="tf-light red-light"></div>
-            <div class="tf-light yellow-light"></div>
-            <div class="tf-light green-light activated"></div>
-          {% else %}
-            {% if too_many_attempts %}
-              <div class="tf-light red-light"></div>
-              <div class="tf-light yellow-light activated"></div>
-            {% else %}
-              <div class="tf-light red-light activated"></div>
-              <div class="tf-light yellow-light"></div>
-            {% endif %}
+      {% for index, question_dict in questions_dict.items %}
+              <h3 class="original-size">Question {{question_dict.question.number}}</h3>
+              <hr>
+              <form method="post" enctype="multipart/form-data" class="question-form">
+                {% csrf_token %}
+                <input type="hidden" value="{{question_dict.question.id}}" class="question-id"/>
+                <p class="question-content">{{question_dict.question.text | safe}}</p>
+                <div class="question-status">
+                  {% if question_dict.success %}
+                    <div class="tf-light red-light"></div>
+                    <div class="tf-light yellow-light"></div>
+                    <div class="tf-light green-light activated"></div>
+                  {% else %}
+                    {% if question_dict.too_many_attempts %}
+                      <div class="tf-light red-light"></div>
+                      <div class="tf-light yellow-light activated"></div>
+                    {% else %}
+                      <div class="tf-light red-light activated"></div>
+                      <div class="tf-light yellow-light"></div>
+                    {% endif %}
 
-            <div class="tf-light green-light"></div>
-          {% endif %}
-        </div>
-        <div class="question-images">
-          {% for question_image in question.images.all %}
-              <div class="formatted-answer-option" id="{{question_image.image.url}}">
-                  <p>{{question_image.label}}</p>
-                  <img src="{{question_image.image.url}}" class="question-image image-in-formatted" alt="{{question_image.label}}"/>
-              </div>
-          {% endfor %}
-        </div><br/>
-         {% if is_mcq%}
-              <input type="hidden" value="mcq" class="question-type"/>
-              <div class="inputed-mcq-answers">
-                {% for answer, is_latex, question_type in answers_is_latex_question_type %}
-                  <div class="mcq-option-answer">
-                    <div class="formatted-answer-option">
-                      {% if is_latex %}
-                          <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
+                    <div class="tf-light green-light"></div>
+                  {% endif %}
+                </div>
+                <div class="question-images">
+                  {% for question_image in question_dict.question.images.all %}
+                      <div class="formatted-answer-option" id="{{question_image.image.url}}">
+                          <p>{{question_image.label}}</p>
+                          <img src="{{question_image.image.url}}" class="question-image image-in-formatted" alt="{{question_image.label}}"/>
+                      </div>
+                  {% endfor %}
+                </div><br/>
+                {% if question_dict.is_mcq%}
+                      <input type="hidden" value="mcq" class="question-type"/>
+                      <div class="inputed-mcq-answers" data-true-counter="0">
+                        {% for answer, is_latex, question_type in question_dict.answers_is_latex_question_type %}
+                          <div class="mcq-option-answer">
+                            <div class="formatted-answer-option">
+                              {% if is_latex %}
+                                  <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
+                              {% else %}
+                                {% if answer.image %}
+                                  {{answer.label}}
+                                  <img src="{{answer.image.url}}" class="mcq-image-answer image-in-formatted" alt="{{answer.image.label}}"/>
+                                {% else %}
+                                  {{answer.content|safe}}
+                                {% endif %}
+                              {% endif %}
+                              <input type="hidden" value="{{answer.pk}}{{question_type}}" class="answer_id" name="mcq_answer_id_{{ forloop.counter0 }}"/>
+                              <input type="hidden" value="0{{question_type}}" class="answer_info" name="mcq_answer_info_{{ forloop.counter0 }}"/>
+                            </div>
+                            <button type="button" class="btn btn-warning mcq-false exempt">False</button> 
+                          </div>
+                          <br/> <br/>   
+                        {% endfor %}
+                      </div> 
+                      <input type="submit" class="btn btn-success exempt submit-btn" value="Submit Answer">
+                      <br/> <br/>
+                  {% elif question_dict.is_fr %}
+                    <input type="hidden" value="fr" class="question-type"/>
+                      <div>
+                        <textarea placeholder="Enter answer" class="w-100 question-input-field" name="fr_answer_{{question_dict.question.id}}"></textarea>
+                      </div>
+                      <div> <input type="submit" class="btn btn-success exempt submit-btn" value="Submit Answer"></div>
+                      <br/><br/>
+                  {% else %}
+                      <input type="hidden" value="structural_{{question_dict.sq_type}}" class="question-type"/>
+                      <!--TODO: !Important. I don't think we will ever use the pk of the answer for structural questions.-->
+                      <input type="hidden" value="{{question_dict.answer.pk}}" name="structural_answer_id_0"/>
+                      {% for q_type in question_dict.question_type %} <!--expecting to iterate only over one item-->
+                        <input type="hidden" value="{{q_type}}" name="structural_answer_info_0"/>
+                      {% endfor %}
+                      <input type="submit" class="btn btn-outline-success exempt attempt-mode submit-btn" value="Attempt">
+                      <div class="formatted-answer"></div>
+                      {% if question_dict.answer.preface %}
+                        <input type="hidden" class="answer_preface" value="{{question_dict.answer.preface}}"/>
                       {% else %}
-                        {% if answer.image %}
-                          {{answer.label}}
-                          <img src="{{answer.image.url}}" class="mcq-image-answer image-in-formatted" alt="{{answer.image.label}}"/>
-                        {% else %}
-                          {{answer.content|safe}}
-                        {% endif %}
+                        <input type="hidden" class="answer_preface" value=""/>
                       {% endif %}
-                      <input type="hidden" value="{{answer.pk}}{{question_type}}" class="answer_id" name="mcq_answer_id_{{ forloop.counter0 }}"/>
-                      <input type="hidden" value="0{{question_type}}" class="answer_info" name="mcq_answer_info_{{ forloop.counter0 }}"/>
-                    </div>
-                    <button type="button" class="btn btn-warning mcq-false exempt">False</button> 
-                  </div>
-                  <br/> <br/>   
-                {% endfor %}
-              </div> 
-              <input type="submit" class="btn btn-success exempt" id="submit-btn" value="Submit Answer">
-              <br/> <br/>
-          {% elif is_fr %}
-            <input type="hidden" value="fr" class="question-type"/>
-              <div>
-                <textarea placeholder="Enter answer" class="w-100 question-input-field" name="fr_answer_{{question.id}}"></textarea>
-              </div>
-              <div> <input type="submit" class="btn btn-success exempt" id="submit-btn" value="Submit Answer"></div>
-              <br/><br/>
-          {% else %}
-              <input type="hidden" value="structural_{{sq_type}}" class="question-type"/>
-              <!--TODO: !Important. I don't think we will ever use the pk of the answer for structural questions.-->
-              <input type="hidden" value="{{answer.pk}}" name="structural_answer_id_0"/>
-              {% for q_type in question_type %} <!--expecting to iterate only over one item-->
-                <input type="hidden" value="{{q_type}}" name="structural_answer_info_0"/>
-              {% endfor %}
-              <input type="submit" class="btn btn-success exempt" id="submit-btn" value="Submit Answer">
-              <div class="formatted-answer"></div>
-              {% if answer.answer_unit %}
-                {% include 'deimos/calci.html' with preface=answer.preface show_units=True %}
-              {% else %}
-                {% include 'deimos/calci.html' with preface=answer.preface %}
-              {% endif %}
+                      {% if question_dict.answer.answer_unit %}
+                        <input type="hidden" class="show_unit" value="yes"/>
+                      {% else %}
+                        <input type="hidden" class="show_unit" value="no"/>
+                      {% endif %}
+                      <input type="hidden" class="inputed_answer_structural"/>
+                      <input type="hidden" class="inputed_units_structural"/>
+                      <br/>
+                {% endif %}
+          
+              
               <br/>
-        {% endif %}
-  
-      
-      <br/>
-      </form>
-      
+              <br/>
+              </form>
+              <hr>
+              
+      {% endfor %}
 
       <div class="navigation">
         <ul>
           {% for question_id, question_num in question_ids_nums %}
-            {% if question_id == question.id %}
+            {% if question_id == main_question_id %}
               <li class="list active">
             {% else %}
               <li class="list">
@@ -170,6 +181,8 @@
 
     </div>
 
+    {% include 'deimos/calci.html' with not_display=True %}
+
 
 {% endblock %}
 {% block scripts%}
@@ -179,9 +192,7 @@
 <script id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <script src="{% static 'deimos/js/question.js' %}"></script>
 <script src="{% static 'deimos/js/answer_question.js' %}"></script>
-{% if not is_mcq%}
-  <script src="{% static 'deimos/js/calci.js' %}"></script>
-{% endif %}
+<script src="{% static 'deimos/js/calci.js' %}"></script>
 <script src="{% static 'deimos/js/question_nav.js' %}"></script>
 <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
 <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>

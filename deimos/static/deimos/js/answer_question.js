@@ -1,16 +1,12 @@
 document.addEventListener('DOMContentLoaded', ()=> {
-    const answerFieldsDiv = document.querySelector('.answer-fields');
-    const form = document.querySelector('#question-form');
+    const forms = document.querySelectorAll('.question-form');
     const validateAnswerActionURL = extractQuestionPath(window.location.href) + '/validate_answer';
-    //console.log(newActionURL);
-    //form.setAttribute('action', newActionURL);
-    const submitBtn = document.querySelector('#submit-btn');
-    const formattedAnswerDiv = document.querySelector('.formatted-answer');
-    const calculatorDiv = document.querySelector('.calculator');
-    const inputedMcqAnswersDiv = document.querySelector('.inputed-mcq-answers');
-    var num_true_counter = 0;
     const screen = document.querySelector('#screen'); 
-    const questionType = document.querySelector('.question-type');
+    var formattedAnswerDiv;
+   
+
+
+    // Notes variables
     const questionAddImgBtn = document.querySelector('.main-question-add-image-btn');
     const uploadedQuestionPreview = document.querySelector('.uploaded-question-preview');
     const mainQuestionImageInput = document.querySelector('.main-question-image-input');
@@ -20,102 +16,169 @@ document.addEventListener('DOMContentLoaded', ()=> {
     var question_img_counter = 0;
     var answer_struct;
 /*-----------------------------Question submission-----------------------*/
+forms.forEach((form)=>{
+  var submitBtn = form.querySelector('.submit-btn');
+  const inputedMcqAnswersDiv = form.querySelector('.inputed-mcq-answers');
+  
+  submitBtn.addEventListener('click', (event)=>{
+    event.preventDefault();
+    if(submitBtn.classList.contains('attempt-mode')){
+      // Changing the button from "Attempt" to "Submit answer"
+      submitBtn.classList.remove('attempt-mode');
+      submitBtn.classList.remove('btn-outline-success');
+      submitBtn.classList.add('btn-success');
+      submitBtn.value = 'Submit answer';
 
-    submitBtn.addEventListener('click', (event)=>{
-        event.preventDefault();
+      // Displaying the calculator (the assumption here is that only structural questions 
+      // will have an attempt-mode)
+      const calculatorDiv = screen.closest('#calc-container');
+      const previousForm = screen.closest('.question-form');
+      if(previousForm !=null){
+        previousForm.querySelector('.inputed_answer_structural').value = screen.value;
+        previousForm.querySelector('.inputed_units_structural').value = calculatorDiv.querySelector('.units-screen').value;
+      }
+      
+      form.appendChild(calculatorDiv)
+      calculatorDiv.classList.remove('hide');
+      calculatorDiv.querySelector('.preface-content').innerHTML = form.querySelector('.answer_preface').value
+      screen.value = form.querySelector('.inputed_answer_structural').value;
+      if(form.querySelector('.show_unit').value ==='yes'){
+        calculatorDiv.querySelector('.units-screen').value = form.querySelector('.inputed_units_structural').value
+        calculatorDiv.querySelector('.units-section').style.display='block';
+      }else{
+        calculatorDiv.querySelector('.units-section').style.display='none';
+      }
+      screen.dataset.changedPart = 'true';
 
-        const yellowLight = form.querySelector('.yellow-light');
-        const greenLight = form.querySelector('.green-light');
-        const redLight = form.querySelector('.red-light');
-        
-        // For now, yellow light represents to many attempts
-        if(!greenLight.classList.contains('activated') && !yellowLight.classList.contains('activated')){
-          // Checking whether the submitted answer is valid
-          const question_type = questionType.value
-          if (question_type.startsWith('structural')){
-            if(screen.value.length === 0){
-              alert('Cannot submit blank answer');
+
+      return;  
+    }
+    const yellowLight = form.querySelector('.yellow-light');
+    const greenLight = form.querySelector('.green-light');
+    const redLight = form.querySelector('.red-light');
+    
+    // For now, yellow light represents to many attempts
+    if(!greenLight.classList.contains('activated') && !yellowLight.classList.contains('activated')){
+      // Checking whether the submitted answer is valid
+      const questionType = form.querySelector('.question-type');
+      const question_type = questionType.value
+      if (question_type.startsWith('structural')){
+        if(screen.value.length === 0){
+          alert('Cannot submit blank answer');
+          return;
+        }
+        const last_character = parseInt(question_type.charAt(question_type.length-1)); 
+        // Checks if the answer to the question is supposed to be a float
+        if(last_character===5 || last_character===1){
+          try{
+            const test_answer = math.evaluate(screen.value);
+            if(typeof(test_answer) != 'number'){
+              
+              alert('The answer you provided is not a float');
               return;
-            }
-            const last_character = parseInt(question_type.charAt(question_type.length-1)); 
-            // Checks if the answer to the question is supposed to be a float
-            if(last_character===5 || last_character===1){
-              try{
-                const test_answer = math.evaluate(screen.value);
-                if(typeof(test_answer) != 'number'){
-                  
-                  alert('The answer you provided is not a float');
-                  return;
-              }
-              }catch{
-                alert('The answer you provided is not a float');
-                return;
-              }
-            }
-            try{
-              answer_struct = math.simplify(processString(screen.value));
-            }catch{
-              alert('Enter a valid expression');
-              return;
-            }
-           
-          } else if (questionType.value ==='mcq' && num_true_counter===0){
-            alert('Must select at least on MCQ answer as true');
+          }
+          }catch{
+            alert('The answer you provided is not a float');
             return;
           }
-          scrollToCenter(redLight);
-          yellowLight.classList.add('activated');
-          yellowLight.classList.add('blinking');
-          redLight.classList.remove('activated');
-        if (question_type.startsWith('structural')){
-            fetch(`/${validateAnswerActionURL}`, {
-                method: 'POST',
-                headers: { 'X-CSRFToken': getCookie('csrftoken') },
-                body: JSON.stringify({
-                        answer: answer_struct.toString(),
-                        questionType: questionType.value    
-                })
-              })
-              .then(response => response.json())
-              .then(result => {
-                  // Print result
-                  //console.log(result.correct);
-                  if(result.previously_submitted){
-                    alert('You already attempted using that answer');
-                    resetLightsToRed(redLight,yellowLight,greenLight);
-                    return;
-                  }
-                  toggleLight(result.correct,result.too_many_attempts,redLight,yellowLight,greenLight);
-                  feedback_message(result.feedback_data);
-              });
-        } else if( question_type ==='mcq'){
-            // TODO make sure some mcqs are selected as true.
-            fetch(`/${validateAnswerActionURL}`, {
-                method: 'POST',
-                headers: { 'X-CSRFToken': getCookie('csrftoken') },
-                body: JSON.stringify({
-                        answer: getSelectedTrueAnswerIds(),
-                        questionType: questionType.value    
-                })
-              })
-              .then(response => response.json())
-              .then(result => {
-                  // Print result
-                  //console.log(result.correct);
-                  if(result.previously_submitted){
-                    alert('You already attempted using that answer');
-                    resetLightsToRed(redLight,yellowLight,greenLight);
-                    return;
-                  }
-                  toggleLight(result.correct,result.too_many_attempts, redLight, yellowLight, greenLight);
-              });
-        }else {
-          alert('Something went wrong');
         }
-      }else if(greenLight.classList.contains('activated')){
-            alert('You already passed this question')
+        try{
+          answer_struct = math.simplify(processString(screen.value));
+        }catch{
+          alert('Enter a valid expression');
+          return;
+        }
+       
+      } else if (questionType.value ==='mcq' && inputedMcqAnswersDiv.trueCounter===0){
+        alert('Must select at least on MCQ answer as true');
+        return;
       }
-    });
+      scrollToCenter(redLight);
+      yellowLight.classList.add('activated');
+      yellowLight.classList.add('blinking');
+      redLight.classList.remove('activated');
+      const qid = form.querySelector('.question-id').value;
+    if (question_type.startsWith('structural')){
+       
+        fetch(`/${validateAnswerActionURL}/${qid}`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({
+                    answer: answer_struct.toString(),
+                    questionType: questionType.value    
+            })
+          })
+          .then(response => response.json())
+          .then(result => {
+              // Print result
+              //console.log(result.correct);
+              if(result.previously_submitted){
+                alert('You already attempted using that answer');
+                resetLightsToRed(redLight,yellowLight,greenLight);
+                return;
+              }
+              toggleLight(result.correct,result.too_many_attempts,redLight,yellowLight,greenLight);
+              feedback_message(result.feedback_data);
+          });
+    } else if( question_type ==='mcq'){
+        // TODO make sure some mcqs are selected as true.
+        fetch(`/${validateAnswerActionURL}/${qid}`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({
+                    answer: getSelectedTrueAnswerIds(form),
+                    questionType: questionType.value    
+            })
+          })
+          .then(response => response.json())
+          .then(result => {
+              // Print result
+              //console.log(result.correct);
+              if(result.previously_submitted){
+                alert('You already attempted using that answer');
+                resetLightsToRed(redLight,yellowLight,greenLight);
+                return;
+              }
+              toggleLight(result.correct,result.too_many_attempts, redLight, yellowLight, greenLight);
+          });
+    }else {
+      alert('Something went wrong');
+    }
+  }else if(greenLight.classList.contains('activated')){
+        alert('You already passed this question')
+  }
+});
+
+
+
+    /*----------------------------MCQ QUESTION --------------------------------*/
+    if (!(inputedMcqAnswersDiv === null)){
+      inputedMcqAnswersDiv.addEventListener('click', (event)=>{
+          event.preventDefault();
+          target = event.target
+          if(target.classList.contains('mcq-false')){
+              target.classList.remove('mcq-false','btn-warning');
+              target.classList.add('mcq-true', 'btn-info');
+              target.innerHTML = 'True';
+              const holder = inputedMcqAnswersDiv.dataset.trueCounter;
+              inputedMcqAnswersDiv.dataset.trueCounter =  `${parseInt(holder) + 1}`;
+              const answer_info_input = target.closest('.mcq-option-answer').querySelector('.formatted-answer-option').querySelector('.answer_info');
+              answer_info_input.value = rep(answer_info_input.value, 0, '1');
+          } else if(target.classList.contains('mcq-true')){
+              target.classList.add('mcq-false','btn-warning');
+              target.classList.remove('mcq-true', 'btn-info');
+              target.innerHTML = 'False'; 
+              const holder = inputedMcqAnswersDiv.dataset.trueCounter;
+              inputedMcqAnswersDiv.dataset.trueCounter =  `${parseInt(holder) - 1}`;
+              const answer_info_input = target.closest('.mcq-option-answer').querySelector('.formatted-answer-option').querySelector('.answer_info');
+              answer_info_input.value = rep(answer_info_input.value, 0, '0');
+          }
+      })
+  
+      }
+
+})
+
 
 /*----------------------------DISPLAYING LATEX-------------------------*/
 
@@ -133,7 +196,7 @@ function displayLatex(){
                 }
 
             } catch (error) {
-                console.log(error);
+                //console.log(error);
             }
         });
     });
@@ -142,33 +205,16 @@ function displayLatex(){
 
 displayLatex();
 
-    /*----------------------------MCQ QUESTION --------------------------------*/
-    if (!(inputedMcqAnswersDiv === null)){
-    inputedMcqAnswersDiv.addEventListener('click', (event)=>{
-        event.preventDefault();
-        target = event.target
-        if(target.classList.contains('mcq-false')){
-            target.classList.remove('mcq-false','btn-warning');
-            target.classList.add('mcq-true', 'btn-info');
-            target.innerHTML = 'True';
-            num_true_counter += 1;
-            const answer_info_input = target.parentNode.querySelector('.formatted-answer-option').querySelector('.answer_info');
-            answer_info_input.value = rep(answer_info_input.value, 0, '1');
-        } else if(target.classList.contains('mcq-true')){
-            target.classList.add('mcq-false','btn-warning');
-            target.classList.remove('mcq-true', 'btn-info');
-            target.innerHTML = 'False'; 
-            num_true_counter -= 1;    
-            const answer_info_input = target.parentNode.querySelector('.formatted-answer-option').querySelector('.answer_info');
-            answer_info_input.value = rep(answer_info_input.value, 0, '0');
-        }
-    })
 
-    }
 
     if (!(screen === null)){
 
         screen.addEventListener('input', ()=> {
+          if(screen.dataset.changedPart === 'true'){
+            formattedAnswerDiv = screen.closest('.question-form').querySelector('.formatted-answer');
+            screen.dataset.changedPart = 'false';
+          }
+          
             if(screen.value.length != 0){
 
               MathJax.typesetPromise().then(() => {
@@ -178,11 +224,12 @@ displayLatex();
                 var parsedNode = math.parse(processed);
                 var userInputLatex = parsedNode.toTex() + '\\quad = \\quad' + userInputNode.toTex();
                 const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
+                
                 formattedAnswerDiv.innerHTML = '';
                 formattedAnswerDiv.appendChild(formattedAnswer);
                 MathJax.typesetPromise();
                 } catch (error) {
-                   //console.log(error);
+                  // console.log(error);
                 }
                 
                 });
@@ -196,25 +243,6 @@ displayLatex();
     }
 
 
-    form.addEventListener('submit', (event)=>{
-        event.preventDefault();
-        if (!(screen === null)){
-          try{
-            const userInputNode = math.simplify(processString(screen.value));
-            var userInputString = userInputNode.toString();
-            screen.value = userInputString;
-          }catch{
-            alert('Invalid answer');
-            return;
-          }
-
-        }
-        if (!(inputedMcqAnswersDiv === null) && num_true_counter < 1){
-            event.preventDefault();
-            alert('Must select at least one MCQ answer as correct.');
-        }
-    });
-
 
     /*------------------------------UTILITY FUNCTIONS ----------------------------*/
     function toggleLight(correct, too_many_attempts,redLight, yellowLight, greenLight) {
@@ -227,7 +255,7 @@ displayLatex();
               yellowLight.classList.remove('activated');
               yellowLight.classList.remove('blinking');
               greenLight.classList.add('activated');
-            }, 1600);
+            }, 1000);
         
           } else {
             setTimeout(function () {
@@ -242,7 +270,7 @@ displayLatex();
                 redLight.classList.add('activated');
               }
               
-            }, 1600);
+            }, 1000);
         
           }
 
@@ -299,8 +327,8 @@ function getCookie(name) {
     return decodeURIComponent(csrfCookie.split('=')[1]);
   }
 
-  function getSelectedTrueAnswerIds() {
-    const mcqOptions = document.querySelectorAll('.mcq-option-answer');
+  function getSelectedTrueAnswerIds(form) {
+    const mcqOptions = form.querySelectorAll('.mcq-option-answer');
     const selectedAnswerIds = [];
   
     mcqOptions.forEach((option) => {
@@ -333,22 +361,24 @@ MathJax.typesetPromise().then(() => {
             questionContentP.innerHTML = parseLatex(questionContentP.innerHTML);
             MathJax.typesetPromise();
         } catch(error){
-            console.log(error)
+           // console.log(error)
         }
     })
 })
 
-const prefaces = document.querySelectorAll('.preface-content');
-if (prefaces !=null){
+const prefacesInputs = document.querySelectorAll('.answer_preface');
+if (prefacesInputs !=null){
 
   MathJax.typesetPromise().then(() => {
 
-    prefaces.forEach((preface) => {
+    prefacesInputs.forEach((preface) => {
         try{
-            preface.innerHTML = MathJax.tex2chtml(preface.innerHTML).innerHTML;
+            //console.log(preface.value);
+            preface.value = MathJax.tex2chtml(preface.value).innerHTML;
             MathJax.typesetPromise();
+            
         } catch(error){
-            console.log(error)
+           console.log(error)
         }
     })
   })
@@ -362,13 +392,20 @@ function parseLatex(text) {
           const mathJaxHTML = MathJax.tex2chtml(latexCode + '\\phantom{}');
           return mathJaxHTML.innerHTML;
       } catch (error) {
-          console.log(error);
+          //console.log(error);
           return ''; // Return an empty string if MathJax conversion fails.
       }
   });
   
   return formattedText;
 }
+
+
+
+
+
+
+
 
 //------------------------NOTES FEATURE----------------------//
 const notePencil = document.querySelector('.note-pencil');

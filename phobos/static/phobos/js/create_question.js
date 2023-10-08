@@ -9,6 +9,10 @@ document.addEventListener('DOMContentLoaded', () => {
     calculatorDiv.style.display = 'none';
     const createQuestionBtn = document.querySelector('.create-question-btn');
     var num_questions = 1;
+    
+    var questionTypeDicts = {
+
+    }
 
     allQuestionBlocks.appendChild(addQuestionBlock());
   
@@ -75,8 +79,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;  // Exit the loop
             }
         }
+
+        var newAction = '';
+        // After all the tests have passed. 
+        for (let key in questionTypeDicts) {
+            if (questionTypeDicts.hasOwnProperty(key)) {  // This check ensures that you only access direct properties of the object, not properties inherited from the prototype
+                let value = questionTypeDicts[key];
+                newAction = newAction + '$'+ `${key}` + `-${value}`
+            }
+        }
+        newAction = currentAction + `/${newAction}`;
         // Now the form will be submitted after all the checks have passed.
-        //form.submit();
+        form.setAttribute('action', newAction);
+        //console.log(newAction);
+        form.submit();
     })
 
 
@@ -426,6 +442,7 @@ function addQuestionBlock(){
 
 
     const questionBluePrint = `
+    <input type="hidden" value=${num_questions} class="question-number-value">
     <div class="question-content form-group">
          <label class="q-label-title">Question ${String.fromCharCode(64 + num_questions)}:</label><br/>
          <textarea placeholder="Enter the content of the question" class="question-textarea w-100 question-input-field" name="${num_questions}_question_text"></textarea>
@@ -548,6 +565,39 @@ function addQuestionBlock(){
                     const newfield = questionBlock.querySelector(mapping.source) 
                     calcField.value = newfield.value
                     calcField.placeholder = newfield.placeholder;
+                    if(calcField.value.length > 1){
+                        calcField.style.display = 'block';
+                        prefaceUnitsBtns.forEach((btn)=>{
+                                if(!btn.classList.contains('open')){ // closed state
+                                    btn.parentNode.querySelector('input').style.display = 'block';
+                                    btn.textContent = '-'
+                                    btn.classList.add('open');
+                                }else { // open state
+                                    btn.parentNode.querySelector('input').style.display = 'none';
+                                    btn.textContent = '+'
+                                    btn.classList.remove('open');
+                                }
+                        
+                           
+                        })
+                        
+                    }else if(mapping.target != "#screen"){
+                        calcField.style.display = 'none';
+                        prefaceUnitsBtns.forEach((btn)=>{
+                            if(!btn.classList.contains('open')){ // closed state
+                                btn.parentNode.querySelector('input').style.display = 'block';
+                                btn.textContent = '-'
+                                btn.classList.add('open');
+                            }else { // open state
+                                btn.parentNode.querySelector('input').style.display = 'none';
+                                btn.textContent = '+'
+                                btn.classList.remove('open');
+                            }
+                    
+                       
+                    })
+                    }
+
 
                 })
             } else {
@@ -557,6 +607,12 @@ function addQuestionBlock(){
                 // update the previous block hidden inputs
                 const calcField = displayDiv.querySelector(mapping.target);
                 previousQuestionBlock.querySelector(mapping.source).value = calcField.value;
+                if(calcField.value.length > 1){
+                    calcField.style.display = 'block';
+                }else if(mapping.target != "#screen"){
+                    calcField.style.display = 'none';
+                }
+
                 })
             }
         }
@@ -598,6 +654,7 @@ checkButton.addEventListener('click', (event)=>{
             newQuestionBlock.scrollIntoView({behavior: "smooth"});
         }
     }else{// Delete block;
+        delete questionTypeDicts.questionBlock.querySelector('.question-number-value').value;
         questionBlock.parentNode.removeChild(questionBlock);
         num_questions -= 1;
         // Renaming the question titles.
@@ -679,9 +736,10 @@ event.preventDefault();
     calculatorDiv.style.display = 'none';
     mcqOptionBtnsDiv.style.display = 'block';
     // Append '/3' at the end of the URL
-    const newAction = currentAction + '/3';
+    questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '3';
+    //const newAction = currentAction + '/3';
     // Update the form's action attribute
-    form.setAttribute('action', newAction);
+    //form.setAttribute('action', newAction);
     
 
 });
@@ -828,10 +886,8 @@ frBtn.addEventListener('click', (event)=>{
     answerFieldsDiv.innerHTML = '';
     
     formattedAnswerDiv.scrollIntoView({behavior: 'smooth'});
-    // Append '/4' at the end of the URL
-    const newAction = currentAction + '/4';
-    // Update the form's action attribute
-    form.setAttribute('action', newAction);      
+    questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '4';
+     
 })
 
 // Expression answer button selected.
@@ -848,11 +904,7 @@ expressionBtn.addEventListener('click', (event)=> {
     screen.placeholder = 'Expression';
 
     answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
-
-    // Append '/0' at the end of the URL
-    const newAction = currentAction + '/0';
-    // Update the form's action attribute
-    form.setAttribute('action', newAction);
+    questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '0';
 
 });
 
@@ -870,10 +922,7 @@ floatBtn.addEventListener('click', function(event) {
     screen.placeholder = 'Real number';
 
     answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
-    // Append '/1' at the end of the URL
-    const newAction = currentAction + '/1';
-    // Update the form's action attribute
-    form.setAttribute('action', newAction);
+    questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '1';
 });
 
 // Latex button selected. Probably never used.
@@ -889,10 +938,7 @@ latexBtn.addEventListener('click', (event)=> {
     answerFieldsDiv.innerHTML = latexAnswerDiv;
     answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
 
-    // Append '/2' at the end of the URL
-    const newAction = currentAction + '/2';
-    // Update the form's action attribute
-    form.setAttribute('action', newAction);
+    questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '2'
 
 
 
@@ -961,8 +1007,8 @@ addQuestionImgBtn.addEventListener('click', (event)=>{
         const formatted_new_img = create_img_div(mainQuestionImageInput, imgLabelInputField.value);
         mainQuestionImagePreview.appendChild(formatted_new_img);
         imgLabelInputField.value = '';
-        const holder = parseInt(mainQuestionImagePreview.counter)
-        mainQuestionImagePreview.counter =  `${holder - 1}`;
+        const holder = parseInt(mainQuestionImagePreview.dataset.counter)
+        mainQuestionImagePreview.dataset.counter =  `${holder + 1}`;
         questionAddImgBtn.classList.remove('closed');
         questionAddImgBtn.classList.add('open');
         uploadedQuestionPreview.innerHTML = '';
@@ -995,7 +1041,7 @@ function create_img_div(img_input_field, img_label){
     imgDiv.innerHTML = `
     <br/>
     <div class="formatted-answer-option"></div>
-    <input value="${img_label}" type="hidden" name="${num_questions}_question_image_label_${mainQuestionImagePreview.counter}"/>
+    <input value="${img_label}" type="hidden" name="${num_questions - 1}_question_image_label_${mainQuestionImagePreview.dataset.counter}"/>
     <div class="add-delete-btns">
         <button  type="button" class="btn btn-danger img-delete exempt">delete</button>
     </div>
@@ -1004,7 +1050,7 @@ function create_img_div(img_input_field, img_label){
     formattedImgDiv.appendChild(imgLabel);
     formattedImgDiv.appendChild(uploadedQuestionPreview.cloneNode(true));
     const image_input_field_clone = img_input_field.cloneNode(true);
-    image_input_field_clone.name = `${num_questions}_question_image_file_${mainQuestionImagePreview.counter}`;
+    image_input_field_clone.name = `${num_questions - 1}_question_image_file_${mainQuestionImagePreview.dataset.counter}`;
     image_input_field_clone.style.display = 'none';
     formattedImgDiv.appendChild(image_input_field_clone);
     uploadedQuestionPreview.innerHTML = '';
@@ -1121,8 +1167,8 @@ function create_inputed_mcq_div(input_field, answer_type) {
                 mcqAnswerDiv.innerHTML = `
                 <br/>
                 <div class="formatted-answer-option"></div>
-                <input value="${answer_value}" type="hidden" name="${num_questions}_answer_value_${inputedMcqAnswersDiv.counter}"/>
-                <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="${num_questions}_answer_info_${inputedMcqAnswersDiv.counter}"/>
+                <input value="${answer_value}" type="hidden" name="${num_questions - 1}_answer_value_${inputedMcqAnswersDiv.dataset.counter}"/>
+                <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="${num_questions - 1}_answer_info_${inputedMcqAnswersDiv.dataset.counter}"/>
                 <div class="add-delete-btns">
                     <button type="button" class="btn btn-warning mcq-status mcq-false exempt">False</button>
                     <button  type="button" class="btn btn-danger mcq-delete exempt">delete</button>
@@ -1132,8 +1178,8 @@ function create_inputed_mcq_div(input_field, answer_type) {
                 mcqAnswerDiv.innerHTML = `
                 <br/>
                 <div class="formatted-answer-option"></div>
-                <input value="${display_value}" type="hidden" name="${num_questions}_image_label_${inputedMcqAnswersDiv.counter}"/>
-                <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="${num_questions}_answer_info_${inputedMcqAnswersDiv.counter}"/>
+                <input value="${display_value}" type="hidden" name="${num_questions - 1}_image_label_${inputedMcqAnswersDiv.dataset.counter}"/>
+                <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="${num_questions - 1}_answer_info_${inputedMcqAnswersDiv.dataset.counter}"/>
                 <div class="add-delete-btns">
                     <button type="button" class="btn btn-warning mcq-status mcq-false exempt">False</button>
                     <button  type="button" class="btn btn-danger mcq-delete exempt">delete</button>
