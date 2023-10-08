@@ -88,6 +88,9 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
     questions_dictionary = {}
     for index, question in enumerate(questions):
         question_student, created = QuestionStudent.objects.get_or_create(question=question, student=student)
+        if index==0:
+            note, note_created = Note.objects.get_or_create(question_student=question_student)
+            note_md = markdown(note.content)
         too_many_attempts = question_student.get_num_attempts() >= question.max_num_attempts
         if created:
             question_student.create_instances()
@@ -169,8 +172,7 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
                 answers.extend([question.text_answer])
                 question_type = [4]    
             answers[0].preface = '' if answers[0].preface is None else answers[0].preface
-        note, note_created = Note.objects.get_or_create(question_student=question_student)
-        note_md = markdown(note.content)
+
         context = {
             'question':question,
             "is_mcq": is_mcq,
@@ -191,7 +193,9 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
                     'note_md':note_md,
                     'note_comment': 'Edit Notes' if note.content else 'Add Notes'})
 @login_required(login_url='astros:login')
-def validate_answer(request, question_id, assignment_id=None, course_id=None):
+def validate_answer(request, question_id, landed_question_id=None,assignment_id=None, course_id=None):
+    # landed_question_id is just the id of the question used to get to the page
+    # to answer questions. Could have been the id of the main question or other sub questions.
     student = get_object_or_404(Student, pk=request.user.pk)
     
     if request.method == 'POST':
@@ -602,9 +606,12 @@ def save_note(request, question_id, course_id=None, assignment_id=None):
         requester_id = request.user.pk 
         student = get_object_or_404(Student, pk = requester_id)
         question = get_object_or_404(Question, pk = question_id)
-        if question.parent_question: # Notes should be related only to the parent question.
-            question = question.parent_question
-        question_student = get_object_or_404(QuestionStudent, student=student, question=question)
+        print(question.parent_question)
+        if question.parent_question is None: # Notes should be related only to the parent question.
+            main_question = question
+        else:
+            main_question = question.parent_question
+        question_student = get_object_or_404(QuestionStudent, student=student, question=main_question)
         if question_student.student.pk != requester_id:
             return JsonResponse({'message': "You are not allowed to manage these notes", "success":False})
         with transaction.atomic():

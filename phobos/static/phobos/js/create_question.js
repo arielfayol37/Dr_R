@@ -567,9 +567,37 @@ function addQuestionBlock(){
                     calcField.placeholder = newfield.placeholder;
                     if(calcField.value.length > 1){
                         calcField.style.display = 'block';
+                        prefaceUnitsBtns.forEach((btn)=>{
+                                if(!btn.classList.contains('open')){ // closed state
+                                    btn.parentNode.querySelector('input').style.display = 'block';
+                                    btn.textContent = '-'
+                                    btn.classList.add('open');
+                                }else { // open state
+                                    btn.parentNode.querySelector('input').style.display = 'none';
+                                    btn.textContent = '+'
+                                    btn.classList.remove('open');
+                                }
+                        
+                           
+                        })
+                        
                     }else if(mapping.target != "#screen"){
                         calcField.style.display = 'none';
+                        prefaceUnitsBtns.forEach((btn)=>{
+                            if(!btn.classList.contains('open')){ // closed state
+                                btn.parentNode.querySelector('input').style.display = 'block';
+                                btn.textContent = '-'
+                                btn.classList.add('open');
+                            }else { // open state
+                                btn.parentNode.querySelector('input').style.display = 'none';
+                                btn.textContent = '+'
+                                btn.classList.remove('open');
+                            }
+                    
+                       
+                    })
                     }
+
 
                 })
             } else {

@@ -205,7 +205,7 @@ def create_question(request, assignment_id=None, question_nums_types=None):
             question_num, question_type = string_pair.split("-")
             num_type_pairs.append((question_num, question_type))
         assignment = Assignment.objects.get(pk = assignment_id)
-        quest_num = assignment.questions.count() + 1
+        quest_num = assignment.questions.filter(parent_question=None).count() + 1
         parent_question = None
         counter = 0
         vars_dict = {}
@@ -384,18 +384,14 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
        show_answer = True
     else:
         show_answer = False
-    for course in courses:
-        assignments.append((course.id, Assignment.objects.filter(course = course)))                  #for front-end Export question implementation
+    for course_ in courses: # Watch out variable names here
+        assignments.append((course_.id, Assignment.objects.filter(course = course_)))                  #for front-end Export question implementation
         
     question_0 = Question.objects.get(pk=question_id)
-    if not question_0.parent_question: # if question has no parent question(the question itself 
-        #is the parent question)
-        questions = list(Question.objects.filter(parent_question=question_0))
-        questions.insert(0, question_0)
-    else:
+    if question_0.parent_question: # if question has no parent question(the question itself 
         question_0 = question_0.parent_question
-        questions = list(Question.objects.filter(parent_question=question_0))
-        questions.insert(0, question_0)
+    questions = list(Question.objects.filter(parent_question=question_0))
+    questions.insert(0, question_0)
 
     questions_dictionary = {}
     for index, question in enumerate(questions):
@@ -444,14 +440,14 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
             answers[0].answer_unit = '' if not answers[0].answer_unit else answers[0].answer_unit
         
         questions_dictionary[index] = {'question':question,\
-                   'assignments':assignments,\
                       'show_answer':show_answer,\
                      'is_mcq':is_mcq, 'is_fr':is_fr,'answers': answers,\
                          'answers_is_latex': zip(answers, is_latex) if is_latex else None}
 
     return render(request, 'phobos/question_view.html', {'courses':zip(range(len(courses)),courses),\
                                                          'questions_dict':questions_dictionary, \
-                                                         'question':questions[0]})
+                                                         'question':questions[0],
+                                                         'assignments':assignments})
 
 
 @login_required(login_url='astros:login')  
@@ -707,19 +703,21 @@ def copy_question_images(old_question, new_question):
     question_images = QuestionImage.objects.filter(question=old_question)
     for question_image in question_images:
         qi = QuestionImage.objects.create(question=new_question, image=question_image.image, label=question_image.label)
-
+        qi.save()
 def copy_variables(old_question, new_question):
     for variable in Variable.objects.filter(question=old_question):
         new_variable = Variable.objects.create(
             question=new_question,
             symbol=variable.symbol
         )
+        new_variable.save()
         for var_interval in VariableInterval.objects.filter(variable=variable):
             vi = VariableInterval.objects.create(
                 variable=new_variable,
                 lower_bound=var_interval.lower_bound,
                 upper_bound=var_interval.upper_bound
             )
+            vi.save()
         
 
 def copy_answers(old_question, new_question):
@@ -735,10 +733,11 @@ def copy_answers(old_question, new_question):
     answer_type_class = answer_type_mapping.get(old_question.answer_type)
     if answer_type_class:
         answer = answer_type_class.objects.get(question=old_question)
-        answer_type_class.objects.create(
+        a = answer_type_class.objects.create(
             question=new_question,
             content=answer.content
         )
+        a.save()
     else:
         # Handle MCQ types separately as they have multiple possible answers
         mcq_answer_type_mapping = {
@@ -769,15 +768,12 @@ def export_question_to(request,question_id,exp_assignment_id,course_id=None,assi
     try:
         assignment = get_object_or_404(Assignment, pk=exp_assignment_id)
         question_0 = Question.objects.get(pk=question_id)
-        if not question_0.parent_question: # if question has no parent question(the question itself 
-            #is the parent question)
-            questions = list(Question.objects.filter(parent_question=question_0))
-            questions.insert(0, question_0)
-        else:
+        if question_0.parent_question: # if question has no parent question(the question itself 
             question_0 = question_0.parent_question
-            questions = list(Question.objects.filter(parent_question=question_0))
-            questions.insert(0, question_0)
-        q_count = assignment.questions.count()
+        questions = list(Question.objects.filter(parent_question=question_0))
+        questions.insert(0, question_0)
+        q_count = assignment.questions.filter(parent_question=None).count() + 1
+        p_question = None
         for index, question in enumerate(questions):    
             new_question_data = {
                 'number': str(q_count) + chr(65 + index) if index > 0 else str(q_count),
@@ -791,6 +787,11 @@ def export_question_to(request,question_id,exp_assignment_id,course_id=None,assi
             }
 
             new_question = Question.objects.create(**new_question_data)
+            if index  ==0:
+                p_question = new_question
+            else:
+                new_question.parent_question = p_question
+            new_question.save()
             copy_question_images(question, new_question)
             copy_variables(question, new_question)
             copy_answers(question, new_question)

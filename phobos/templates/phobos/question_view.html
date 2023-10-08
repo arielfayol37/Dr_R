@@ -17,27 +17,27 @@
 
 <div class="export_question">
     
-    <div style="display: none;"> 
+    <div class="form-container" style="display: none;"> 
         <form action="" >
             {% csrf_token %}
-            <select id="select_course" class="form-select field-style q-import-field">
-                {% for index, course in courses %}
-                <option value="selected_course_id_{{course.id}}">{{course.name}} </option>
-                {% endfor %}
-            </select>
+                <select id="select_course" class="form-select field-style q-import-field">
+                    {% for index, course in courses %}
+                    <option value="selected_course_id_{{course.id}}">{{course.name}} </option>
+                    {% endfor %}
+                </select>
 
-            {% for course_id,assignment_course in assignments %}
-                <select class="selected_course form-select field-style q-import-field" id="selected_course_id_{{course_id}}" style="display: none;">
-            {% for assignment in assignment_course %}
-                {% if assignment.name != question.assignment.name %}
-                    <option value="{{assignment.id}}"> {{assignment.name}} </option>
-                {% endif %}
-            {% endfor %}
-        </select>
-            {% endfor %}
-       
-        <input type="button" value="Confirm" class="export-confirm btn btn-outline-info"> 
-    </form>
+                {% for course_id, assignment_course in assignments %}
+                    <select class="selected_course form-select field-style q-import-field" id="selected_course_id_{{course_id}}" style="display: none;">
+                    {% for assignment in assignment_course %}
+                        {% if assignment.name != question.assignment.name %}
+                            <option value="{{assignment.id}}"> {{assignment.name}} </option>
+                        {% endif %}
+                    {% endfor %}
+                    </select>
+                {% endfor %}
+        
+            <input type="button" value="Confirm" class="export-confirm btn btn-outline-info"> 
+        </form>
     </div>
     <p class="export_result"></p>
 </div>

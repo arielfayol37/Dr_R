@@ -27,10 +27,10 @@
     <div class="page-container" id="answer-question">
       {% for index, question_dict in questions_dict.items %}
               <h3 class="original-size">Question {{question_dict.question.number}}</h3>
-              <hr/><br/>
-              <form method="post" enctype="multipart/form-data" id="question-form">
+              <hr>
+              <form method="post" enctype="multipart/form-data" class="question-form">
                 {% csrf_token %}
-                <input type="hidden" value="{{question_dict.question.id}}" name="question-id"/>
+                <input type="hidden" value="{{question_dict.question.id}}" class="question-id"/>
                 <p class="question-content">{{question_dict.question.text | safe}}</p>
                 <div class="question-status">
                   {% if question_dict.success %}
@@ -59,7 +59,7 @@
                 </div><br/>
                 {% if question_dict.is_mcq%}
                       <input type="hidden" value="mcq" class="question-type"/>
-                      <div class="inputed-mcq-answers">
+                      <div class="inputed-mcq-answers" data-true-counter="0">
                         {% for answer, is_latex, question_type in question_dict.answers_is_latex_question_type %}
                           <div class="mcq-option-answer">
                             <div class="formatted-answer-option">
@@ -81,14 +81,14 @@
                           <br/> <br/>   
                         {% endfor %}
                       </div> 
-                      <input type="submit" class="btn btn-success exempt" id="submit-btn" value="Submit Answer">
+                      <input type="submit" class="btn btn-success exempt submit-btn" value="Submit Answer">
                       <br/> <br/>
                   {% elif question_dict.is_fr %}
                     <input type="hidden" value="fr" class="question-type"/>
                       <div>
                         <textarea placeholder="Enter answer" class="w-100 question-input-field" name="fr_answer_{{question_dict.question.id}}"></textarea>
                       </div>
-                      <div> <input type="submit" class="btn btn-success exempt" id="submit-btn" value="Submit Answer"></div>
+                      <div> <input type="submit" class="btn btn-success exempt submit-btn" value="Submit Answer"></div>
                       <br/><br/>
                   {% else %}
                       <input type="hidden" value="structural_{{question_dict.sq_type}}" class="question-type"/>
@@ -97,20 +97,28 @@
                       {% for q_type in question_dict.question_type %} <!--expecting to iterate only over one item-->
                         <input type="hidden" value="{{q_type}}" name="structural_answer_info_0"/>
                       {% endfor %}
-                      <input type="submit" class="btn btn-success exempt" id="submit-btn" value="Submit Answer">
+                      <input type="submit" class="btn btn-outline-success exempt attempt-mode submit-btn" value="Attempt">
                       <div class="formatted-answer"></div>
-                      {% if question_dict.answer.answer_unit %}
-                        {% include 'deimos/calci.html' with preface=question_dict.answer.preface show_units=True %}
+                      {% if question_dict.answer.preface %}
+                        <input type="hidden" class="answer_preface" value="{{question_dict.answer.preface}}"/>
                       {% else %}
-                        {% include 'deimos/calci.html' with preface=question_dict.answer.preface %}
+                        <input type="hidden" class="answer_preface" value=""/>
                       {% endif %}
+                      {% if question_dict.answer.answer_unit %}
+                        <input type="hidden" class="show_unit" value="yes"/>
+                      {% else %}
+                        <input type="hidden" class="show_unit" value="no"/>
+                      {% endif %}
+                      <input type="hidden" class="inputed_answer_structural"/>
+                      <input type="hidden" class="inputed_units_structural"/>
                       <br/>
                 {% endif %}
           
               
               <br/>
-              
+              <br/>
               </form>
+              <hr>
               
       {% endfor %}
 
@@ -172,6 +180,8 @@
       </div>
 
     </div>
+
+    {% include 'deimos/calci.html' with not_display=True %}
 
 
 {% endblock %}
