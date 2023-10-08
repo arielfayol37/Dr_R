@@ -34,7 +34,7 @@ urlpatterns = [
      path('courses/<int:course_id>/gradebook', views.gradebook, name='gradebook'),
      path('courses/<int:course_id>/<int:student_id>/student_profile', views.student_profile, name='student_profile'),
      #####
-     path('courses/<int:course_id>/<int:student_id>/student_profile/modify_question_student_score/<str:new_score>/<int:question_student_id>', \
+     path('courses/<int:course_id>/<int:student_id>/student_profile/modify_question_student_score/<str:new_score>/<str:question_student_id>', \
           views.modify_question_student_score, name='modify_question_score'),
      ######
      path('courses/<int:course_id>/gradebook/student_search',views.student_search, name="student_search"),

@@ -60,8 +60,8 @@ class Enrollment(models.Model):
     """
     Used to handle a `Student`'s enrollment for a particular course.
     """
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='enrollments')
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    student = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='enrollments')
+    course = models.OneToOneField(Course, on_delete=models.CASCADE)
     grade = models.FloatField(validators=[MaxValueValidator(100)], default=0, null=True)
     registration_date = models.DateTimeField(auto_now_add=True)
 
@@ -69,8 +69,8 @@ class AssignmentStudent(models.Model):
     """
     Used to manage `Assigment` - `Student` relationship.
     """
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='assignments_intermediate')
-    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
+    student = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='assignments_intermediate')
+    assignment = models.OneToOneField(Assignment, on_delete=models.CASCADE)
     grade = models.FloatField(validators=[MaxValueValidator(100)], default=0, null=True)
     due_date = models.DateTimeField(null=True, blank=True)
 
@@ -83,17 +83,17 @@ class AssignmentStudent(models.Model):
         for question in self.assignment.questions.all():
             total += question.num_points
             try:
-                question_student = QuestionStudent.objects.get(\
-                    question=question, student=self.student)
-                ###### Taking modified score in to account to compute grade
-                question_score_modified,is_created= QuestionModifiedScore.objects.get_or_create(question_student= question_student)
+                question_student = QuestionStudent.objects.get(question=question, student=self.student)
+                # Taking modified score in to account to compute grade
+                question_score_modified, is_created= QuestionModifiedScore.objects.get_or_create(question_student = question_student)
                 if not question_score_modified.is_modified:
                     num_points += question_student.get_num_points()
                 else:
                     num_points +=  question_score_modified.score
-                ##### End 
+                # End 
             except QuestionStudent.DoesNotExist:
-                num_points += 0
+                pass
+                # num_points += 0
         if total != 0:
             self.grade = round((num_points/total) * 100, 2)
         else:
@@ -108,8 +108,8 @@ class QuestionStudent(models.Model):
     """
     Used to manage `Question` - `Student` relationship.
     """
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    student = models.OneToOneField(Student, on_delete=models.CASCADE)
+    question = models.OneToOneField(Question, on_delete=models.CASCADE)
     num_points = models.FloatField(default=0)
     success = models.BooleanField(default=False)
     var_instances = models.ManyToManyField(VariableInstance, related_name='question_students')
@@ -276,9 +276,9 @@ class QuestionModifiedScore(models.Model):
     """
     Used to modify `Student` points on `Question`s
     """
-    question_student = models.ForeignKey(QuestionStudent, on_delete=models.CASCADE, related_name='modify_question_score')
+    question_student = models.OneToOneField(QuestionStudent, on_delete=models.CASCADE, related_name='modify_question_score')
     is_modified = models.BooleanField(default=False)
-    score= models.FloatField(default=0, null=True, blank=True) 
+    score = models.FloatField(default=0, null=True, blank=True) 
 
     def __str__(self):
         if self.score == None:

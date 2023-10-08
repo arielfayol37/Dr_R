@@ -14,7 +14,7 @@ addEventListener('DOMContentLoaded', () => {
     //
 
 
-    document.addEventListener('click', () => {
+    document.addEventListener('click', (event) => {
 
         if (event.target.classList.contains('select-button')) { // button to start selecting students and perform action
             checkboxes = document.querySelectorAll('.td-checkbox');
@@ -48,7 +48,7 @@ addEventListener('DOMContentLoaded', () => {
 
     // To sELECT AND display a particular action, and it's associate elements.
 
-    selected_action.addEventListener('click', () => {
+    selected_action.addEventListener('click', (event) => {
         DueDateDiv.style.display = 'none';
 
         if (selected_action.value === 'action-1') {

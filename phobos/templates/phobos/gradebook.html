@@ -23,13 +23,13 @@
     <button id="export-button" class="btn btn-info">Export as Excel</button>
 
 <!-- extra functionalities-->    
-    <button class="select-button" class="btn btn-primary" style="position: relative; float: right">Select Students</button>
+    <button class="select-button btn btn-outline-primary" style="position: relative; float: right">Select Students</button>
 <br/>
 <br/>
 
 <div class="extra-functions">
 
-    <button class="action-button" class="btn btn-primary" style="display: none;">Bulk Action</button>
+    <button class="action-button btn btn-outline-primary" style="display: none;">Bulk Action</button>
 
     <select class="selected-action" style="display:none"> 
         <option value="action-1">Extend Due Date</option>
@@ -46,7 +46,7 @@
         {% endfor %}
     </select>
     <input type="datetime-local"  class="input-new-due-date-field">
-    <input type="button" class="save-new-due-date-field" value="OK">
+    <input type="button" class="save-new-due-date-field  btn btn-outline-success" value="OK">
 </div>
 
 <!-- Add elements associated with an action here-->
