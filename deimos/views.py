@@ -25,6 +25,7 @@ from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
 import heapq
 from django.db import transaction
 from markdown2 import markdown
+import qrcode
 # Create your views here.
 @login_required(login_url='astros:login') 
 def index(request):
@@ -67,10 +68,13 @@ def assignment_management(request, assignment_id, course_id=None):
 
 # TODO: Add the action link in answer_question.html
 # TODO: Implement question_view as well.
-@login_required(login_url='astros:login')
-def answer_question(request, question_id, assignment_id=None, course_id=None):
+# @login_required(login_url='astros:login')
+def answer_question(request, question_id, assignment_id=None, course_id=None, student_id=None, upload_note_img=None):
     # Making sure the request is done by a Student.
-    student = get_object_or_404(Student, pk=request.user.pk)
+    if student_id:
+        student = get_object_or_404(Student, pk=student_id)
+    else:
+        student = get_object_or_404(Student, pk=request.user.pk)
     assignment = get_object_or_404(Assignment, pk=assignment_id)
     if assignment.course.name != 'Question Bank':
         question_ids = assignment.questions.filter(parent_question=None).values_list('id', flat=True)
@@ -91,6 +95,7 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
         if index==0:
             note, note_created = Note.objects.get_or_create(question_student=question_student)
             note_md = markdown(note.content)
+        
         too_many_attempts = question_student.get_num_attempts() >= question.max_num_attempts
         if created:
             question_student.create_instances()
@@ -191,7 +196,9 @@ def answer_question(request, question_id, assignment_id=None, course_id=None):
                    'assignment_id': assignment_id,'main_question_id':question_0.id,
                     'note':note, 'question_ids_nums':zip(question_ids, question_nums),
                     'note_md':note_md,
-                    'note_comment': 'Edit Notes' if note.content else 'Add Notes'})
+                    'note_comment': 'Edit Notes' if note.content else 'Add Notes',
+                    'upload_note_img':upload_note_img,
+                    'temp_note': note.temp_note if upload_note_img==1 else None})
 @login_required(login_url='astros:login')
 def validate_answer(request, question_id, landed_question_id=None,assignment_id=None, course_id=None):
     # landed_question_id is just the id of the question used to get to the page
@@ -649,3 +656,20 @@ def save_note(request, question_id, course_id=None, assignment_id=None):
                              'last_edited':note.last_edited})
     else:
         return JsonResponse({'message': f'Error: Expected POST method, not {request.method}', 'success':False})
+@csrf_exempt    
+def generate_note_qr(request, question_id, course_id, assignment_id):
+    data = json.loads(request.body)
+    question = get_object_or_404(Question,pk=question_id)
+    student = get_object_or_404(Student,pk=request.user.id)
+    question_student = QuestionStudent.objects.get(question=question, student=student)
+    data_temp_note = data['temp_note']
+    base_link = data['base_link']
+    custom_link = f"{base_link}/{request.user.pk}/1"
+    note = Note.objects.get(question_student=question_student)
+    temp_note, created = NoteTemporary.objects.get_or_create(note=note)
+    temp_note.content = data_temp_note
+    temp_note.save()
+    img = qrcode.make(custom_link)  # replace with your custom link
+    response = HttpResponse(content_type="image/png")
+    img.save(response, "PNG")
+    return response

@@ -60,8 +60,8 @@ class Enrollment(models.Model):
     """
     Used to handle a `Student`'s enrollment for a particular course.
     """
-    student = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='enrollments')
-    course = models.OneToOneField(Course, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='enrollments')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
     grade = models.FloatField(validators=[MaxValueValidator(100)], default=0, null=True)
     registration_date = models.DateTimeField(auto_now_add=True)
 
@@ -69,8 +69,8 @@ class AssignmentStudent(models.Model):
     """
     Used to manage `Assigment` - `Student` relationship.
     """
-    student = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='assignments_intermediate')
-    assignment = models.OneToOneField(Assignment, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='assignments_intermediate')
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
     grade = models.FloatField(validators=[MaxValueValidator(100)], default=0, null=True)
     due_date = models.DateTimeField(null=True, blank=True)
 
@@ -108,8 +108,8 @@ class QuestionStudent(models.Model):
     """
     Used to manage `Question` - `Student` relationship.
     """
-    student = models.OneToOneField(Student, on_delete=models.CASCADE)
-    question = models.OneToOneField(Question, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
     num_points = models.FloatField(default=0)
     success = models.BooleanField(default=False)
     var_instances = models.ManyToManyField(VariableInstance, related_name='question_students')
@@ -256,6 +256,12 @@ class NoteImage(models.Model):
         if self.image:
             self.image.delete(save=False)
         super(NoteImage, self).delete(*args, **kwargs)
+class NoteTemporary(models.Model):
+    """
+    Used to store notes temporarily when user uses QR Code to change device.
+    """
+    note = models.OneToOneField(Note, on_delete=models.CASCADE, related_name='temp_note')
+    content = models.TextField()
     
     
 class QuestionAttempt(models.Model):
