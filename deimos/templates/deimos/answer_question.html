@@ -142,7 +142,11 @@
 
   
     </div>
-    <div class="note-section hide">
+    {% if upload_note_img != 1%}
+      <div class="note-section hide">
+    {% else %}
+      <div class="note-section dispatch-upload">
+    {% endif %}
       <span id="close-x-note">X</span><br/>
       <button type="button" class="btn btn-outline-success note-edit-btn" style="position:absolute; right:2%;"> {{note_comment}} </button><br/><br/>
       <div class="suggestion note-last-edited">Last edited on {{note.last_edited}}</div>
@@ -150,8 +154,11 @@
         <div class="note-content formatted-answer-option">
           {{note_md|safe}}
         </div>
-        <textarea placeholder="Enter notes (markdown supported)" class="field-style note-textarea" style="display: none;">{{note.content}}</textarea>
-
+        {% if not temp_note %}
+          <textarea placeholder="Enter notes (markdown supported)" class="field-style note-textarea" style="display: none;">{{note.content}}</textarea>
+        {% else %}
+          <textarea placeholder="Enter notes (markdown supported)" class="field-style note-textarea" style="display: none;">{{temp_note.content}}</textarea>
+        {% endif %}
         <div class="main-question-image-preview">
           {% for image_object in note.images.all %}
               {% if image_object.image %}
@@ -170,7 +177,9 @@
       </div>
       <div class="edit-handling-section" style="display: none;">
         <div class="uploaded-question-preview"></div><br/>
-        <button type="button" class="main-question-add-image-btn btn btn-light open">Upload Image</button>
+        <button type="button" class="main-question-add-image-btn btn btn-light open">Upload Image </button>
+        <button type="button" class="btn btn-outline-info qr-code-btn"> QR Code</button>
+        <img id="qrCodeImage" style="display:none;" />
         <div class="question-image-upload-section" style="display: none;">
           <input type="file" accept="image/*" class="main-question-image-input">
           <button type="button" class="btn btn-success question-image-add">add</button>
@@ -196,7 +205,5 @@
 <script src="{% static 'deimos/js/question_nav.js' %}"></script>
 <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
 <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
-
-
 
 {% endblock %}

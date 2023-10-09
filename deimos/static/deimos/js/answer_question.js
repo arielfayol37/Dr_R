@@ -33,7 +33,15 @@ forms.forEach((form)=>{
       // will have an attempt-mode)
       const calculatorDiv = screen.closest('#calc-container');
       const previousForm = screen.closest('.question-form');
+      
       if(previousForm !=null){
+        const prevSubmitBtn = previousForm.querySelector('.submit-btn');
+        prevSubmitBtn.value = 'Attempt';
+       // prevSubmitBtn.remove('btn-success');
+        prevSubmitBtn.classList.add('attempt-mode');
+        //prevSubmitBtn.classList.add('btn-outline-success');
+        console.log(prevSubmitBtn);
+
         previousForm.querySelector('.inputed_answer_structural').value = screen.value;
         previousForm.querySelector('.inputed_units_structural').value = calculatorDiv.querySelector('.units-screen').value;
       }
@@ -417,6 +425,26 @@ const editHandlingSection = noteSection.querySelector('.edit-handling-section');
 const noteTextArea = noteSection.querySelector('.note-textarea');
 const saveNoteBtn = noteSection.querySelector('.save-note-btn');
 const noteLastEdited = noteSection.querySelector('.note-last-edited');
+const qrCodeBtn = noteSection.querySelector('.qr-code-btn');
+const qrImage = document.getElementById("qrCodeImage");
+
+if(noteSection.classList.contains('dispatch-upload')){
+ const clickEvent = new Event('click', {
+    'bubbles': true, 
+    'cancelable': true
+});
+console.log('auto upload')
+//noteEditBtn.dispatchEvent(clickEvent);
+// mainQuestionImageInput.click();
+noteTextArea.style.display = 'block';
+noteContent.style.display = 'none';
+editHandlingSection.style.display = 'block';
+noteSection.querySelectorAll('.add-delete-btns').forEach((btn)=>{
+  btn.style.display = 'block';
+})
+noteEditBtn.style.display = 'none';
+
+}
 
 noteEditBtn.addEventListener('click', (event)=>{
   event.preventDefault();
@@ -494,6 +522,7 @@ saveNoteBtn.addEventListener('click', ()=>{
 // Expanding image upload section
 questionAddImgBtn.addEventListener('click', (event)=>{
   event.preventDefault();
+  qrImage.style.display='none';
   if(questionAddImgBtn.classList.contains('open')){
       questionAddImgBtn.classList.remove('open');
       questionAddImgBtn.classList.add('closed');
@@ -581,6 +610,36 @@ function create_img_div(img_input_field){
 
   return imgDiv;
 }
+qrCodeBtn.addEventListener('click', ()=>{
+  showQRCode();
+})
+
+function showQRCode() {
+  const temp_note = document.querySelector('.note-textarea').value;
+  const imgElement = document.getElementById("qrCodeImage");
+  
+  // Construct the URL based on your Django URL pattern. Replace with the correct variable if not `main_question_id`.
+  const baseUrl = window.location.href.replace(/#$/, '');
+
+  fetch(`${baseUrl}/generate_note_qr`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCookie('csrftoken') },
+    body: JSON.stringify({
+            temp_note: temp_note,
+            base_link: baseUrl   
+    })
+  })
+  .then(response => response.blob())
+  .then(blob => {
+      const imageUrl = URL.createObjectURL(blob);
+      imgElement.src = imageUrl;
+      imgElement.style.display = "block";
+  })
+  .catch(error => {
+      console.error("Error fetching the QR Code:", error);
+  });
+}
+
 
 });
 

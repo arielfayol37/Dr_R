@@ -8,4 +8,4 @@ numpy
 scikit-learn
 PyPDF2
 markdown2
-
+qrcode

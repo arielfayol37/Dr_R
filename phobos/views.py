@@ -21,7 +21,7 @@ from django.middleware import csrf
 from django.utils.timesince import timesince
 from django.utils import timezone
 from datetime import datetime
-from deimos.models import AssignmentStudent, Student, QuestionStudent, Enrollment
+from deimos.models import AssignmentStudent, Student, QuestionStudent, Enrollment, QuestionModifiedScore
 from datetime import date
 from sklearn.metrics.pairwise import cosine_similarity
 from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
@@ -534,13 +534,13 @@ def upload_image(request):
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 def student_profile(request,course_id,student_id):
-    student= Student.objects.get(pk =student_id)
+    student = Student.objects.get(pk =student_id)
     course = Course.objects.get(pk = course_id)
-    assignments= Assignment.objects.filter(course = course)
+    assignments = Assignment.objects.filter(course = course)
     grades = []
     for assignment in assignments:
         try:
-            grade = AssignmentStudent.objects.get(student=student, assignment=assignment).get_grade()
+            grade = 0.5 * AssignmentStudent.objects.get(student=student, assignment=assignment).get_grade()
         except:
             grade = 'None'
 
@@ -573,20 +573,64 @@ def get_questions(request, student_id, assignment_id, course_id=None):
     for question in questions:
         try:
             question_student = QuestionStudent.objects.get(student= student, question=question)
-            question_details.append({'Question_number':'Question ' + question.number,\
-                                 'score':f"{question_student.get_num_points()} / {question.num_points}", \
-                                    'num_attempts': question_student.get_num_attempts()})
+            question_modified_score, is_created= QuestionModifiedScore.objects.get_or_create(question_student=question_student)
+            # print(question_modified_score.is_modified,question_modified_score.score,question_student.pk)
+            if question_modified_score.is_modified:
+                question_details.append({'Question_number':'Question ' + question.number,\
+                                    'score':f"{round(question_modified_score.score, 2)} / {question.num_points}", \
+                                        'num_attempts': question_student.get_num_attempts(),\
+                                        'original_score':f"{question_student.get_num_points()} / {question.num_points}", \
+                                            'id': question_student.pk})
+            else:
+                        question_details.append({'Question_number':'Question ' + question.number,\
+                                    'score':f"{round(question_student.get_num_points(), 2)} / {question.num_points}", \
+                                        'num_attempts': question_student.get_num_attempts(),\
+                                    'original_score':f"{question_student.get_num_points()} / {question.num_points}", \
+                                            'id': question_student.pk})
+
         except QuestionStudent.DoesNotExist:
             question_details.append({'Question_number':'Question ' + question.number,\
-                                     'score':f"0 / {question.num_points}",'num_attempts': "0"})    
+                                     'score':f"0 / {question.num_points}",'num_attempts': "0",\
+                                     #'original_score':f"0 / {question.num_points}",'id': question_student.pk})
+                                     'original_score':f"0 / {question.num_points}",'id': "-1"})    
         
     question_details= json.dumps(question_details)
     return HttpResponse(question_details)
 
+def modify_question_student_score(request,question_student_id,new_score,course_id=None,student_id=None):
+    professor = get_object_or_404(Professor, pk=request.user.id)
+    course = get_object_or_404(Course, pk = course_id)
+    if not course.professors.filter(pk=request.user.pk).exists():
+        return HttpResponseForbidden('You are not authorized to change the scores of a student in this course.')
+    try:
+         new_score= float(new_score)
+    except:
+         return JsonResponse({'success':False,'result':'Enter a real number'})
+    try:
+        question_student_id = int(question_student_id)
+    except:
+        return JsonResponse({'success':False, 'result': 'something went wrong'})
+    try:
+        question_student= QuestionStudent.objects.get(pk= question_student_id)
+    except QuestionStudent.DoesNotExist:
+        return JsonResponse({
+            'success': False, 'result':"Can't modify grade when student has not even attempted question!"
+        })
+        # question_student = QuestionStudent.objects.create(question, student) # Needs the question and student
+        # question_student.save()
+    question_modified_score, is_created= QuestionModifiedScore.objects.get_or_create(question_student=question_student)
+    try:
+        # print(question_student_id)
+        question_modified_score.score= new_score
+        question_modified_score.is_modified= True
+        question_modified_score.save()
+        return JsonResponse({'success':True,'result':'Grade successfully edited.'})
+    except:
+        return JsonResponse({'success':False,'result':'Something Went Wrong'})
 
 def search_question(request):
     if request.method == 'POST':
-        input_text = request.POST.get('search_question', '')
+        input_text = request.POST.get('search_question','')
 
         # Tokenize and encode the input text
         input_tokens = BERT_TOKENIZER.encode(input_text, add_special_tokens=True)
@@ -806,11 +850,16 @@ def export_question_to(request,question_id,exp_assignment_id,course_id=None,assi
 
     
 def change_due_date(assignment, new_date):
-    # Assuming new_date is a string in the format 'YYYY-MM-DD',
-    # convert it to a datetime object.
-    # If new_date is already a datetime object, this step is not necessary.
-    naive_datetime = datetime.strptime(new_date, "%Y-%m-%d")
-    # Now make the datetime object timezone-aware
+    # Decode any URL-encoded characters in the date string
+    decoded_date = unquote(new_date)
+
+    # Adjust the format string to handle the new date format with time
+    format_string = "%Y-%m-%dT%H:%M" if 'T' in decoded_date else "%Y-%m-%d"
+
+    # Convert the string to a datetime object
+    naive_datetime = datetime.strptime(decoded_date, format_string)
+
+    # Make the datetime object timezone-aware
     aware_datetime = timezone.make_aware(naive_datetime)
 
     # Assign the timezone-aware datetime to assignment.due_date and save
