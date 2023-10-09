@@ -608,20 +608,21 @@ def search_question(request):
     return render(request,'deimos/search_question.html')
 
 
-@login_required(login_url='astros:login')
 @csrf_exempt
 def save_note(request, question_id, course_id=None, assignment_id=None, student_id=None, upload_note_img=None):
     if request.method == "POST":
-        requester_id = request.user.pk 
-        student = get_object_or_404(Student, pk = requester_id)
+        requester_id = request.user.pk
+        if not student_id: 
+            student = get_object_or_404(Student, pk = requester_id)
+        else:
+            student = get_object_or_404(Student, pk=student_id)
         question = get_object_or_404(Question, pk = question_id)
-        print(question.parent_question)
         if question.parent_question is None: # Notes should be related only to the parent question.
             main_question = question
         else:
             main_question = question.parent_question
         question_student = get_object_or_404(QuestionStudent, student=student, question=main_question)
-        if question_student.student.pk != requester_id:
+        if question_student.student.pk != requester_id and student_id is None:
             return JsonResponse({'message': "You are not allowed to manage these notes", "success":False})
         with transaction.atomic():
             note, created = Note.objects.get_or_create(question_student=question_student)
