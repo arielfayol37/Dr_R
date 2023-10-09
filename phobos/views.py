@@ -540,7 +540,7 @@ def student_profile(request,course_id,student_id):
     grades = []
     for assignment in assignments:
         try:
-            grade = 0.5 * AssignmentStudent.objects.get(student=student, assignment=assignment).get_grade()
+            grade = AssignmentStudent.objects.get(student=student, assignment=assignment).get_grade()
         except:
             grade = 'None'
 
