@@ -200,7 +200,7 @@ def answer_question(request, question_id, assignment_id=None, course_id=None, st
                     'upload_note_img':upload_note_img,
                     'temp_note': note.temp_note if upload_note_img==1 else None})
 @login_required(login_url='astros:login')
-def validate_answer(request, question_id, landed_question_id=None,assignment_id=None, course_id=None):
+def validate_answer(request, question_id, landed_question_id=None,assignment_id=None, course_id=None, student_id=None, upload_note_img=None):
     # landed_question_id is just the id of the question used to get to the page
     # to answer questions. Could have been the id of the main question or other sub questions.
     student = get_object_or_404(Student, pk=request.user.pk)
@@ -608,7 +608,7 @@ def search_question(request):
 
 @login_required(login_url='astros:login')
 @csrf_exempt
-def save_note(request, question_id, course_id=None, assignment_id=None):
+def save_note(request, question_id, course_id=None, assignment_id=None, student_id=None, upload_note_img=None):
     if request.method == "POST":
         requester_id = request.user.pk 
         student = get_object_or_404(Student, pk = requester_id)

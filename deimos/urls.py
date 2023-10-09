@@ -17,6 +17,8 @@ urlpatterns = [
          views.answer_question, name='answer_question'),
     path('courses/<int:course_id>/assignments/<int:assignment_id>/questions/<int:landed_question_id>/validate_answer/<int:question_id>',\
          views.validate_answer, name='validate_answer'),
+     path('courses/<int:course_id>/assignments/<int:assignment_id>/questions/<int:landed_question_id>/<int:student_id>/<int:upload_note_img>/validate_answer/<int:question_id>',\
+         views.validate_answer, name='validate_answer'),
      path('courses/<int:course_id>/assignments/<int:assignment_id>/questions/<int:question_id>/generate_note_qr',\
          views.generate_note_qr, name='generate_note_qr'),
     path('question_nav', views.question_nav, name='question_nav'),
@@ -24,5 +26,7 @@ urlpatterns = [
     path('search_question/', views.search_question, name='search_question'),
     path('compare_expressions', views.expression_compare_test, name='compare_expressions'),
     path('courses/<int:course_id>/assignments/<int:assignment_id>/questions/<int:question_id>/save_note',\
+         views.save_note, name='save_note'), 
+   path('courses/<int:course_id>/assignments/<int:assignment_id>/questions/<int:question_id>/<int:student_id>/<int:upload_note_img>/save_note',\
          views.save_note, name='save_note'), 
 ]
