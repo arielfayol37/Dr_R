@@ -79,6 +79,8 @@ def answer_question(request, question_id, assignment_id=None, course_id=None, st
     if assignment.course.name != 'Question Bank':
         question_ids = assignment.questions.filter(parent_question=None).values_list('id', flat=True)
         question_nums = assignment.questions.filter(parent_question=None).values_list('number', flat=True)
+    else:
+        question_ids, question_nums = [], []
     question_0 = Question.objects.get(pk=question_id)
     if not question_0.parent_question: # if question has no parent question(the question itself 
         #is the parent question)
