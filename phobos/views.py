@@ -252,6 +252,11 @@ def create_question(request, assignment_id=None, question_nums_types=None):
                     label = request.POST.get(label_name)
                     question_image = QuestionImage(question=new_question, image=image, label=label)
                     question_image.save()
+                # creating the hints
+                elif key.startswith(q_num +'_hint_'):
+                    hint_text = value
+                    hint = Hint.objects.create(question=new_question, text=hint_text)
+                    hint.save()
             if counter == 1:
                 for var_symbol in vars_dict:
                     step_size = request.POST[f'step#size#{var_symbol}']

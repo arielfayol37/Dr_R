@@ -278,7 +278,7 @@ class Hint(models.Model):
     text = models.TextField(blank=False, null=False) # Professor must include text(description)
 
     def __str__(self):
-        return f"Hint {self.id} for {self.question}"
+        return f"Hint {self.pk} for {self.question}"
     
 class AnswerBase(models.Model):
     """

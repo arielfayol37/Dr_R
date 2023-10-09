@@ -82,6 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         var newAction = '';
         // After all the tests have passed. 
+        // console.log(questionTypeDicts);
         for (let key in questionTypeDicts) {
             if (questionTypeDicts.hasOwnProperty(key)) {  // This check ensures that you only access direct properties of the object, not properties inherited from the prototype
                 let value = questionTypeDicts[key];
@@ -502,6 +503,17 @@ function addQuestionBlock(){
      <div class="formatted-answer structural-formatted-answer"></div>
      <br/>
      <div class="calculator-area-div"></div><br/>
+     <div class="hints-section"  data-counter="0">
+        <div class="inputed-hints">
+        </div>
+        <div class="add-hint-section" style="display:none;"/>
+            <input type="text" placeholder="Enter hint and click add" class="field-style add-hint-input-field"/>
+            <br/>
+            <button type="button" class="add-inputed-hint-btn btn btn-success"> add </button>
+        </div>
+        <button type="button" class="add-hint-btn btn btn-outline-info open"> Add Hint </button>
+     </div>
+     <hr/>
      <button class="btn btn-outline-success check-question-btn">Add Part ${String.fromCharCode(64 + num_questions + 1)}</button>
      <br/><br/>
      
@@ -523,6 +535,7 @@ function addQuestionBlock(){
     const questionAddImgBtn = questionBlock.querySelector('.main-question-add-image-btn');
     const questionImgUploadSection = questionBlock.querySelector('.question-image-upload-section');
     const uploadedQuestionPreview = questionBlock.querySelector('.uploaded-question-preview');
+    const hintSectionDiv = questionBlock.querySelector('.hints-section');
 
 
 
@@ -654,7 +667,8 @@ checkButton.addEventListener('click', (event)=>{
             newQuestionBlock.scrollIntoView({behavior: "smooth"});
         }
     }else{// Delete block;
-        delete questionTypeDicts.questionBlock.querySelector('.question-number-value').value;
+        const val = questionBlock.querySelector('.question-number-value').value;
+        delete questionTypeDicts[val];
         questionBlock.parentNode.removeChild(questionBlock);
         num_questions -= 1;
         // Renaming the question titles.
@@ -966,7 +980,34 @@ latexBtn.addEventListener('click', (event)=> {
 });
 
 
+//-------------------------HINTS--------------------------------------------
 
+hintSectionDiv.addEventListener('click', (event)=>{
+    event.preventDefault();
+    const inputedHints = hintSectionDiv.querySelector('.inputed-hints')
+    if(event.target.classList.contains('add-hint-btn')){
+        const addHintSection = hintSectionDiv.querySelector('.add-hint-section');
+        addHintSection.style.display = 'block';
+        event.target.style.display = 'none';
+
+    }else if(event.target.classList.contains('delete-hint-btn')){
+        inputedHints.removeChild(event.target.closest('.hint-div'));
+        const holder = hintSectionDiv.dataset.counter
+        hintSectionDiv.dataset.counter = `${parseInt(holder) - 1}`;
+    }else if(event.target.classList.contains('add-inputed-hint-btn')){
+        const hintInputField = event.target.closest('.add-hint-section').querySelector('.add-hint-input-field');
+        if(hintInputField.value.length < 1){
+            alert('Cannot add empty hint');
+            return
+        }else{
+            const newHintDiv = create_hint_div(hintInputField);
+            inputedHints.appendChild(newHintDiv);
+            const holder = hintSectionDiv.dataset.counter
+            hintSectionDiv.dataset.counter = `${parseInt(holder) + 1}`;
+
+        }
+    }
+})
 
 
 
@@ -1060,7 +1101,21 @@ function create_img_div(img_input_field, img_label){
 }
 
 
-
+function create_hint_div(hint_input_field){
+    var hintDiv = document.createElement('div');
+    const hintSection = hint_input_field.closest('.hints-section');
+    hintDiv.className = 'hint-div';
+    hintDiv.innerHTML = `
+    <br/>
+    <div class="formatted-answer-option">${hint_input_field.value}</div>
+    <input type="hidden" value="${hint_input_field.value}" name="${num_questions - 1}_hint_${hintSection.dataset.counter}"/>
+    <div class="add-delete-btns">
+        <button type="button" class="delete-hint-btn btn btn-danger">delete</button>
+    </div>
+    `
+    hint_input_field.value = '';
+    return hintDiv;
+}
 
 
 
