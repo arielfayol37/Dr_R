@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', ()=> {
     const forms = document.querySelectorAll('.question-form');
-    const validateAnswerActionURL = extractQuestionPath(window.location.href) + '/validate_answer';
+    //const validateAnswerActionURL = extractQuestionPath(window.location.href) + '/validate_answer';
     const screen = document.querySelector('#screen'); 
     var formattedAnswerDiv;
    
@@ -40,7 +40,7 @@ forms.forEach((form)=>{
        // prevSubmitBtn.remove('btn-success');
         prevSubmitBtn.classList.add('attempt-mode');
         //prevSubmitBtn.classList.add('btn-outline-success');
-        console.log(prevSubmitBtn);
+        //console.log(prevSubmitBtn);
 
         previousForm.querySelector('.inputed_answer_structural').value = screen.value;
         previousForm.querySelector('.inputed_units_structural').value = calculatorDiv.querySelector('.units-screen').value;
@@ -107,8 +107,8 @@ forms.forEach((form)=>{
       redLight.classList.remove('activated');
       const qid = form.querySelector('.question-id').value;
     if (question_type.startsWith('structural')){
-       
-        fetch(`/${validateAnswerActionURL}/${qid}`, {
+       const baseUrl = window.location.href.replace(/#$/, '');
+        fetch(`${baseUrl}/validate_answer/${qid}`, {
             method: 'POST',
             headers: { 'X-CSRFToken': getCookie('csrftoken') },
             body: JSON.stringify({
@@ -353,7 +353,7 @@ function getCookie(name) {
 
 function feedback_message(result){
 
-  console.log(result);
+  //console.log(result);
 }
 
 
