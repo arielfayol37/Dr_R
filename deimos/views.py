@@ -660,14 +660,17 @@ def save_note(request, question_id, course_id=None, assignment_id=None, student_
     else:
         return JsonResponse({'message': f'Error: Expected POST method, not {request.method}', 'success':False})
 @csrf_exempt    
-def generate_note_qr(request, question_id, course_id, assignment_id):
+def generate_note_qr(request, question_id, course_id, assignment_id, student_id=None, upload_note_img=None):
     data = json.loads(request.body)
     question = get_object_or_404(Question,pk=question_id)
     student = get_object_or_404(Student,pk=request.user.id)
     question_student = QuestionStudent.objects.get(question=question, student=student)
     data_temp_note = data['temp_note']
     base_link = data['base_link']
-    custom_link = f"{base_link}/{request.user.pk}/1"
+    if data['same_url']:
+        custom_link = base_link
+    else:
+        custom_link = f"{base_link}/{request.user.pk}/1"
     note = Note.objects.get(question_student=question_student)
     temp_note, created = NoteTemporary.objects.get_or_create(note=note)
     temp_note.content = data_temp_note

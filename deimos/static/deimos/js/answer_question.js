@@ -19,6 +19,44 @@ document.addEventListener('DOMContentLoaded', ()=> {
 forms.forEach((form)=>{
   var submitBtn = form.querySelector('.submit-btn');
   const inputedMcqAnswersDiv = form.querySelector('.inputed-mcq-answers');
+  const hintsContainerDiv = form.querySelector('.hints-container');
+  if(hintsContainerDiv != null){
+    const questionHintsDiv = hintsContainerDiv.querySelector('.question-hints');
+    const seeMoreBtn = hintsContainerDiv.querySelector('.see-more-hint-btn');
+    const showHintBtn = hintsContainerDiv.querySelector('.show-hint-btn');
+    showHintBtn.addEventListener('click', (event)=>{
+      event.preventDefault();
+      if(showHintBtn.classList.contains('closed-hints')){
+        questionHintsDiv.style.display = 'block';
+        showHintBtn.classList.remove('closed-hints');
+        showHintBtn.name = 'caret-down-outline';
+        if(questionHintsDiv.dataset.counter > questionHintsDiv.dataset.seen){
+          seeMoreBtn.style.display = 'block';
+        }else{
+          seeMoreBtn.style.display = 'none';
+        }
+      }else{
+        questionHintsDiv.style.display = 'none';
+        showHintBtn.classList.add('closed-hints');
+        showHintBtn.name = 'caret-forward-outline';
+      }
+    })
+    seeMoreBtn.addEventListener('click', (event)=>{
+      event.preventDefault();
+      const holder = questionHintsDiv.dataset.seen;
+      questionHintsDiv.dataset.seen = `${parseInt(holder) + 1}`;
+      const hClass = `.hint-num-${parseInt(holder)}`
+      console.log(hClass)
+      questionHintsDiv.querySelector(hClass).style.display='block';
+      if(questionHintsDiv.dataset.counter > questionHintsDiv.dataset.seen){
+        seeMoreBtn.style.display = 'block';
+      }else{
+        seeMoreBtn.style.display = 'none';
+      }
+  
+    })
+  }
+
   
   submitBtn.addEventListener('click', (event)=>{
     event.preventDefault();
@@ -106,8 +144,9 @@ forms.forEach((form)=>{
       yellowLight.classList.add('blinking');
       redLight.classList.remove('activated');
       const qid = form.querySelector('.question-id').value;
+      const baseUrl = window.location.href.replace(/#$/, '');
     if (question_type.startsWith('structural')){
-       const baseUrl = window.location.href.replace(/#$/, '');
+      
         fetch(`${baseUrl}/validate_answer/${qid}`, {
             method: 'POST',
             headers: { 'X-CSRFToken': getCookie('csrftoken') },
@@ -130,7 +169,7 @@ forms.forEach((form)=>{
           });
     } else if( question_type ==='mcq'){
         // TODO make sure some mcqs are selected as true.
-        fetch(`/${validateAnswerActionURL}/${qid}`, {
+        fetch(`${baseUrl}/validate_answer/${qid}`, {
             method: 'POST',
             headers: { 'X-CSRFToken': getCookie('csrftoken') },
             body: JSON.stringify({
@@ -427,15 +466,15 @@ const saveNoteBtn = noteSection.querySelector('.save-note-btn');
 const noteLastEdited = noteSection.querySelector('.note-last-edited');
 const qrCodeBtn = noteSection.querySelector('.qr-code-btn');
 const qrImage = document.getElementById("qrCodeImage");
-
+var maintain_base_url = false
 if(noteSection.classList.contains('dispatch-upload')){
  const clickEvent = new Event('click', {
     'bubbles': true, 
     'cancelable': true
 });
-console.log('auto upload')
 //noteEditBtn.dispatchEvent(clickEvent);
 // mainQuestionImageInput.click();
+maintain_base_url = true
 noteTextArea.style.display = 'block';
 noteContent.style.display = 'none';
 editHandlingSection.style.display = 'block';
@@ -626,7 +665,8 @@ function showQRCode() {
     headers: { 'X-CSRFToken': getCookie('csrftoken') },
     body: JSON.stringify({
             temp_note: temp_note,
-            base_link: baseUrl   
+            base_link: baseUrl,
+            same_url: maintain_base_url   
     })
   })
   .then(response => response.blob())
