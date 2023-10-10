@@ -21,6 +21,8 @@ urlpatterns = [
          views.validate_answer, name='validate_answer'),
      path('courses/<int:course_id>/assignments/<int:assignment_id>/questions/<int:question_id>/generate_note_qr',\
          views.generate_note_qr, name='generate_note_qr'),
+     path('courses/<int:course_id>/assignments/<int:assignment_id>/questions/<int:question_id>/<int:student_id>/<int:upload_note_img>/generate_note_qr',\
+         views.generate_note_qr, name='generate_note_qr'),
     path('question_nav', views.question_nav, name='question_nav'),
     path('action_menu', views.action_menu, name='action_menu'),
     path('search_question/', views.search_question, name='search_question'),

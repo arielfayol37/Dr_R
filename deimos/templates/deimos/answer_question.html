@@ -2,7 +2,8 @@
 {% extends 'deimos/layout.html' %}
 {% load static %}
 {% block title%} Answer Question {% endblock %}
-{% block style%} <link rel="stylesheet" href="{% static 'deimos/css/question_nav.css' %}"/>  
+{% block style%} <link rel="stylesheet" href="{% static 'deimos/css/question_nav.css' %}"/> 
+
 {% endblock %}
 {% block body %}
     
@@ -17,9 +18,7 @@
     </ul>
   </div>
   <div class="note-pencil">
-    <li style="--i:0.1s; width:30px; height:30px">
-      <ion-icon name="pencil-outline"></ion-icon>
-    </li>
+    <ion-icon name="create-outline"></ion-icon>
   </div>
 
 
@@ -49,7 +48,29 @@
                     <div class="tf-light green-light"></div>
                   {% endif %}
                 </div>
+                {% if question_dict.question.hints.all %}
+                <div class="hints-container">
+                  <ion-icon name="caret-forward-outline" class="show-hint-btn closed-hints"></ion-icon>
+                  <div class="question-hints" data-counter="{{question_dict.question.hints.all.count}}" data-seen="1" style="display:none">
+                    {% for hint in question_dict.question.hints.all %}
+                        {% if forloop.counter0 == 0%}
+                          <div class="formatted-answer-option hint-num-{{forloop.counter0}}">
+                              {{hint.text}}
+                          </div>
+                        {% else %}
+                          <div class="formatted-answer-option hint-num-{{forloop.counter0}}"style="display: none;">
+                              {{hint.text}}
+                          </div>
+                        {% endif %}
+
+                    {% endfor %}
+                    <br/>
+                    <button type="button" class="see-more-hint-btn btn btn-outline-info" style="display: none;"> see more </button>
+                  </div>
+                </div>
+                {% endif %}
                 <div class="question-images">
+               
                   {% for question_image in question_dict.question.images.all %}
                       <div class="formatted-answer-option" id="{{question_image.image.url}}">
                           <p>{{question_image.label}}</p>
@@ -177,8 +198,9 @@
       </div>
       <div class="edit-handling-section" style="display: none;">
         <div class="uploaded-question-preview"></div><br/>
-        <button type="button" class="main-question-add-image-btn btn btn-light open">Upload Image </button>
-        <button type="button" class="btn btn-outline-info qr-code-btn"> QR Code</button>
+        <ion-icon name="camera" class="main-question-add-image-btn btn btn-light open"></ion-icon>
+        <ion-icon name="qr-code-outline" class="qr-code-btn"></ion-icon>
+        
         <img id="qrCodeImage" style="display:none;" />
         <div class="question-image-upload-section" style="display: none;">
           <input type="file" accept="image/*" class="main-question-image-input">

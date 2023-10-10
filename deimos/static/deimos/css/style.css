@@ -644,6 +644,16 @@ more than assignment display */
 .expression-comparisons.formatted-e .formatted-answer{
   margin: 20px;
 }
+.qr-code-btn{
+  background-color: #999;
+  margin:20px;
+}
+.qr-code-btn:hover{
+  cursor: pointer;
+}
+ion-icon:hover{
+  cursor:pointer;
+}
 /*-----------------------------MOBILE VIEW STYLE--------------------*/
 
   @media screen and (max-width: 1200px){
