@@ -28,6 +28,10 @@ from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
 import heapq
 from markdown2 import markdown
 
+from django.core.mail import send_mail
+
+
+
 # Create your views here.
 @login_required(login_url='astros:login') 
 def index(request):
@@ -167,11 +171,13 @@ def create_assignment(request, course_id):
 def assign_assignment(request, assignment_id, course_id=None):
     assignment = get_object_or_404(Assignment, pk = assignment_id)
     course = assignment.course
+    email_list = []
     if not course.professors.filter(pk=request.user.pk).exists():
         return JsonResponse({'message': 'You are not authorized to manage this Assignment.', 'success':False})
     if request.method == 'POST':
         students = Student.objects.filter(enrollments__course=course)
         for student in students:
+            email_list.append(student.email)
             assignment_student, created = AssignmentStudent.objects.get_or_create(assignment=assignment, student=student)
             for question in assignment.questions.all():
                     # ASSINGING EVERY QUESTION IN THE ASSIGNMENT TO STUDENTS
@@ -182,6 +188,14 @@ def assign_assignment(request, assignment_id, course_id=None):
                         quest = QuestionStudent.objects.create(question=question, student=student)
                     quest.save()
         assignment.is_assigned = True
+        
+        send_mail(
+            'New Assignment',                # subject
+           f'You have {assignment.name} to be completed before {assignment.due_date}. Good luck!',    # message
+            'arielfayol37@gmail.com',      # from email
+             email_list,      # recipient list
+             fail_silently=True,           # Raises an error if there's a problem
+        )
         assignment.save()
         return JsonResponse({
             'message':'Assignment assigned successfully.', 'success':True
