@@ -5,6 +5,22 @@ document.addEventListener('DOMContentLoaded', ()=> {
     var formattedAnswerDiv;
    
 
+    MathJax.typesetPromise().then(() => {
+      const passedAnswers = document.querySelectorAll('.formatted-answer');
+      passedAnswers.forEach((passedAnswer)=>{
+        try {
+          passedAnswer.innerHTML = MathJax.tex2chtml(passedAnswer.innerHTML + '\\phantom{}').innerHTML;
+      } catch (error) {
+          console.log(error);
+      }
+      })
+      MathJax.typesetPromise();
+    });
+     
+ 
+
+
+
 
     // Notes variables
     const questionAddImgBtn = document.querySelector('.main-question-add-image-btn');
@@ -152,6 +168,7 @@ forms.forEach((form)=>{
             headers: { 'X-CSRFToken': getCookie('csrftoken') },
             body: JSON.stringify({
                     answer: answer_struct.toString(),
+                    submitted_answer: screen.value,
                     questionType: questionType.value    
             })
           })
@@ -239,13 +256,14 @@ function displayLatex(){
                     const formatted_answer = MathJax.tex2chtml(inputElement.value + '\\phantom{}');
                     //inputElement.remove();
                     formattedAnswerDiv.appendChild(formatted_answer);
-                    MathJax.typesetPromise();
+                    
                 }
 
             } catch (error) {
                 //console.log(error);
             }
         });
+        MathJax.typesetPromise();
     });
 
 }
@@ -390,9 +408,10 @@ function getCookie(name) {
     return selectedAnswerIds;
   }
 
-function feedback_message(result){
-
-  //console.log(result);
+function feedback_message(message){
+  if(message != 'None'){
+    alert(message);
+  }
 }
 
 

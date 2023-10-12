@@ -144,6 +144,7 @@ function checkTopicAndSubtopic() {
         const match = text.match(/@\{(.+?)\}@/);
         if (text.startsWith("@{") && text.endsWith("}@") && match && match[1].length >= 1) {
             const contentWithinBraces = match[1];
+            console.log(contentWithinBraces);
             const contentArray = extractSymbols(contentWithinBraces);
             if (!contentArray) {
                 return false;
@@ -1112,6 +1113,7 @@ function create_hint_div(hint_input_field){
     <div class="add-delete-btns">
         <button type="button" class="delete-hint-btn btn btn-danger">delete</button>
     </div>
+    <br/>
     `
     hint_input_field.value = '';
     return hintDiv;
@@ -1221,7 +1223,7 @@ function create_inputed_mcq_div(input_field, answer_type) {
             if (answer_type != 'i-answer'){
                 mcqAnswerDiv.innerHTML = `
                 <br/>
-                <div class="formatted-answer-option"></div>
+                <div class="formatted-answer-option unexpand"></div>
                 <input value="${answer_value}" type="hidden" name="${num_questions - 1}_answer_value_${inputedMcqAnswersDiv.dataset.counter}"/>
                 <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="${num_questions - 1}_answer_info_${inputedMcqAnswersDiv.dataset.counter}"/>
                 <div class="add-delete-btns">

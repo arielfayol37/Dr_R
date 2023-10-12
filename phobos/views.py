@@ -253,7 +253,7 @@ def create_question(request, assignment_id=None, question_nums_types=None):
                     question_image = QuestionImage(question=new_question, image=image, label=label)
                     question_image.save()
                 # creating the hints
-                elif key.startswith(q_num +'_hint_'):
+                elif key.startswith(q_num + '_hint_'):
                     hint_text = value
                     hint = Hint.objects.create(question=new_question, text=hint_text)
                     hint.save()
@@ -405,6 +405,8 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
         labels_urls_list = [(question_image.label, question_image.image.url) for question_image in \
                             question.images.all()]
         question.text = replace_image_labels_with_links(question.text, labels_urls_list)
+        question.text = question.text.replace('@{', '')
+        question.text = question.text.replace('}@', '')
         answers = []
         is_latex = []
         is_mcq = False
@@ -438,7 +440,10 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
                 answers.extend([question.latex_answer])
                 is_latex.extend([1])
             elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
-                answers.extend([question.variable_float_answer])
+                a = question.variable_float_answer
+                a.content = a.content.replace('@{', '')
+                a.content = a.content.replace('}@', '')
+                answers.extend([a])
             else:
                 return HttpResponse('Something went wrong.')
             answers[0].preface = '' if not answers[0].preface else answers[0].preface + "\quad = \quad"# This is to display well in the front end.

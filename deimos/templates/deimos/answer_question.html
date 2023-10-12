@@ -17,7 +17,7 @@
 
     </ul>
   </div>
-  <div class="note-pencil">
+  <div class="note-pencil" title="Notes">
     <ion-icon name="create-outline"></ion-icon>
   </div>
 
@@ -38,10 +38,10 @@
                     <div class="tf-light green-light activated"></div>
                   {% else %}
                     {% if question_dict.too_many_attempts %}
-                      <div class="tf-light red-light"></div>
-                      <div class="tf-light yellow-light activated"></div>
-                    {% else %}
                       <div class="tf-light red-light activated"></div>
+                      <div class="tf-light yellow-light"></div>
+                    {% else %}
+                      <div class="tf-light red-light"></div>
                       <div class="tf-light yellow-light"></div>
                     {% endif %}
 
@@ -50,7 +50,7 @@
                 </div>
                 {% if question_dict.question.hints.all %}
                 <div class="hints-container">
-                  <ion-icon name="caret-forward-outline" class="show-hint-btn closed-hints"></ion-icon>
+                  <ion-icon name="caret-forward-outline" class="show-hint-btn closed-hints" title="Hints"></ion-icon>
                   <div class="question-hints" data-counter="{{question_dict.question.hints.all.count}}" data-seen="1" style="display:none">
                     {% for hint in question_dict.question.hints.all %}
                         {% if forloop.counter0 == 0%}
@@ -58,7 +58,7 @@
                               {{hint.text}}
                           </div>
                         {% else %}
-                          <div class="formatted-answer-option hint-num-{{forloop.counter0}}"style="display: none;">
+                          <div class="formatted-answer-option hint-num-{{forloop.counter0}}" style="display: none;">
                               {{hint.text}}
                           </div>
                         {% endif %}
@@ -83,7 +83,7 @@
                       <div class="inputed-mcq-answers" data-true-counter="0">
                         {% for answer, is_latex, question_type in question_dict.answers_is_latex_question_type %}
                           <div class="mcq-option-answer">
-                            <div class="formatted-answer-option">
+                            <div class="formatted-answer-option unexpand">
                               {% if is_latex %}
                                   <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
                               {% else %}
@@ -97,12 +97,23 @@
                               <input type="hidden" value="{{answer.pk}}{{question_type}}" class="answer_id" name="mcq_answer_id_{{ forloop.counter0 }}"/>
                               <input type="hidden" value="0{{question_type}}" class="answer_info" name="mcq_answer_info_{{ forloop.counter0 }}"/>
                             </div>
-                            <button type="button" class="btn btn-warning mcq-false exempt">False</button> 
+                            {% if question_dict.success %}
+                                {% if answer.is_answer%}
+                                    <button type="button" class="btn btn-info">True</button> 
+                                {% endif %}
+                            {% else %}
+                                <button type="button" class="btn btn-warning">False</button> 
+                            {% endif %}
+                            
                           </div>
                           <br/> <br/>   
                         {% endfor %}
                       </div> 
-                      <input type="submit" class="btn btn-success exempt submit-btn" value="Submit Answer">
+                      {% if question_dict.success %}
+                        <input type="submit" class="btn btn-success exempt submit-btn" value="Submit Answer" style="display: none;">
+                      {% else %}
+                        <input type="submit" class="btn btn-success exempt submit-btn" value="Submit Answer" style="display: none;">
+                      {% endif %}
                       <br/> <br/>
                   {% elif question_dict.is_fr %}
                     <input type="hidden" value="fr" class="question-type"/>
@@ -112,37 +123,45 @@
                       <div> <input type="submit" class="btn btn-success exempt submit-btn" value="Submit Answer"></div>
                       <br/><br/>
                   {% else %}
-                      <input type="hidden" value="structural_{{question_dict.sq_type}}" class="question-type"/>
-                      <!--TODO: !Important. I don't think we will ever use the pk of the answer for structural questions.-->
-                      <input type="hidden" value="{{question_dict.answer.pk}}" name="structural_answer_id_0"/>
-                      {% for q_type in question_dict.question_type %} <!--expecting to iterate only over one item-->
-                        <input type="hidden" value="{{q_type}}" name="structural_answer_info_0"/>
-                      {% endfor %}
-                      <input type="submit" class="btn btn-outline-success exempt attempt-mode submit-btn" value="Attempt">
-                      <div class="formatted-answer"></div>
-                      {% if question_dict.answer.preface %}
-                        <input type="hidden" class="answer_preface" value="{{question_dict.answer.preface}}"/>
-                      {% else %}
-                        <input type="hidden" class="answer_preface" value=""/>
-                      {% endif %}
-                      {% if question_dict.answer.answer_unit %}
-                        <input type="hidden" class="show_unit" value="yes"/>
-                      {% else %}
-                        <input type="hidden" class="show_unit" value="no"/>
-                      {% endif %}
-                      <input type="hidden" class="inputed_answer_structural"/>
-                      <input type="hidden" class="inputed_units_structural"/>
+                      {% if not question_dict.success %}
+                          <input type="hidden" value="structural_{{question_dict.sq_type}}" class="question-type"/>
+                          <!--TODO: !Important. I don't think we will ever use the pk of the answer for structural questions.-->
+                          <input type="hidden" value="{{question_dict.answer.pk}}" name="structural_answer_id_0"/>
+                          {% for q_type in question_dict.question_type %} <!--expecting to iterate only over one item-->
+                            <input type="hidden" value="{{q_type}}" name="structural_answer_info_0"/>
+                          {% endfor %}
+                          <input type="submit" class="btn btn-outline-success exempt attempt-mode submit-btn" value="Attempt">
+                          <div class="formatted-answer"></div>
+                          {% if question_dict.answer.preface %}
+                            <input type="hidden" class="answer_preface" value="{{question_dict.answer.preface}}"/>
+                          {% else %}
+                            <input type="hidden" class="answer_preface" value=""/>
+                          {% endif %}
+                          {% if question_dict.answer.answer_unit %}
+                            <input type="hidden" class="show_unit" value="yes"/>
+                          {% else %}
+                            <input type="hidden" class="show_unit" value="no"/>
+                          {% endif %}
+                          <input type="hidden" class="inputed_answer_structural"/>
+                          <input type="hidden" class="inputed_units_structural"/>
+                        {% else %}
+                            <input style="display:none;" type="submit" class="btn btn-outline-success exempt attempt-mode submit-btn" value="Attempt">
+                            <div class="formatted-answer">
+                              {{question_dict.last_attempt}}
+                            </div>
+                        {% endif %}
                       <br/>
                 {% endif %}
           
               
               <br/>
               <br/>
+              <hr/>
               </form>
-              <hr>
+              
               
       {% endfor %}
-
+      <br/><br/>
       <div class="navigation">
         <ul>
           {% for question_id, question_num in question_ids_nums %}
