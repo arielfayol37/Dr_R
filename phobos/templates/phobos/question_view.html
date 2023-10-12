@@ -8,8 +8,10 @@
     <header class="sidebar-header">X</header>
     <ul>
         <li><a href="{% url 'phobos:index' %}">Home</a></li>
+        {% if not is_questionbank %}
         <li><a href="{% url 'phobos:assignment_management' assignment_id=question.assignment.id course_id=question.assignment.course.id %}">Questions</a></li>
         <li><a href="{% url 'phobos:course_management' course_id=question.assignment.course.id %}">Assignments</a></li>
+        {% endif %}
         <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
         <li id="btn-export_question"> <a>Export this question</a> </li>
     </ul>
@@ -93,12 +95,14 @@
                     </p>
                 {% endif %}
                 <br/>
+                {% if question_dict.question.hints.all%}
                 <strong>Hints</strong>    
-                {% for hint in question_dict.question.hints.all %}
-                    <div class="formatted-answer-option"> 
-                        {{hint.text}}
-                    </div>
-                {% endfor %}
+                    {% for hint in question_dict.question.hints.all %}
+                        <div class="formatted-answer-option"> 
+                            {{hint.text}}
+                        </div>
+                    {% endfor %}
+                {% endif %}
             {% endif %}
 
                     <hr/><br/><br/>

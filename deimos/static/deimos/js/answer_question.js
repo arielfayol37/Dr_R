@@ -4,12 +4,13 @@ document.addEventListener('DOMContentLoaded', ()=> {
     const screen = document.querySelector('#screen'); 
     var formattedAnswerDiv;
    
-
+  // Displaying the validated submissions
     MathJax.typesetPromise().then(() => {
-      const passedAnswers = document.querySelectorAll('.formatted-answer');
+      const passedAnswers = document.querySelectorAll('.passed-answer');
       passedAnswers.forEach((passedAnswer)=>{
         try {
-          passedAnswer.innerHTML = MathJax.tex2chtml(passedAnswer.innerHTML + '\\phantom{}').innerHTML;
+          const latex = math.parse(passedAnswer.innerHTML).toTex()
+          passedAnswer.innerHTML = MathJax.tex2chtml(latex + '\\phantom{}').innerHTML;
       } catch (error) {
           console.log(error);
       }

@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.querySelector('#question-form');
     const allQuestionBlocks = form.querySelector("#all-question-blocks");
     let currentAction = form.getAttribute('action');
-    const varSymbolsArray = [];
+    const varSymbolsArray = ['ò', 'ë', 'à', 'ê', 'ä', 'ï', 'ù', 'ô', 'ü', 'î', 'â', 'ö', 'ÿ', 'è', 'é', 'ç', 'û', 'у́', 'я'];
     const screen = document.querySelector('#screen'); 
     const calculatorDiv = document.querySelector('.calculator');
     calculatorDiv.style.display = 'none';
@@ -140,18 +140,31 @@ function checkTopicAndSubtopic() {
     // is called if and only if the user selected float but what he entered is not float.
     // hence, it returns false if a variable expression is not detected but returns true
     // if one is detected and all the symbols within are defined. 
+    const trigFunctions = {
+        'asin': 'ò', 'acos': 'ë', 'atan': 'à', 'arcsin': 'ê', 'arccos': 'ä',
+        'arctan': 'ï', 'sinh': 'ù', 'cosh': 'ô', 'tanh': 'ü', 'sin': 'î', 'cos': 'â', 
+        'tan': 'ö', 'log': 'ÿ', 'ln': 'è',
+        'cosec': 'é', 'sec': 'ç', 'cot': 'û', 'sqrt':'у́', 'pi': 'я',
+    };
+    
+    text = encode(text, trigFunctions);
     if (isFloat) {
+
         const match = text.match(/@\{(.+?)\}@/);
         if (text.startsWith("@{") && text.endsWith("}@") && match && match[1].length >= 1) {
             const contentWithinBraces = match[1];
-            console.log(contentWithinBraces);
+            //console.log(contentWithinBraces);
+           
             const contentArray = extractSymbols(contentWithinBraces);
-            if (!contentArray) {
+            if (contentArray.length==0) {
+                alert('There is no variable in the entered expression.');
                 return false;
             }
+            //console.log(contentArray);
             for (const item of contentArray) {
                 const trimmedItem = item.trim();
                 if (isNaN(trimmedItem) && !array.includes(trimmedItem)) {
+                    alert(`${trimmedItem} is not defined`);
                     return false;
                 }
             }
@@ -163,6 +176,7 @@ function checkTopicAndSubtopic() {
         if (matches) {
             for (const m of matches) {
                 const contentWithinBraces = m.slice(2, -2); // Extract content without using another regex
+                //console.log(contentWithinBraces);
                 const contentArray = extractSymbols(contentWithinBraces);
                 if (!contentArray) {
                     return false;

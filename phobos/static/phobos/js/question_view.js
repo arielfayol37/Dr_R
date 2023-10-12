@@ -13,7 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     const inputElement = formattedAnswerDiv.querySelector('.latex-answer-question-view');
                     if (inputElement != null) {
-                        var formatted_answer = MathJax.tex2chtml(inputElement.value + '\\phantom{}');
+                        const latex = math.parse(inputElement.value).toTex()
+                        var formatted_answer = MathJax.tex2chtml(latex + '\\phantom{}');
                         formattedAnswerDiv.appendChild(formatted_answer);
                         MathJax.typesetPromise();
                     }
