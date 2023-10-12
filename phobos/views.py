@@ -457,7 +457,8 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
     return render(request, 'phobos/question_view.html', {'courses':zip(range(len(courses)),courses),\
                                                          'questions_dict':questions_dictionary, \
                                                          'question':questions[0],
-                                                         'assignments':assignments})
+                                                         'assignments':assignments,
+                                                         'is_questionbank': True if course.name=='Question Bank' else False })
 
 
 @login_required(login_url='astros:login')  

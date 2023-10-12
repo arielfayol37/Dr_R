@@ -78,9 +78,11 @@ def answer_question(request, question_id, assignment_id=None, course_id=None, st
         student = get_object_or_404(Student, pk=request.user.pk)
     assignment = get_object_or_404(Assignment, pk=assignment_id)
     if assignment.course.name != 'Question Bank':
+        is_questionbank = False
         question_ids = assignment.questions.filter(parent_question=None).values_list('id', flat=True)
         question_nums = assignment.questions.filter(parent_question=None).values_list('number', flat=True)
     else:
+        is_questionbank = True
         question_ids, question_nums = [], []
     question_0 = Question.objects.get(pk=question_id)
     if not question_0.parent_question: # if question has no parent question(the question itself 
@@ -203,7 +205,8 @@ def answer_question(request, question_id, assignment_id=None, course_id=None, st
                     'note_md':note_md,
                     'note_comment': 'Edit Notes' if note.content else 'Add Notes',
                     'upload_note_img':upload_note_img,
-                    'temp_note': note.temp_note if upload_note_img==1 else None})
+                    'temp_note': note.temp_note if upload_note_img==1 else None,
+                    'is_questionbank': is_questionbank})
 
 
 def validate_answer(request, question_id, landed_question_id=None,assignment_id=None, course_id=None, student_id=None, upload_note_img=None):

@@ -497,6 +497,12 @@ textarea {
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
 }
+.formatted-answer-option.unexpand, .formatted-answer.unexpand{
+  resize:initial;
+  overflow: initial;
+}
+
+
 
 .image-in-formatted {
   max-width: 70%; /* Limit image width to 100% of parent div's width */
