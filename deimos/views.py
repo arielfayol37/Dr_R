@@ -25,7 +25,8 @@ from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
 import heapq
 from django.db import transaction
 from markdown2 import markdown
-import string
+import qrcode
+import math
 # Create your views here.
 @login_required(login_url='astros:login') 
 def index(request):
@@ -65,7 +66,7 @@ def assignment_management(request, assignment_id, course_id=None):
     # Making sure the request is done by a Student.
     student = get_object_or_404(Student, pk = request.user.pk)
     assignment = get_object_or_404(Assignment, pk = assignment_id)
-    questions = Question.objects.filter(assignment = assignment)
+    questions = Question.objects.filter(assignment = assignment, parent_question=None)
     context = {
         "questions": questions,
         "assignment": assignment
@@ -74,129 +75,159 @@ def assignment_management(request, assignment_id, course_id=None):
 
 # TODO: Add the action link in answer_question.html
 # TODO: Implement question_view as well.
-@login_required(login_url='astros:login')
-def answer_question(request, question_id, assignment_id=None, course_id=None):
+# @login_required(login_url='astros:login')
+def answer_question(request, question_id, assignment_id=None, course_id=None, student_id=None, upload_note_img=None):
     # Making sure the request is done by a Student.
-    student = get_object_or_404(Student, pk=request.user.pk)
+    if student_id:
+        student = get_object_or_404(Student, pk=student_id)
+    else:
+        student = get_object_or_404(Student, pk=request.user.pk)
     assignment = get_object_or_404(Assignment, pk=assignment_id)
-    question_ids = assignment.questions.values_list('id', flat=True)
-    question_nums = assignment.questions.values_list('number', flat=True)
-    question = Question.objects.get(pk=question_id)
-    
-    question_student, created = QuestionStudent.objects.get_or_create(question=question, student=student)
-    too_many_attempts = question_student.get_num_attempts() >= question.max_num_attempts
-    if created:
-        question_student.create_instances()
+    if assignment.course.name != 'Question Bank':
+        question_ids = assignment.questions.filter(parent_question=None).values_list('id', flat=True)
+        question_nums = assignment.questions.filter(parent_question=None).values_list('number', flat=True)
     else:
-        if not question_student.instances_created:
-            question_student.create_instances()
-    question_student.save() 
-    # Detect links and replace with html a-tags
-    question.text = replace_links_with_html(question.text)
-    labels_urls_list = [(question_image.label, question_image.image.url) for question_image in \
-                    question.images.all()]
-    question.text = replace_image_labels_with_links(question.text,labels_urls_list)
-    # Replace vars with values in colored tags.
-    question.text = question_student.evaluate_var_expressions_in_text(question.text, add_html_style=True)
-    is_mcq = False #nis mcq
-    is_fr = False # is free response
-    answers = []
-    is_latex = []
-    question_type = []
-    # The dictionary question_type_dict is used for answer validation.
-    # So validate_answer() takes the input from the user and kind of compares to this dictionary.
-    question_type_dict = {'ea': 0, 'fa':1, 'fva':8,'la':2, 'ta':3, 'ia':7}
-    question_type_count = {'ea': 0, 'fa': 0, 'fva':0, 'la': 0, 'ta': 0, 'ia': 0}
-    if question.answer_type.startswith('MCQ'):
-        is_mcq = True
-        ea = question.mcq_expression_answers.all()
-        answers.extend(ea)
-        ta = question.mcq_text_answers.all()
-        answers.extend(ta)
-        # Putting before floats because they are not a django character field.
-        for answer in answers:
-            answer.content = question_student.evaluate_var_expressions_in_text(answer.content, add_html_style=True)
-        fa = question.mcq_float_answers.all()
-        answers.extend(fa)
-        fva = question.mcq_variable_float_answers.all()
-        #evaluated_fva = [question_student.evaluate_var_expressions_in_text(mcq_fva.content, add_html_style=True)\
-               #for mcq_fva in fva]
-        for mcq_fva in fva:
-            mcq_fva.content = question_student.evaluate_var_expressions_in_text(mcq_fva.content, add_html_style=True)
-        answers.extend(fva)
-        ia = question.mcq_image_answers.all()
-        answers.extend(ia)
-        la = question.mcq_latex_answers.all()
-        answers.extend(la)
+        question_ids, question_nums = [], []
+    question_0 = Question.objects.get(pk=question_id)
+    if not question_0.parent_question: # if question has no parent question(the question itself 
+        #is the parent question)
+        questions = list(Question.objects.filter(parent_question=question_0))
+        questions.insert(0, question_0)
+    else:
+        question_0 = question_0.parent_question
+        questions = list(Question.objects.filter(parent_question=question_0))
+        questions.insert(0, question_0)
+
+    questions_dictionary = {}
+    for index, question in enumerate(questions):
+        question_student, created = QuestionStudent.objects.get_or_create(question=question, student=student)
+        if index==0:
+            note, note_created = Note.objects.get_or_create(question_student=question_student)
+            note_md = markdown(note.content)
         
-        question_type_keys = ['ea', 'fa', 'fva', 'ta', 'ia', 'la']
+        too_many_attempts = question_student.get_num_attempts() >= question.max_num_attempts
+        if created:
+            question_student.create_instances()
+        else:
+            if not question_student.instances_created:
+                question_student.create_instances()
+        question_student.save() 
+        # Detect links and replace with html a-tags
+        question.text = replace_links_with_html(question.text)
+        labels_urls_list = [(question_image.label, question_image.image.url) for question_image in \
+                        question.images.all()]
+        question.text = replace_image_labels_with_links(question.text,labels_urls_list)
+        # Replace vars with values in colored tags.
+        question.text = question_student.evaluate_var_expressions_in_text(question.text, add_html_style=True)
+        is_mcq = False #nis mcq
+        is_fr = False # is free response
+        answers = []
+        is_latex = []
+        question_type = []
+        # The dictionary question_type_dict is used for answer validation.
+        # So validate_answer() takes the input from the user and kind of compares to this dictionary.
+        question_type_dict = {'ea': 0, 'fa':1, 'fva':8,'la':2, 'ta':3, 'ia':7}
+        question_type_count = {'ea': 0, 'fa': 0, 'fva':0, 'la': 0, 'ta': 0, 'ia': 0}
+        if question.answer_type.startswith('MCQ'):
+            is_mcq = True
+            ea = question.mcq_expression_answers.all()
+            answers.extend(ea)
+            ta = question.mcq_text_answers.all()
+            answers.extend(ta)
+            # Putting before floats because they are not a django character field.
+            for answer in answers:
+                answer.content = question_student.evaluate_var_expressions_in_text(answer.content, add_html_style=True)
+            fa = question.mcq_float_answers.all()
+            answers.extend(fa)
+            fva = question.mcq_variable_float_answers.all()
+            #evaluated_fva = [question_student.evaluate_var_expressions_in_text(mcq_fva.content, add_html_style=True)\
+                #for mcq_fva in fva]
+            for mcq_fva in fva:
+                mcq_fva.content = question_student.evaluate_var_expressions_in_text(mcq_fva.content, add_html_style=True)
+            answers.extend(fva)
+            ia = question.mcq_image_answers.all()
+            answers.extend(ia)
+            la = question.mcq_latex_answers.all()
+            answers.extend(la)
+            
+            question_type_keys = ['ea', 'fa', 'fva', 'ta', 'ia', 'la']
 
-        for key in question_type_keys:
-            question_type_count[key] = getattr(locals()[key], 'count')()
+            for key in question_type_keys:
+                question_type_count[key] = getattr(locals()[key], 'count')()
 
-        # !Important: order matters here. Latex has to be last!
-        is_latex = [0 for _ in range(ea.count()+ta.count()+fa.count()+fva.count()+ia.count())]
-        is_latex.extend([1 for _ in range(la.count())])
-        for q_type in question_type_dict:
-            question_type.extend([question_type_dict[q_type] for _ in range(question_type_count[q_type])])
-        assert len(is_latex) == len(answers)
-        shuffler = [counter for counter in range(len(answers))]
-        random.shuffle(shuffler)  
-        is_latex = [is_latex[i] for i in shuffler]
-        answers = [answers[i] for i in shuffler]
-    else:
-        # TODO: Subclass all structural answers to a more general class 
-        # so that you may use only one if.
-        if question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
-            answers.extend([question.latex_answer])
-            is_latex.extend([1]) 
-            question_type = [2]  
-        elif question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
-            answers.extend([question.expression_answer])
-            question_type = [0]
-        elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
-            answers.extend([question.variable_float_answer])
-            question_type = [5]
-        elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
-            answers.extend([question.float_answer])
-            question_type = [1]
-        elif question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
-            is_fr = True 
-            answers.extend([question.text_answer])
-            question_type = [4]    
-        answers[0].preface = '' if answers[0].preface is None else answers[0].preface + " = "
-    note, note_created = Note.objects.get_or_create(question_student=question_student)
-    note_md = markdown(note.content)
-    context = {
-        'question':question,
-        'question_ids_nums':zip(question_ids, question_nums),
-        'assignment_id': assignment_id,
-        'course_id': course_id,
-        "is_mcq": is_mcq,
-        "is_fr": is_fr, 
-        "answers_is_latex_question_type": zip(answers, is_latex, question_type),
-        'question_type': question_type, # For structural
-        'answer': answers[0],
-        'success':question_student.success,
-        'too_many_attempts':too_many_attempts,
-        'sq_type':question_type[0], # structural question type used in js.
-        'note':note,
-        'note_md':note_md,
-        'note_comment': 'Edit Notes' if note.content else 'Add Notes'
-    }
+            # !Important: order matters here. Latex has to be last!
+            is_latex = [0 for _ in range(ea.count()+ta.count()+fa.count()+fva.count()+ia.count())]
+            is_latex.extend([1 for _ in range(la.count())])
+            for q_type in question_type_dict:
+                question_type.extend([question_type_dict[q_type] for _ in range(question_type_count[q_type])])
+            assert len(is_latex) == len(answers)
+            if not question_student.success: # Do not need to randomize the order if student has already passed.
+                shuffler = [counter for counter in range(len(answers))]
+                random.shuffle(shuffler)  
+                is_latex = [is_latex[i] for i in shuffler]
+                answers = [answers[i] for i in shuffler]
+        else:
+            # TODO: Subclass all structural answers to a more general class 
+            # so that you may use only one if.
+            if question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
+                answers.extend([question.latex_answer])
+                is_latex.extend([1]) 
+                question_type = [2]  
+            elif question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
+                answers.extend([question.expression_answer])
+                question_type = [0]
+            elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
+                answers.extend([question.variable_float_answer])
+                question_type = [5]
+            elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
+                answers.extend([question.float_answer])
+                question_type = [1]
+            elif question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
+                is_fr = True 
+                answers.extend([question.text_answer])
+                question_type = [4]    
+            answers[0].preface = '' if answers[0].preface is None else answers[0].preface
+        last_attempt = question_student.attempts.last()
+        context = {
+            'question':question,
+            "is_mcq": is_mcq,
+            "is_fr": is_fr, 
+            "answers_is_latex_question_type": zip(answers, is_latex, question_type),
+            'question_type': question_type, # For structural
+            'answer': answers[0],
+            'success':question_student.success,
+            'too_many_attempts':too_many_attempts,
+            'sq_type':question_type[0], # structural question type used in js.
+            'last_attempt':last_attempt.submitted_answer if last_attempt else ''
+
+        }
+        questions_dictionary[index] = context
     return render(request, 'deimos/answer_question.html',
-                  context)
-@login_required(login_url='astros:login')
-def validate_answer(request, question_id, assignment_id=None, course_id=None):
-    student = get_object_or_404(Student, pk=request.user.pk)
+                  {'questions_dict':questions_dictionary, 'course_id': course_id,
+                   'assignment_id': assignment_id,'main_question_id':question_0.id,
+                    'note':note, 'question_ids_nums':zip(question_ids, question_nums),
+                    'note_md':note_md,
+                    'note_comment': 'Edit Notes' if note.content else 'Add Notes',
+                    'upload_note_img':upload_note_img,
+                    'temp_note': note.temp_note if upload_note_img==1 else None})
+
+
+def validate_answer(request, question_id, landed_question_id=None,assignment_id=None, course_id=None, student_id=None, upload_note_img=None):
+    # landed_question_id is just the id of the question used to get to the page
+    # to answer questions. Could have been the id of the main question or other sub questions.
+    if not student_id:
+        student = get_object_or_404(Student, pk=request.user.pk)
+    else:
+        student = get_object_or_404(Student, pk=student_id)
     
     if request.method == 'POST':
         correct = False
         previously_submitted = False
         data = json.loads(request.body)
-        submitted_answer = data["answer"]
+        simplified_answer = data["answer"]
+        submitted_answer = data["submitted_answer"]
         question = Question.objects.get(pk=question_id)
-        feedback_data = ('none')
+        feedback_data = 'None'
         
         # Use get_or_create() to avoid duplicating QuestionStudent instances
         # Normally, we should just use get() because QuestionStudent object is already created
@@ -210,13 +241,14 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                 if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
                     # checking previous attempts
                     for previous_attempt in question_student.attempts.all():
-                        if compare_expressions(previous_attempt.content, submitted_answer):
+                        if compare_expressions(previous_attempt.content, simplified_answer):
                             previously_submitted = True
                             return JsonResponse({'previously_submitted': previously_submitted})
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
-                    attempt.content = submitted_answer
+                    attempt.content = simplified_answer
+                    attempt.submitted_answer = submitted_answer
                     answer = question.expression_answer
-                    correct = compare_expressions(answer.content, submitted_answer)
+                    correct = compare_expressions(answer.content, simplified_answer)
                 elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
                     # Checking previous attempts (Yes, this should be done after checking with the real answer)
                     # Because of 'margin_error' in compare_floats(). 
@@ -226,35 +258,35 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                     answer = question.float_answer
                     try:
                         # answer.content must come first in the compare_floats()
-                        correct, feedback_data = compare_floats(answer.content, submitted_answer, question.margin_error) 
+                        correct, feedback_data = compare_floats(answer.content, simplified_answer, question.margin_error) 
                     except ValueError:
                         correct = False
                     # Checking previous attempts
                     if not correct:
                         for previous_attempt in question_student.attempts.all():
-                            are_the_same, fake_feedback = compare_floats(previous_attempt.content,submitted_answer, get_feedback=False)
+                            are_the_same, fake_feedback = compare_floats(previous_attempt.content,simplified_answer, get_feedback=False)
                             if are_the_same:
                                 previously_submitted = True
                                 return JsonResponse({'previously_submitted': previously_submitted})
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
-                    attempt.content = submitted_answer
-
+                    attempt.content = simplified_answer
+                    attempt.submitted_answer = submitted_answer
                 elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
                     try:
                         answer_temp = question_student.compute_structural_answer()
-                        correct, feedback_data = compare_floats(answer_temp, submitted_answer,
+                        correct, feedback_data = compare_floats(answer_temp, simplified_answer,
                                                     question.margin_error)
                     except ValueError:
                         correct = False
                     if not correct:
                         for previous_attempt in question_student.attempts.all():
-                            are_the_same, fake_feedback = compare_floats(previous_attempt.content, submitted_answer, margin_error=0.02, get_feedback=False)
+                            are_the_same, fake_feedback = compare_floats(previous_attempt.content, simplified_answer, margin_error=0.02, get_feedback=False)
                             if are_the_same:
                                 previously_submitted = True
                                 return JsonResponse({'previously_submitted': previously_submitted})
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
-                    attempt.content = submitted_answer
-
+                    attempt.content = simplified_answer
+                    attempt.submitted_answer = submitted_answer
                 if correct:
                     # Deduct points based on attempts, but ensure it doesn't go negative
                     attempt.num_points = max(0, question.num_points * (1 - (question.deduct_per_attempt * question.num_points * max(0, question_student.get_num_attempts()-1))))
@@ -268,11 +300,11 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                 
                 # checking previous attempts
                 for previous_attempt in question_student.attempts.all():
-                    if set(submitted_answer) == set(previous_attempt.content):
+                    if set(simplified_answer) == set(previous_attempt.content):
                         previously_submitted = True
                         return JsonResponse({'previously_submitted': previously_submitted})
                 attempt = QuestionAttempt.objects.create(question_student=question_student)
-                attempt.content = str(submitted_answer)
+                attempt.content = str(simplified_answer)
                 question_type_dict = {'ea': 0, 'fa':1, 'fva':8,'la':2, 'ta':3, 'ia':7}
                 answers = []
                 ea = list(question.mcq_expression_answers.filter(is_answer=True).values_list('pk', flat=True))
@@ -293,8 +325,8 @@ def validate_answer(request, question_id, assignment_id=None, course_id=None):
                 ia = list(question.mcq_image_answers.filter(is_answer=True).values_list('pk', flat=True))
                 ia = [str(pk) + str(question_type_dict['ia']) for pk in ia]
                 answers.extend(ia)
-                if len(submitted_answer) == len(answers):
-                    s1, s2 = set(submitted_answer), set(answers)
+                if len(simplified_answer) == len(answers):
+                    s1, s2 = set(simplified_answer), set(answers)
                     if s1 == s2:
                         correct = True
                         attempt.num_points = max(0, question.num_points * (1 - (question.deduct_per_attempt * question.num_points * max(0, question_student.get_num_attempts()-1))))
@@ -453,23 +485,54 @@ def compare_expressions(expression1, expression2, for_units=False):
     difference = (simplify(sym_e1 - sym_e2, symbols=symbls))
     return True if difference == 0 else False
 
-def compare_floats(correct_answer, submitted_answer, margin_error=0.0, get_feedback=True):
+def compare_floats(correct_answer, simplified_answer, margin_error=0.0, get_feedback=True):
     """
     Takes two floats f1 and f2,
     returns True if they are equal or close,
     returns False otherwise
     """
     f1 = eval(str(correct_answer))
-    f2 = eval(str(submitted_answer))
-    feedback_message = "'feedback message function'"
-    if get_feedback:
-        # TODO: Implement the function to compute the feedback message.
-        pass
-    if f1 == 0:
-        return (f1-f2 <= margin_error, feedback_message) 
-    else:
-        return (abs(f1-f2)/f1 <= margin_error, feedback_message)
+    f2 = eval(str(simplified_answer))
+    feedback_message = "None"
+    correct = (abs(f1-f2) <= margin_error * abs(f1)) and f1*f2 >= 0
+    if not correct and get_feedback:
+        feedback_message = feedback_floats(f1, f2, margin_error) 
+    return (correct, feedback_message)
 
+def feedback_floats(base_float, inputed_float, margin_error):
+    """
+    Helper function that returns a feedback message when two floats
+    differ but may be integer multiples (within n=2) of each other.
+    Margin error is a percentage.
+    """
+    assert 0 <= margin_error <= 1
+    quotient = inputed_float/base_float if base_float != 0 else 0
+    inverse = False
+    if abs(quotient) < 1:
+        inverse = True
+        quotient = round(quotient ** -1)
+    int_quotient = round(quotient)
+    if abs(int_quotient) < 3 and int_quotient != 0:
+        if (int_quotient ** -1)  * abs(quotient - int_quotient) <= (margin_error * base_float):
+            if not inverse:
+                return f"Your answer is {int_quotient}x the correct answer"
+            else:
+                return f"Your answer is {int_quotient ** -1}x the correct answer"
+    log_input = math.log10(abs(inputed_float))
+    a = math.log10(abs(base_float) * (1 - margin_error)) - log_input
+    b = math.log10(abs(base_float) * (1 + margin_error)) - log_input
+    neg = "-" if base_float * inputed_float < 0 else ""
+    if a == b and type(b) == int:
+        return f"Your answer is {neg}10^{-(b)} x the correct answer"
+    if not a < b:
+        a, b = b, a
+    f_a = math.floor(a)
+    f_b = math.floor(b)
+    diff = abs(f_b - f_a)
+    if type(diff) == int and diff != 0:
+        return f"Your answer is {neg}10^{-(diff + f_a)} x the correct answer"
+    return ""
+    
 def compare_units(units_1, units_2):
     """
     Takes two units units_1 and units_2
@@ -612,15 +675,21 @@ def search_question(request):
     return render(request,'deimos/search_question.html')
 
 
-@login_required(login_url='astros:login')
 @csrf_exempt
-def save_note(request, question_id, course_id=None, assignment_id=None):
+def save_note(request, question_id, course_id=None, assignment_id=None, student_id=None, upload_note_img=None):
     if request.method == "POST":
-        requester_id = request.user.pk 
-        student = get_object_or_404(Student, pk = requester_id)
+        requester_id = request.user.pk
+        if not student_id: 
+            student = get_object_or_404(Student, pk = requester_id)
+        else:
+            student = get_object_or_404(Student, pk=student_id)
         question = get_object_or_404(Question, pk = question_id)
-        question_student = get_object_or_404(QuestionStudent, student=student, question=question)
-        if question_student.student.pk != requester_id:
+        if question.parent_question is None: # Notes should be related only to the parent question.
+            main_question = question
+        else:
+            main_question = question.parent_question
+        question_student = get_object_or_404(QuestionStudent, student=student, question=main_question)
+        if question_student.student.pk != requester_id and student_id is None:
             return JsonResponse({'message': "You are not allowed to manage these notes", "success":False})
         with transaction.atomic():
             note, created = Note.objects.get_or_create(question_student=question_student)
@@ -657,3 +726,23 @@ def save_note(request, question_id, course_id=None, assignment_id=None):
                              'last_edited':note.last_edited})
     else:
         return JsonResponse({'message': f'Error: Expected POST method, not {request.method}', 'success':False})
+@csrf_exempt    
+def generate_note_qr(request, question_id, course_id, assignment_id, student_id=None, upload_note_img=None):
+    data = json.loads(request.body)
+    question = get_object_or_404(Question,pk=question_id)
+    student = get_object_or_404(Student,pk=request.user.id)
+    question_student = QuestionStudent.objects.get(question=question, student=student)
+    data_temp_note = data['temp_note']
+    base_link = data['base_link']
+    if data['same_url']:
+        custom_link = base_link
+    else:
+        custom_link = f"{base_link}/{request.user.pk}/1"
+    note = Note.objects.get(question_student=question_student)
+    temp_note, created = NoteTemporary.objects.get_or_create(note=note)
+    temp_note.content = data_temp_note
+    temp_note.save()
+    img = qrcode.make(custom_link)  # replace with your custom link
+    response = HttpResponse(content_type="image/png")
+    img.save(response, "PNG")
+    return response

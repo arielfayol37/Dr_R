@@ -17,82 +17,93 @@
 
 <div class="export_question">
     
-    <div style="display: none;"> 
+    <div class="form-container" style="display: none;"> 
         <form action="" >
             {% csrf_token %}
-            <select id="select_course" class="form-select field-style q-import-field">
-                {% for index, course in courses %}
-                <option value="selected_course_id_{{course.id}}">{{course.name}} </option>
-                {% endfor %}
-            </select>
+                <select id="select_course" class="form-select field-style q-import-field">
+                    {% for index, course in courses %}
+                    <option value="selected_course_id_{{course.id}}">{{course.name}} </option>
+                    {% endfor %}
+                </select>
 
-            {% for course_id,assignment_course in assignments %}
-                <select class="selected_course form-select field-style q-import-field" id="selected_course_id_{{course_id}}" style="display: none;">
-            {% for assignment in assignment_course %}
-                {% if assignment.name != question.assignment.name %}
-                    <option value="{{assignment.id}}"> {{assignment.name}} </option>
-                {% endif %}
-            {% endfor %}
-        </select>
-            {% endfor %}
-       
-        <input type="button" value="Confirm" class="export-confirm btn btn-outline-info"> 
-    </form>
+                {% for course_id, assignment_course in assignments %}
+                    <select class="selected_course form-select field-style q-import-field" id="selected_course_id_{{course_id}}" style="display: none;">
+                    {% for assignment in assignment_course %}
+                        {% if assignment.name != question.assignment.name %}
+                            <option value="{{assignment.id}}"> {{assignment.name}} </option>
+                        {% endif %}
+                    {% endfor %}
+                    </select>
+                {% endfor %}
+        
+            <input type="button" value="Confirm" class="export-confirm btn btn-outline-info"> 
+        </form>
     </div>
     <p class="export_result"></p>
 </div>
 
 <div class="embed">
-<p class="question-number"><strong>Question {{question.number}}</strong></p>
-<hr/>
-<p class="question-content">{{question.text|safe}}</p>
-<div class="question-images">
-    {% for question_image in question.images.all %}
-        <div class="formatted-answer-option" id="{{question_image.image.url}}">
-            <p>{{question_image.label}}</p>
-            <img src="{{question_image.image.url}}" class="question-image image-in-formatted" alt="{{question_image.label}}"/>
-        </div>
-    {% endfor %}
-</div><br/>
+    {% for index, question_dict in questions_dict.items %}
 
-{% if show_answer %}
-
-    {% if is_mcq %}
-        {% for answer, is_latex in answers_is_latex %}
-            <div class="formatted-answer-option">
-                {% if is_latex %}
-                    <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
-                {% else %}   
-                    {% if answer.image %}
-                        {{answer.label}}
-                        <img src="{{answer.image.url}}" class="mcq-image-answer image-in-formatted" alt="{{answer.image.label}}"/>
-                    {% else %}
-                        {{answer.content|safe}}
-                    {% endif %}
+            <p class="question-number"><strong>Question {{question_dict.question.number}}</strong></p>
+            <p class="question-content">{{question_dict.question.text|safe}}</p>
+            <div class="question-images">
+                {% for question_image in question_dict.question.images.all %}
+                    <div class="formatted-answer-option" id="{{question_image.image.url}}">
+                        <p>{{question_image.label}}</p>
+                        <img src="{{question_image.image.url}}" class="question-image image-in-formatted" alt="{{question_image.label}}"/>
+                    </div>
+                {% endfor %}
+            </div><br/>
+            
+            {% if question_dict.show_answer %}
+            
+                {% if question_dict.is_mcq %}
+                    {% for answer, is_latex in question_dict.answers_is_latex %}
+                        
+                            {% if is_latex %}
+                            <div class="formatted-answer-option unexpand">
+                                <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
+                            {% else %}  
+                            <div class="formatted-answer-option">
+                                {% if answer.image %}
+                                    {{answer.label}}
+                                    <img src="{{answer.image.url}}" class="mcq-image-answer image-in-formatted" alt="{{answer.image.label}}"/>
+                                {% else %}
+                                    {{answer.content|safe}}
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                        {% if answer.is_answer%}
+                            <button type="button" class="btn btn-info">True</button>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <p class="question-answer">
+                        {% for answer in question_dict.answers %}
+                        <strong>Answer </strong>
+                            <div class="formatted-answer-option unexpand">
+                                {% if not question_dict.is_fr %}
+                                <input type="hidden" class="latex-answer-question-view" value="{{answer.preface}} {{answer.content}}\quad {{answer.answer_unit}}"> 
+                                {% else %}
+                                <input type="hidden" class="latex-answer-question-view" value="Free Response Question.">
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </p>
                 {% endif %}
-            </div>
-            {% if answer.is_answer%}
-                <button type="button" class="btn btn-info exempt">True</button>
-            {% else %}
-                <button type="button" class="btn btn-warning exempt">False</button>
+                <br/>
+                <strong>Hints</strong>    
+                {% for hint in question_dict.question.hints.all %}
+                    <div class="formatted-answer-option"> 
+                        {{hint.text}}
+                    </div>
+                {% endfor %}
             {% endif %}
-        {% endfor %}
-    {% else %}
-        <p class="question-answer">
-            {% for answer in answers %}
-            <strong>Answer </strong>
-                <div class="formatted-answer-option">
-                    {% if not is_fr %}
-                    <input type="hidden" class="latex-answer-question-view" value="{{answer.preface}} {{answer.content}}\quad {{answer.answer_unit}}"> 
-                    {% else %}
-                    <input type="hidden" class="latex-answer-question-view" value="Free Response Question.">
-                    {% endif %}
-                </div>
-            {% endfor %}
-        </p>
-    {% endif %}
 
-{% endif %}
+                    <hr/><br/><br/>
+    {% endfor %}
+
 </div>
 {% endblock %}
 {% block scripts %}

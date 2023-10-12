@@ -487,7 +487,10 @@ div.c-text {
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
 }
-
+.formatted-answer-option.unexpand, .formatted-answer.unexpand{
+  resize:initial;
+  overflow: initial;
+}
 
 
 
@@ -589,6 +592,9 @@ more than assignment display */
   justify-content: center;
   align-items: center;
 }
+.original-size {
+  font-size: initial;
+}
 @keyframes blink {
   0%, 100% {
     opacity: 1;
@@ -640,6 +646,15 @@ more than assignment display */
 }
 .expression-comparisons.formatted-e .formatted-answer{
   margin: 20px;
+}
+.qr-code-btn{
+  background-color: #999;
+}
+.qr-code-btn:hover{
+  cursor: pointer;
+}
+ion-icon:hover{
+  cursor:pointer;
 }
 /*-----------------------------MOBILE VIEW STYLE--------------------*/
 

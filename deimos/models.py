@@ -83,11 +83,17 @@ class AssignmentStudent(models.Model):
         for question in self.assignment.questions.all():
             total += question.num_points
             try:
-                question_student = QuestionStudent.objects.get(\
-                    question=question, student=self.student)
-                num_points += question_student.get_num_points()  
+                question_student = QuestionStudent.objects.get(question=question, student=self.student)
+                # Taking modified score in to account to compute grade
+                question_score_modified, is_created= QuestionModifiedScore.objects.get_or_create(question_student = question_student)
+                if not question_score_modified.is_modified:
+                    num_points += question_student.get_num_points()
+                else:
+                    num_points +=  question_score_modified.score
+                # End 
             except QuestionStudent.DoesNotExist:
-                num_points += 0
+                pass
+                # num_points += 0
         if total != 0:
             self.grade = round((num_points/total) * 100, 2)
         else:
@@ -112,11 +118,11 @@ class QuestionStudent(models.Model):
         """
         Get variable instances from the variables associated to the question.
         """
-        if not self.question.parent_question:
+        if not self.question.parent_question: # If parent question.
             self.var_instances.clear()
             for var in self.question.variables.all():
                 self.var_instances.add(var.get_instance())
-        else:
+        else: # if not parent question.
             parent_question_student = QuestionStudent.objects.get(question=self.question.parent_question,\
                                                                    student=self.student)
             if not parent_question_student.instances_created:
@@ -150,10 +156,14 @@ class QuestionStudent(models.Model):
 
         # TODO: !important Alternatively, we could just update the permanent dictionary whenever the professor
         # makes changes to question.
-        var_value_dict = {}
-        for var_instance in self.var_instances.all():
-            var_value_dict[var_instance.variable.symbol] = var_instance.value
-        return var_value_dict
+        if not self.question.parent_question:# if parent question
+            var_value_dict = {}
+            for var_instance in self.var_instances.all():
+                var_value_dict[var_instance.variable.symbol] = var_instance.value
+            return var_value_dict
+        else:
+            parent_question_student = QuestionStudent.objects.get(student=self.student, question=self.question.parent_question)
+            return parent_question_student.get_var_value_dict()
     
 
 
@@ -246,6 +256,12 @@ class NoteImage(models.Model):
         if self.image:
             self.image.delete(save=False)
         super(NoteImage, self).delete(*args, **kwargs)
+class NoteTemporary(models.Model):
+    """
+    Used to store notes temporarily when user uses QR Code to change device.
+    """
+    note = models.OneToOneField(Note, on_delete=models.CASCADE, related_name='temp_note')
+    content = models.TextField()
     
     
 class QuestionAttempt(models.Model):
@@ -257,10 +273,27 @@ class QuestionAttempt(models.Model):
     success = models.BooleanField(default=False, null=True)
     num_points = models.FloatField(default=0, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
-
+    # MCQ answers don't need submitted_answer.
+    # Structural questions attempts will be simplified and stored in content
+    # while the actual submission will be stored in submitted_answer.
+    submitted_answer =models.CharField(max_length=1000, blank=True, null=True)
     def __str__(self):
         return f"{self.question_student.student.username} attempt for {self.question_student.question}"
     
+
+class QuestionModifiedScore(models.Model): 
+    """
+    Used to modify `Student` points on `Question`s
+    """
+    question_student = models.OneToOneField(QuestionStudent, on_delete=models.CASCADE, related_name='modify_question_score')
+    is_modified = models.BooleanField(default=False)
+    score = models.FloatField(default=0, null=True, blank=True) 
+
+    def __str__(self):
+        if self.score == None:
+            self.is_modified = False
+        return f"{self.question_student.student.username} score: {self.score} is modified? {self.is_modified}"
+
 
 def transform_expression(expr):
     """Insert multiplication signs between combined characters, except within trig functions."""

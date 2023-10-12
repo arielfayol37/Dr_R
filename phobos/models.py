@@ -278,7 +278,7 @@ class Hint(models.Model):
     text = models.TextField(blank=False, null=False) # Professor must include text(description)
 
     def __str__(self):
-        return f"Hint {self.id} for {self.question}"
+        return f"Hint {self.pk} for {self.question}"
     
 class AnswerBase(models.Model):
     """
@@ -288,6 +288,7 @@ class AnswerBase(models.Model):
     content = models.TextField(blank=False, null=False)
     answer_unit = models.CharField(max_length=50, blank=True, null=True) # Optional field for the units of the answer
     preface = models.CharField(max_length=20, blank=True, null=True)
+    sufface = models.CharField(max_length=20, blank=True, null=True) 
     class Meta:
         abstract = True
 

@@ -18,7 +18,9 @@
     align-items: center !important;
 }
 
-
+#calc-container.hide{
+    display: none;
+}
 .content 
 {
     width: 100%;

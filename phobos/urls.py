@@ -10,7 +10,7 @@ urlpatterns = [
     path('register', views.register, name='register'),
     path('create_course', views.create_course, name='create_course'),
     path('create_question/<int:assignment_id>', views.create_question, name='create_question'),
-    path('create_question/<int:assignment_id>/<int:type_int>',views.create_question,
+    path('create_question/<int:assignment_id>/<str:question_nums_types>',views.create_question,
          name='create_question'
     ),
     path('courses/<int:course_id>', views.course_management, name='course_management'),
@@ -25,7 +25,7 @@ urlpatterns = [
     path('create_question/get_subtopics/<str:selected_topic>', views.get_subtopics, name='get_subtopics'),
     path('courses/<int:course_id>/assignments/<int:assignment_id>/<int:question_id>',
          views.question_view, name='question_view'),
-         ## for export question implementation
+       
      path('courses/<int:course_id>/assignments/<int:assignment_id>/<int:question_id>/export_question_to/<int:exp_assignment_id>',
           views.export_question_to, name='export_question'),
 
@@ -33,6 +33,10 @@ urlpatterns = [
      path('create_question/upload-image/', views.upload_image, name='upload_image'),
      path('courses/<int:course_id>/gradebook', views.gradebook, name='gradebook'),
      path('courses/<int:course_id>/<int:student_id>/student_profile', views.student_profile, name='student_profile'),
+     #####
+     path('courses/<int:course_id>/<int:student_id>/student_profile/modify_question_student_score/<str:new_score>/<str:question_student_id>', \
+          views.modify_question_student_score, name='modify_question_score'),
+     ######
      path('courses/<int:course_id>/gradebook/student_search',views.student_search, name="student_search"),
      path('courses/<int:course_id>/<int:student_id>/get_questions/<int:assignment_id>',
           views.get_questions,name='get_questions'),
@@ -49,5 +53,6 @@ urlpatterns = [
          views.edit_assignment_due_date, name='assignment_due_date'),
           path('courses/<int:course_id>/<int:student_id>/student_profile/<int:assignment_id>/<str:new_date>/edit_student_assignment_due_date', \
          views.edit_student_assignment_due_date, name='assignmentstudent_due_date'),
+         
     
 ]
