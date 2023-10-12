@@ -30,12 +30,12 @@ document.addEventListener('DOMContentLoaded', () => {
         questionContentPs.forEach((questionContentP) => {
             try{
                 questionContentP.innerHTML = parseLatex(questionContentP.innerHTML);
-                MathJax.typesetPromise();
+                
             } catch(error){
                 console.log(error)
             }
         })
-
+        MathJax.typesetPromise();
     })
         
     function parseLatex(text) {

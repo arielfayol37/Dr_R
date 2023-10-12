@@ -273,7 +273,10 @@ class QuestionAttempt(models.Model):
     success = models.BooleanField(default=False, null=True)
     num_points = models.FloatField(default=0, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
-
+    # MCQ answers don't need submitted_answer.
+    # Structural questions attempts will be simplified and stored in content
+    # while the actual submission will be stored in submitted_answer.
+    submitted_answer =models.CharField(max_length=1000, blank=True, null=True)
     def __str__(self):
         return f"{self.question_student.student.username} attempt for {self.question_student.question}"
     

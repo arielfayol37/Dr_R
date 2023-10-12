@@ -26,6 +26,7 @@ import heapq
 from django.db import transaction
 from markdown2 import markdown
 import qrcode
+import math
 # Create your views here.
 @login_required(login_url='astros:login') 
 def index(request):
@@ -154,10 +155,11 @@ def answer_question(request, question_id, assignment_id=None, course_id=None, st
             for q_type in question_type_dict:
                 question_type.extend([question_type_dict[q_type] for _ in range(question_type_count[q_type])])
             assert len(is_latex) == len(answers)
-            shuffler = [counter for counter in range(len(answers))]
-            random.shuffle(shuffler)  
-            is_latex = [is_latex[i] for i in shuffler]
-            answers = [answers[i] for i in shuffler]
+            if not question_student.success: # Do not need to randomize the order if student has already passed.
+                shuffler = [counter for counter in range(len(answers))]
+                random.shuffle(shuffler)  
+                is_latex = [is_latex[i] for i in shuffler]
+                answers = [answers[i] for i in shuffler]
         else:
             # TODO: Subclass all structural answers to a more general class 
             # so that you may use only one if.
@@ -179,7 +181,7 @@ def answer_question(request, question_id, assignment_id=None, course_id=None, st
                 answers.extend([question.text_answer])
                 question_type = [4]    
             answers[0].preface = '' if answers[0].preface is None else answers[0].preface
-
+        last_attempt = question_student.attempts.last()
         context = {
             'question':question,
             "is_mcq": is_mcq,
@@ -190,6 +192,7 @@ def answer_question(request, question_id, assignment_id=None, course_id=None, st
             'success':question_student.success,
             'too_many_attempts':too_many_attempts,
             'sq_type':question_type[0], # structural question type used in js.
+            'last_attempt':last_attempt.submitted_answer if last_attempt else ''
 
         }
         questions_dictionary[index] = context
@@ -201,19 +204,24 @@ def answer_question(request, question_id, assignment_id=None, course_id=None, st
                     'note_comment': 'Edit Notes' if note.content else 'Add Notes',
                     'upload_note_img':upload_note_img,
                     'temp_note': note.temp_note if upload_note_img==1 else None})
-@login_required(login_url='astros:login')
+
+
 def validate_answer(request, question_id, landed_question_id=None,assignment_id=None, course_id=None, student_id=None, upload_note_img=None):
     # landed_question_id is just the id of the question used to get to the page
     # to answer questions. Could have been the id of the main question or other sub questions.
-    student = get_object_or_404(Student, pk=request.user.pk)
+    if not student_id:
+        student = get_object_or_404(Student, pk=request.user.pk)
+    else:
+        student = get_object_or_404(Student, pk=student_id)
     
     if request.method == 'POST':
         correct = False
         previously_submitted = False
         data = json.loads(request.body)
-        submitted_answer = data["answer"]
+        simplified_answer = data["answer"]
+        submitted_answer = data["submitted_answer"]
         question = Question.objects.get(pk=question_id)
-        feedback_data = ('none')
+        feedback_data = 'None'
         
         # Use get_or_create() to avoid duplicating QuestionStudent instances
         # Normally, we should just use get() because QuestionStudent object is already created
@@ -227,13 +235,14 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                 if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
                     # checking previous attempts
                     for previous_attempt in question_student.attempts.all():
-                        if compare_expressions(previous_attempt.content, submitted_answer):
+                        if compare_expressions(previous_attempt.content, simplified_answer):
                             previously_submitted = True
                             return JsonResponse({'previously_submitted': previously_submitted})
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
-                    attempt.content = submitted_answer
+                    attempt.content = simplified_answer
+                    attempt.submitted_answer = submitted_answer
                     answer = question.expression_answer
-                    correct = compare_expressions(answer.content, submitted_answer)
+                    correct = compare_expressions(answer.content, simplified_answer)
                 elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
                     # Checking previous attempts (Yes, this should be done after checking with the real answer)
                     # Because of 'margin_error' in compare_floats(). 
@@ -243,35 +252,35 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     answer = question.float_answer
                     try:
                         # answer.content must come first in the compare_floats()
-                        correct, feedback_data = compare_floats(answer.content, submitted_answer, question.margin_error) 
+                        correct, feedback_data = compare_floats(answer.content, simplified_answer, question.margin_error) 
                     except ValueError:
                         correct = False
                     # Checking previous attempts
                     if not correct:
                         for previous_attempt in question_student.attempts.all():
-                            are_the_same, fake_feedback = compare_floats(previous_attempt.content,submitted_answer, get_feedback=False)
+                            are_the_same, fake_feedback = compare_floats(previous_attempt.content,simplified_answer, get_feedback=False)
                             if are_the_same:
                                 previously_submitted = True
                                 return JsonResponse({'previously_submitted': previously_submitted})
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
-                    attempt.content = submitted_answer
-
+                    attempt.content = simplified_answer
+                    attempt.submitted_answer = submitted_answer
                 elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
                     try:
                         answer_temp = question_student.compute_structural_answer()
-                        correct, feedback_data = compare_floats(answer_temp, submitted_answer,
+                        correct, feedback_data = compare_floats(answer_temp, simplified_answer,
                                                     question.margin_error)
                     except ValueError:
                         correct = False
                     if not correct:
                         for previous_attempt in question_student.attempts.all():
-                            are_the_same, fake_feedback = compare_floats(previous_attempt.content, submitted_answer, margin_error=0.02, get_feedback=False)
+                            are_the_same, fake_feedback = compare_floats(previous_attempt.content, simplified_answer, margin_error=0.02, get_feedback=False)
                             if are_the_same:
                                 previously_submitted = True
                                 return JsonResponse({'previously_submitted': previously_submitted})
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
-                    attempt.content = submitted_answer
-
+                    attempt.content = simplified_answer
+                    attempt.submitted_answer = submitted_answer
                 if correct:
                     # Deduct points based on attempts, but ensure it doesn't go negative
                     attempt.num_points = max(0, question.num_points * (1 - (question.deduct_per_attempt * question.num_points * max(0, question_student.get_num_attempts()-1))))
@@ -285,11 +294,11 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                 
                 # checking previous attempts
                 for previous_attempt in question_student.attempts.all():
-                    if set(submitted_answer) == set(previous_attempt.content):
+                    if set(simplified_answer) == set(previous_attempt.content):
                         previously_submitted = True
                         return JsonResponse({'previously_submitted': previously_submitted})
                 attempt = QuestionAttempt.objects.create(question_student=question_student)
-                attempt.content = str(submitted_answer)
+                attempt.content = str(simplified_answer)
                 question_type_dict = {'ea': 0, 'fa':1, 'fva':8,'la':2, 'ta':3, 'ia':7}
                 answers = []
                 ea = list(question.mcq_expression_answers.filter(is_answer=True).values_list('pk', flat=True))
@@ -310,8 +319,8 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                 ia = list(question.mcq_image_answers.filter(is_answer=True).values_list('pk', flat=True))
                 ia = [str(pk) + str(question_type_dict['ia']) for pk in ia]
                 answers.extend(ia)
-                if len(submitted_answer) == len(answers):
-                    s1, s2 = set(submitted_answer), set(answers)
+                if len(simplified_answer) == len(answers):
+                    s1, s2 = set(simplified_answer), set(answers)
                     if s1 == s2:
                         correct = True
                         attempt.num_points = max(0, question.num_points * (1 - (question.deduct_per_attempt * question.num_points * max(0, question_student.get_num_attempts()-1))))
@@ -449,23 +458,54 @@ def compare_expressions(expression1, expression2, for_units=False):
     difference = (simplify(sym_e1 - sym_e2, symbols=symbls))
     return True if difference == 0 else False
 
-def compare_floats(correct_answer, submitted_answer, margin_error=0.0, get_feedback=True):
+def compare_floats(correct_answer, simplified_answer, margin_error=0.0, get_feedback=True):
     """
     Takes two floats f1 and f2,
     returns True if they are equal or close,
     returns False otherwise
     """
     f1 = eval(str(correct_answer))
-    f2 = eval(str(submitted_answer))
-    feedback_message = "'feedback message function'"
-    if get_feedback:
-        # TODO: Implement the function to compute the feedback message.
-        pass
-    if f1 == 0:
-        return (f1-f2 <= margin_error, feedback_message) 
-    else:
-        return (abs(f1-f2)/f1 <= margin_error, feedback_message)
+    f2 = eval(str(simplified_answer))
+    feedback_message = "None"
+    correct = (abs(f1-f2) <= margin_error * abs(f1)) and f1*f2 >= 0
+    if not correct and get_feedback:
+        feedback_message = feedback_floats(f1, f2, margin_error) 
+    return (correct, feedback_message)
 
+def feedback_floats(base_float, inputed_float, margin_error):
+    """
+    Helper function that returns a feedback message when two floats
+    differ but may be integer multiples (within n=2) of each other.
+    Margin error is a percentage.
+    """
+    assert 0 <= margin_error <= 1
+    quotient = inputed_float/base_float if base_float != 0 else 0
+    inverse = False
+    if abs(quotient) < 1:
+        inverse = True
+        quotient = round(quotient ** -1)
+    int_quotient = round(quotient)
+    if abs(int_quotient) < 3 and int_quotient != 0:
+        if (int_quotient ** -1)  * abs(quotient - int_quotient) <= (margin_error * base_float):
+            if not inverse:
+                return f"Your answer is {int_quotient}x the correct answer"
+            else:
+                return f"Your answer is {int_quotient ** -1}x the correct answer"
+    log_input = math.log10(abs(inputed_float))
+    a = math.log10(abs(base_float) * (1 - margin_error)) - log_input
+    b = math.log10(abs(base_float) * (1 + margin_error)) - log_input
+    neg = "-" if base_float * inputed_float < 0 else ""
+    if a == b and type(b) == int:
+        return f"Your answer is {neg}10^{-(b)} x the correct answer"
+    if not a < b:
+        a, b = b, a
+    f_a = math.floor(a)
+    f_b = math.floor(b)
+    diff = abs(f_b - f_a)
+    if type(diff) == int and diff != 0:
+        return f"Your answer is {neg}10^{-(diff + f_a)} x the correct answer"
+    return ""
+    
 def compare_units(units_1, units_2):
     """
     Takes two units units_1 and units_2

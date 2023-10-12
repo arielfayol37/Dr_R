@@ -60,10 +60,12 @@
             
                 {% if question_dict.is_mcq %}
                     {% for answer, is_latex in question_dict.answers_is_latex %}
-                        <div class="formatted-answer-option">
+                        
                             {% if is_latex %}
+                            <div class="formatted-answer-option unexpand">
                                 <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
-                            {% else %}   
+                            {% else %}  
+                            <div class="formatted-answer-option">
                                 {% if answer.image %}
                                     {{answer.label}}
                                     <img src="{{answer.image.url}}" class="mcq-image-answer image-in-formatted" alt="{{answer.image.label}}"/>
@@ -73,16 +75,14 @@
                             {% endif %}
                         </div>
                         {% if answer.is_answer%}
-                            <button type="button" class="btn btn-info exempt">True</button>
-                        {% else %}
-                            <button type="button" class="btn btn-warning exempt">False</button>
+                            <button type="button" class="btn btn-info">True</button>
                         {% endif %}
                     {% endfor %}
                 {% else %}
                     <p class="question-answer">
                         {% for answer in question_dict.answers %}
                         <strong>Answer </strong>
-                            <div class="formatted-answer-option">
+                            <div class="formatted-answer-option unexpand">
                                 {% if not question_dict.is_fr %}
                                 <input type="hidden" class="latex-answer-question-view" value="{{answer.preface}} {{answer.content}}\quad {{answer.answer_unit}}"> 
                                 {% else %}
