@@ -89,7 +89,7 @@ def login_view(request):
         if user is not None and user.check_password(password):
             # If authentication successful, log in the user
             login(request, user)
-            next_url = request.GET.get('next')
+            next_url = request.POST.get('next')
             if next_url:
                 return redirect(next_url)
             return HttpResponseRedirect(reverse("phobos:index"))

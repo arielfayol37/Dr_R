@@ -493,7 +493,12 @@ div.c-text {
 }
 
 
-
+.hints-feedback {
+  display: flex;
+  flex-direction: row;
+  justify-content:space-between;
+  align-items: center;
+}
 
 .image-in-formatted {
   max-width: 90%; /* Limit image width to 100% of parent div's width */
@@ -544,7 +549,7 @@ more than assignment display */
 
 }
 
-.note-section {
+.side-info {
   background-color: white;
   width:90vw;
   position:absolute;
@@ -558,21 +563,21 @@ more than assignment display */
   padding:1%;
   transition: width 1s ease, height 1s ease, display 1.1s ease;
 }
-.note-section #close-x-note{
+.side-info .side-info-x{
   color:#007bff;
 
 }
-.note-section #close-x-note:hover{
+.side-info .side-info-x:hover{
   font-size: larger;
   cursor:pointer;
 }
-.note-section.hide {
+.side-info.hide {
   width: 0px;
   /*height: 0px;*/
   display: none;
 }
 
-.note-pencil {
+.side-info-icon {
   background-color: white;
   border-radius: 30%;
   position: absolute;
@@ -581,17 +586,44 @@ more than assignment display */
   box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.1);  /* Horizontal offset, Vertical offset, Blur radius, Color */
 }
 
-.note-pencil:hover {
+.side-info-icon:hover {
   cursor: pointer;
   transform: scale(1.5);
 }
 
-.note-pencil li{
+.side-info-icon li{
   display:flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
 }
+
+.settings-modification {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.settings-modification .settings-item{
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  width: 50%;
+  border-bottom: 1px solid gray;
+}
+.settings-modification .settings-label {
+  width:70% !important;
+  color: gray;
+  font-size: small;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-left: 10px;
+}
+.settings-modification .settings-input-div {
+  width:20% !important;
+}
+
 .original-size {
   font-size: initial;
 }
