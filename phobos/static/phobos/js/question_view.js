@@ -12,10 +12,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 try {
                     const inputElement = formattedAnswerDiv.querySelector('.latex-answer-question-view');
+                    const preface = formattedAnswerDiv.querySelector('.preface');
+                    const units = formattedAnswerDiv.querySelector('.units');
                     if (inputElement != null) {
                         const latex = math.parse(inputElement.value).toTex()
-                        var formatted_answer = MathJax.tex2chtml(latex + '\\phantom{}');
-                        formattedAnswerDiv.appendChild(formatted_answer);
+                        const units_latex = MathJax.tex2chtml(units.value)
+                        const preface_latex = MathJax.tex2chtml(preface.value)
+                        const answer_latex = MathJax.tex2chtml(latex + '\\phantom{}');
+                        const formatted_answer = `<span>${preface_latex.innerHTML}</span> 
+                                                    <span>${answer_latex.innerHTML}</span>
+                                                    <span>${units_latex.innerHTML}</span>`
+                        formattedAnswerDiv.innerHTML = formatted_answer;
                         MathJax.typesetPromise();
                     }
                 } catch (error) {

@@ -89,6 +89,9 @@ def login_view(request):
         if user is not None and user.check_password(password):
             # If authentication successful, log in the user
             login(request, user)
+            next_url = request.GET.get('next')
+            if next_url:
+                return redirect(next_url)
             return HttpResponseRedirect(reverse("phobos:index"))
         
         else:
@@ -223,15 +226,24 @@ def create_question(request, assignment_id=None, question_nums_types=None):
         parent_question = None
         counter = 0
         vars_dict = {}
+        topic = Topic.objects.get(name=request.POST.get('topic'))
+        sub_topic = SubTopic.objects.get(name=request.POST.get('sub_topic'))
+        num_points = request.POST.get('num_points', 10)
+        struct_max_num_attempts = request.POST.get('max_num_attempts', 5)
+        struct_deduct_per_attempt = request.POST.get('deduct_per_attempt', 0.05)
+        margin_error = request.POST.get('margin_error', 0.03)
+        mcq_max_num_attempts = request.POST.get('max_mcq_num_attempts', 4)
+        mcq_deduct_per_attempt = request.POST.get('mcq_deduct_per_attempt', 0.25)
+        percentage_pts_units = request.POST.get('percentage_pts_units', 0.1)
+        units_num_attempts = request.POST.get('units_num_attempts', 2)
+        difficulty = request.POST.get('question_difficulty', 'MEDIUM')
         for q_num, q_type in num_type_pairs:
             counter += 1
             type_int = int(q_type)
-            topic = Topic.objects.get(name=request.POST.get('topic'))
-            sub_topic = SubTopic.objects.get(name=request.POST.get('sub_topic'))
+
             text = request.POST.get(q_num + '_question_text')
             answer_unit = request.POST.get(q_num + '_answer_unit')
             answer_preface = request.POST.get(q_num + '_answer_preface')
-            num_points = request.POST.get(q_num + '_num_points', 10/(len(num_type_pairs)))
             if answer_unit == '':
                 answer_unit = None
             if type_int != 3 and type_int != 4:
@@ -242,11 +254,26 @@ def create_question(request, assignment_id=None, question_nums_types=None):
                 topic = topic,
                 sub_topic = sub_topic,
                 assignment = assignment,
-                num_points = num_points,
                 parent_question = parent_question 
             )
-            new_question.save() # Needed here. Before saving answer
             
+            new_question.save()  # the settings object is automatically created in the save
+
+            # Update the existing QuestionSettings instead of creating a new one
+            question_settings = new_question.settings
+
+            question_settings.num_points = int(int(num_points) / len(num_type_pairs))
+            question_settings.difficulty_level = difficulty
+            question_settings.max_num_attempts = int(struct_max_num_attempts)
+            question_settings.deduct_per_attempt = float(struct_deduct_per_attempt)
+            question_settings.margin_error = float(margin_error)
+            question_settings.mcq_max_num_attempts = int(mcq_max_num_attempts)
+            question_settings.mcq_deduct_per_attempt = float(mcq_deduct_per_attempt)
+            question_settings.percentage_pts_units = float(percentage_pts_units)
+            question_settings.units_num_attempts = int(units_num_attempts)
+
+            question_settings.save()
+
             for key, value in request.POST.items():
                 if key.startswith('domain') and counter==1: # Creating the variables
                     # variables will be associated only to the parent question.
@@ -284,8 +311,6 @@ def create_question(request, assignment_id=None, question_nums_types=None):
                                                         upper_bound = vars_dict[var_symbol]['ub'][bound_index])
                         var_interval.save()
             if type_int == 3:
-                new_question.deduct_per_attempt = 0.25 # Deduct 25% of points when it is an mcq
-                new_question.max_num_attempts = 3
                 for key, value in request.POST.items():
                     if key.startswith(q_num + '_answer_value_'):
                         option_index_start = len(q_num + '_answer_value_')
@@ -361,7 +386,6 @@ def create_question(request, assignment_id=None, question_nums_types=None):
             if counter == 1:
                 parent_question = new_question
             answer.save() # Needed here too.
-        messages.info(request=request, message="Question created successfully!")
         return HttpResponseRedirect(reverse("phobos:assignment_management",\
                                             kwargs={'course_id':assignment.course.id,\
                                                     'assignment_id':assignment_id}))
@@ -374,7 +398,7 @@ def create_question(request, assignment_id=None, question_nums_types=None):
     return render(request, 'phobos/create_question.html', {
  
         'topics': topics if topics else '',
-        'assignment_id': assignment_id,
+        'assignment': assignment,
         'question_difficulties': question_difficulties
     })  
 
@@ -460,11 +484,11 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
                 answers.extend([a])
             else:
                 return HttpResponse('Something went wrong.')
-            answers[0].preface = '' if not answers[0].preface else answers[0].preface + "\quad = \quad"# This is to display well in the front end.
-            answers[0].answer_unit = '' if not answers[0].answer_unit else answers[0].answer_unit
+            answers[0].preface = '' if not answers[0].preface else answers[0].preface + "\quad = \quad" # This is to display well in the front end.
+            answers[0].answer_unit = '' if not answers[0].answer_unit else "\quad " + answers[0].answer_unit
         
         questions_dictionary[index] = {'question':question,\
-                      'show_answer':show_answer,\
+                      'show_answer':show_answer,
                      'is_mcq':is_mcq, 'is_fr':is_fr,'answers': answers,\
                          'answers_is_latex': zip(answers, is_latex) if is_latex else None}
 
@@ -602,22 +626,22 @@ def get_questions(request, student_id, assignment_id, course_id=None):
             # print(question_modified_score.is_modified,question_modified_score.score,question_student.pk)
             if question_modified_score.is_modified:
                 question_details.append({'Question_number':'Question ' + question.number,\
-                                    'score':f"{round(question_modified_score.score, 2)} / {question.num_points}", \
+                                    'score':f"{round(question_modified_score.score, 2)} / {question.settings.num_points}", \
                                         'num_attempts': question_student.get_num_attempts(),\
-                                        'original_score':f"{question_student.get_num_points()} / {question.num_points}", \
+                                        'original_score':f"{question_student.get_num_points()} / {question.settings.num_points}", \
                                             'id': question_student.pk})
             else:
                         question_details.append({'Question_number':'Question ' + question.number,\
-                                    'score':f"{round(question_student.get_num_points(), 2)} / {question.num_points}", \
+                                    'score':f"{round(question_student.get_num_points(), 2)} / {question.settings.num_points}", \
                                         'num_attempts': question_student.get_num_attempts(),\
-                                    'original_score':f"{question_student.get_num_points()} / {question.num_points}", \
+                                    'original_score':f"{question_student.get_num_points()} / {question.settings.num_points}", \
                                             'id': question_student.pk})
 
         except QuestionStudent.DoesNotExist:
             question_details.append({'Question_number':'Question ' + question.number,\
-                                     'score':f"0 / {question.num_points}",'num_attempts': "0",\
-                                     #'original_score':f"0 / {question.num_points}",'id': question_student.pk})
-                                     'original_score':f"0 / {question.num_points}",'id': "-1"})    
+                                     'score':f"0 / {question.settings.num_points}",'num_attempts': "0",\
+                                     #'original_score':f"0 / {question.settings.num_points}",'id': question_student.pk})
+                                     'original_score':f"0 / {question.settings.num_points}",'id': "-1"})    
         
     question_details= json.dumps(question_details)
     return HttpResponse(question_details)

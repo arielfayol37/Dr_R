@@ -46,7 +46,7 @@ class AssignmentForm(forms.ModelForm):
 class QuestionForm(forms.ModelForm):
     class Meta:
         model = Question
-        fields = ['text', 'topic', 'sub_topic', 'num_points', 'parent_question']
+        fields = ['text', 'topic', 'sub_topic']
 
 
 
