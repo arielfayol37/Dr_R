@@ -95,7 +95,7 @@
     <div class="question-settings hide">
 
       <span id="close-x-settings">X</span><br/>
-      <div class="suggestion">Settings</div>
+      <h4 class="suggestion original-size">Settings</h4>
       <hr/>
       <div class="settings-modification">
           <div class="settings-item"> 
@@ -127,6 +127,13 @@
             </div>
           </div>
           <div class="settings-item">
+            <div class="settings-label">% points for units:</div>
+            <div class="settings-input-div">
+              <input class="field-style settings" type="number" name="percentage_pts_units"
+              placeholder="% points for units" value="{{assignment.grading_scheme.percentage_pts_units}}"/>
+            </div>
+          </div>
+          <div class="settings-item">
             <div class="settings-label">Max attempts(mcq):</div>
             <div class="settings-input-div">
               <input class="field-style settings" type="number" name="max_mcq_num_attempts"
@@ -138,13 +145,6 @@
             <div class="settings-input-div">
               <input class="field-style settings" type="number" name="mcq_deduct_per_attempt"
               placeholder="% deduct per attempt(mcq)" value="{{assignment.grading_scheme.mcq_deduct_per_attempt}}"/>
-            </div>
-          </div>
-          <div class="settings-item">
-            <div class="settings-label">% points for units:</div>
-            <div class="settings-input-div">
-              <input class="field-style settings" type="number" name="percentage_pts_units"
-              placeholder="% points for units" value="{{assignment.grading_scheme.percentage_pts_units}}"/>
             </div>
           </div>
           <div class="settings-item">

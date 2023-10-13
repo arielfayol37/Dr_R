@@ -37,41 +37,57 @@ forms.forEach((form)=>{
   var submitBtn = form.querySelector('.submit-btn');
   const inputedMcqAnswersDiv = form.querySelector('.inputed-mcq-answers');
   const hintsContainerDiv = form.querySelector('.hints-container');
+  const feedbackContainerDiv = form.querySelector('.feedback-container');
+
+  feedbackContainerDiv.querySelector('.show-feedback-btn').addEventListener('click', (event)=>{
+    event.preventDefault();
+    if(event.target.classList.contains('closed-feedback')){
+      feedbackContainerDiv.querySelector('.formatted-answer-option').style.display = 'block';
+      event.target.classList.remove('closed-feedback');
+    }else{
+      feedbackContainerDiv.querySelector('.formatted-answer-option').style.display = 'none';
+      event.target.classList.add('closed-feedback');
+    }
+  })
+
   if(hintsContainerDiv != null){
     const questionHintsDiv = hintsContainerDiv.querySelector('.question-hints');
     const seeMoreBtn = hintsContainerDiv.querySelector('.see-more-hint-btn');
     const showHintBtn = hintsContainerDiv.querySelector('.show-hint-btn');
-    showHintBtn.addEventListener('click', (event)=>{
-      event.preventDefault();
-      if(showHintBtn.classList.contains('closed-hints')){
-        questionHintsDiv.style.display = 'block';
-        showHintBtn.classList.remove('closed-hints');
-        showHintBtn.name = 'caret-down-outline';
+    if((seeMoreBtn != null) && (showHintBtn != null)){
+      showHintBtn.addEventListener('click', (event)=>{
+        event.preventDefault();
+        if(showHintBtn.classList.contains('closed-hints')){
+          questionHintsDiv.style.display = 'block';
+          showHintBtn.classList.remove('closed-hints');
+          showHintBtn.name = 'caret-down-outline';
+          if(questionHintsDiv.dataset.counter > questionHintsDiv.dataset.seen){
+            seeMoreBtn.style.display = 'block';
+          }else{
+            seeMoreBtn.style.display = 'none';
+          }
+        }else{
+          questionHintsDiv.style.display = 'none';
+          showHintBtn.classList.add('closed-hints');
+          showHintBtn.name = 'caret-forward-outline';
+        }
+      })
+      seeMoreBtn.addEventListener('click', (event)=>{
+        event.preventDefault();
+        const holder = questionHintsDiv.dataset.seen;
+        questionHintsDiv.dataset.seen = `${parseInt(holder) + 1}`;
+        const hClass = `.hint-num-${parseInt(holder)}`
+        console.log(hClass)
+        questionHintsDiv.querySelector(hClass).style.display='block';
         if(questionHintsDiv.dataset.counter > questionHintsDiv.dataset.seen){
           seeMoreBtn.style.display = 'block';
         }else{
           seeMoreBtn.style.display = 'none';
         }
-      }else{
-        questionHintsDiv.style.display = 'none';
-        showHintBtn.classList.add('closed-hints');
-        showHintBtn.name = 'caret-forward-outline';
-      }
-    })
-    seeMoreBtn.addEventListener('click', (event)=>{
-      event.preventDefault();
-      const holder = questionHintsDiv.dataset.seen;
-      questionHintsDiv.dataset.seen = `${parseInt(holder) + 1}`;
-      const hClass = `.hint-num-${parseInt(holder)}`
-      console.log(hClass)
-      questionHintsDiv.querySelector(hClass).style.display='block';
-      if(questionHintsDiv.dataset.counter > questionHintsDiv.dataset.seen){
-        seeMoreBtn.style.display = 'block';
-      }else{
-        seeMoreBtn.style.display = 'none';
-      }
-  
-    })
+    
+      })
+    }
+
   }
 
   
@@ -134,7 +150,7 @@ forms.forEach((form)=>{
         // Checks if the answer to the question is supposed to be a float
         if(last_character===5 || last_character===1){
           try{
-            const test_answer = math.evaluate(screen.value);
+            const test_answer = math.evaluate(processString(screen.value));
             if(typeof(test_answer) != 'number'){
               
               alert('The answer you provided is not a float');
@@ -183,7 +199,11 @@ forms.forEach((form)=>{
                 return;
               }
               toggleLight(result.correct,result.too_many_attempts,redLight,yellowLight,greenLight);
-              feedback_message(result.feedback_data);
+              if(!result.correct && result.feedback_data.length > 0){
+                feedbackContainerDiv.querySelector('.show-feedback-btn').style.display='block';
+                feedbackContainerDiv.querySelector('.formatted-answer-option').innerHTML = result.feedback_data;
+                feedbackContainerDiv.querySelector('.formatted-answer-option').style.display = 'block';
+              }
           });
     } else if( question_type ==='mcq'){
         // TODO make sure some mcqs are selected as true.
@@ -476,10 +496,10 @@ function parseLatex(text) {
 
 
 
-//------------------------NOTES FEATURE----------------------//
-const notePencil = document.querySelector('.note-pencil');
+//------------------------NOTES FEATURE and INFO----------------------//
+const sideInfosIcons = document.querySelectorAll('.side-info-icon');
+const sideInfox = document.querySelectorAll('.side-info-x');
 const noteSection = document.querySelector('.note-section');
-const noteXBtn = noteSection.querySelector('#close-x-note');
 const noteEditBtn = noteSection.querySelector('.note-edit-btn');
 const noteContent = noteSection.querySelector('.note-content');
 const editHandlingSection = noteSection.querySelector('.edit-handling-section');
@@ -518,18 +538,27 @@ noteEditBtn.addEventListener('click', (event)=>{
   noteEditBtn.style.display = 'none';
 })
 
-noteXBtn.addEventListener('click', (event)=>{
-  event.preventDefault();
-  noteSection.classList.add('hide');
-})
 
-notePencil.addEventListener('click', (event)=>{
+sideInfox.forEach((Xbtn)=>{
+  Xbtn.addEventListener('click', (event)=>{
+    event.preventDefault();
+    const sideDiv = Xbtn.closest('.side');
+    sideDiv.querySelector('.side-info').classList.add('hide');
+  })
+})
+var sideCounters = 0
+sideInfosIcons.forEach((sideInfoIcon)=>{
+sideInfoIcon.style.top = `${70 + 8*sideCounters}%`
+sideCounters += 1;
+sideInfoIcon.addEventListener('click', (event)=>{
   event.preventDefault();
-  noteSection.classList.remove('hide');
+  const sideDiv = sideInfoIcon.closest('.side');
+  sideDiv.querySelector('.side-info').classList.remove('hide');
   window.scrollTo({
     top: 0,
     behavior: 'smooth'
   });
+})
 })
 
 saveNoteBtn.addEventListener('click', ()=>{
@@ -560,7 +589,10 @@ saveNoteBtn.addEventListener('click', ()=>{
     .then(data => {
         noteContent.innerHTML = data.md;
         noteLastEdited.innerHTML = `Last edited on ${data.last_edited}`;
-        alert(data.message);
+        if (noteSection.classList.contains('dispatch-upload')){
+          alert(`${data.message}\n Reload other device to see change.`)
+        }
+        
         noteEditBtn.style.display = 'block';
         noteTextArea.style.display = 'none';
         noteContent.style.display = 'block';

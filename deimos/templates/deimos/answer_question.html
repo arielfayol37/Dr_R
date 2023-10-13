@@ -1,6 +1,7 @@
 <!-- deimos: answer_question.html -->
 {% extends 'deimos/layout.html' %}
 {% load static %}
+{% load my_custom_tags %}
 {% block title%} Answer Question {% endblock %}
 {% block style%} <link rel="stylesheet" href="{% static 'deimos/css/question_nav.css' %}"/> 
 
@@ -12,17 +13,13 @@
     <ul>
         <li><a href="{% url 'deimos:index' %}">Home</a></li>
         {% if not is_questionbak %}
-          <li><a href="{% url 'deimos:assignment_management' assignment_id=assignment_id course_id=course_id %}">Questions</a></li>
+          <li><a href="{% url 'deimos:assignment_management' assignment_id=assignment.id course_id=course_id %}">Questions</a></li>
           <li><a href="{% url 'deimos:course_management' course_id=course_id %}">Assignments</a></li>
         {% endif %}
         <li><a href="{% url 'deimos:search_question' %}">Search Question</a></li>
 
     </ul>
   </div>
-  <div class="note-pencil" title="Notes">
-    <ion-icon name="create-outline"></ion-icon>
-  </div>
-
 
     
     <div class="page-container" id="answer-question">
@@ -50,27 +47,35 @@
                     <div class="tf-light green-light"></div>
                   {% endif %}
                 </div>
-                {% if question_dict.question.hints.all %}
-                <div class="hints-container">
-                  <ion-icon name="caret-forward-outline" class="show-hint-btn closed-hints" title="Hints"></ion-icon>
-                  <div class="question-hints" data-counter="{{question_dict.question.hints.all.count}}" data-seen="1" style="display:none">
-                    {% for hint in question_dict.question.hints.all %}
-                        {% if forloop.counter0 == 0%}
-                          <div class="formatted-answer-option hint-num-{{forloop.counter0}}">
-                              {{hint.text}}
-                          </div>
-                        {% else %}
-                          <div class="formatted-answer-option hint-num-{{forloop.counter0}}" style="display: none;">
-                              {{hint.text}}
-                          </div>
-                        {% endif %}
+                <div class="hints-feedback">
+                  <div class="hints-container">
+                    {% if question_dict.question.hints.all %}
+                      <ion-icon name="caret-forward-outline" class="show-hint-btn closed-hints" title="Hints"></ion-icon>
+                      <div class="question-hints" data-counter="{{question_dict.question.hints.all.count}}" data-seen="1" style="display:none">
+                        {% for hint in question_dict.question.hints.all %}
+                            {% if forloop.counter0 == 0%}
+                              <div class="formatted-answer-option hint-num-{{forloop.counter0}}">
+                                  {{hint.text}}
+                              </div>
+                            {% else %}
+                              <div class="formatted-answer-option hint-num-{{forloop.counter0}}" style="display: none;">
+                                  {{hint.text}}
+                              </div>
+                            {% endif %}
 
-                    {% endfor %}
-                    <br/>
-                    <button type="button" class="see-more-hint-btn btn btn-outline-info" style="display: none;"> see more </button>
+                        {% endfor %}
+                        <br/>
+                        <button type="button" class="see-more-hint-btn btn btn-outline-info" style="display: none;"> see more </button>
+                      </div>
+                    {% endif %}
+                  </div>
+                  <div class="feedback-container">
+                    <ion-icon name="build" class="show-feedback-btn closed-feedback" title="Feedback" style="display: none; right:0;"></ion-icon>
+                    <div class="formatted-answer-option" style="display: none;">
+                    
+                    </div>
                   </div>
                 </div>
-                {% endif %}
                 <div class="question-images">
                
                   {% for question_image in question_dict.question.images.all %}
@@ -154,11 +159,7 @@
                         {% endif %}
                       <br/>
                 {% endif %}
-          
-              
               <br/>
-              <br/>
-              <hr/>
               </form>
               
               
@@ -167,12 +168,12 @@
       <div class="navigation">
         <ul>
           {% for question_id, question_num in question_ids_nums %}
-            {% if question_id == main_question_id %}
+            {% if question_id == main_question.id %}
               <li class="list active">
             {% else %}
               <li class="list">
             {% endif %}
-                  <a href="{% url 'deimos:answer_question' question_id=question_id assignment_id=assignment_id course_id=course_id %}">
+                  <a href="{% url 'deimos:answer_question' question_id=question_id assignment_id=assignment.id course_id=course_id %}">
                       <span class="icon">{{question_num}}</span>    
                   </a>
               </li>
@@ -182,14 +183,20 @@
         </ul>
       </div>  
 
-  
     </div>
+    <div class="side">
+
+
+    <div class="note-pencil side-info-icon" title="Notes">
+      <ion-icon name="book"></ion-icon>
+    </div>
+  
     {% if upload_note_img != 1%}
-      <div class="note-section hide">
+      <div class="note-section hide side-info">
     {% else %}
-      <div class="note-section dispatch-upload">
+      <div class="note-section side-info dispatch-upload">
     {% endif %}
-      <span id="close-x-note">X</span><br/>
+      <span id="close-x-note" class="side-info-x">X</span><br/>
       <button type="button" class="btn btn-outline-success note-edit-btn" style="position:absolute; right:2%;"> {{note_comment}} </button><br/><br/>
       <div class="suggestion note-last-edited">Last edited on {{note.last_edited}}</div>
       <div class="previous-notes">
@@ -232,6 +239,72 @@
       </div>
 
     </div>
+  </div>
+  <div class="side">
+    <div class="side-info-icon" title="Info">
+      <ion-icon name="cog"></ion-icon>
+    </div>
+    <div class="hide side-info">
+        <span class="side-info-x">X</span><br/>
+        <div class="question-grades">
+
+        </div>
+        <hr/>
+        <h4 class="suggestion original-size">Grading Scheme</h4>
+        <div class="settings-modification">
+          <div class="settings-item"> 
+            <div class="settings-label">Number of points:</div>
+            <div class="settings-input-div suggestion">
+              {{assignment.grading_scheme.num_points}}
+            </div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-label">Max attempts:</div>
+            <div class="settings-input-div suggestion">
+            {{main_question.settings.max_num_attempts}}
+            </div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-label">% deduct per attempt:</div>
+            <div class="settings-input-div suggestion">
+          {{main_question.settings.deduct_per_attempt|multiply:"100" }}%
+            </div>
+          </div >
+          <div class="settings-item">
+            <div class="settings-label">% Margin error:</div>
+            <div class="settings-input-div suggestion"> 
+            {{main_question.settings.margin_error|multiply:"100" }}%
+            </div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-label">% points for units:</div>
+            <div class="settings-input-div suggestion">
+          {{main_question.settings.percentage_pts_units|multiply:"100" }}%
+            </div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-label">Max attempts(mcq):</div>
+            <div class="settings-input-div suggestion">
+            {{main_question.settings.mcq_max_num_attempts}}
+            </div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-label">% deduct per attempt(mcq):</div>
+            <div class="settings-input-div suggestion">
+              {{ main_question.settings.mcq_deduct_per_attempt|multiply:"100" }}%
+            </div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-label">Max attempts(units):</div>
+            <div class="settings-input-div suggestion">
+          {{main_question.settings.units_num_attempts}}
+            </div>
+          </div>
+          
+      </div>
+    </div>
+
+  </div>
 
     {% include 'deimos/calci.html' with not_display=True %}
 

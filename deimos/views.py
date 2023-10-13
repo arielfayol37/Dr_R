@@ -27,6 +27,7 @@ from django.db import transaction
 from markdown2 import markdown
 import qrcode
 import math
+
 # Create your views here.
 @login_required(login_url='astros:login') 
 def index(request):
@@ -69,8 +70,8 @@ def assignment_management(request, assignment_id, course_id=None):
 
 # TODO: Add the action link in answer_question.html
 # TODO: Implement question_view as well.
-# @login_required(login_url='astros:login')
-def answer_question(request, question_id, assignment_id=None, course_id=None, student_id=None, upload_note_img=None):
+@login_required(login_url='astros:login')
+def answer_question(request, question_id, assignment_id, course_id, student_id=None, upload_note_img=None):
     # Making sure the request is done by a Student.
     if student_id:
         student = get_object_or_404(Student, pk=student_id)
@@ -202,7 +203,7 @@ def answer_question(request, question_id, assignment_id=None, course_id=None, st
         questions_dictionary[index] = context
     return render(request, 'deimos/answer_question.html',
                   {'questions_dict':questions_dictionary, 'course_id': course_id,
-                   'assignment_id': assignment_id,'main_question_id':question_0.id,
+                   'assignment': assignment,'main_question':question_0,
                     'note':note, 'question_ids_nums':zip(question_ids, question_nums),
                     'note_md':note_md,
                     'note_comment': 'Edit Notes' if note.content else 'Add Notes',
@@ -226,7 +227,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
         simplified_answer = data["answer"]
         submitted_answer = data["submitted_answer"]
         question = Question.objects.get(pk=question_id)
-        feedback_data = 'None'
+        feedback_data = ''
         
         # Use get_or_create() to avoid duplicating QuestionStudent instances
         # Normally, we should just use get() because QuestionStudent object is already created
@@ -302,7 +303,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                 
                 # checking previous attempts
                 for previous_attempt in question_student.attempts.all():
-                    if set(simplified_answer) == set(previous_attempt.content):
+                    if set(simplified_answer) == set(eval(previous_attempt.content)):
                         previously_submitted = True
                         return JsonResponse({'previously_submitted': previously_submitted})
                 attempt = QuestionAttempt.objects.create(question_student=question_student)
@@ -362,7 +363,7 @@ def login_view(request):
         if user is not None and user.check_password(password):
             # If authentication successful, log in the user
             login(request, user)
-            next_url = request.GET.get('next')
+            next_url = request.POST.get('next')
             if next_url:
                 return redirect(next_url)
             return HttpResponseRedirect(reverse("deimos:index"))
@@ -477,7 +478,7 @@ def compare_floats(correct_answer, simplified_answer, margin_error=0.0, get_feed
     """
     f1 = eval(str(correct_answer))
     f2 = eval(str(simplified_answer))
-    feedback_message = "None"
+    feedback_message = ""
     correct = (abs(f1-f2) <= margin_error * abs(f1)) and f1*f2 >= 0
     if not correct and get_feedback:
         feedback_message = feedback_floats(f1, f2, margin_error) 
