@@ -202,7 +202,7 @@ function checkTopicAndSubtopic() {
     try {
         expression = math.simplify(expr).toString();
     } catch {
-        //console.log(expr)
+        console.log(expr)
         alert('Algebraic expression(s) in the variable expression(s) @{..}@ invalid');
         return false;
     }
@@ -398,8 +398,8 @@ function checkTopicAndSubtopic() {
                 const lowerBound = parseFloat(bounds[0]);
                 const upperBound = parseFloat(bounds[1]);
                 if (!isNaN(lowerBound) && !isNaN(upperBound)) {
-                    if (lowerBound > upperBound) {
-                        alert("Lower bound is greater than upper bound!");
+                    if (lowerBound >= upperBound) {
+                        alert("Lower bound must be less than upper bound!");
                         boundsArray.length = 0; // Clear the array
                         return boundsArray; // Exit the function
                     }else if (lowerBound < -1000 || upperBound > 1000){
@@ -1381,7 +1381,26 @@ function checkQuestionBlock(questionBlock){
 
 
 
+// --------------------------SETTINGS -------------------------------------------//
 
+const settingsIcon = document.querySelector('.settings-icon');
+const settingsSection = document.querySelector('.question-settings');
+const settingsXBtn = settingsSection.querySelector('#close-x-settings');
+
+settingsXBtn.addEventListener('click', (event)=>{
+    event.preventDefault();
+    settingsSection.classList.add('hide');
+  })
+  
+  settingsIcon.addEventListener('click', (event)=>{
+    event.preventDefault();
+    settingsSection.classList.remove('hide');
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  })
+  
 
 });
 

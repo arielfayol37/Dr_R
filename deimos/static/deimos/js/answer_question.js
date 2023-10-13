@@ -187,12 +187,14 @@ forms.forEach((form)=>{
           });
     } else if( question_type ==='mcq'){
         // TODO make sure some mcqs are selected as true.
+        const ids_ = getSelectedTrueAnswerIds(form)
         fetch(`${baseUrl}/validate_answer/${qid}`, {
             method: 'POST',
             headers: { 'X-CSRFToken': getCookie('csrftoken') },
             body: JSON.stringify({
-                    answer: getSelectedTrueAnswerIds(form),
-                    questionType: questionType.value    
+                    answer: ids_,
+                    questionType: questionType.value,
+                    submitted_answer: ids_    
             })
           })
           .then(response => response.json())

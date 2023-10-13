@@ -120,11 +120,19 @@ class Professor(User):
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
 
+class Subject(models.Model):
+    """
+    Subject
+    """
+    name = models.CharField(max_length=50, blank=False, null=False, default='PHYSICS')
+    def __str__(self):
+        return self.name
 class Topic(models.Model):
 
     """
     A course may cover various topics. For example Mechanics and Fields in Physics, but should likely cover at most 3. 
     """
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='topics')
     name = models.CharField(max_length=50)
 
     def __str__(self):
@@ -159,8 +167,19 @@ class Assignment(models.Model):
     category = models.CharField(max_length=25, choices=AssignmentChoices.choices,
                                  default = AssignmentChoices.HOMEWORK)
     is_assigned = models.BooleanField(default=False)
+    grading_scheme = models.ForeignKey('GradingScheme', on_delete=models.SET_NULL, related_name='assignments', null=True, blank=True)
+    
     def __str__(self):
         return f"Assigment {self.name} ranked {self.difficulty_level} for '{self.course.name.title()}'"
+    
+    def save(self, *args, **kwargs):
+        if not self.grading_scheme:
+            self.grading_scheme, created = GradingScheme.objects.get_or_create(pk=1)
+            if created:
+                self.grading_scheme.name = "Default"
+            self.grading_scheme.save()
+        super(Assignment, self).save(*args, **kwargs)
+
 
 class Question(models.Model):
     """
@@ -199,25 +218,13 @@ class Question(models.Model):
     category = models.CharField(max_length=50, null=True, blank=True)
     topic = models.ForeignKey(Topic, on_delete=models.SET_NULL, null=True, blank=True)
     sub_topic = models.ForeignKey(SubTopic, on_delete=models.SET_NULL, null=True, blank=True)
-    num_points = models.IntegerField(default=10, validators=[MinValueValidator(0), MaxValueValidator(15)]) # Add lower and upper bound.
     parent_question = models.ForeignKey('self', on_delete=models.CASCADE, null=True, \
                                         blank=True, related_name='sub_questions')
-    timestamp = models.DateTimeField(auto_now_add=True)
-    difficulty_level = models.CharField(
-        max_length=10,
-        choices=DifficultyChoices.choices,
-        default=DifficultyChoices.MEDIUM,
-    )
     answer_type = models.CharField(
         max_length = 30,
         choices = QuestionChoices.choices,
         default = QuestionChoices.STRUCTURAL_TEXT
     )
-    max_num_attempts = models.IntegerField(default=5)
-    answer = models.CharField(max_length=1000, null=True, blank=True) # TODO: delete this attribute.
-    deduct_per_attempt = models.FloatField(default=0.05, blank=True, null=True)
-    margin_error = models.FloatField(default=0.03, blank=True, null=True)
-    due_date = models.DateTimeField(null=True, blank=True)
     embedding = models.JSONField(null=True, blank=True)  # Field to store encoded representation for search
     
 
@@ -227,9 +234,10 @@ class Question(models.Model):
         return None
 
     def save(self, *args, **kwargs):
-        if self.due_date is None:
-            self.due_date = self.default_due_date()
-
+        super(Question, self).save(*args, **kwargs)
+        settings, created = QuestionSettings.objects.get_or_create(question=self)
+        settings.due_date = self.default_due_date()
+        settings.save()
         if not self.embedding:
             question_tokens = BERT_TOKENIZER.encode(self.text, add_special_tokens=True)
             with torch.no_grad():
@@ -243,12 +251,50 @@ class Question(models.Model):
             # Save the encoded output to the question object
             self.embedding = question_encoded_output_pooled.tolist()
 
-        super(Question, self).save(*args, **kwargs)
+            super(Question, self).save(*args, **kwargs)
 
 
     def __str__(self):
         return f"Question {self.number} ranked {self.difficulty_level} for {self.assignment}"
     
+class QuestionSettings(models.Model):
+    """
+    Settings for a `Question`
+    """
+    question = models.OneToOneField(Question, on_delete=models.CASCADE, related_name='settings')
+    num_points = models.IntegerField(default=10, validators=[MinValueValidator(0), MaxValueValidator(15)]) # Add lower and upper bound.
+    max_num_attempts = models.IntegerField(default=5)
+    mcq_max_num_attempts = models.IntegerField(default=4)
+    deduct_per_attempt = models.FloatField(default=0.05, blank=True, null=True)
+    mcq_deduct_per_attempt = models.FloatField(default=0.25, blank=True, null=True)
+    margin_error = models.FloatField(default=0.03, blank=True, null=True, validators=[MinValueValidator(0), MaxValueValidator(1)])
+    percentage_pts_units =  models.FloatField(default=0.03, blank=True, null=True, validators=[MinValueValidator(0), MaxValueValidator(1)])
+    units_num_attempts = models.IntegerField(default=2)
+    due_date = models.DateTimeField(null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    difficulty_level = models.CharField(
+    max_length=10,
+    choices=DifficultyChoices.choices,
+    default=DifficultyChoices.MEDIUM,
+)
+
+class GradingScheme(models.Model):
+    """
+    Grading scheme for assignments
+    """
+    # Number of points per question
+    name = models.CharField(max_length=25, blank=False, null=False, default="Default")
+    num_points = models.IntegerField(default=10, validators=[MinValueValidator(0), MaxValueValidator(15)])
+    mcq_num_attempts = models.IntegerField(default=4)
+    struct_num_attempts = models.IntegerField(default=5)
+    deduct_per_attempt = models.FloatField(default=0.05, blank=True, null=True)
+    mcq_deduct_per_attempt = models.FloatField(default=0.25, blank=True, null=True)
+    margin_error = models.FloatField(default=0.03, blank=True, null=True, validators=[MinValueValidator(0), MaxValueValidator(1)])
+    percentage_pts_units = models.FloatField(default=0.1, blank=True, null=True, validators=[MinValueValidator(0), MaxValueValidator(1)])
+    units_num_attempts = models.IntegerField(default=2)
+
+def __str__(self):
+    return f"Grading scheme {self.name}"
 
 
 class QuestionImage(models.Model):
