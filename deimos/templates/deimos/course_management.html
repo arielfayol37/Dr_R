@@ -1,7 +1,13 @@
 <!-- deimos: course_management.html-->
 {% extends 'deimos/layout.html' %}
 {% block title %} Course {% endblock %}
+{% block style %} <link rel="stylesheet" href=""/> {% endblock %}
 {% block body%}
+<style>
+    .nav-link:hover {
+    cursor: pointer;
+  }
+</style>
 <div class="sidebar" style="display:none">
     <header class="sidebar-header">X</header>
     <ul>
