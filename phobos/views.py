@@ -228,14 +228,7 @@ def create_question(request, assignment_id=None, question_nums_types=None):
         vars_dict = {}
         topic = Topic.objects.get(name=request.POST.get('topic'))
         sub_topic = SubTopic.objects.get(name=request.POST.get('sub_topic'))
-        num_points = request.POST.get('num_points', 10)
-        struct_max_num_attempts = request.POST.get('max_num_attempts', 5)
-        struct_deduct_per_attempt = request.POST.get('deduct_per_attempt', 0.05)
-        margin_error = request.POST.get('margin_error', 0.03)
-        mcq_max_num_attempts = request.POST.get('max_mcq_num_attempts', 4)
-        mcq_deduct_per_attempt = request.POST.get('mcq_deduct_per_attempt', 0.25)
-        percentage_pts_units = request.POST.get('percentage_pts_units', 0.1)
-        units_num_attempts = request.POST.get('units_num_attempts', 2)
+
         difficulty = request.POST.get('question_difficulty', 'MEDIUM')
         for q_num, q_type in num_type_pairs:
             counter += 1
@@ -259,10 +252,19 @@ def create_question(request, assignment_id=None, question_nums_types=None):
             
             new_question.save()  # the settings object is automatically created in the save
 
+            num_points = request.POST.get(q_num + '_num_points')
+            struct_max_num_attempts = request.POST.get(q_num + '_max_num_attempts')
+            struct_deduct_per_attempt = request.POST.get(q_num + '_deduct_per_attempt')
+            margin_error = request.POST.get(q_num + '_margin_error')
+            mcq_max_num_attempts = request.POST.get(q_num + '_max_mcq_num_attempts')
+            mcq_deduct_per_attempt = request.POST.get(q_num + '_mcq_deduct_per_attempt')
+            percentage_pts_units = request.POST.get(q_num + '_percentage_pts_units')
+            units_num_attempts = request.POST.get(q_num + '_units_num_attempts')
+
             # Update the existing QuestionSettings instead of creating a new one
             question_settings = new_question.settings
 
-            question_settings.num_points = int(int(num_points) / len(num_type_pairs))
+            question_settings.num_points = int(num_points)
             question_settings.difficulty_level = difficulty
             question_settings.max_num_attempts = int(struct_max_num_attempts)
             question_settings.deduct_per_attempt = float(struct_deduct_per_attempt)

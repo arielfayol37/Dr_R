@@ -8,10 +8,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const calculatorDiv = document.querySelector('.calculator');
     calculatorDiv.style.display = 'none';
     const createQuestionBtn = document.querySelector('.create-question-btn');
+    var settingsPreviousValue = 1;
+    const settingsSelect = document.querySelector('.settings-select');
+    var initial_num_points = document.querySelector('.init-num-pts').value;
+
+  
     var num_questions = 1;
+    var part_num_questions = 1;
     
     var questionTypeDicts = {
-
     }
 
     allQuestionBlocks.appendChild(addQuestionBlock());
@@ -69,6 +74,14 @@ document.addEventListener('DOMContentLoaded', () => {
             lastQB.querySelector('.answer-options').dispatchEvent(clickEvent);
         }
 
+
+        // Dispatching event on settings select so that the last changes are updated
+        const changeEvent = new Event('change', {
+            'bubbles': true,
+            'cancelable': true
+        });
+    
+        settingsSelect.dispatchEvent(changeEvent);
         
         const questionBlocks = allQuestionBlocks.querySelectorAll('.question-block');
         for (let i = 0; i < questionBlocks.length; i++) {
@@ -449,18 +462,49 @@ prefaceUnitsBtns.forEach((btn)=>{
 
 
 
+settingsSelect.addEventListener('change', (event)=>{
+    var inputsWithSettingsClass = document.querySelectorAll('input.settings');
+    inputsWithSettingsClass.forEach((sInput)=>{
+        // Updating the previous hidden inputs
+        const settingsHiddenInput = document.querySelector(`input[name="${parseInt(settingsPreviousValue)}_${sInput.name}"]`);
+        if(settingsHiddenInput){// in case it has been deleted
+            settingsHiddenInput.value = sInput.value; 
+        }
 
 
+        // updating the displayed settings to the current option
+
+        sInput.value = document.querySelector(`input[name="${parseInt(event.target.value)}_${sInput.name}"]`).value
+   
+   })
+   settingsPreviousValue = event.target.value
+})
 
 // ---------------------------------MAKING THE QUESTION MULTIPART------------------------------------------//
 
 function addQuestionBlock(){
 
+    // creating new option in settings
+    const newSettingsOption = document.createElement('option');
+    newSettingsOption.classList.add(`settings-option-${num_questions}`);
+    newSettingsOption.value = `${num_questions}`
+    newSettingsOption.innerHTML = `Part ${String.fromCharCode(64 + part_num_questions)}`;
+    const pts = initial_num_points/(part_num_questions) | 0;// to convert to integer
+    settingsSelect.appendChild(newSettingsOption);
+    // each time a new part is added, the number of points is redistributed.
+    // this is not very nice because if the instructor changed them earlier
+    // it will be changed again but I don't think that's too much of a big deal.
+    document.querySelector('.init-num-pts').value = pts;
+    const hiddenNumberPts = document.querySelectorAll('.h-num-pts');// this does not include the h-num-pts in the new block
+    // We take care of that in the questionBluePrint below
+    hiddenNumberPts.forEach((hnp)=>{
+        hnp.value = pts
+    })
 
     const questionBluePrint = `
     <input type="hidden" value=${num_questions} class="question-number-value">
     <div class="question-content form-group">
-         <label class="q-label-title">Question ${String.fromCharCode(64 + num_questions)}:</label><br/>
+         <label class="q-label-title">Question ${String.fromCharCode(64 + part_num_questions)}:</label><br/>
          <textarea placeholder="Enter the content of the question" class="question-textarea w-100 question-input-field" name="${num_questions}_question_text"></textarea>
      </div>
      <div class="main-question-image-preview" data-counter="0"></div>
@@ -529,9 +573,18 @@ function addQuestionBlock(){
         <button type="button" class="add-hint-btn btn btn-outline-info open"> Add Hint </button>
      </div>
      <hr/>
-     <button class="btn btn-outline-success check-question-btn">Add Part ${String.fromCharCode(64 + num_questions + 1)}</button>
+     <button class="btn btn-outline-success check-question-btn">Add Part ${String.fromCharCode(64 + part_num_questions + 1)}</button>
      <br/><br/>
-     
+     <div class="hidden-settings">
+            <input class="field-style hidden-settings h-num-pts" type="hidden" name="${num_questions}_num_points" value="${pts}"/>
+            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_max_num_attempts"/>
+            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_deduct_per_attempt"/>
+            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_margin_error"/>
+            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_percentage_pts_units"/>
+            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_max_mcq_num_attempts">
+            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_mcq_deduct_per_attempt"/>
+            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_units_num_attempts"/>
+     </div>
     `
 
 
@@ -573,6 +626,17 @@ function addQuestionBlock(){
     const checkButton = questionBlock.querySelector('.check-question-btn');
     const hiddenQuestionType = questionBlock.querySelector('.hidden-q-type');
     const calculatorAreaDiv = questionBlock.querySelector('.calculator-area-div');
+
+
+    // setting the initial hidden settings
+
+var inputsWithSettingsClass = document.querySelectorAll('input.settings');
+inputsWithSettingsClass.forEach((input)=>{
+     const question_num = parseInt(questionBlock.querySelector('.question-number-value').value)
+     const settingsHiddenInput = questionBlock.querySelector(`input[name="${question_num}_${input.name}"]`);
+     settingsHiddenInput.value = input.value;
+
+})
 
     answerOptionsDiv.addEventListener('click', () => {
         const displayDiv = screen.closest('.calc-display-div');
@@ -685,11 +749,22 @@ checkButton.addEventListener('click', (event)=>{
         const val = questionBlock.querySelector('.question-number-value').value;
         delete questionTypeDicts[val];
         questionBlock.parentNode.removeChild(questionBlock);
-        num_questions -= 1;
+        //num_questions -= 1;
+        const correspondingSettingsOption = settingsSelect.querySelector(`.settings-option-${val}`);
+        if (correspondingSettingsOption) {
+            settingsSelect.removeChild(correspondingSettingsOption);
+        }
+        part_num_questions -= 1;
         // Renaming the question titles.
         const allqBlocks = document.querySelectorAll('.question-block');
         let count = 1;
-        
+        let optionCounter = 1;
+        const allSettingsOptions = settingsSelect.querySelectorAll('option');
+        allSettingsOptions.forEach((sO)=>{
+            sO.innerHTML = `Part ${String.fromCharCode(64 + optionCounter)}`;
+            optionCounter += 1;
+        })
+
         allqBlocks.forEach((qBlock) => {
             const labelTitle = qBlock.querySelector('.q-label-title');
             const checkBtn = qBlock.querySelector('.check-question-btn');
@@ -700,7 +775,6 @@ checkButton.addEventListener('click', (event)=>{
             }else{
             checkBtn.textContent = checkBtn.textContent.slice(0, -1) + String.fromCharCode(64 + count);
             }
-
             count = count + 1;
         });
     }
@@ -1294,11 +1368,13 @@ function create_inputed_mcq_div(input_field, answer_type) {
 
 
 num_questions += 1;
-
+part_num_questions += 1;
 return questionBlock;
 
 }
 
+
+/// addQuestionBlock END //////////////////////////////////////////////////////
 
 
 
@@ -1400,7 +1476,9 @@ settingsXBtn.addEventListener('click', (event)=>{
       behavior: 'smooth'
     });
   })
-  
+
+
+
 
 });
 

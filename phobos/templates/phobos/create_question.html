@@ -97,11 +97,13 @@
       <span id="close-x-settings">X</span><br/>
       <h4 class="suggestion original-size">Settings</h4>
       <hr/>
+      <select title="Part" name="settings-select" class="settings-select field-style">
+      </select>
       <div class="settings-modification">
           <div class="settings-item"> 
             <div class="settings-label">Number of points:</div>
             <div class="settings-input-div">
-              <input class="field-style settings" type="number" name="num_points"
+              <input class="field-style settings init-num-pts" type="number" name="num_points"
               placeholder="Number of points e.g. 10" value="{{assignment.grading_scheme.num_points}}"/>
             </div>
           </div>
