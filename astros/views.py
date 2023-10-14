@@ -159,6 +159,7 @@ def validate_auth_code(request):
             code= data["code"]
             for auth_code in code_base:
                 if int(code)== int(auth_code["code"]) and str(email)== str(auth_code["email"]):
+                    code_base.remove(auth_code)
                     return JsonResponse({'success':True,
                     'message':'OK'})
         except:

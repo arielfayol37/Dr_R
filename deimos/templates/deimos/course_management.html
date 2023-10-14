@@ -20,6 +20,9 @@
         <li class="nav-item" style="display:inline;">
           <a class="nav-link view-notes-btn" >View notes</a>
         </li>
+        <li class="nav-item" style="display:inline;">
+            <a class="nav-link grabebook-btn" >GradeBook</a>
+        </li>
         </div>
   </nav>
 
@@ -51,14 +54,20 @@
     {% endfor %}
 </div>
 
+<div class="gradebook" style="display: none;">
+    {% include 'deimos/gradebook.html' with student=student assignment_student_grade=assignment_student_grade course_score=course_score %}
+</div>
+
 <script>
     const navigation = document.querySelector('.navigation');
     const homeDiv = document.querySelector('.home');
     const noteDiv = document.querySelector('.notes');
+    const gradebookDiv = document.querySelector('.gradebook')
 
     function initial_view() {
         homeDiv.style.display = 'none';
         noteDiv.style.display = 'none';
+        gradebookDiv.style.display= 'none';
     }
 
     document.addEventListener('click', () => {
@@ -67,9 +76,13 @@
             initial_view();
             homeDiv.style.display = 'block';
         }
-        if (target.classList.contains('view-notes-btn')) {
+        else if (target.classList.contains('view-notes-btn')) {
             initial_view();
             noteDiv.style.display = 'block';
+        }
+        else if(target.classList.contains('grabebook-btn')){
+            initial_view();
+            gradebookDiv.style.display= 'block';
         }
 
     })
