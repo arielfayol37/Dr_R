@@ -11,6 +11,8 @@ urlpatterns = [
     #
      path('forgot_password', views.forgot_password, name='forgot_password'),
      #
+     path('courses/<int:student_id>/gradebook/<int:assignment_id>/assignment_grades', views.assignemt_gradebook_student, name='assignemt_gradebook_student'),
+     #
     path('courses/<int:course_id>', views.course_management, name='course_management'),
     path('courses/<int:course_id>/assignments/<int:assignment_id>', \
          views.assignment_management, name='assignment_management'),

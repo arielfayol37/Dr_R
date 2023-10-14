@@ -45,20 +45,33 @@ def course_management(request, course_id):
     # Check if there is any Enrollment entry that matches the given student and course
     student = get_object_or_404(Student, pk = request.user.pk)
     is_enrolled = Enrollment.objects.filter(student=student, course=course).exists()
+    
+    # needed student's gradebook
+    course_score=0
+    assignment_student_grade=[]
+    assignment_student = AssignmentStudent.objects.filter(student=student)
+    for assignment in assignment_student:
+        assignment_student_grade.append({'id':assignment.id,'assignment_student':assignment,'grade':assignment.get_grade()})
+        course_score= course_score+ assignment.get_grade()
 
     if not is_enrolled:
         return HttpResponseForbidden('You are not enrolled in this course.')
     assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student, \
                                             is_assigned=True)
+    # this is needed to display notes
     Notes = Note.objects.all()
     notes=[]
     for note in Notes:
         if note.question_student.student == student:
              notes.append({'Note':note,"note_md":markdown(note.content)})
+    
     context = {
+        "student":student,
         "assignments": assignments,
         "course": course,
-        "notes": notes
+        "notes": notes,
+        "assignment_student_grade": assignment_student_grade,
+        "course_score": course_score
     }
     return render(request, "deimos/course_management.html", context)
 
@@ -408,7 +421,7 @@ def forgot_password(request):
         except:
             pass
     return JsonResponse({'success':False,
-                         'message':'Something '})
+                         'message':'Something went wrong'})
 
 
 def register(request):
@@ -753,3 +766,46 @@ def generate_note_qr(request, question_id, course_id, assignment_id, student_id=
     response = HttpResponse(content_type="image/png")
     img.save(response, "PNG")
     return response
+
+@login_required(login_url='astros:login')
+def assignemt_gradebook_student(request,student_id, assignment_id):
+
+    assignment_student, created = AssignmentStudent.objects.get_or_create(pk=assignment_id)
+    course= assignment_student.assignment.course.id
+
+    questions= Question.objects.filter(assignment= assignment_student.assignment ) 
+    student= Student.objects.get(pk=student_id)
+    assignments= AssignmentStudent.objects.filter(student=student)
+
+    assignment_details={'name':assignment_student.assignment.name,'assignment_id':assignment_id,\
+                        'Due_date':str(assignment_student.due_date).split(' ')[0],'grade':assignment_student.get_grade() }
+    
+    question_heading=['Question_number','score','num_attempts']
+    question_details=[]
+    for question in questions:
+        try:
+            question_student = QuestionStudent.objects.get(student= student, question=question)
+            question_modified_score, is_created= QuestionModifiedScore.objects.get_or_create(question_student=question_student)
+
+            if question_modified_score.is_modified:
+                question_details.append({'Question_number':'Question ' + question.number,\
+                                    'score':f"{round(question_modified_score.score, 2)} / {question.num_points}", \
+                                        'num_attempts': question_student.get_num_attempts()})
+            else:
+                        question_details.append({'Question_number':'Question ' + question.number,\
+                                    'score':f"{round(question_student.get_num_points(), 2)} / {question.num_points}", \
+                                        'num_attempts': question_student.get_num_attempts()})
+        except QuestionStudent.DoesNotExist:
+            question_details.append({'Question_number':'Question ' + question.number,\
+                                     'score':f"0 / {question.num_points}",'num_attempts': "0"})    
+
+    context={
+        'question_details':question_details,
+        'question_heading':question_heading,
+        'assignment': assignment_details,
+        'assignments':assignments,
+        'student': student,
+        'course_id':course
+        }
+                  
+    return render(request,'deimos/assignment_gradebook.html',context)
