@@ -290,9 +290,9 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     attempt.content = simplified_answer
                     attempt.submitted_answer = submitted_answer
                 if correct:
-                    # Deduct points based on attempts, but ensure it doesn't go negative
-                    attempt.num_points = max(0, question.settings.num_points * (1 - (question.settings.deduct_per_attempt * \
-                                                                                      question.settings.num_points * max(0, question_student.get_num_attempts()-1))))
+                    attempt.num_points = max(0, question.settings.num_points * \
+                                                 (1 - question.settings.deduct_per_attempt *
+                                                   max(0, question_student.get_num_attempts() - 1)))
                     question_student.success = True
                     attempt.success = True
                 question_student.save()  # Save the changes to the QuestionStudent instance
@@ -332,7 +332,9 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     s1, s2 = set(simplified_answer), set(answers)
                     if s1 == s2:
                         correct = True
-                        attempt.num_points = max(0, question.settings.num_points * (1 - (question.settings.mcq_deduct_per_attempt * question.settings.num_points * max(0, question_student.get_num_attempts()-1))))
+                        attempt.num_points = max(0, question.settings.num_points * \
+                                                 (1 - question.settings.mcq_deduct_per_attempt *
+                                                   max(0, question_student.get_num_attempts() - 1)))
                         question_student.success = True
                         attempt.success = True
                 question_student.save()
@@ -493,7 +495,7 @@ def feedback_floats(base_float, inputed_float, margin_error):
     assert 0 <= margin_error <= 1
     quotient = inputed_float/base_float if base_float != 0 else 0
     inverse = False
-    if abs(quotient) < 1:
+    if abs(quotient) < 1 and quotient != 0:
         inverse = True
         quotient = round(quotient ** -1)
     int_quotient = round(quotient)
