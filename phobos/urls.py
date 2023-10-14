@@ -8,6 +8,9 @@ urlpatterns = [
     path('login', views.login_view, name='login'),
     path('logout', views.logout_view, name='logout'),
     path('register', views.register, name='register'),
+     #
+     path('forgot_password', views.forgot_password, name='forgot_password'),
+     #
     path('create_course', views.create_course, name='create_course'),
     path('create_question/<int:assignment_id>', views.create_question, name='create_question'),
     path('create_question/<int:assignment_id>/<str:question_nums_types>',views.create_question,

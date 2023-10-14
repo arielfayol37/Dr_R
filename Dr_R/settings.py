@@ -129,8 +129,6 @@ MEDIA_ROOT = BASE_DIR/'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-
-import torch
 from transformers import BertTokenizer, BertModel
 
 
@@ -143,4 +141,14 @@ bert_model.eval()
 # Add these to your Django settings
 BERT_TOKENIZER = bert_tokenizer
 BERT_MODEL = bert_model
+
+
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'no.reply.dr.r.valpo@gmail.com' # Your Gmail address
+EMAIL_HOST_PASSWORD = 'jxey ewuu mrsq fvnb' # Your Gmail password
+
 

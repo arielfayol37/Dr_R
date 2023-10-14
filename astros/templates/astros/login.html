@@ -6,15 +6,15 @@
 {% block title %} Login {% endblock %}
 
 {% block body%}
-    <div id="registration-container" class="bs-overrides">
+<div id="registration-container" class="bs-overrides">
     <div class="vertical-line"></div>
     <div class="register-phobos registration-form">
         <p>Login as an <strong><em>instructor</em></strong> on the <strong><em>Phobos</em></strong> version</p>
 
         {% if message_phobos %}
-            <div>{{ message_phobos }}</div>
+        <div>{{ message_phobos }}</div>
         {% endif %}
-        <form action="{% url 'phobos:login' %}" method="post" >
+        <form action="{% url 'phobos:login' %}" method="post">
             {% csrf_token %}
             <div class="form-group">
                 <input class="form-control" type="email" name="email" placeholder="Email Address">
@@ -24,16 +24,36 @@
             </div>
             <input class="btn btn-primary r" type="submit" value="Login">
         </form>
+        <u class='forgot-password'>forgot password?</u>
+
+        <br>
+        <br>
+
+        <div class="change-pwd-phobos registration-form" >
+            <form action="{% url 'phobos:forgot_password' %}" method="post" class="change-pwd-form" style="display: none">
+                {% csrf_token %}
+                <div class="form-group">
+                    <input class="form-control" type="email" name="email" placeholder="Email Address">
+                </div>
+                <div class="form-group">
+                    <input class="form-control" type="password" name="new_password" placeholder="New Password">
+                </div>
+                <div class="form-group">
+                    <input class="form-control" type="password" name="confirmation" placeholder="Confirm Password">
+                </div>
+                <input class="btn btn-primary r" type="submit" value="OK">
+            </form>
+        </div>
     </div>
 
     <div class="register-deimos registration-form">
         <p>Login as a <strong><em>student</em></strong> on the <strong><em>Deimos</em></strong> version</p>
 
         {% if message_deimos %}
-            <div>{{ message_deimos }}</div>
+        <div>{{ message_deimos }}</div>
         {% endif %}
 
-        <form action="{% url 'deimos:login' %}" method="post" >
+        <form action="{% url 'deimos:login' %}" method="post">
             {% csrf_token %}
             <div class="form-group">
                 <input class="form-control" type="email" name="email" placeholder="Email Address">
@@ -43,7 +63,142 @@
             </div>
             <input class="btn btn-primary r" type="submit" value="Login">
         </form>
+        <u  class='forgot-password'>forgot password?</u>
+    <br>
+    <br>
+    <div class="change-pwd-deimos registration-form" >
+        <form action="{% url 'deimos:forgot_password' %}" method="post" class="change-pwd-form" style="display: none">
+            {% csrf_token %}
+            <div class="form-group">
+                <input class="form-control" type="email" name="email" placeholder="Email Address">
+            </div>
+            <div class="form-group">
+                <input class="form-control" type="password" name="new_password" placeholder="New Password">
+            </div>
+            <div class="form-group">
+                <input class="form-control" type="password" name="confirmation" placeholder="Confirm New Password">
+            </div>
+            <input class="btn btn-primary r" type="submit" value="OK">
+        </form>
     </div>
 </div>
+    <div class="Authentification-div" style="border: solid,3px; height: 100px; width: 250px; position: absolute; left:40%; top:auto; display: none;">
+        <div form-control>
+            Enter verification code: <input class=" form-control input-code" type="number" name="code">
+            <br>
+            <button class=" btn btn-primary Authentification-btn">Change Password </button>
+            <button class="btn btn-primary cancel-btn">Cancel </button>
+        </div>
+    </div>
 
+</div>
+
+<script>
+        let working_form= null;
+function getCookie(name) {
+if (!document.cookie) {
+  return null;
+}
+
+const csrfCookie = document.cookie
+  .split(';')
+  .map(c => c.trim())
+  .find(c => c.startsWith(name + '='));
+
+if (!csrfCookie) {
+  return null;
+}
+
+return decodeURIComponent(csrfCookie.split('=')[1]);
+}
+
+    const AuthentificationDiv = document.querySelector('.Authentification-div')
+
+    forms= document.querySelectorAll('.change-pwd-form')
+    forms.forEach(form => {
+        form.addEventListener('submit',()=>{
+            event.preventDefault();
+            new_password = form.querySelector('input[name=new_password]').value;
+            confirmation =form.querySelector('input[name=confirmation]').value;
+
+            if(new_password.length>=8 && new_password=== confirmation || 1){
+            fetch('/authentification/generate_code', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({
+                    email: form.querySelector('input[name=email]').value
+            })
+          })
+          .then(response => response.json())
+          .then(result => {
+              alert(result.message);
+              if(result.success){
+                AuthentificationDiv.style.display='block';
+                AuthentificationDiv.scrollIntoView({behavior:'smooth'})
+                working_form= form;
+              }
+          });
+        }else{
+            alert('passwords must match and must contain atleast 8 characters')
+        }
+
+        })
+    });
+
+    AuthentificationDiv.addEventListener('click',()=>{
+        target= event.target;
+        if(target.classList.contains('cancel-btn')){
+            AuthentificationDiv.style.display='none';
+        }
+        else if(target.classList.contains('Authentification-btn')){
+            fetch('/authentification/validate_code', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({
+                    code: AuthentificationDiv.querySelector('.input-code').value,
+                    email: working_form.querySelector('input[name=email]').value
+                    
+            })
+          })
+          .then(response => response.json())
+          .then(result => {
+              alert(result.message);
+              if(result.success){
+                AuthentificationDiv.style.display='none';
+                fetch(working_form.action, {
+                            method: 'POST',
+                            headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                            body: JSON.stringify({
+                                new_password: working_form.querySelector('input[name=new_password]').value,
+                                confirm_new_password: working_form.querySelector('input[name=confirmation]').value,
+                                email:working_form.querySelector('input[name=email]').value
+                            })
+                        })
+                            .then(response => response.json())
+                            .then(result => {
+                                alert(result.message);
+                                if (result.success) {
+                                    initial_view();
+                                }
+                            });
+                    }
+                });
+        }
+    });    
+    
+    document.addEventListener('click',()=>{
+        target = event.target;
+        if (target.classList.contains('forgot-password')){
+            console.log('fkjdlj')
+            form = target.closest('.registration-form').querySelector('.change-pwd-form');
+            console.log(target.parentNode,form)
+            form.style.display= 'block';
+        }
+    })
+function initial_view(){
+ AuthentificationDiv.style.display='none';
+ forms.forEach(form=>{form.style.display='none'});
+}
+
+</script>
 {% endblock %}

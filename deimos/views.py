@@ -16,7 +16,7 @@ from django.shortcuts import get_object_or_404
 from django.middleware import csrf
 from django.utils.timesince import timesince
 from phobos.models import QuestionChoices
-import random
+import random, string
 from sympy import symbols, simplify
 import numpy as np
 import torch
@@ -84,9 +84,11 @@ def answer_question(request, question_id, assignment_id=None, course_id=None, st
         student = get_object_or_404(Student, pk=request.user.pk)
     assignment = get_object_or_404(Assignment, pk=assignment_id)
     if assignment.course.name != 'Question Bank':
+        is_questionbank = False
         question_ids = assignment.questions.filter(parent_question=None).values_list('id', flat=True)
         question_nums = assignment.questions.filter(parent_question=None).values_list('number', flat=True)
     else:
+        is_questionbank = True
         question_ids, question_nums = [], []
     question_0 = Question.objects.get(pk=question_id)
     if not question_0.parent_question: # if question has no parent question(the question itself 
@@ -209,7 +211,8 @@ def answer_question(request, question_id, assignment_id=None, course_id=None, st
                     'note_md':note_md,
                     'note_comment': 'Edit Notes' if note.content else 'Add Notes',
                     'upload_note_img':upload_note_img,
-                    'temp_note': note.temp_note if upload_note_img==1 else None})
+                    'temp_note': note.temp_note if upload_note_img==1 else None,
+                    'is_questionbank': is_questionbank})
 
 
 def validate_answer(request, question_id, landed_question_id=None,assignment_id=None, course_id=None, student_id=None, upload_note_img=None):
@@ -372,6 +375,29 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return HttpResponseRedirect(reverse("astros:index"))
+
+def forgot_password(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            email = data["email"]
+            password= data['new_password']
+            confirmPwd= data['confirm_new_password']
+
+            try:
+                user = Student.objects.get(email=email)
+            except Student.DoesNotExist:
+               return JsonResponse({'success':False,
+                         'message':"Hacker don't hack in here. Email does not exist"})
+            if password == confirmPwd:
+                user.set_password(password)
+                user.save()
+                return JsonResponse({'success':True,
+                    'message':'Password Succesfully changed'})
+        except:
+            pass
+    return JsonResponse({'success':False,
+                         'message':'Something '})
 
 
 def register(request):
