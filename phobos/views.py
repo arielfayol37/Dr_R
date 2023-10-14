@@ -261,21 +261,6 @@ def create_question(request, assignment_id=None, question_nums_types=None):
             percentage_pts_units = request.POST.get(q_num + '_percentage_pts_units')
             units_num_attempts = request.POST.get(q_num + '_units_num_attempts')
 
-            # Update the existing QuestionSettings instead of creating a new one
-            question_settings = new_question.settings
-
-            question_settings.num_points = int(num_points)
-            question_settings.difficulty_level = difficulty
-            question_settings.max_num_attempts = int(struct_max_num_attempts)
-            question_settings.deduct_per_attempt = float(struct_deduct_per_attempt)
-            question_settings.margin_error = float(margin_error)
-            question_settings.mcq_max_num_attempts = int(mcq_max_num_attempts)
-            question_settings.mcq_deduct_per_attempt = float(mcq_deduct_per_attempt)
-            question_settings.percentage_pts_units = float(percentage_pts_units)
-            question_settings.units_num_attempts = int(units_num_attempts)
-
-            question_settings.save()
-
             for key, value in request.POST.items():
                 if key.startswith('domain') and counter==1: # Creating the variables
                     # variables will be associated only to the parent question.
@@ -384,10 +369,27 @@ def create_question(request, assignment_id=None, question_nums_types=None):
                 answer = TextAnswer(question=new_question, content='')
             else:
                 return HttpResponseForbidden('Something went wrong: unexpected question type_int')
-            new_question.save()
+            new_question.save(save_settings=True)
+            
             if counter == 1:
                 parent_question = new_question
             answer.save() # Needed here too.
+           
+            # Saving the settings.
+            if new_question.answer_type.startswith('MCQ'): # if MCQ
+                question_settings = new_question.mcq_settings
+                question_settings.mcq_max_num_attempts = int(mcq_max_num_attempts)
+                question_settings.mcq_deduct_per_attempt = float(mcq_deduct_per_attempt)
+            else:
+                question_settings = new_question.struct_settings
+                question_settings.units_num_attempts = int(units_num_attempts)
+                question_settings.max_num_attempts = int(struct_max_num_attempts)
+                question_settings.percentage_pts_units = float(percentage_pts_units)
+                question_settings.deduct_per_attempt = float(struct_deduct_per_attempt)
+                question_settings.margin_error = float(margin_error)
+            question_settings.num_points = int(num_points)
+            question_settings.difficulty_level = difficulty
+            question_settings.save()
         return HttpResponseRedirect(reverse("phobos:assignment_management",\
                                             kwargs={'course_id':assignment.course.id,\
                                                     'assignment_id':assignment_id}))
@@ -622,28 +624,30 @@ def get_questions(request, student_id, assignment_id, course_id=None):
     assignment_student, created = AssignmentStudent.objects.get_or_create(assignment=assignment, student=student)
     question_details=[{'name':assignment.name,'assignment_id':assignment_id,'Due_date':str(assignment_student.due_date).split(' ')[0]}]
     for question in questions:
+        if question.answer_type.startswith('MCQ'):
+            num_pts = question.mcq_settings.num_points
+        else:
+            num_pts = question.struct_settings.num_points
         try:
             question_student = QuestionStudent.objects.get(student= student, question=question)
             question_modified_score, is_created= QuestionModifiedScore.objects.get_or_create(question_student=question_student)
-            # print(question_modified_score.is_modified,question_modified_score.score,question_student.pk)
             if question_modified_score.is_modified:
                 question_details.append({'Question_number':'Question ' + question.number,\
-                                    'score':f"{round(question_modified_score.score, 2)} / {question.settings.num_points}", \
+                                    'score':f"{round(question_modified_score.score, 2)} / {num_pts}", \
                                         'num_attempts': question_student.get_num_attempts(),\
-                                        'original_score':f"{question_student.get_num_points()} / {question.settings.num_points}", \
+                                        'original_score':f"{question_student.get_num_points()} / {num_pts}", \
                                             'id': question_student.pk})
             else:
                         question_details.append({'Question_number':'Question ' + question.number,\
-                                    'score':f"{round(question_student.get_num_points(), 2)} / {question.settings.num_points}", \
+                                    'score':f"{round(question_student.get_num_points(), 2)} / {num_pts}", \
                                         'num_attempts': question_student.get_num_attempts(),\
-                                    'original_score':f"{question_student.get_num_points()} / {question.settings.num_points}", \
+                                    'original_score':f"{question_student.get_num_points()} / {num_pts}", \
                                             'id': question_student.pk})
 
         except QuestionStudent.DoesNotExist:
             question_details.append({'Question_number':'Question ' + question.number,\
-                                     'score':f"0 / {question.settings.num_points}",'num_attempts': "0",\
-                                     #'original_score':f"0 / {question.settings.num_points}",'id': question_student.pk})
-                                     'original_score':f"0 / {question.settings.num_points}",'id': "-1"})    
+                                     'score':f"0 / {num_pts}",'num_attempts': "0",\
+                                     'original_score':f"0 / {num_pts}",'id': "-1"})    
         
     question_details= json.dumps(question_details)
     return HttpResponse(question_details)

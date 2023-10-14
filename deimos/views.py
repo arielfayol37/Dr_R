@@ -102,9 +102,9 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
             note, note_created = Note.objects.get_or_create(question_student=question_student)
             note_md = markdown(note.content)
         if question.answer_type.startswith('MCQ'):
-            too_many_attempts = question_student.get_num_attempts() >= question.settings.mcq_max_num_attempts
+            too_many_attempts = question_student.get_num_attempts() >= question.mcq_settings.mcq_max_num_attempts
         else:
-            too_many_attempts = question_student.get_num_attempts() >= question.settings.max_num_attempts    
+            too_many_attempts = question_student.get_num_attempts() >= question.struct_settings.max_num_attempts    
         if created:
             question_student.create_instances()
         else:
@@ -234,9 +234,9 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
         # whenever the user opens a question for the first time, but just to be safe.
         question_student, created = QuestionStudent.objects.get_or_create(student=student, question=question)
         if data["questionType"].startswith('structural'):
-            too_many_attempts = question_student.get_num_attempts() >= question.settings.max_num_attempts
+            too_many_attempts = question_student.get_num_attempts() >= question.struct_settings.max_num_attempts
         else:
-            too_many_attempts = question_student.get_num_attempts() >= question.settings.mcq_max_num_attempts
+            too_many_attempts = question_student.get_num_attempts() >= question.mcq_settings.mcq_max_num_attempts
         if ( not (too_many_attempts or question_student.success)):
             if data["questionType"].startswith('structural'):
 
@@ -260,7 +260,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     answer = question.float_answer
                     try:
                         # answer.content must come first in the compare_floats()
-                        correct, feedback_data = compare_floats(answer.content, simplified_answer, question.settings.margin_error) 
+                        correct, feedback_data = compare_floats(answer.content, simplified_answer, question.struct_settings.margin_error) 
                     except ValueError:
                         correct = False
                     # Checking previous attempts
@@ -277,7 +277,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     try:
                         answer_temp = question_student.compute_structural_answer()
                         correct, feedback_data = compare_floats(answer_temp, simplified_answer,
-                                                    question.settings.margin_error)
+                                                    question.struct_settings.margin_error)
                     except ValueError:
                         correct = False
                     if not correct:
@@ -290,8 +290,8 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     attempt.content = simplified_answer
                     attempt.submitted_answer = submitted_answer
                 if correct:
-                    attempt.num_points = max(0, question.settings.num_points * \
-                                                 (1 - question.settings.deduct_per_attempt *
+                    attempt.num_points = max(0, question.struct_settings.num_points * \
+                                                 (1 - question.struct_settings.deduct_per_attempt *
                                                    max(0, question_student.get_num_attempts() - 1)))
                     question_student.success = True
                     attempt.success = True
@@ -332,8 +332,8 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     s1, s2 = set(simplified_answer), set(answers)
                     if s1 == s2:
                         correct = True
-                        attempt.num_points = max(0, question.settings.num_points * \
-                                                 (1 - question.settings.mcq_deduct_per_attempt *
+                        attempt.num_points = max(0, question.mcq_settings.num_points * \
+                                                 (1 - question.mcq_settings.mcq_deduct_per_attempt *
                                                    max(0, question_student.get_num_attempts() - 1)))
                         question_student.success = True
                         attempt.success = True

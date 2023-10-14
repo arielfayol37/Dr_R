@@ -18,7 +18,25 @@ document.addEventListener('DOMContentLoaded', ()=> {
       MathJax.typesetPromise();
     });
      
+
+    // GRADING SHEMES
+    var previousGNumber = 0;
+    const selectGrading = document.querySelector('.select-grading');
+    const allGradingSchemes = document.querySelectorAll('.settings-modification');
+    var gCounter = 0;
+    allGradingSchemes.forEach((gs)=>{
+      const newOption = document.createElement('option');
+      newOption.value = gCounter;
+      newOption.innerHTML = `Part ${String.fromCharCode(64 + gCounter + 1)}`;
+      selectGrading.appendChild(newOption);
+      gCounter += 1
+    })
  
+    selectGrading.addEventListener('change', (event)=>{
+      document.querySelector(`.grading-number-${previousGNumber}`).style.display = 'none';
+      document.querySelector(`.grading-number-${event.target.value}`).style.display = 'flex';
+      previousGNumber = event.target.value;
+    })
 
 
 
@@ -117,7 +135,8 @@ forms.forEach((form)=>{
         previousForm.querySelector('.inputed_units_structural').value = calculatorDiv.querySelector('.units-screen').value;
       }
       
-      form.appendChild(calculatorDiv)
+      form.appendChild(calculatorDiv);
+      calculatorDiv.scrollIntoView({behavior: 'smooth'});
       calculatorDiv.classList.remove('hide');
       calculatorDiv.querySelector('.preface-content').innerHTML = form.querySelector('.answer_preface').value
       screen.value = form.querySelector('.inputed_answer_structural').value;
@@ -203,6 +222,9 @@ forms.forEach((form)=>{
                 feedbackContainerDiv.querySelector('.show-feedback-btn').style.display='block';
                 feedbackContainerDiv.querySelector('.formatted-answer-option').innerHTML = result.feedback_data;
                 feedbackContainerDiv.querySelector('.formatted-answer-option').style.display = 'block';
+              }
+              if(result.correct){
+                submitBtn.style.display = 'none';
               }
           });
     } else if( question_type ==='mcq'){

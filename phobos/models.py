@@ -234,10 +234,15 @@ class Question(models.Model):
         return None
 
     def save(self, *args, **kwargs):
+        save_settings = kwargs.pop('save_settings', False)
         super(Question, self).save(*args, **kwargs)
-        settings, created = QuestionSettings.objects.get_or_create(question=self)
-        settings.due_date = self.default_due_date()
-        settings.save()
+        if save_settings:
+            if self.answer_type.startswith('MCQ'):
+                settings, created = MCQQuestionSettings.objects.get_or_create(question=self)
+            else:
+                settings, created = StructuralQuestionSettings.objects.get_or_create(question=self)
+            settings.due_date = self.default_due_date()
+            settings.save()
         if not self.embedding:
             question_tokens = BERT_TOKENIZER.encode(self.text, add_special_tokens=True)
             with torch.no_grad():
@@ -257,26 +262,45 @@ class Question(models.Model):
     def __str__(self):
         return f"Question {self.number} ranked {self.difficulty_level} for {self.assignment}"
     
-class QuestionSettings(models.Model):
+from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
+
+class BaseQuestionSettings(models.Model):
     """
-    Settings for a `Question`
+    Base settings for a `Question`.
+    Fields common to both Structural and MCQ questions will be defined here.
     """
-    question = models.OneToOneField(Question, on_delete=models.CASCADE, related_name='settings')
-    num_points = models.IntegerField(default=10, validators=[MinValueValidator(0), MaxValueValidator(15)]) # Add lower and upper bound.
-    max_num_attempts = models.IntegerField(default=5)
-    mcq_max_num_attempts = models.IntegerField(default=4)
-    deduct_per_attempt = models.FloatField(default=0.05, blank=True, null=True)
-    mcq_deduct_per_attempt = models.FloatField(default=0.25, blank=True, null=True)
-    margin_error = models.FloatField(default=0.03, blank=True, null=True, validators=[MinValueValidator(0), MaxValueValidator(1)])
-    percentage_pts_units =  models.FloatField(default=0.03, blank=True, null=True, validators=[MinValueValidator(0), MaxValueValidator(1)])
-    units_num_attempts = models.IntegerField(default=2)
+    question = models.OneToOneField(Question, on_delete=models.CASCADE)
+    num_points = models.IntegerField(default=10, validators=[MinValueValidator(0), MaxValueValidator(15)])
     due_date = models.DateTimeField(null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     difficulty_level = models.CharField(
-    max_length=10,
-    choices=DifficultyChoices.choices,
-    default=DifficultyChoices.MEDIUM,
-)
+        max_length=10,
+        choices=DifficultyChoices.choices,
+        default=DifficultyChoices.MEDIUM,
+    )
+
+    class Meta:
+        abstract = True  # This means we won't create a table just for this base model.
+
+class StructuralQuestionSettings(BaseQuestionSettings):
+    """
+    Settings specific to Structural Questions
+    """
+    question = models.OneToOneField(Question, on_delete=models.CASCADE, related_name='struct_settings')
+    max_num_attempts = models.IntegerField(default=5)
+    deduct_per_attempt = models.FloatField(default=0.05, blank=True, null=True)
+    margin_error = models.FloatField(default=0.03, blank=True, null=True, validators=[MinValueValidator(0), MaxValueValidator(1)])
+    percentage_pts_units = models.FloatField(default=0.03, blank=True, null=True, validators=[MinValueValidator(0), MaxValueValidator(1)])
+    units_num_attempts = models.IntegerField(default=2)
+
+class MCQQuestionSettings(BaseQuestionSettings):
+    """
+    Settings specific to MCQ Questions
+    """
+    question = models.OneToOneField(Question, on_delete=models.CASCADE, related_name='mcq_settings')
+    mcq_max_num_attempts = models.IntegerField(default=4)
+    mcq_deduct_per_attempt = models.FloatField(default=0.25, blank=True, null=True)
 
 class GradingScheme(models.Model):
     """
