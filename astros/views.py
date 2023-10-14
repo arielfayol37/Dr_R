@@ -13,12 +13,8 @@ from markdown2 import markdown
 from django.core.mail import send_mail
 from django.http import JsonResponse
 import random
-from deimos.views import register as deimos_register
-from phobos.views import register as phobos_register
-from phobos.models import Professor
-from deimos.models import Student
 
-code_base={}
+code_base = {}
 
 # Create your views here.
 def index(request):
@@ -131,17 +127,18 @@ def course_info(request, course_id):
     return render(request, 'astros/course_info.html', context)
 
 def generate_auth_code(request):
-    min=100000000000
-    max=999999999999
+    min=3000
+    max=9999
 
     if request.method == "POST":
         try:
             data = json.loads(request.body)
             email = data["email"]
+            str_email = str(email)
             code = random.randint(min,max)
-            if email not in code:
-                code_base[email] = []
-            code_base[email].append(code)
+            if str_email not in code_base:
+                code_base[str_email] = []
+            code_base[str_email].append(code)
             send_mail(
             'Authentify',                # subject
            f'Enter the following authentification code on DR-R: {code}',    # message
@@ -162,10 +159,14 @@ def validate_auth_code(request):
     if request.method == "POST":
         data = json.loads(request.body)
         email = data["email"]
-        code= data["code"]
-        valid_codes = code_base.get(email, [])
+        str_email = str(email)
+        code= int(data["code"])
+        if str_email in code_base:
+            valid_codes = code_base[str_email]
+        else:
+            valid_codes = []
         if code in valid_codes:
-            code_base[email] = [] # Clearing out the list for that email.
+            code_base[str_email] = [] # Clearing out the list for that email.
             return JsonResponse({'success':True,
             'message':'You have been registered successfully.'})
         else:

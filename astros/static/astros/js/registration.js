@@ -1,7 +1,7 @@
 
 document.addEventListener('DOMContentLoaded',()=>{
-let working_form= null;
-const AuthentificationDiv = document.querySelector('.Authentification-div');
+const submitBtns = document.querySelectorAll('.submit-btn-register');
+
 // Blurring out depending on the selected side
 
 // Select both registration forms
@@ -36,17 +36,17 @@ function isAnyInputFocused(parent) {
     return Array.from(parent.querySelectorAll('input')).some(input => input === document.activeElement);
 }
 
-
-
-// Event listener for the Phobos form submission
-document.querySelector('.register-phobos form').addEventListener('submit', function(event) {
+submitBtns.forEach((submitBtn)=>{
+    submitBtn.addEventListener('click', (event)=>{
     event.preventDefault();
-    const emailField = event.target.querySelector('[name="email"]');
-    const passwordField = event.target.querySelector('[name="password"]');
-    const confirmPasswordField = event.target.querySelector('[name="confirmation"]');
-
+    const form = submitBtn.closest('.registration-form');    
+    const emailField = form.querySelector('[name="email"]');
+    const passwordField = form.querySelector('[name="password"]');
+    const confirmPasswordField = form.querySelector('[name="confirmation"]');
+    const authenticationArea = form.querySelector('.authentication-area');
+        console.log(emailField.value)
     // Clear previous error messages
-    clearErrorMessages(event.target);
+    clearErrorMessages(form);
 
     if (!isValidEmail(emailField.value)) {
         displayErrorMessage(emailField, "Invalid email address.");
@@ -64,62 +64,45 @@ document.querySelector('.register-phobos form').addEventListener('submit', funct
         return;
     }
 
-    fetch('/authentification/generate_code', {
-        method: 'POST',
-        headers: { 'X-CSRFToken': getCookie('csrftoken') },
-        body: JSON.stringify({
-                email: emailField.value
-        })
-      })
-      .then(response => response.json())
-      .then(result => {
-          alert(result.message);
-          if(result.success){
-            authenticationField.style.display='block';
-          }
-      });
-});
-
-// Event listener for the Deimos form submission
-document.querySelector('.register-deimos form').addEventListener('submit', function(event) {
-    event.preventDefault();
-    const emailField = event.target.querySelector('[name="email"]');
-    const passwordField = event.target.querySelector('[name="password"]');
-    const confirmPasswordField = event.target.querySelector('[name="confirmation"]');
-
-    // Clear previous error messages
-    clearErrorMessages(event.target);
-
-    if (!isValidEmail(emailField.value)) {
-        displayErrorMessage(emailField, "Invalid email address.");
-        return
+    if(authenticationArea.classList.contains('closed')){
+        fetch('/authentification/generate_code', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({
+                    email: emailField.value
+            })
+          })
+          .then(response => response.json())
+          .then(result => {
+              alert(result.message);
+              if(result.success){
+                authenticationArea.style.display='block';
+                authenticationArea.classList.remove('closed');
+              }
+          });
+    }else {
+        fetch('/authentification/validate_code', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({
+                    code: authenticationArea.querySelector('.input-code').value,
+                    email: emailField.value
+                    
+            })
+          })
+          .then(response => response.json())
+          .then(result => {
+              alert(result.message);
+              if(result.success){
+                form.querySelector('form').submit();
+              }
+          })
     }
 
-    if (!isValidPassword(passwordField.value, confirmPasswordField.value)) {
-        if (passwordField.value.length < 8) {
-            displayErrorMessage(passwordField, "Password should be at least 8 characters long.");
-        }
-        if (passwordField.value !== confirmPasswordField.value) {
-            displayErrorMessage(confirmPasswordField, "Passwords do not match.");
-        }
-        return
-    }
 
-    fetch('/authentification/generate_code', {
-        method: 'POST',
-        headers: { 'X-CSRFToken': getCookie('csrftoken') },
-        body: JSON.stringify({
-                email: emailField.value
-        })
-      })
-      .then(response => response.json())
-      .then(result => {
-          alert(result.message);
-          if(result.success){
-            authenticationield.style.display='block';
-          }
-      });
-});
+    })
+})
+
 
 // Helper function to check email validity using a simple regex pattern
 function isValidEmail(email) {
