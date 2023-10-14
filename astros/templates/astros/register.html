@@ -13,7 +13,7 @@
         {% if message_phobos %}
             <div>{{ message_phobos }}</div>
         {% endif %}
-        <form action="{% url 'phobos:register' %}" method="post" >
+        <form action="{% url 'phobos:register' %}" method="post" class="phobos">
             {% csrf_token %}
             <div class="form-group">
                 <input class="form-control" autofocus type="text" name="first_name" placeholder="First name">
@@ -36,7 +36,7 @@
             <div class="form-group">
                 <input class="form-control" type="password" name="confirmation" placeholder="Confirm Password">
             </div>
-            <input class="btn btn-primary r" type="submit" value="Register">
+            <input class="btn btn-primary r submit-btn-register" type="submit" value="Register">
         </form>
     </div>
 
@@ -45,7 +45,7 @@
         {% if message_deimos %}
             <div>{{ message_deimos }}</div>
         {% endif %}
-        <form action="{% url 'deimos:register' %}" method="post" >
+        <form action="{% url 'deimos:register' %}" method="post" class="deimos" >
             {% csrf_token %}
             <div class="form-group">
                 <input class="form-control" autofocus type="text" name="first_name" placeholder="First name">
@@ -65,7 +65,7 @@
             <div class="form-group">
                 <input class="form-control" type="password" name="confirmation" placeholder="Confirm Password">
             </div>
-            <input class="btn btn-primary r" type="submit" value="Register">
+            <input class="btn btn-primary r submit-btn-register" type="submit" value="Register">
         </form>
     </div>
 
@@ -78,83 +78,5 @@
         </div>
     </div>
 </div>
-
-<script>
-    let working_form= null;
-
-function getCookie(name) {
-if (!document.cookie) {
-  return null;
-}
-
-const csrfCookie = document.cookie
-  .split(';')
-  .map(c => c.trim())
-  .find(c => c.startsWith(name + '='));
-
-if (!csrfCookie) {
-  return null;
-}
-
-return decodeURIComponent(csrfCookie.split('=')[1]);
-}
-
-    const AuthentificationDiv = document.querySelector('.Authentification-div')
-
-    forms= document.querySelectorAll('form')
-    forms.forEach(form => {
-        form.addEventListener('submit',()=>{
-            event.preventDefault();
-            password = form.querySelector('input[name=email]').value
-
-            if(password.length>=8){
-            fetch('/authentification/generate_code', {
-            method: 'POST',
-            headers: { 'X-CSRFToken': getCookie('csrftoken') },
-            body: JSON.stringify({
-                    email: form.querySelector('input[name=email]').value
-            })
-          })
-          .then(response => response.json())
-          .then(result => {
-              alert(result.message);
-              if(result.success){
-                AuthentificationDiv.style.display='block';
-                working_form= form;
-              }
-          });
-        }else{
-            alert('password must contain atleast 8 characters')
-        }
-
-        })
-    });
-
-    AuthentificationDiv.addEventListener('click',()=>{
-        target= event.target;
-        if(target.classList.contains('cancel-btn')){
-            AuthentificationDiv.style.display='none';
-        }
-        else if(target.classList.contains('Authentification-btn')){
-            fetch('/authentification/validate_code', {
-            method: 'POST',
-            headers: { 'X-CSRFToken': getCookie('csrftoken') },
-            body: JSON.stringify({
-                    code: AuthentificationDiv.querySelector('.input-code').value,
-                    email: working_form.querySelector('input[name=email]').value
-                    
-            })
-          })
-          .then(response => response.json())
-          .then(result => {
-              alert(result.message);
-              if(result.success){
-                working_form.submit();
-              }
-          });    
-        }
-    })
-
-</script>
 
 {% endblock %}

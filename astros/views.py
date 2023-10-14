@@ -13,8 +13,12 @@ from markdown2 import markdown
 from django.core.mail import send_mail
 from django.http import JsonResponse
 import random
+from deimos.views import register as deimos_register
+from phobos.views import register as phobos_register
+from phobos.models import Professor
+from deimos.models import Student
 
-code_base=[]
+code_base={}
 
 # Create your views here.
 def index(request):
@@ -134,11 +138,13 @@ def generate_auth_code(request):
         try:
             data = json.loads(request.body)
             email = data["email"]
-            code= random.randint(min,max)
-            code_base.append({'email':email,'code': code})
+            code = random.randint(min,max)
+            if email not in code:
+                code_base[email] = []
+            code_base[email].append(code)
             send_mail(
             'Authentify',                # subject
-           f'enter the following authentification code on the website DR_R-{code}',    # message
+           f'Enter the following authentification code on DR-R: {code}',    # message
             'no.reply.dr.r.valpo@gmail.com',      # from email
              [email],      # recipient list
              fail_silently=False,           # Raises an error if there's a problem
@@ -148,23 +154,24 @@ def generate_auth_code(request):
         except:
             return JsonResponse({'success':False,
                          'message':'Something went wrong during the mailing process'})
+        
     return JsonResponse({'success':False,
                          'message':'Something went wrong'})
         
 def validate_auth_code(request):
     if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            email = data["email"]
-            code= data["code"]
-            for auth_code in code_base:
-                if int(code)== int(auth_code["code"]) and str(email)== str(auth_code["email"]):
-                    return JsonResponse({'success':True,
-                    'message':'OK'})
-        except:
+        data = json.loads(request.body)
+        email = data["email"]
+        code= data["code"]
+        valid_codes = code_base.get(email, [])
+        if code in valid_codes:
+            code_base[email] = [] # Clearing out the list for that email.
+            return JsonResponse({'success':True,
+            'message':'You have been registered successfully.'})
+        else:
             return JsonResponse({'success':False,
-                         'message':'Something '})
+                         'message':'Wrong code. Try again.'})
     return JsonResponse({'success':False,
-                         'message':'Something '})
+                         'message':'Something went wrong'})
 
 

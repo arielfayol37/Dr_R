@@ -33,6 +33,12 @@ body.body {
     right: 3%;
     top:4%;
 }
+
+.blur {
+  filter: blur(4px);
+  pointer-events: none; /* Prevents clicking on the blurred elements */
+}
+
 @font-face {
     font-family: 'Nebula Regular';
     src: url('../fonts/nebula-regular.otf') format('opentype');

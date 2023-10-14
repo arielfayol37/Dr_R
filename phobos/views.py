@@ -135,39 +135,10 @@ def register(request):
     if request.method == "POST":
         username = request.POST["username"]
         email = request.POST["email"]
-
-        letters= string.ascii_uppercase
-
         password = request.POST["password"]
-        confirmation = request.POST["confirmation"]
         first_name = request.POST["first_name"]
         last_name = request.POST["last_name"]
         department = request.POST["department"]
-        # Ensure password matches confirmation
-        if password != confirmation:
-            return render(request, "astros/register.html", {
-                "message_phobos": "Passwords must match."
-            })
-        
-        # Ensure password standards are met
-        if len(password)<8:
-            return render(request, "astros/register.html", {
-                "message_phobos": "Passwords must be at least 8 character long."
-            })
-        for i in letters:
-            if i in password:
-                break
-            if(i == letters[len(letters)-1]):
-                return render(request, "astros/register.html", {
-                "message_phobos": "Passwords must include altleast one lower case and one Upper case letter."
-            })
-        for i in letters:
-            if i.lower in password:
-                break
-            if(i.lower == letters[len(letters)-1].lower):
-                return render(request, "astros/register.html", {
-                "message_phobos": "Passwords must include altleast one lower case and one Upper case letter."
-            })
 
         # Attempt to create new professor
         try:
