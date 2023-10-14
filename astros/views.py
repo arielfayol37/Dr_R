@@ -10,6 +10,11 @@ from django.contrib import messages
 from deimos.models import QuestionStudent, AssignmentStudent
 from django.urls import reverse
 from markdown2 import markdown
+from django.core.mail import send_mail
+from django.http import JsonResponse
+import random
+
+code_base=[]
 
 # Create your views here.
 def index(request):
@@ -120,3 +125,46 @@ def course_info(request, course_id):
     }
 
     return render(request, 'astros/course_info.html', context)
+
+def generate_auth_code(request):
+    min=100000000000
+    max=999999999999
+
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            email = data["email"]
+            code= random.randint(min,max)
+            code_base.append({'email':email,'code': code})
+            send_mail(
+            'Authentify',                # subject
+           f'enter the following authentification code on the website DR_R-{code}',    # message
+            'no.reply.dr.r.valpo@gmail.com',      # from email
+             [email],      # recipient list
+             fail_silently=False,           # Raises an error if there's a problem
+        )
+            return JsonResponse({'success':True,
+                         'message':'An authentification code was sent to email. Please enter the code into the box'})
+        except:
+            return JsonResponse({'success':False,
+                         'message':'Something went wrong during the mailing process'})
+    return JsonResponse({'success':False,
+                         'message':'Something went wrong'})
+        
+def validate_auth_code(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            email = data["email"]
+            code= data["code"]
+            for auth_code in code_base:
+                if int(code)== int(auth_code["code"]) and str(email)== str(auth_code["email"]):
+                    return JsonResponse({'success':True,
+                    'message':'OK'})
+        except:
+            return JsonResponse({'success':False,
+                         'message':'Something '})
+    return JsonResponse({'success':False,
+                         'message':'Something '})
+
+

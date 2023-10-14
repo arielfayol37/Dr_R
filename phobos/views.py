@@ -27,6 +27,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
 import heapq
 from markdown2 import markdown
+import string
 
 from django.core.mail import send_mail
 
@@ -106,21 +107,66 @@ def logout_view(request):
     logout(request)
     return HttpResponseRedirect(reverse("astros:index"))
 
+def forgot_password(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            email = data["email"]
+            password= data['new_password']
+            confirmPwd= data['confirm_new_password']
+
+            try:
+                user = Professor.objects.get(email=email)
+            except Professor.DoesNotExist:
+               return JsonResponse({'success':False,
+                         'message':"Hacker don't hack in here. Email does not exist"})
+            if password == confirmPwd:
+                user.set_password(password)
+                user.save()
+                return JsonResponse({'success':True,
+                    'message':'Password Succesfully changed'})
+        except:
+            pass
+    return JsonResponse({'success':False,
+                         'message':'Something '})
+
 
 def register(request):
     if request.method == "POST":
         username = request.POST["username"]
         email = request.POST["email"]
 
-        # Ensure password matches confirmation
+        letters= string.ascii_uppercase
+
         password = request.POST["password"]
         confirmation = request.POST["confirmation"]
         first_name = request.POST["first_name"]
         last_name = request.POST["last_name"]
         department = request.POST["department"]
+        # Ensure password matches confirmation
         if password != confirmation:
             return render(request, "astros/register.html", {
                 "message_phobos": "Passwords must match."
+            })
+        
+        # Ensure password standards are met
+        if len(password)<8:
+            return render(request, "astros/register.html", {
+                "message_phobos": "Passwords must be at least 8 character long."
+            })
+        for i in letters:
+            if i in password:
+                break
+            if(i == letters[len(letters)-1]):
+                return render(request, "astros/register.html", {
+                "message_phobos": "Passwords must include altleast one lower case and one Upper case letter."
+            })
+        for i in letters:
+            if i.lower in password:
+                break
+            if(i.lower == letters[len(letters)-1].lower):
+                return render(request, "astros/register.html", {
+                "message_phobos": "Passwords must include altleast one lower case and one Upper case letter."
             })
 
         # Attempt to create new professor

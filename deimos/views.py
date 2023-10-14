@@ -16,7 +16,7 @@ from django.shortcuts import get_object_or_404
 from django.middleware import csrf
 from django.utils.timesince import timesince
 from phobos.models import QuestionChoices
-import random
+import random, string
 from sympy import symbols, simplify
 import numpy as np
 import torch
@@ -50,9 +50,15 @@ def course_management(request, course_id):
         return HttpResponseForbidden('You are not enrolled in this course.')
     assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student, \
                                             is_assigned=True)
+    Notes = Note.objects.all()
+    notes=[]
+    for note in Notes:
+        if note.question_student.student == student:
+             notes.append({'Note':note,"note_md":markdown(note.content)})
     context = {
         "assignments": assignments,
-        "course": course
+        "course": course,
+        "notes": notes
     }
     return render(request, "deimos/course_management.html", context)
 
@@ -381,21 +387,65 @@ def logout_view(request):
     logout(request)
     return HttpResponseRedirect(reverse("astros:index"))
 
+def forgot_password(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            email = data["email"]
+            password= data['new_password']
+            confirmPwd= data['confirm_new_password']
+
+            try:
+                user = Student.objects.get(email=email)
+            except Student.DoesNotExist:
+               return JsonResponse({'success':False,
+                         'message':"Hacker don't hack in here. Email does not exist"})
+            if password == confirmPwd:
+                user.set_password(password)
+                user.save()
+                return JsonResponse({'success':True,
+                    'message':'Password Succesfully changed'})
+        except:
+            pass
+    return JsonResponse({'success':False,
+                         'message':'Something '})
+
 
 def register(request):
     if request.method == "POST":
         username = request.POST["username"]
         email = request.POST["email"]
 
-        # Ensure password matches confirmation
+        letters= string.ascii_uppercase
+
         password = request.POST["password"]
         confirmation = request.POST["confirmation"]
         first_name = request.POST["first_name"]
         last_name = request.POST["last_name"]
         
+        # Ensure password matches confirmation
         if password != confirmation:
             return render(request, "astros/register.html", {
-                "message": "Passwords must match."
+                "message_deimos": "Passwords must match."
+            })
+        # Ensure password standards are met
+        if len(password)<8:
+            return render(request, "astros/register.html", {
+                "message_deimos": "Passwords must be at least 8 character long."
+            })
+        for i in letters:
+            if i in password:
+                break
+            if(i == letters[len(letters)-1]):
+                return render(request, "astros/register.html", {
+                "message_deimos": "Passwords must include altleast one lower case and one Upper case letter."
+            })
+        for i in letters:
+            if i.lower in password:
+                break
+            if(i.lower == letters[len(letters)-1].lower):
+                return render(request, "astros/register.html", {
+                "message_deimos": "Passwords must include altleast one lower case and one Upper case letter."
             })
 
         # Attempt to create new student
