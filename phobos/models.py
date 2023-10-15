@@ -260,7 +260,7 @@ class Question(models.Model):
 
 
     def __str__(self):
-        return f"Question {self.number} ranked {self.difficulty_level} for {self.assignment}"
+        return f"Question {self.number} for {self.assignment}"
     
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator

@@ -1,7 +1,7 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
-from .models import Course, Professor, Topic, SubTopic, Assignment, Question
+from .models import Course, Professor, Topic, SubTopic, Assignment, Question, Subject
 
 class ModelTests(TestCase):
 
@@ -10,7 +10,8 @@ class ModelTests(TestCase):
                                                   email='prof@valpo.edu',\
                                                      first_name='Jim',
                                                       last_name='Carter', department='Computer Science')
-        self.topic = Topic.objects.create(name='Topic 1')
+        self.subject = Subject.objects.get(name='PHYSICS')
+        self.topic = Topic.objects.create(name='Topic 1', subject=self.subject)
         self.course = Course.objects.create(name='Course 1', subject='COMPUTER_SCIENCE', number_of_students=50)
         self.course.professors.add(self.professor)
         self.course.topics.add(self.topic)
@@ -62,7 +63,8 @@ class ViewTests(TestCase):
                                                       last_name='Carter', department='Computer Science',
                                                       password='testpassword')
 
-        self.topic = Topic.objects.create(name='Topic 1')
+        self.subject = Subject.objects.get(name='PHYSICS')
+        self.topic = Topic.objects.create(name='Topic 1', subject=self.subject)
         self.course = Course.objects.create(name='Course 1', subject='COMPUTER_SCIENCE')
         self.course_2 = Course.objects.create(name='Course 2', subject='PHYSICS')
         self.course.professors.add(self.professor)

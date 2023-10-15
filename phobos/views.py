@@ -48,12 +48,14 @@ def course_management(request, course_id):
     # Making sure the request is done by a professor.
     professor = get_object_or_404(Professor, pk=request.user.id)
     course = get_object_or_404(Course, pk = course_id)
-    if not course.professors.filter(pk=request.user.pk).exists() and course.name !='Question Bank':
+    is_question_bank = course.name =='Question Bank'
+    if not course.professors.filter(pk=request.user.pk).exists() and not is_question_bank:
         return HttpResponseForbidden('You are not authorized to manage this course.')
     assignments = Assignment.objects.filter(course=course)
     context = {
         "assignments": assignments,
-        "course": course
+        "course": course,
+        "is_question_bank":is_question_bank
     }
     return render(request, "phobos/course_management.html", context)
 
@@ -63,14 +65,16 @@ def assignment_management(request, assignment_id, course_id=None):
     professor = get_object_or_404(Professor, pk=request.user.id)
     assignment = get_object_or_404(Assignment, pk = assignment_id)
     course = assignment.course
-    if not course.professors.filter(pk=request.user.pk).exists() and course.name != 'Question Bank':
+    is_question_bank = course.name == 'Question Bank'
+    if not course.professors.filter(pk=request.user.pk).exists() and not is_question_bank:
         return HttpResponseForbidden('You are not authorized to manage this Assignment.')
     questions = Question.objects.filter(assignment = assignment, parent_question=None)
     for question in questions:
         question.text = replace_links_with_html(question.text)
     context = {
         "questions": questions,
-        "assignment": assignment
+        "assignment": assignment,
+        'is_question_bank':is_question_bank
     }
     return render(request, "phobos/assignment_management.html", context)
 
@@ -888,60 +892,59 @@ def copy_answers(old_question, new_question):
 
 @transaction.atomic
 @login_required(login_url='astros:login')
-def export_question_to(request,question_id, exp_assignment_id, course_id=None, assignment_id=None):
-    try:
-        assignment = get_object_or_404(Assignment, pk=exp_assignment_id)
-        question_0 = Question.objects.get(pk=question_id)
-        if question_0.parent_question: # if question has no parent question(the question itself 
-            question_0 = question_0.parent_question
-        questions = list(Question.objects.filter(parent_question=question_0))
-        questions.insert(0, question_0)
-        q_count = assignment.questions.filter(parent_question=None).count() + 1
-        p_question = None
-        for index, question in enumerate(questions):    
-            new_question_data = {
-                'number': str(q_count) + chr(65 + index) if index > 0 else str(q_count),
-                'text': question.text,
-                'topic': question.topic,
-                'sub_topic': question.sub_topic,
-                'assignment': assignment,
-                'answer_type': question.answer_type
-            }
+def export_question_to(request, question_id, exp_assignment_id, course_id=None, assignment_id=None):
+    assignment = get_object_or_404(Assignment, pk=exp_assignment_id)
+    question_0 = Question.objects.get(pk=question_id)
+    if question_0.parent_question: # if question has no parent question(the question itself 
+        question_0 = question_0.parent_question
+    questions = list(Question.objects.filter(parent_question=question_0))
+    questions.insert(0, question_0)
+    q_count = assignment.questions.filter(parent_question=None).count() + 1
+    p_question = None
+    for index, question in enumerate(questions):    
+        new_question = Question(
+            number= str(q_count) + chr(65 + index) if index > 0 else str(q_count),
+            text= question.text,
+            topic= question.topic,
+            sub_topic= question.sub_topic,
+            assignment= assignment,
+            answer_type= question.answer_type
+        )
 
-            new_question = Question.objects.create(**new_question_data)
-            if index == 0:
-                p_question = new_question
-            else:
-                new_question.parent_question = p_question
-            new_question.save()
-            copy_question_images(question, new_question)
-            copy_variables(question, new_question)
-            copy_answers(question, new_question)
-            # Saving the settings.
-            if new_question.answer_type.startswith('MCQ'): # if MCQ
-                question_settings = new_question.mcq_settings
-                question_settings.num_points = question.mcq_settings.num_points
-                question_settings.difficulty_level = question.mcq_settings.difficulty
-                question_settings.mcq_max_num_attempts = question.mcq_settings.mcq_max_num_attempts
-                question_settings.mcq_deduct_per_attempt = question.mcq_settings.mcq_deduct_per_attempt
-            else:
-                question_settings = new_question.struct_settings
-                question_settings.units_num_attempts = question.struct_settings.units_num_attempts
-                question_settings.max_num_attempts = question.struct_settings.max_num_attempts
-                question_settings.percentage_pts_units = question.struct_settings.percentage_pts_units
-                question_settings.deduct_per_attempt = question.struct_settings.deduct_per_attempt
-                question_settings.margin_error = question.struct_settings.margin_error
-                question_settings.num_points = question.struct_settings.num_points
-                question_settings.difficulty_level = question.struct_settings.difficulty
-            question_settings.save()
+        if index == 0:
+            p_question = new_question
+        else:
+            new_question.parent_question = p_question
+        new_question.save(save_settings=True)
+        copy_question_images(question, new_question)
+        copy_variables(question, new_question)
+        copy_answers(question, new_question)
+        # Saving the settings.
+        if new_question.answer_type.startswith('MCQ'): # if MCQ
+            question_settings = new_question.mcq_settings
+            question_settings.num_points = question.mcq_settings.num_points
+            question_settings.difficulty_level = question.mcq_settings.difficulty_level
+            question_settings.mcq_max_num_attempts = question.mcq_settings.mcq_max_num_attempts
+            question_settings.mcq_deduct_per_attempt = question.mcq_settings.mcq_deduct_per_attempt
+        else:
+            question_settings = new_question.struct_settings
+            question_settings.units_num_attempts = question.struct_settings.units_num_attempts
+            question_settings.max_num_attempts = question.struct_settings.max_num_attempts
+            question_settings.percentage_pts_units = question.struct_settings.percentage_pts_units
+            question_settings.deduct_per_attempt = question.struct_settings.deduct_per_attempt
+            question_settings.margin_error = question.struct_settings.margin_error
+            question_settings.num_points = question.struct_settings.num_points
+            question_settings.difficulty_level = question.struct_settings.difficulty_level
+        question_settings.save()
 
-        return JsonResponse({'message': 'Export Successful', 'success': True}, status=200)
-    except ObjectDoesNotExist:
-        return JsonResponse({'message': 'Export Failed: Object does not exist','success':False}, status=400)
-    except MultipleObjectsReturned:
-        return JsonResponse({'message': 'Export Failed: Multiple objects returned', 'success': False}, status=400)
-    except Exception as e:
-        return JsonResponse({'message': f'Export Failed: {str(e)}', 'success': False}, status=500)
+    return JsonResponse({'message': 'Export Successful', 'success': True}, status=200)
+    
+    # except ObjectDoesNotExist:
+    #    return JsonResponse({'message': 'Export Failed: Object does not exist','success':False}, status=400)
+    # except MultipleObjectsReturned:
+    #    return JsonResponse({'message': 'Export Failed: Multiple objects returned', 'success': False}, status=400)
+    # except Exception as e:
+    #    return JsonResponse({'message': f'Export Failed: {str(e)}', 'success': False}, status=500)
 
     
 def change_due_date(assignment, new_date):
