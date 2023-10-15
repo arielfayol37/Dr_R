@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.querySelector('#question-form');
     const allQuestionBlocks = form.querySelector("#all-question-blocks");
     let currentAction = form.getAttribute('action');
-    const varSymbolsArray = ['ò', 'ë', 'à', 'ê', 'ä', 'ï', 'ù', 'ô', 'ü', 'î', 'â', 'ö', 'ÿ', 'è', 'é', 'ç', 'û', 'у́', 'я'];
+    const varSymbolsArray = ['ò', 'ë', 'à', 'ê', 'ä', 'ï', 'ù', 'ô', 'ü', 'î', 'â', 'ö', 'ÿ', 'è', 'é', 'ç', 'û', 'β', 'я', 'α'];
     const screen = document.querySelector('#screen'); 
     const calculatorDiv = document.querySelector('.calculator');
     calculatorDiv.style.display = 'none';
@@ -153,22 +153,29 @@ function checkTopicAndSubtopic() {
     // is called if and only if the user selected float but what he entered is not float.
     // hence, it returns false if a variable expression is not detected but returns true
     // if one is detected and all the symbols within are defined. 
+
+
+    // IMPORTANT: though the following may look similar to what has been done elsewhere
+    // so do not just copy and paste.
     const trigFunctions = {
         'asin': 'ò', 'acos': 'ë', 'atan': 'à', 'arcsin': 'ê', 'arccos': 'ä',
         'arctan': 'ï', 'sinh': 'ù', 'cosh': 'ô', 'tanh': 'ü', 'sin': 'î', 'cos': 'â', 
         'tan': 'ö', 'log': 'ÿ', 'ln': 'è',
-        'cosec': 'é', 'sec': 'ç', 'cot': 'û', 'sqrt':'у́', 'pi': 'я',
+        'cosec': 'é', 'sec': 'ç', 'cot': 'û', 'sqrt':'β', 'pi': 'я', '√':'α'
     };
-    
-    text = encode(text, trigFunctions);
+    // console.log(`text to be validated before encoding: ${text}`)
+    text = encode(processString(text), trigFunctions);
+    // console.log(`text to be validated after encoding: ${text}`)
     if (isFloat) {
 
         const match = text.match(/@\{(.+?)\}@/);
         if (text.startsWith("@{") && text.endsWith("}@") && match && match[1].length >= 1) {
             const contentWithinBraces = match[1];
-            //console.log(contentWithinBraces);
+            // console.log(`extracted expression within the braces: ${contentWithinBraces}`);
            
             const contentArray = extractSymbols(contentWithinBraces);
+
+            // console.log(`extracted symbols from expression: ${contentArray}`)
             if (contentArray.length==0) {
                 alert('There is no variable in the entered expression.');
                 return false;
@@ -189,14 +196,17 @@ function checkTopicAndSubtopic() {
         if (matches) {
             for (const m of matches) {
                 const contentWithinBraces = m.slice(2, -2); // Extract content without using another regex
-                //console.log(contentWithinBraces);
+                // console.log(`extracted expression within the braces: ${contentWithinBraces}`);
                 const contentArray = extractSymbols(contentWithinBraces);
-                if (!contentArray) {
+                // console.log(`extracted symbols from expression: ${contentArray}`)
+                if (contentArray.length == 0) {
+                    alert('There is no variable in the entered expression.');
                     return false;
                 }
                 for (const item of contentArray) {
                     const trimmedItem = item.trim();
                     if (isNaN(trimmedItem) && !array.includes(trimmedItem)) {
+                        alert(`${trimmedItem} is not defined`);
                         return false;
                     }
                 }
@@ -217,7 +227,7 @@ function checkTopicAndSubtopic() {
     } catch {
         console.log(expr)
         alert('Algebraic expression(s) in the variable expression(s) @{..}@ invalid');
-        return false;
+        return [];
     }
     var symbols = [];
     var char;
@@ -245,6 +255,7 @@ function checkTopicAndSubtopic() {
     }
 }
     symbols = symbols.filter(item => !/^e[+-]?\d+$/.test(item));
+    // console.log(`Symbols from extract symbols: ${symbols}`)
     return symbols
   }
 
@@ -1081,8 +1092,8 @@ hintSectionDiv.addEventListener('click', (event)=>{
 
     }else if(event.target.classList.contains('delete-hint-btn')){
         inputedHints.removeChild(event.target.closest('.hint-div'));
-        const holder = hintSectionDiv.dataset.counter
-        hintSectionDiv.dataset.counter = `${parseInt(holder) - 1}`;
+        //const holder = hintSectionDiv.dataset.counter
+        //hintSectionDiv.dataset.counter = `${parseInt(holder) - 1}`;
     }else if(event.target.classList.contains('add-inputed-hint-btn')){
         const hintInputField = event.target.closest('.add-hint-section').querySelector('.add-hint-input-field');
         if(hintInputField.value.length < 1){
@@ -1164,6 +1175,7 @@ mainQuestionImagePreview.addEventListener('click', (event)=>{
 
 
 function create_img_div(img_input_field, img_label){
+    const qnum = questionBlock.querySelector('.question-number-value').value;
     var imgDiv = document.createElement('div');
     var imgLabel = document.createElement('p');
     imgLabel.innerHTML = img_label;
@@ -1171,7 +1183,7 @@ function create_img_div(img_input_field, img_label){
     imgDiv.innerHTML = `
     <br/>
     <div class="formatted-answer-option"></div>
-    <input value="${img_label}" type="hidden" name="${num_questions - 1}_question_image_label_${mainQuestionImagePreview.dataset.counter}"/>
+    <input value="${img_label}" type="hidden" name="${qnum}_question_image_label_${mainQuestionImagePreview.dataset.counter}"/>
     <div class="add-delete-btns">
         <button  type="button" class="btn btn-danger img-delete exempt">delete</button>
     </div>
@@ -1180,7 +1192,7 @@ function create_img_div(img_input_field, img_label){
     formattedImgDiv.appendChild(imgLabel);
     formattedImgDiv.appendChild(uploadedQuestionPreview.cloneNode(true));
     const image_input_field_clone = img_input_field.cloneNode(true);
-    image_input_field_clone.name = `${num_questions - 1}_question_image_file_${mainQuestionImagePreview.dataset.counter}`;
+    image_input_field_clone.name = `${qnum}_question_image_file_${mainQuestionImagePreview.dataset.counter}`;
     image_input_field_clone.style.display = 'none';
     formattedImgDiv.appendChild(image_input_field_clone);
     uploadedQuestionPreview.innerHTML = '';
@@ -1191,13 +1203,14 @@ function create_img_div(img_input_field, img_label){
 
 
 function create_hint_div(hint_input_field){
+    const qnum = questionBlock.querySelector('.question-number-value').value;
     var hintDiv = document.createElement('div');
     const hintSection = hint_input_field.closest('.hints-section');
     hintDiv.className = 'hint-div';
     hintDiv.innerHTML = `
     <br/>
     <div class="formatted-answer-option">${hint_input_field.value}</div>
-    <input type="hidden" value="${hint_input_field.value}" name="${num_questions - 1}_hint_${hintSection.dataset.counter}"/>
+    <input type="hidden" value="${hint_input_field.value}" name="${qnum}_hint_${hintSection.dataset.counter}"/>
     <div class="add-delete-btns">
         <button type="button" class="delete-hint-btn btn btn-danger">delete</button>
     </div>
@@ -1211,6 +1224,7 @@ function create_hint_div(hint_input_field){
 
 
 function create_inputed_mcq_div(input_field, answer_type) {
+    const qnum = questionBlock.querySelector('.question-number-value').value;
     var answer_value = input_field.value
     var inputedMcqDiv = document.createElement('div'); // to be appended to .inputed-mcq-answers.
     inputedMcqDiv.className = 'inputed-mcq-answer';
@@ -1312,8 +1326,8 @@ function create_inputed_mcq_div(input_field, answer_type) {
                 mcqAnswerDiv.innerHTML = `
                 <br/>
                 <div class="formatted-answer-option unexpand"></div>
-                <input value="${answer_value}" type="hidden" name="${num_questions - 1}_answer_value_${inputedMcqAnswersDiv.dataset.counter}"/>
-                <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="${num_questions - 1}_answer_info_${inputedMcqAnswersDiv.dataset.counter}"/>
+                <input value="${answer_value}" type="hidden" name="${qnum}_answer_value_${inputedMcqAnswersDiv.dataset.counter}"/>
+                <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="${qnum}_answer_info_${inputedMcqAnswersDiv.dataset.counter}"/>
                 <div class="add-delete-btns">
                     <button type="button" class="btn btn-warning mcq-status mcq-false exempt">False</button>
                     <button  type="button" class="btn btn-danger mcq-delete exempt">delete</button>
@@ -1323,8 +1337,8 @@ function create_inputed_mcq_div(input_field, answer_type) {
                 mcqAnswerDiv.innerHTML = `
                 <br/>
                 <div class="formatted-answer-option"></div>
-                <input value="${display_value}" type="hidden" name="${num_questions - 1}_image_label_${inputedMcqAnswersDiv.dataset.counter}"/>
-                <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="${num_questions - 1}_answer_info_${inputedMcqAnswersDiv.dataset.counter}"/>
+                <input value="${display_value}" type="hidden" name="${qnum}_image_label_${inputedMcqAnswersDiv.dataset.counter}"/>
+                <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="${qnum}_answer_info_${inputedMcqAnswersDiv.dataset.counter}"/>
                 <div class="add-delete-btns">
                     <button type="button" class="btn btn-warning mcq-status mcq-false exempt">False</button>
                     <button  type="button" class="btn btn-danger mcq-delete exempt">delete</button>
@@ -1343,7 +1357,7 @@ function create_inputed_mcq_div(input_field, answer_type) {
                     throw 'Image expected to be selected but wasn\'t'
                 }
                 const image_input_field_clone = imageUploadInput.cloneNode(true);
-                image_input_field_clone.name = `${num_questions}_answer_value_${inputedMcqAnswersDiv.counter}`;
+                image_input_field_clone.name = `${qnum}_answer_value_${inputedMcqAnswersDiv.counter}`;
                 image_input_field_clone.style.display = 'none';
                 formattedAnswerDiv.appendChild(image_input_field_clone);
                 imageUploadInput.value = '';

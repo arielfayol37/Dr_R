@@ -1,10 +1,8 @@
 
 document.addEventListener('DOMContentLoaded',()=>{
 const submitBtns = document.querySelectorAll('.submit-btn-register');
-var mode;
 const forgotPLinks = document.querySelectorAll('.forgot-password-link');
 if(forgotPLinks != null){
-    mode = 'LOGIN'
     forgotPLinks.forEach((fp)=>{
         const mformDiv = fp.closest('.main-form');
         fp.addEventListener('click', (event)=>{
@@ -22,8 +20,6 @@ if(forgotPLinks != null){
             fp.style.display = 'block';
         })
     })
-}else {
-    mode = 'REGISTRATION';
 }
 
 
@@ -116,12 +112,13 @@ submitBtns.forEach((submitBtn)=>{
           })
           .then(response => response.json())
           .then(result => {
-              alert(result.message);
+              const working_form = form.querySelector('form');
+              console.log(`${working_form.querySelector('input[name="username"]').value}`);
               if(result.success){
-                if(mode != 'LOGIN'){
-                    form.querySelector('form').submit();
+                if(working_form.classList.contains('register')){
+                    working_form.submit();
+                    return;
                 }else{
-                    const working_form = form.querySelector('form')
                     fetch(working_form.action, {
                         method: 'POST',
                         headers: { 'X-CSRFToken': getCookie('csrftoken') },
@@ -146,6 +143,8 @@ submitBtns.forEach((submitBtn)=>{
                         });
                 }
                
+              }else {
+                alert(result.message);
               }
           })
     }

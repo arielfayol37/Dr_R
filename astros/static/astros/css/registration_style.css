@@ -1,3 +1,23 @@
+/* Define the keyframe animation */
+@keyframes borderHighlight {
+  0% {
+    border-color: #333;  /* starting color */
+  }
+  50% {
+    border-color: rgba(249, 105, 0, 1);  /* highlight color */
+  }
+  100% {
+    border-color: #333;  /* ending color (same as starting color) */
+  }
+}
+
+.input-code {
+  /* Initial border setup */
+  border: 2px solid #333;
+  /* Apply the animation */
+  animation: borderHighlight 1s infinite; /* The animation will run for 1 second and repeat infinitely */
+}
+
 body.body {
     background-color: black !important; 
     color:white;
