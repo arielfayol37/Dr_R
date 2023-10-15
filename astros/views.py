@@ -145,7 +145,7 @@ def generate_auth_code(request):
              fail_silently=False,           # Raises an error if there's a problem
         )
             return JsonResponse({'success':True,
-                         'message':'An authentification code was sent to email. Please enter the code in the field that just appeared at the bottom.'})
+                         'message':'An authentification code was sent to email. Please enter the code in the field that will appear at the bottom.'})
         except:
             return JsonResponse({'success':False,
                          'message':'Something went wrong during the mailing process'})
