@@ -10,7 +10,7 @@ class ModelTests(TestCase):
                                                   email='prof@valpo.edu',\
                                                      first_name='Jim',
                                                       last_name='Carter', department='Computer Science')
-        self.subject = Subject.objects.get(name='PHYSICS')
+        self.subject = Subject.objects.create(name='PHYSICS')
         self.topic = Topic.objects.create(name='Topic 1', subject=self.subject)
         self.course = Course.objects.create(name='Course 1', subject='COMPUTER_SCIENCE', number_of_students=50)
         self.course.professors.add(self.professor)
