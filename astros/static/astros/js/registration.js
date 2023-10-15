@@ -1,6 +1,31 @@
 
 document.addEventListener('DOMContentLoaded',()=>{
 const submitBtns = document.querySelectorAll('.submit-btn-register');
+var mode;
+const forgotPLinks = document.querySelectorAll('.forgot-password-link');
+if(forgotPLinks != null){
+    mode = 'LOGIN'
+    forgotPLinks.forEach((fp)=>{
+        const mformDiv = fp.closest('.main-form');
+        fp.addEventListener('click', (event)=>{
+            event.preventDefault();
+            console.log('received click');
+            // Hide normal login and display password reset div
+            mformDiv.querySelector('.original-form').style.display = 'none';
+            mformDiv.querySelector('.cpwd').style.display = 'block';
+            fp.style.display = 'none';
+        })
+        mformDiv.querySelector('.cancel-btn').addEventListener('click', (event)=>{
+            event.preventDefault();
+            mformDiv.querySelector('.original-form').style.display = 'block';
+            mformDiv.querySelector('.cpwd').style.display = 'none';
+            fp.style.display = 'block';
+        })
+    })
+}else {
+    mode = 'REGISTRATION';
+}
+
 
 // Blurring out depending on the selected side
 
@@ -44,7 +69,6 @@ submitBtns.forEach((submitBtn)=>{
     const passwordField = form.querySelector('[name="password"]');
     const confirmPasswordField = form.querySelector('[name="confirmation"]');
     const authenticationArea = form.querySelector('.authentication-area');
-        console.log(emailField.value)
     // Clear previous error messages
     clearErrorMessages(form);
 
@@ -94,7 +118,34 @@ submitBtns.forEach((submitBtn)=>{
           .then(result => {
               alert(result.message);
               if(result.success){
-                form.querySelector('form').submit();
+                if(mode != 'LOGIN'){
+                    form.querySelector('form').submit();
+                }else{
+                    const working_form = form.querySelector('form')
+                    fetch(working_form.action, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                        body: JSON.stringify({
+                            new_password: working_form.querySelector('input[name="password"]').value,
+                            confirm_new_password: working_form.querySelector('input[name="confirmation"]').value,
+                            email:working_form.querySelector('input[name="email"]').value
+                        })
+                    })
+                        .then(response => response.json())
+                        .then(result => {
+                            alert(result.message);
+                            if (result.success) {
+                                working_form.closest('.registration-form').style.display = 'none';
+                                document.querySelectorAll('.original-form').forEach((form)=>{
+                                    form.style.display = 'block';
+                                })
+                                forgotPLinks.forEach((fp)=>{
+                                    fp.style.display = 'block';
+                                })
+                            }
+                        });
+                }
+               
               }
           })
     }

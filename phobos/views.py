@@ -128,7 +128,7 @@ def forgot_password(request):
         except:
             pass
     return JsonResponse({'success':False,
-                         'message':'Something '})
+                         'message':'Something went wrong'})
 
 
 def register(request):

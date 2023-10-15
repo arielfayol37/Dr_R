@@ -526,31 +526,39 @@ def feedback_floats(base_float, inputed_float, margin_error):
     Margin error is a percentage.
     """
     assert 0 <= margin_error <= 1
-    quotient = inputed_float/base_float if base_float != 0 else 0
-    inverse = False
-    if abs(quotient) < 1 and quotient != 0:
-        inverse = True
-        quotient = round(quotient ** -1)
-    int_quotient = round(quotient)
-    if abs(int_quotient) < 3 and int_quotient != 0:
-        if (int_quotient ** -1)  * abs(quotient - int_quotient) <= (margin_error * base_float):
-            if not inverse:
-                return f"Your answer is {int_quotient}x the correct answer"
-            else:
-                return f"Your answer is {int_quotient ** -1}x the correct answer"
-    log_input = math.log10(abs(inputed_float))
-    a = math.log10(abs(base_float) * (1 - margin_error)) - log_input
-    b = math.log10(abs(base_float) * (1 + margin_error)) - log_input
-    neg = "-" if base_float * inputed_float < 0 else ""
-    if a == b and type(b) == int:
-        return f"Your answer is {neg}10^{-(b)} x the correct answer"
-    if not a < b:
-        a, b = b, a
-    f_a = math.floor(a)
-    f_b = math.floor(b)
-    diff = abs(f_b - f_a)
-    if type(diff) == int and diff != 0:
-        return f"Your answer is {neg}10^{-(diff + f_a)} x the correct answer"
+    abs_quotient = abs(inputed_float)/abs(base_float) if base_float != 0 and inputed_float!= 0 else 0
+    if abs_quotient == 0:
+        return ""
+    def check_int_interval(a, b):
+        # Checking whether there is an integer between a and b
+        if not a < b:
+            a, b = b, a
+        f_a = math.floor(a)
+        f_b = math.floor(b)
+        diff = abs(f_b - f_a)
+        if a == b and (f_a - a) == 0:
+            return int(a)
+        if type(diff) == int and diff != 0:
+            return f_a + diff
+        else:
+            return None
+    sign = "-" if base_float * inputed_float < 0 else ""    
+    a_0 = abs_quotient * (1 - margin_error)
+    b_0 = abs_quotient * (1 + margin_error)
+    n_0 = check_int_interval(a_0, b_0)
+    if n_0 and n_0 < 3:
+        return f"Your answer is {sign}{n_0}x the correct answer"
+    a_1 = (abs_quotient)**-1 * (1 - margin_error)
+    b_1 = (abs_quotient)**-1 * (1 + margin_error)
+    n_1 = check_int_interval(a_1, b_1)
+    if n_1 and n_1 < 3:
+        return f"Your answer is {sign}{n_1 ** -1}x the correct answer"
+    # Checking for 10^n submission mistake
+    a = math.log10(abs_quotient * (1 - margin_error))
+    b = math.log10(abs_quotient * (1 + margin_error))
+    n = check_int_interval(a, b)
+    if n:
+        return f"Your answer is {sign}10^{n} x the correct answer"
     return ""
     
 def compare_units(units_1, units_2):
@@ -725,7 +733,7 @@ def save_note(request, question_id, course_id=None, assignment_id=None, student_
                 kept_images_pk_list = []
             kept_images_pk_list = [int(pk) for pk in kept_images_pk_list]
             # Get a list of all current NoteImage primary keys.
-            note_images_pk_list = list(NoteImage.objects.all().values_list('pk', flat=True))
+            note_images_pk_list = list(NoteImage.objects.filter(note=note).values_list('pk', flat=True))
 
             # Compute the difference.
             difference = set(note_images_pk_list) - set(kept_images_pk_list)
@@ -783,21 +791,25 @@ def assignemt_gradebook_student(request,student_id, assignment_id):
     question_heading=['Question_number','score','num_attempts']
     question_details=[]
     for question in questions:
+        if question.answer_type.startswith('MCQ'):
+            nm_pts = question.mcq_settings.num_points
+        else:
+            nm_pts = question.struct_settings.num_points
         try:
             question_student = QuestionStudent.objects.get(student= student, question=question)
             question_modified_score, is_created= QuestionModifiedScore.objects.get_or_create(question_student=question_student)
 
             if question_modified_score.is_modified:
                 question_details.append({'Question_number':'Question ' + question.number,\
-                                    'score':f"{round(question_modified_score.score, 2)} / {question.num_points}", \
+                                    'score':f"{round(question_modified_score.score, 2)} / {nm_pts}", \
                                         'num_attempts': question_student.get_num_attempts()})
             else:
                         question_details.append({'Question_number':'Question ' + question.number,\
-                                    'score':f"{round(question_student.get_num_points(), 2)} / {question.num_points}", \
+                                    'score':f"{round(question_student.get_num_points(), 2)} / {nm_pts}", \
                                         'num_attempts': question_student.get_num_attempts()})
         except QuestionStudent.DoesNotExist:
             question_details.append({'Question_number':'Question ' + question.number,\
-                                     'score':f"0 / {question.num_points}",'num_attempts': "0"})    
+                                     'score':f"0 / {nm_pts}",'num_attempts': "0"})    
 
     context={
         'question_details':question_details,

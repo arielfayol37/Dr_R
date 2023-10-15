@@ -38,7 +38,10 @@ body.body {
   filter: blur(4px);
   pointer-events: none; /* Prevents clicking on the blurred elements */
 }
-
+.forgot-password-div {
+  display: flex;
+  flex-direction: row;
+}
 @font-face {
     font-family: 'Nebula Regular';
     src: url('../fonts/nebula-regular.otf') format('opentype');
