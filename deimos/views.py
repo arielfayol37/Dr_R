@@ -373,8 +373,8 @@ def login_view(request):
     if request.method == "POST":
 
         # Attempt to sign user in
-        email = request.POST["email"]
-        password = request.POST["password"]
+        email = request.POST["email"].strip()
+        password = request.POST["password"].strip()
         try:
             user = Student.objects.get(email=email)
         except Student.DoesNotExist:
@@ -426,11 +426,11 @@ def forgot_password(request):
 
 def register(request):
     if request.method == "POST":
-        username = request.POST["username"]
-        email = request.POST["email"]
-        password = request.POST["password"]
-        first_name = request.POST["first_name"]
-        last_name = request.POST["last_name"]
+        username = request.POST["username"].strip()
+        email = request.POST["email"].strip()
+        password = request.POST["password"].strip()
+        first_name = request.POST["first_name"].strip()
+        last_name = request.POST["last_name"].strip()
         # Attempt to create new student
         try:
             student = Student.objects.create_user(username, email, password,\

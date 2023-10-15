@@ -111,9 +111,9 @@ def forgot_password(request):
     if request.method == "POST":
         try:
             data = json.loads(request.body)
-            email = data["email"]
-            password= data['new_password']
-            confirmPwd= data['confirm_new_password']
+            email = data["email"].strip()
+            password= data['new_password'].strip()
+            confirmPwd= data['confirm_new_password'].strip()
 
             try:
                 user = Professor.objects.get(email=email)
@@ -133,12 +133,12 @@ def forgot_password(request):
 
 def register(request):
     if request.method == "POST":
-        username = request.POST["username"]
-        email = request.POST["email"]
-        password = request.POST["password"]
-        first_name = request.POST["first_name"]
-        last_name = request.POST["last_name"]
-        department = request.POST["department"]
+        username = request.POST["username"].strip()
+        email = request.POST["email"].strip()
+        password = request.POST["password"].strip()
+        first_name = request.POST["first_name"].strip()
+        last_name = request.POST["last_name"].strip()
+        department = request.POST["department"].strip()
 
         # Attempt to create new professor
         try:

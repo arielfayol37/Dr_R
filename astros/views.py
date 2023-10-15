@@ -72,13 +72,11 @@ def course_enroll(request, course_id, code):
         if code.expiring_date >= date.today():
             # If not enrolled, create a new Enrollment instance
             enrollment = Enrollment.objects.create(student=student, course=course)
-            messages.info(request, message="You were successfully enrolled")
-            # Now assign all the courses assignments to the student. NOTE: CHANGING THIS TO ALLOW PROFS ASSIGN STUDENTS.
-
-            # for assignment in course.assignments.all():
-            #     assign = AssignmentStudent.objects.create(assignment=assignment, student=student)
-            #     for question in assignment.questions.all():
-            #         quest = QuestionStudent.objects.create(question=question, student=student)
+            enrollment.save()
+            for assignment in course.assignments.all():
+                 if assignment.is_assigned == True:
+                    assign = AssignmentStudent.objects.create(assignment=assignment, student=student)
+                    assign.save()
 
             return HttpResponse(json.dumps({'state': True, 'response':'valid code',\
                                             'course_management_url':reverse('deimos:course_management', \
@@ -98,7 +96,7 @@ def course_info(request, course_id):
         return HttpResponseForbidden('COURSE DOES NOT EXIST')
     
     try:
-        student = Student.objects.get(pk=request.user.id)
+        student = Student.objects.get(pk=request.user.pk)
     except Student.DoesNotExist:
         return HttpResponseForbidden('STUDENT PROFILE DOES NOT EXIST')
 
@@ -160,7 +158,7 @@ def validate_auth_code(request):
         data = json.loads(request.body)
         email = data["email"]
         str_email = str(email)
-        code= int(data["code"])
+        code= int(data["code"].strip())
         if str_email in code_base:
             valid_codes = code_base[str_email]
         else:
