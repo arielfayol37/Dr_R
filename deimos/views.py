@@ -433,10 +433,12 @@ def register(request):
         last_name = request.POST["last_name"].strip()
         try:
             checking_student = Student.objects.get(email=email)
-        except Student.DoesNotExist:
-            return render(request, "astros/register.html", {
+            if checking_student:
+                return render(request, "astros/register.html", {
                 "message": "Student profile with this email already exists."
             })
+        except Student.DoesNotExist:
+            pass
         # Attempt to create new student
         try:
             student = Student.objects.create_user(username, email, password,\

@@ -113,7 +113,6 @@ submitBtns.forEach((submitBtn)=>{
           .then(response => response.json())
           .then(result => {
               const working_form = form.querySelector('form');
-              console.log(`${working_form.querySelector('input[name="username"]').value}`);
               if(result.success){
                 if(working_form.classList.contains('register')){
                     working_form.submit();
