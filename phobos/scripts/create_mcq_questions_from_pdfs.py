@@ -60,13 +60,11 @@ def run():
             text = ""
             for page_num in range(len(reader.pages)):
                 text += reader.pages[page_num].extract_text()
-        print(text)
-        pattern = r"(\d+)\. ANS: [A-E] \nTOP: \d+[\+]? (\w+)"
+        pattern = r"(\d+)\. ANS: [A-E] TOP: \d+[\+]? ([\w/*]+)"
         matches = re.findall(pattern, text)
         topics = {question: topic for question, topic in matches}
         return topics
     course, course_created = Course.objects.get_or_create(name='Question Bank')
-    assignment, assignment_created = Assignment.objects.get_or_create(name='Question Bank 101', course=course)
     # In case you want to delete the questions in the question bank,
     # uncomment the following:
     # if not created:
@@ -74,17 +72,23 @@ def run():
     for test_number in [1,2,3,4,5]:
         rpdf_path = f"PHYSICS QUESTION BANK/p101tb{test_number}q.pdf"
         pdf_path = os.path.abspath(rpdf_path)
-
         text = extract_text_from_pdf(pdf_path)
         parsed_questions, question_numbers  = parse_questions(text)
 
         rpdf_path = f"PHYSICS QUESTION BANK/p101tb{test_number}a.pdf"
         pdf_path = os.path.abspath(rpdf_path)
         answers_dict = extract_answers_from_pdf(pdf_path)
+        topics_dict = extract_topics_from_pdf(pdf_path)
+        question_assignments = {}
+        # Creating assignments from topics
+        for q_num, topic in topics_dict.items():
+            assignment, assign_created = Assignment.objects.get_or_create(name=topic, course=course)
+            if assign_created:
+                assignment.save() 
+            question_assignments[q_num] = assignment
         # Adding the answer character to the parsed_questions dictionary
         for index, question_number in enumerate(question_numbers):
             parsed_questions[index]['answer_'+ str(question_number)] = answers_dict[str(question_number)]
-
         # Creating question objects
         for parsed_question in parsed_questions:
             for key, value in parsed_question.items():
@@ -95,7 +99,7 @@ def run():
                         text = value,
                         #topic = topics_dict[q_number],  # Assigning the topic extracted from the answer key PDF
                         #sub_topic = sub_topic,
-                        assignment = assignment
+                        assignment = question_assignments[str(q_number)]
                     )
                     new_question.answer_type = QuestionChoices.MCQ_TEXT
                     new_question.save(save_settings=True)
