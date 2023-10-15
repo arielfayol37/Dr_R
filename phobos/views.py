@@ -888,7 +888,7 @@ def copy_answers(old_question, new_question):
 
 @transaction.atomic
 @login_required(login_url='astros:login')
-def export_question_to(request,question_id,exp_assignment_id,course_id=None,assignment_id=None):
+def export_question_to(request,question_id, exp_assignment_id, course_id=None, assignment_id=None):
     try:
         assignment = get_object_or_404(Assignment, pk=exp_assignment_id)
         question_0 = Question.objects.get(pk=question_id)
@@ -905,13 +905,11 @@ def export_question_to(request,question_id,exp_assignment_id,course_id=None,assi
                 'topic': question.topic,
                 'sub_topic': question.sub_topic,
                 'assignment': assignment,
-                'answer_type': question.answer_type,
-                'deduct_per_attempt': question.deduct_per_attempt,
-                'max_num_attempts': question.max_num_attempts,
+                'answer_type': question.answer_type
             }
 
             new_question = Question.objects.create(**new_question_data)
-            if index  ==0:
+            if index == 0:
                 p_question = new_question
             else:
                 new_question.parent_question = p_question
@@ -919,6 +917,23 @@ def export_question_to(request,question_id,exp_assignment_id,course_id=None,assi
             copy_question_images(question, new_question)
             copy_variables(question, new_question)
             copy_answers(question, new_question)
+            # Saving the settings.
+            if new_question.answer_type.startswith('MCQ'): # if MCQ
+                question_settings = new_question.mcq_settings
+                question_settings.num_points = question.mcq_settings.num_points
+                question_settings.difficulty_level = question.mcq_settings.difficulty
+                question_settings.mcq_max_num_attempts = question.mcq_settings.mcq_max_num_attempts
+                question_settings.mcq_deduct_per_attempt = question.mcq_settings.mcq_deduct_per_attempt
+            else:
+                question_settings = new_question.struct_settings
+                question_settings.units_num_attempts = question.struct_settings.units_num_attempts
+                question_settings.max_num_attempts = question.struct_settings.max_num_attempts
+                question_settings.percentage_pts_units = question.struct_settings.percentage_pts_units
+                question_settings.deduct_per_attempt = question.struct_settings.deduct_per_attempt
+                question_settings.margin_error = question.struct_settings.margin_error
+                question_settings.num_points = question.struct_settings.num_points
+                question_settings.difficulty_level = question.struct_settings.difficulty
+            question_settings.save()
 
         return JsonResponse({'message': 'Export Successful', 'success': True}, status=200)
     except ObjectDoesNotExist:
