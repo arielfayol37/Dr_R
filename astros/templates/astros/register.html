@@ -13,7 +13,7 @@
         {% if message_phobos %}
             <div>{{ message_phobos }}</div>
         {% endif %}
-        <form action="{% url 'phobos:register' %}" method="post" >
+        <form action="{% url 'phobos:register' %}" method="post" class="phobos">
             {% csrf_token %}
             <div class="form-group">
                 <input class="form-control" autofocus type="text" name="first_name" placeholder="First name">
@@ -36,7 +36,10 @@
             <div class="form-group">
                 <input class="form-control" type="password" name="confirmation" placeholder="Confirm Password">
             </div>
-            <input class="btn btn-primary r" type="submit" value="Register">
+            <div class="form-group authentication-area closed" style="display: none">
+                <input class="form-control input-code" type="password" name="validation_code" placeholder="Enter code">
+            </div>
+            <button class="btn btn-primary r submit-btn-register" type="button"> Register </button>
         </form>
     </div>
 
@@ -45,7 +48,7 @@
         {% if message_deimos %}
             <div>{{ message_deimos }}</div>
         {% endif %}
-        <form action="{% url 'deimos:register' %}" method="post" >
+        <form action="{% url 'deimos:register' %}" method="post" class="deimos" >
             {% csrf_token %}
             <div class="form-group">
                 <input class="form-control" autofocus type="text" name="first_name" placeholder="First name">
@@ -65,9 +68,15 @@
             <div class="form-group">
                 <input class="form-control" type="password" name="confirmation" placeholder="Confirm Password">
             </div>
-            <input class="btn btn-primary r" type="submit" value="Register">
+            <div class="form-group authentication-area closed" style="display: none">
+                <input class="form-control input-code" type="password" name="validation_code" placeholder="Enter code">
+            </div>
+            <button class="btn btn-primary r submit-btn-register" type="button"> Register </button>
         </form>
     </div>
 </div>
 
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'astros/js/registration.js' %}"></script>
 {% endblock %}

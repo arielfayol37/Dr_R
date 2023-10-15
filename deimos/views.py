@@ -16,7 +16,7 @@ from django.shortcuts import get_object_or_404
 from django.middleware import csrf
 from django.utils.timesince import timesince
 from phobos.models import QuestionChoices
-import random
+import random, string
 from sympy import symbols, simplify
 import numpy as np
 import torch
@@ -45,14 +45,33 @@ def course_management(request, course_id):
     # Check if there is any Enrollment entry that matches the given student and course
     student = get_object_or_404(Student, pk = request.user.pk)
     is_enrolled = Enrollment.objects.filter(student=student, course=course).exists()
+    
+    # needed student's gradebook
+    course_score=0
+    assignment_student_grade=[]
+    assignment_student = AssignmentStudent.objects.filter(student=student)
+    for assignment in assignment_student:
+        assignment_student_grade.append({'id':assignment.id,'assignment_student':assignment,'grade':assignment.get_grade()})
+        course_score= course_score+ assignment.get_grade()
 
     if not is_enrolled:
         return HttpResponseForbidden('You are not enrolled in this course.')
     assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student, \
                                             is_assigned=True)
+    # this is needed to display notes
+    Notes = Note.objects.all()
+    notes=[]
+    for note in Notes:
+        if note.question_student.student == student:
+             notes.append({'Note':note,"note_md":markdown(note.content)})
+    
     context = {
+        "student":student,
         "assignments": assignments,
-        "course": course
+        "course": course,
+        "notes": notes,
+        "assignment_student_grade": assignment_student_grade,
+        "course_score": course_score
     }
     return render(request, "deimos/course_management.html", context)
 
@@ -102,9 +121,9 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
             note, note_created = Note.objects.get_or_create(question_student=question_student)
             note_md = markdown(note.content)
         if question.answer_type.startswith('MCQ'):
-            too_many_attempts = question_student.get_num_attempts() >= question.settings.mcq_max_num_attempts
+            too_many_attempts = question_student.get_num_attempts() >= question.mcq_settings.mcq_max_num_attempts
         else:
-            too_many_attempts = question_student.get_num_attempts() >= question.settings.max_num_attempts    
+            too_many_attempts = question_student.get_num_attempts() >= question.struct_settings.max_num_attempts    
         if created:
             question_student.create_instances()
         else:
@@ -234,9 +253,9 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
         # whenever the user opens a question for the first time, but just to be safe.
         question_student, created = QuestionStudent.objects.get_or_create(student=student, question=question)
         if data["questionType"].startswith('structural'):
-            too_many_attempts = question_student.get_num_attempts() >= question.settings.max_num_attempts
+            too_many_attempts = question_student.get_num_attempts() >= question.struct_settings.max_num_attempts
         else:
-            too_many_attempts = question_student.get_num_attempts() >= question.settings.mcq_max_num_attempts
+            too_many_attempts = question_student.get_num_attempts() >= question.mcq_settings.mcq_max_num_attempts
         if ( not (too_many_attempts or question_student.success)):
             if data["questionType"].startswith('structural'):
 
@@ -260,7 +279,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     answer = question.float_answer
                     try:
                         # answer.content must come first in the compare_floats()
-                        correct, feedback_data = compare_floats(answer.content, simplified_answer, question.settings.margin_error) 
+                        correct, feedback_data = compare_floats(answer.content, simplified_answer, question.struct_settings.margin_error) 
                     except ValueError:
                         correct = False
                     # Checking previous attempts
@@ -277,7 +296,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     try:
                         answer_temp = question_student.compute_structural_answer()
                         correct, feedback_data = compare_floats(answer_temp, simplified_answer,
-                                                    question.settings.margin_error)
+                                                    question.struct_settings.margin_error)
                     except ValueError:
                         correct = False
                     if not correct:
@@ -290,8 +309,8 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     attempt.content = simplified_answer
                     attempt.submitted_answer = submitted_answer
                 if correct:
-                    attempt.num_points = max(0, question.settings.num_points * \
-                                                 (1 - question.settings.deduct_per_attempt *
+                    attempt.num_points = max(0, question.struct_settings.num_points * \
+                                                 (1 - question.struct_settings.deduct_per_attempt *
                                                    max(0, question_student.get_num_attempts() - 1)))
                     question_student.success = True
                     attempt.success = True
@@ -332,8 +351,8 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     s1, s2 = set(simplified_answer), set(answers)
                     if s1 == s2:
                         correct = True
-                        attempt.num_points = max(0, question.settings.num_points * \
-                                                 (1 - question.settings.mcq_deduct_per_attempt *
+                        attempt.num_points = max(0, question.mcq_settings.num_points * \
+                                                 (1 - question.mcq_settings.mcq_deduct_per_attempt *
                                                    max(0, question_student.get_num_attempts() - 1)))
                         question_student.success = True
                         attempt.success = True
@@ -381,23 +400,37 @@ def logout_view(request):
     logout(request)
     return HttpResponseRedirect(reverse("astros:index"))
 
+def forgot_password(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            email = data["email"]
+            password= data['new_password']
+            confirmPwd= data['confirm_new_password']
+
+            try:
+                user = Student.objects.get(email=email)
+            except Student.DoesNotExist:
+               return JsonResponse({'success':False,
+                         'message':"Hacker don't hack in here. Email does not exist"})
+            if password == confirmPwd:
+                user.set_password(password)
+                user.save()
+                return JsonResponse({'success':True,
+                    'message':'Password Succesfully changed'})
+        except:
+            pass
+    return JsonResponse({'success':False,
+                         'message':'Something went wrong'})
+
 
 def register(request):
     if request.method == "POST":
         username = request.POST["username"]
         email = request.POST["email"]
-
-        # Ensure password matches confirmation
         password = request.POST["password"]
-        confirmation = request.POST["confirmation"]
         first_name = request.POST["first_name"]
         last_name = request.POST["last_name"]
-        
-        if password != confirmation:
-            return render(request, "astros/register.html", {
-                "message": "Passwords must match."
-            })
-
         # Attempt to create new student
         try:
             student = Student.objects.create_user(username, email, password,\
@@ -493,31 +526,39 @@ def feedback_floats(base_float, inputed_float, margin_error):
     Margin error is a percentage.
     """
     assert 0 <= margin_error <= 1
-    quotient = inputed_float/base_float if base_float != 0 else 0
-    inverse = False
-    if abs(quotient) < 1 and quotient != 0:
-        inverse = True
-        quotient = round(quotient ** -1)
-    int_quotient = round(quotient)
-    if abs(int_quotient) < 3 and int_quotient != 0:
-        if (int_quotient ** -1)  * abs(quotient - int_quotient) <= (margin_error * base_float):
-            if not inverse:
-                return f"Your answer is {int_quotient}x the correct answer"
-            else:
-                return f"Your answer is {int_quotient ** -1}x the correct answer"
-    log_input = math.log10(abs(inputed_float))
-    a = math.log10(abs(base_float) * (1 - margin_error)) - log_input
-    b = math.log10(abs(base_float) * (1 + margin_error)) - log_input
-    neg = "-" if base_float * inputed_float < 0 else ""
-    if a == b and type(b) == int:
-        return f"Your answer is {neg}10^{-(b)} x the correct answer"
-    if not a < b:
-        a, b = b, a
-    f_a = math.floor(a)
-    f_b = math.floor(b)
-    diff = abs(f_b - f_a)
-    if type(diff) == int and diff != 0:
-        return f"Your answer is {neg}10^{-(diff + f_a)} x the correct answer"
+    abs_quotient = abs(inputed_float)/abs(base_float) if base_float != 0 and inputed_float!= 0 else 0
+    if abs_quotient == 0:
+        return ""
+    def check_int_interval(a, b):
+        # Checking whether there is an integer between a and b
+        if not a < b:
+            a, b = b, a
+        f_a = math.floor(a)
+        f_b = math.floor(b)
+        diff = abs(f_b - f_a)
+        if a == b and (f_a - a) == 0:
+            return int(a)
+        if type(diff) == int and diff != 0:
+            return f_a + diff
+        else:
+            return None
+    sign = "-" if base_float * inputed_float < 0 else ""    
+    a_0 = abs_quotient * (1 - margin_error)
+    b_0 = abs_quotient * (1 + margin_error)
+    n_0 = check_int_interval(a_0, b_0)
+    if n_0 and n_0 < 3:
+        return f"Your answer is {sign}{n_0}x the correct answer"
+    a_1 = (abs_quotient)**-1 * (1 - margin_error)
+    b_1 = (abs_quotient)**-1 * (1 + margin_error)
+    n_1 = check_int_interval(a_1, b_1)
+    if n_1 and n_1 < 3:
+        return f"Your answer is {sign}{n_1 ** -1}x the correct answer"
+    # Checking for 10^n submission mistake
+    a = math.log10(abs_quotient * (1 - margin_error))
+    b = math.log10(abs_quotient * (1 + margin_error))
+    n = check_int_interval(a, b)
+    if n:
+        return f"Your answer is {sign}10^{n} x the correct answer"
     return ""
     
 def compare_units(units_1, units_2):
@@ -692,7 +733,7 @@ def save_note(request, question_id, course_id=None, assignment_id=None, student_
                 kept_images_pk_list = []
             kept_images_pk_list = [int(pk) for pk in kept_images_pk_list]
             # Get a list of all current NoteImage primary keys.
-            note_images_pk_list = list(NoteImage.objects.all().values_list('pk', flat=True))
+            note_images_pk_list = list(NoteImage.objects.filter(note=note).values_list('pk', flat=True))
 
             # Compute the difference.
             difference = set(note_images_pk_list) - set(kept_images_pk_list)
@@ -733,3 +774,50 @@ def generate_note_qr(request, question_id, course_id, assignment_id, student_id=
     response = HttpResponse(content_type="image/png")
     img.save(response, "PNG")
     return response
+
+@login_required(login_url='astros:login')
+def assignemt_gradebook_student(request,student_id, assignment_id):
+
+    assignment_student, created = AssignmentStudent.objects.get_or_create(pk=assignment_id)
+    course= assignment_student.assignment.course.id
+
+    questions= Question.objects.filter(assignment= assignment_student.assignment ) 
+    student= Student.objects.get(pk=student_id)
+    assignments= AssignmentStudent.objects.filter(student=student)
+
+    assignment_details={'name':assignment_student.assignment.name,'assignment_id':assignment_id,\
+                        'Due_date':str(assignment_student.due_date).split(' ')[0],'grade':assignment_student.get_grade() }
+    
+    question_heading=['Question_number','score','num_attempts']
+    question_details=[]
+    for question in questions:
+        if question.answer_type.startswith('MCQ'):
+            nm_pts = question.mcq_settings.num_points
+        else:
+            nm_pts = question.struct_settings.num_points
+        try:
+            question_student = QuestionStudent.objects.get(student= student, question=question)
+            question_modified_score, is_created= QuestionModifiedScore.objects.get_or_create(question_student=question_student)
+
+            if question_modified_score.is_modified:
+                question_details.append({'Question_number':'Question ' + question.number,\
+                                    'score':f"{round(question_modified_score.score, 2)} / {nm_pts}", \
+                                        'num_attempts': question_student.get_num_attempts()})
+            else:
+                        question_details.append({'Question_number':'Question ' + question.number,\
+                                    'score':f"{round(question_student.get_num_points(), 2)} / {nm_pts}", \
+                                        'num_attempts': question_student.get_num_attempts()})
+        except QuestionStudent.DoesNotExist:
+            question_details.append({'Question_number':'Question ' + question.number,\
+                                     'score':f"0 / {nm_pts}",'num_attempts': "0"})    
+
+    context={
+        'question_details':question_details,
+        'question_heading':question_heading,
+        'assignment': assignment_details,
+        'assignments':assignments,
+        'student': student,
+        'course_id':course
+        }
+                  
+    return render(request,'deimos/assignment_gradebook.html',context)

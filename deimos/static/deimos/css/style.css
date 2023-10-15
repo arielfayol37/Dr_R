@@ -610,7 +610,6 @@ more than assignment display */
   justify-content: center;
   align-items: center;
   width: 50%;
-  border-bottom: 1px solid gray;
 }
 .settings-modification .settings-label {
   width:70% !important;

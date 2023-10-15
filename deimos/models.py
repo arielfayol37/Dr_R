@@ -81,7 +81,10 @@ class AssignmentStudent(models.Model):
         num_points = 0
         total = 0
         for question in self.assignment.questions.all():
-            total += question.settings.num_points
+            if question.answer_type.startswith('MCQ'):
+                total += question.mcq_settings.num_points
+            else:
+                total += question.struct_settings.num_points
             try:
                 question_student = QuestionStudent.objects.get(question=question, student=self.student)
                 # Taking modified score in to account to compute grade

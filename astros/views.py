@@ -10,6 +10,11 @@ from django.contrib import messages
 from deimos.models import QuestionStudent, AssignmentStudent
 from django.urls import reverse
 from markdown2 import markdown
+from django.core.mail import send_mail
+from django.http import JsonResponse
+import random
+
+code_base = {}
 
 # Create your views here.
 def index(request):
@@ -120,3 +125,54 @@ def course_info(request, course_id):
     }
 
     return render(request, 'astros/course_info.html', context)
+
+def generate_auth_code(request):
+    min=3000
+    max=9999
+
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            email = data["email"]
+            str_email = str(email)
+            code = random.randint(min,max)
+            if str_email not in code_base:
+                code_base[str_email] = []
+            code_base[str_email].append(code)
+            send_mail(
+            'Authentify',                # subject
+           f'Enter the following authentification code on DR-R: {code}',    # message
+            'no.reply.dr.r.valpo@gmail.com',      # from email
+             [email],      # recipient list
+             fail_silently=False,           # Raises an error if there's a problem
+        )
+            return JsonResponse({'success':True,
+                         'message':'An authentification code was sent to email. Please enter the code in the field that just appeared at the bottom.'})
+        except:
+            return JsonResponse({'success':False,
+                         'message':'Something went wrong during the mailing process'})
+        
+    return JsonResponse({'success':False,
+                         'message':'Something went wrong'})
+        
+def validate_auth_code(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        email = data["email"]
+        str_email = str(email)
+        code= int(data["code"])
+        if str_email in code_base:
+            valid_codes = code_base[str_email]
+        else:
+            valid_codes = []
+        if code in valid_codes:
+            code_base[str_email] = [] # Clearing out the list for that email.
+            return JsonResponse({'success':True,
+            'message':'You have been registered successfully.'})
+        else:
+            return JsonResponse({'success':False,
+                         'message':'Wrong code. Try again.'})
+    return JsonResponse({'success':False,
+                         'message':'Something went wrong'})
+
+
