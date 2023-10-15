@@ -140,6 +140,12 @@ def register(request):
         last_name = request.POST["last_name"].strip()
         department = request.POST["department"].strip()
 
+        try:
+            checking_student = Professor.objects.get(email=email)
+        except Professor.DoesNotExist:
+            return render(request, "astros/register.html", {
+                "message": "Professor profile with this email already exists."
+            })
         # Attempt to create new professor
         try:
             professor = Professor.objects.create_user(username, email, password,\
