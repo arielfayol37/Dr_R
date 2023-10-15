@@ -33,7 +33,7 @@ class ModelTests(TestCase):
 
     def test_question_creation(self):
         """ Testing question was properly created """
-        question = Question.objects.create(number='Q1', text='Sample question', assignment=self.assignment)
+        question = Question(number='Q1', text='Sample question', assignment=self.assignment)
         self.assertEqual(question.number, 'Q1')
         self.assertEqual(question.text, 'Sample question')
         self.assertEqual(question.assignment, self.assignment)
@@ -63,7 +63,7 @@ class ViewTests(TestCase):
                                                       last_name='Carter', department='Computer Science',
                                                       password='testpassword')
 
-        self.subject = Subject.objects.get(name='PHYSICS')
+        self.subject = Subject.objects.create(name='PHYSICS')
         self.topic = Topic.objects.create(name='Topic 1', subject=self.subject)
         self.course = Course.objects.create(name='Course 1', subject='COMPUTER_SCIENCE')
         self.course_2 = Course.objects.create(name='Course 2', subject='PHYSICS')
@@ -72,7 +72,7 @@ class ViewTests(TestCase):
         self.course.topics.add(self.topic)
 
         self.assignment = Assignment.objects.create(name='Assignment 1', course=self.course)
-        self.question = Question.objects.create(number='Q1', text='Sample question', assignment=self.assignment)
+        self.question = Question(number='Q1', text='Sample question', assignment=self.assignment)
 
 
     def test_create_course_view(self):
