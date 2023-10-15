@@ -98,11 +98,14 @@ def run():
                         assignment = assignment
                     )
                     new_question.answer_type = QuestionChoices.MCQ_TEXT
-                    new_question.save()
+                    new_question.save(save_settings=True)
+                    new_question.mcq_settings.num_points = 5
+                    new_question.mcq_settings.save()
                     answer_char = parsed_question[f'answer_{q_number}']
                     for option_char, option_value in parsed_question[f'options_{q_number}'].items():
                         new_answer = MCQTextAnswer.objects.create(question=new_question,content=option_value)
                         if option_char == answer_char:
                             new_answer.is_answer = True
                         new_answer.save()
+                    
 
