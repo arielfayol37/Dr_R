@@ -431,6 +431,12 @@ def register(request):
         password = request.POST["password"].strip()
         first_name = request.POST["first_name"].strip()
         last_name = request.POST["last_name"].strip()
+        try:
+            checking_student = Student.objects.get(email=email)
+        except Student.DoesNotExist:
+            return render(request, "astros/register.html", {
+                "message": "Student profile with this email already exists."
+            })
         # Attempt to create new student
         try:
             student = Student.objects.create_user(username, email, password,\
@@ -439,7 +445,7 @@ def register(request):
             student.save()
         except IntegrityError:
             return render(request, "astros/register.html", {
-                "message": "Username/email already taken."
+                "message": "Username already taken."
             })
         login(request, student)
         return HttpResponseRedirect(reverse("deimos:index"))
