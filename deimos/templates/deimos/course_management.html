@@ -21,10 +21,10 @@
     <div class="container-fluid">
       <ul class="navbar-nav mr-auto" style="list-style: none; display:flex;">
         <li class="nav-item " style="display:inline;">
-          <a class="nav-link home-btn" >Home </a>
+          <a class="nav-link home-btn" href="{% url 'deimos:course_management' course_id=course.id%}">Home </a>
         </li>
         <li class="nav-item" style="display:inline;">
-          <a class="nav-link view-notes-btn" >View notes</a>
+          <a class="nav-link view-notes-btn" href="{% url 'deimos:note_management' course_id=course.id%}">View notes</a>
         </li>
         <li class="nav-item" style="display:inline;">
             <a class="nav-link grabebook-btn" >GradeBook</a>
@@ -46,18 +46,6 @@
         {% include 'deimos/assignment_display.html' with assignment=assignment course=course %}
         {% endfor %}
     </ul>
-</div>
-<div class="notes" style="display: none;">
-    {% for assignment in assignments %}
-    <h4>{{assignment.name}}</h4>
-    <ol>
-        {% for note in notes %}
-        {% if note.Note.question_student.question.assignment.id == assignment.id %}
-        {% include 'deimos/notes_course_display.html' with note=note.Note note_md=note.note_md %}
-        {% endif %}
-        {% endfor %}
-    </ol>
-    {% endfor %}
 </div>
 
 <div class="gradebook" style="display: none;">
