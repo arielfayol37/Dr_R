@@ -29,6 +29,9 @@
                 </td> 
                     <td> {{assignment.grade}} </td>
             </tr>
+            {% if forloop.last %}
+              <input  class ="num_assignments" type="hidden" data-num_assignments="{{ forloop.counter}}">
+            {% endif %}
             {% endfor %}
             <tr>
                 <td><b>COURSE SCORE</b></td>
@@ -44,10 +47,10 @@
 <script>
     // Get the progress element
     var progress = document.querySelector(".progress");
-
+    var numOfAssignment = document.querySelector('.num_assignments').dataset.num_assignments;
     // Set the value of the progress element to the score
-     score = ''+progress.dataset.score;
-
+    var score = parseFloat(progress.dataset.score )/ parseFloat(numOfAssignment); // computing average score
+    score = score.toFixed(2);
      // Get the progress-bar element inside the progress element
     var progressBar = progress.querySelector(".progress-bar");
 
