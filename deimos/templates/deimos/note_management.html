@@ -28,7 +28,7 @@
           <a class="nav-link view-notes-btn" href="{% url 'deimos:note_management' course_id=course.id%}">View notes</a>
         </li>
         <li class="nav-item" style="display:inline;">
-            <a class="nav-link grabebook-btn" >GradeBook</a>
+            <a class="nav-link grabebook-btn" href="{% url 'deimos:course_management' course_id=course.id show_gradebook=1%}">GradeBook</a>
         </li>
         </div>
   </nav>

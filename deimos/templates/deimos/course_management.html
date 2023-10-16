@@ -27,7 +27,7 @@
           <a class="nav-link view-notes-btn" href="{% url 'deimos:note_management' course_id=course.id%}">View notes</a>
         </li>
         <li class="nav-item" style="display:inline;">
-            <a class="nav-link grabebook-btn" >GradeBook</a>
+            <a class="nav-link gradebook-btn" data-show_gradebook="{{show_gradebook}}">GradeBook</a>
         </li>
         </div>
   </nav>
@@ -55,12 +55,10 @@
 <script>
     const navigation = document.querySelector('.navigation');
     const homeDiv = document.querySelector('.home');
-    const noteDiv = document.querySelector('.notes');
     const gradebookDiv = document.querySelector('.gradebook')
 
     function initial_view() {
         homeDiv.style.display = 'none';
-        noteDiv.style.display = 'none';
         gradebookDiv.style.display= 'none';
     }
 
@@ -70,16 +68,21 @@
             initial_view();
             homeDiv.style.display = 'block';
         }
-        else if (target.classList.contains('view-notes-btn')) {
-            initial_view();
-            noteDiv.style.display = 'block';
-        }
-        else if(target.classList.contains('grabebook-btn')){
+        else if(target.classList.contains('gradebook-btn')){
             initial_view();
             gradebookDiv.style.display= 'block';
         }
-
     })
+
+    const gradebookBtn = document.querySelector('.gradebook-btn')
+    const show_gradebookEvent = new Event('click',{
+        bubbles: true,
+        cancelable: true,
+    });
+    if(gradebookBtn.dataset.show_gradebook === "1"){
+        gradebookBtn.dispatchEvent(show_gradebookEvent)
+    }
+
 </script>
 {% endblock %}
 
