@@ -122,7 +122,7 @@ forms.forEach((form)=>{
       // will have an attempt-mode)
       const calculatorDiv = screen.closest('#calc-container');
       const previousForm = screen.closest('.question-form');
-      
+      var submitted_units;
       if(previousForm !=null){
         const prevSubmitBtn = previousForm.querySelector('.submit-btn');
         prevSubmitBtn.value = 'Attempt';
@@ -141,9 +141,12 @@ forms.forEach((form)=>{
       calculatorDiv.querySelector('.preface-content').innerHTML = form.querySelector('.answer_preface').value
       screen.value = form.querySelector('.inputed_answer_structural').value;
       if(form.querySelector('.show_unit').value ==='yes'){
-        calculatorDiv.querySelector('.units-screen').value = form.querySelector('.inputed_units_structural').value
+        const iUsInputField = form.querySelector('.inputed_units_structural');
+        calculatorDiv.querySelector('.units-screen').value = iUsInputField.value
         calculatorDiv.querySelector('.units-section').style.display='block';
+        submitted_units = iUsInputField.value
       }else{
+        submitted_units = ''
         calculatorDiv.querySelector('.units-section').style.display='none';
       }
       screen.dataset.changedPart = 'true';
@@ -198,14 +201,14 @@ forms.forEach((form)=>{
       const qid = form.querySelector('.question-id').value;
       const baseUrl = window.location.href.replace(/#$/, '');
     if (question_type.startsWith('structural')){
-      
         fetch(`${baseUrl}/validate_answer/${qid}`, {
             method: 'POST',
             headers: { 'X-CSRFToken': getCookie('csrftoken') },
             body: JSON.stringify({
                     answer: answer_struct.toString(),
                     submitted_answer: screen.value,
-                    questionType: questionType.value    
+                    questionType: questionType.value,
+                    submitted_units: submitted_units    
             })
           })
           .then(response => response.json())
@@ -248,7 +251,7 @@ forms.forEach((form)=>{
                 resetLightsToRed(redLight,yellowLight,greenLight);
                 return;
               }
-              toggleLight(result.correct,result.too_many_attempts, redLight, yellowLight, greenLight);
+              toggleLight(result.correct, result.too_many_attempts, redLight, yellowLight, greenLight);
           });
     }else {
       alert('Something went wrong');

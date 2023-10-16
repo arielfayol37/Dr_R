@@ -270,44 +270,27 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     attempt.submitted_answer = submitted_answer
                     answer = question.expression_answer
                     correct = compare_expressions(answer.content, simplified_answer)
-                elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
-                    # Checking previous attempts (Yes, this should be done after checking with the real answer)
-                    # Because of 'margin_error' in compare_floats(). 
-                    # the submitted answer may be close to a previous answer, however be within 
-                    # the margin error of both the correct answer and previous answer.
-                    # Hence we must check the correct answer first.
-                    answer = question.float_answer
+                elif question.answer_type in [QuestionChoices.STRUCTURAL_FLOAT, QuestionChoices.STRUCTURAL_VARIABLE_FLOAT]:
+                    if question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
+                        answer_content, units = question.float_answer.content, question.float_answer.answer_unit
+                    else:
+                        answer_content, units = question_student.compute_structural_answer(), question.variable_float_answer.answer_unit
+                        
                     try:
-                        # answer.content must come first in the compare_floats()
-                        correct, feedback_data = compare_floats(answer.content, simplified_answer, question.struct_settings.margin_error) 
+                        correct, feedback_data = compare_floats(answer_content, simplified_answer, question.struct_settings.margin_error)
                     except ValueError:
                         correct = False
-                    # Checking previous attempts
+                        
                     if not correct:
-                        for previous_attempt in question_student.attempts.all():
-                            are_the_same, fake_feedback = compare_floats(previous_attempt.content,simplified_answer, get_feedback=False)
+                        for prev_attempt in question_student.attempts.all():
+                            are_the_same, _ = compare_floats(prev_attempt.content, simplified_answer, margin_error=0.02, get_feedback=False)
                             if are_the_same:
-                                previously_submitted = True
-                                return JsonResponse({'previously_submitted': previously_submitted})
+                                return JsonResponse({'previously_submitted': True})
+                    
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
                     attempt.content = simplified_answer
                     attempt.submitted_answer = submitted_answer
-                elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
-                    try:
-                        answer_temp = question_student.compute_structural_answer()
-                        correct, feedback_data = compare_floats(answer_temp, simplified_answer,
-                                                    question.struct_settings.margin_error)
-                    except ValueError:
-                        correct = False
-                    if not correct:
-                        for previous_attempt in question_student.attempts.all():
-                            are_the_same, fake_feedback = compare_floats(previous_attempt.content, simplified_answer, margin_error=0.02, get_feedback=False)
-                            if are_the_same:
-                                previously_submitted = True
-                                return JsonResponse({'previously_submitted': previously_submitted})
-                    attempt = QuestionAttempt.objects.create(question_student=question_student)
-                    attempt.content = simplified_answer
-                    attempt.submitted_answer = submitted_answer
+
                 if correct:
                     attempt.num_points = max(0, question.struct_settings.num_points * \
                                                  (1 - question.struct_settings.deduct_per_attempt *
