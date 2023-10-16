@@ -1,0 +1,55 @@
+<!-- deimos: assignment_management.html-->
+{% extends 'deimos/layout.html' %}
+{% block title %} Notes {% endblock %}
+{% load static %}
+{% block body%}
+<div class="sidebar" style="display:none">
+    <header class="sidebar-header">X</header>
+    <ul>
+        <li><a href="{% url 'deimos:index' %}">Home</a></li>
+        <li><a href="{% url 'deimos:course_management' course_id=course.id %}">Assignments</a></li>
+        <li><a href="{% url 'deimos:search_question' %}">Search Question</a></li>
+    </ul>
+</div>
+<form action="{% url 'deimos:search_question' %}" method="post" id="search-form">
+    {% csrf_token %} 
+    <div id="sf-container">
+        <input  id="search-field" type="text" name="search_question" placeholder="search question"/>
+    </div>
+</form>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light" >
+    <div class="container-fluid">
+      <ul class="navbar-nav mr-auto" style="list-style: none; display:flex;">
+        <li class="nav-item " style="display:inline;">
+          <a class="nav-link home-btn" href="{% url 'deimos:course_management' course_id=course.id%}">Home </a>
+        </li>
+        <li class="nav-item" style="display:inline;">
+          <a class="nav-link view-notes-btn" href="{% url 'deimos:note_management' course_id=course.id%}">View notes</a>
+        </li>
+        <li class="nav-item" style="display:inline;">
+            <a class="nav-link grabebook-btn" href="{% url 'deimos:course_management' course_id=course.id show_gradebook=1%}">GradeBook</a>
+        </li>
+        </div>
+  </nav>
+    <br/>
+    <br/>
+    <h4 class="suggestion" style="font-size: large;">{{course.name}} - Notes</h4><hr/>
+    
+
+    <ul class="courses course-list">
+        {% for assignment in assignments %}
+        <h4>{{assignment.name}}</h4>
+            <!-- Display assignment's questions -->
+            {% for note in notes %}
+            {% if note.Note.question_student.question.assignment.id == assignment.id %}
+            {% include 'deimos/note_display.html' with note=note.Note note_md=note.note_md assignment_id=assignment.id course_id=assignment.course.id%}
+            {% endif %}
+            {% endfor %}
+        {% endfor %}
+    </ul>
+
+{% endblock %}
+{% block scripts%}
+<script src="{% static 'deimos/js/search_question.js' %}"></script>
+{% endblock %}

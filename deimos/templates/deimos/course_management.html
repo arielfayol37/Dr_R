@@ -1,5 +1,6 @@
 <!-- deimos: course_management.html-->
 {% extends 'deimos/layout.html' %}
+{% load my_custom_tags %}
 {% block title %} Course {% endblock %}
 {% block style %} <link rel="stylesheet" href=""/> {% endblock %}
 {% block body%}
@@ -17,17 +18,17 @@
     </ul>
 </div>
 
-<nav class="navbar navbar-expand-lg navbar-light bg-light" >
+<nav class="navbar navbar-expand-lg navbar-light bg-light navigation" >
     <div class="container-fluid">
       <ul class="navbar-nav mr-auto" style="list-style: none; display:flex;">
         <li class="nav-item " style="display:inline;">
-          <a class="nav-link home-btn" >Home </a>
+          <a class="nav-link home-btn" href="{% url 'deimos:course_management' course_id=course.id%}">Home </a>
         </li>
         <li class="nav-item" style="display:inline;">
-          <a class="nav-link view-notes-btn" >View notes</a>
+          <a class="nav-link view-notes-btn" href="{% url 'deimos:note_management' course_id=course.id%}">View notes</a>
         </li>
         <li class="nav-item" style="display:inline;">
-            <a class="nav-link grabebook-btn" >GradeBook</a>
+            <a class="nav-link gradebook-btn" data-show_gradebook="{{show_gradebook}}">GradeBook</a>
         </li>
         </div>
   </nav>
@@ -47,18 +48,6 @@
         {% endfor %}
     </ul>
 </div>
-<div class="notes" style="display: none;">
-    {% for assignment in assignments %}
-    <h4>{{assignment.name}}</h4>
-    <ol>
-        {% for note in notes %}
-        {% if note.Note.question_student.question.assignment.id == assignment.id %}
-        {% include 'deimos/notes_course_display.html' with note=note.Note note_md=note.note_md %}
-        {% endif %}
-        {% endfor %}
-    </ol>
-    {% endfor %}
-</div>
 
 <div class="gradebook" style="display: none;">
     {% include 'deimos/gradebook.html' with student=student assignment_student_grade=assignment_student_grade course_score=course_score %}
@@ -67,31 +56,34 @@
 <script>
     const navigation = document.querySelector('.navigation');
     const homeDiv = document.querySelector('.home');
-    const noteDiv = document.querySelector('.notes');
     const gradebookDiv = document.querySelector('.gradebook')
 
     function initial_view() {
         homeDiv.style.display = 'none';
-        noteDiv.style.display = 'none';
         gradebookDiv.style.display= 'none';
     }
 
-    document.addEventListener('click', () => {
+    navigation.addEventListener('click', () => {
         target = event.target;
         if (target.classList.contains('home-btn')) {
             initial_view();
             homeDiv.style.display = 'block';
         }
-        else if (target.classList.contains('view-notes-btn')) {
-            initial_view();
-            noteDiv.style.display = 'block';
-        }
-        else if(target.classList.contains('grabebook-btn')){
+        else if(target.classList.contains('gradebook-btn')){
             initial_view();
             gradebookDiv.style.display= 'block';
         }
-
     })
+
+    const gradebookBtn = document.querySelector('.gradebook-btn')
+    const show_gradebookEvent = new Event('click',{
+        bubbles: true,
+        cancelable: true,
+    });
+    if(gradebookBtn.dataset.show_gradebook === "1"){
+        gradebookBtn.dispatchEvent(show_gradebookEvent)
+    }
+
 </script>
 {% endblock %}
 
