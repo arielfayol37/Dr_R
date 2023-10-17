@@ -144,6 +144,11 @@
                           {% else %}
                             <input type="hidden" class="answer_preface" value=""/>
                           {% endif %}
+                          {% if question_dict.last_attempt.units_success %}
+                            <input type="hidden" class="show_screen" value="1"/>
+                          {% else %}
+                            <input type="hidden" class="show_screen" value="0"/>
+                          {% endif %}
                           {% if question_dict.answer.answer_unit %}
                             <input type="hidden" class="show_unit" value="yes"/>
                           {% else %}
@@ -154,7 +159,7 @@
                         {% else %}
                             <input style="display:none;" type="submit" class="btn btn-outline-success exempt attempt-mode submit-btn" value="Attempt">
                             <div class="formatted-answer passed-answer">
-                              {{question_dict.last_attempt}}
+                              {{question_dict.last_attempt_content}}
                             </div>
                         {% endif %}
                       <br/>

@@ -538,7 +538,7 @@ function addQuestionBlock(){
        <button type="button" id="expression-btn" class="expression-btn btn btn-primary exempt">Expression</button>
        <button type="button" id="float-btn" class="float-btn btn btn-info exempt">Float</button>
        <button type="button" id="mcq-btn" class="mcq-btn btn btn-light exempt">MCQ</button>
-       <button type="button" id="fr-btn" class="fr-btn btn btn-secondary exempt">Free Response</button>
+       <button type="button" id="fr-btn" class="fr-btn btn btn-secondary exempt" style="display:none;">Free Response</button>
        <button type="button" id="survey-btn" class="survey-btn btn btn-dark exempt" style="display: none;">Survey</button>
        <button type="button" id="latex-btn" class="latex-btn btn btn-secondary exempt"  style="display: none;">Latex</button>
        

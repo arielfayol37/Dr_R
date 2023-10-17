@@ -45,17 +45,20 @@ def course_management(request, course_id, show_gradebook=None):
     # Check if there is any Enrollment entry that matches the given student and course
     student = get_object_or_404(Student, pk = request.user.pk)
     is_enrolled = Enrollment.objects.filter(student=student, course=course).exists()
-    
+    if not is_enrolled:
+        return HttpResponseForbidden('You are not enrolled in this course.')
     # needed student's gradebook
     course_score=0
     assignment_student_grade=[]
     assignment_student = AssignmentStudent.objects.filter(student=student)
-    for assignment in assignment_student:
-        assignment_student_grade.append({'id':assignment.id,'assignment_student':assignment,'grade':assignment.get_grade()})
-        course_score= course_score+ assignment.get_grade()
+    a_sums = 0
+    for assignment_s in assignment_student:
+        grade = assignment_s.get_grade()
+        assignment_student_grade.append({'id':assignment_s.id,'assignment_student':assignment_s,'grade':grade})
+        course_score += assignment_s.assignment.num_points * grade
+        a_sums += assignment_s.assignment.num_points
+    course_score /= a_sums
 
-    if not is_enrolled:
-        return HttpResponseForbidden('You are not enrolled in this course.')
     assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student, \
                                             is_assigned=True)
     context = {
@@ -209,8 +212,8 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
             'success':question_student.success,
             'too_many_attempts':too_many_attempts,
             'sq_type':question_type[0], # structural question type used in js.
-            'last_attempt':last_attempt.submitted_answer if last_attempt else ''
-
+            'last_attempt_content':last_attempt.submitted_answer if last_attempt else '',
+            'last_attempt':last_attempt
         }
         questions_dictionary[index] = context
     return render(request, 'deimos/answer_question.html',
@@ -234,6 +237,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
     
     if request.method == 'POST':
         correct = False
+        units_correct = False
         previously_submitted = False
         data = json.loads(request.body)
         simplified_answer = data["answer"]
@@ -247,99 +251,126 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
         question_student, created = QuestionStudent.objects.get_or_create(student=student, question=question)
         if data["questionType"].startswith('structural'):
             too_many_attempts = question_student.get_num_attempts() >= question.struct_settings.max_num_attempts
+            units_too_many_attempts = question_student.get_num_attempts() >= question.struct_settings.units_num_attempts
         else:
             too_many_attempts = question_student.get_num_attempts() >= question.mcq_settings.mcq_max_num_attempts
-        if ( not (too_many_attempts or question_student.success)):
-            if data["questionType"].startswith('structural'):
+            units_too_many_attempts = True
+        if ( not (question_student.success)):
+            last_attempt = QuestionAttempt.objects.filter(question_student=question_student).last()
+            prev_success = last_attempt.success if last_attempt else False
+            prev_units_success = last_attempt.units_success if last_attempt else False
+            if not (too_many_attempts or prev_success):
+                if data["questionType"].startswith('structural'):
+                    if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
+                        # checking previous attempts
+                        for previous_attempt in question_student.attempts.all():
+                            if compare_expressions(previous_attempt.content, simplified_answer):
+                                previously_submitted = True
+                                return JsonResponse({'previously_submitted': previously_submitted})
+                        attempt = QuestionAttempt.objects.create(question_student=question_student)
+                        attempt.content = simplified_answer
+                        attempt.submitted_answer = submitted_answer
+                        answer = question.expression_answer
+                        correct = compare_expressions(answer.content, simplified_answer)
+                    elif question.answer_type in [QuestionChoices.STRUCTURAL_FLOAT, QuestionChoices.STRUCTURAL_VARIABLE_FLOAT]:
+                        if question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
+                            answer_content, units = question.float_answer.content, question.float_answer.answer_unit
+                        else:
+                            answer_content, units = question_student.compute_structural_answer(), question.variable_float_answer.answer_unit
+                        try:
+                            correct, feedback_data = compare_floats(answer_content, simplified_answer, question.struct_settings.margin_error)
+                        except ValueError:
+                            correct = False
+                        if not correct:
+                            for prev_attempt in question_student.attempts.all():
+                                answers_are_the_same, _ = compare_floats(prev_attempt.content, simplified_answer, margin_error=0.02, get_feedback=False)
+                                if answers_are_the_same:
+                                    return JsonResponse({'previously_submitted': True})
+                        
+                        attempt = QuestionAttempt.objects.create(question_student=question_student)
+                        attempt.content = simplified_answer
+                        attempt.submitted_answer = submitted_answer
+                    if correct:
+                        attempt.success = True
+                        if units:
+                            attempt.num_points = max(0, question.struct_settings.num_points * (1 - question.struct_settings.percentage_pts_units)\
+                                                    * (1 - question.struct_settings.deduct_per_attempt *
+                                                    max(0, question_student.get_num_attempts() - 1)))
+                        else:
+                            question_student.success = True
+                            attempt.num_points = max(0, question.struct_settings.num_points * (1 - question.struct_settings.deduct_per_attempt *
+                                                    max(0, question_student.get_num_attempts() - 1)))                        
+                        
 
-                if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
+                elif data["questionType"] == 'mcq':
+                    # retrieve list of 'true' mcq options
+                    # !important: mcq answers of different type may have the same primary key.
                     # checking previous attempts
                     for previous_attempt in question_student.attempts.all():
-                        if compare_expressions(previous_attempt.content, simplified_answer):
+                        if set(simplified_answer) == set(eval(previous_attempt.content)):
                             previously_submitted = True
                             return JsonResponse({'previously_submitted': previously_submitted})
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
-                    attempt.content = simplified_answer
-                    attempt.submitted_answer = submitted_answer
-                    answer = question.expression_answer
-                    correct = compare_expressions(answer.content, simplified_answer)
-                elif question.answer_type in [QuestionChoices.STRUCTURAL_FLOAT, QuestionChoices.STRUCTURAL_VARIABLE_FLOAT]:
-                    if question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
-                        answer_content, units = question.float_answer.content, question.float_answer.answer_unit
-                    else:
-                        answer_content, units = question_student.compute_structural_answer(), question.variable_float_answer.answer_unit
-                        
-                    try:
-                        correct, feedback_data = compare_floats(answer_content, simplified_answer, question.struct_settings.margin_error)
-                    except ValueError:
-                        correct = False
-                        
-                    if not correct:
-                        for prev_attempt in question_student.attempts.all():
-                            are_the_same, _ = compare_floats(prev_attempt.content, simplified_answer, margin_error=0.02, get_feedback=False)
-                            if are_the_same:
-                                return JsonResponse({'previously_submitted': True})
-                    
-                    attempt = QuestionAttempt.objects.create(question_student=question_student)
-                    attempt.content = simplified_answer
-                    attempt.submitted_answer = submitted_answer
-
-                if correct:
-                    attempt.num_points = max(0, question.struct_settings.num_points * \
-                                                 (1 - question.struct_settings.deduct_per_attempt *
-                                                   max(0, question_student.get_num_attempts() - 1)))
-                    question_student.success = True
-                    attempt.success = True
-                question_student.save()  # Save the changes to the QuestionStudent instance
-                attempt.save()
-            elif data["questionType"] == 'mcq':
-                # retrieve list of 'true' mcq options
-                # !important: mcq answers of different type may have the same primary key.
+                    attempt.content = str(simplified_answer)
+                    question_type_dict = {'ea': 0, 'fa':1, 'fva':8,'la':2, 'ta':3, 'ia':7}
+                    answers = []
+                    ea = list(question.mcq_expression_answers.filter(is_answer=True).values_list('pk', flat=True))
+                    ea = [str(pk) + str(question_type_dict['ea']) for pk in ea]
+                    answers.extend(ea)
+                    ta = list(question.mcq_text_answers.filter(is_answer=True).values_list('pk', flat=True))
+                    ta = [str(pk) + str(question_type_dict['ta']) for pk in ta]
+                    answers.extend(ta)
+                    fa = list(question.mcq_float_answers.filter(is_answer=True).values_list('pk', flat=True))
+                    fa = [str(pk) + str(question_type_dict['fa']) for pk in fa]
+                    answers.extend(fa)
+                    fva = list(question.mcq_variable_float_answers.filter(is_answer=True).values_list('pk', flat=True))
+                    fva = [str(pk) + str(question_type_dict['fva']) for pk in fva]
+                    answers.extend(fva)
+                    la = list(question.mcq_latex_answers.filter(is_answer=True).values_list('pk', flat=True))
+                    la = [str(pk)+ str(question_type_dict['la']) for pk in la]
+                    answers.extend(la)
+                    ia = list(question.mcq_image_answers.filter(is_answer=True).values_list('pk', flat=True))
+                    ia = [str(pk) + str(question_type_dict['ia']) for pk in ia]
+                    answers.extend(ia)
+                    if len(simplified_answer) == len(answers):
+                        s1, s2 = set(simplified_answer), set(answers)
+                        if s1 == s2:
+                            correct = True
+                            attempt.num_points = max(0, question.mcq_settings.num_points * \
+                                                    (1 - question.mcq_settings.mcq_deduct_per_attempt *
+                                                    max(0, question_student.get_num_attempts() - 1)))
+                            question_student.success = True
+                            attempt.success = True
                 
-                # checking previous attempts
-                for previous_attempt in question_student.attempts.all():
-                    if set(simplified_answer) == set(eval(previous_attempt.content)):
-                        previously_submitted = True
-                        return JsonResponse({'previously_submitted': previously_submitted})
-                attempt = QuestionAttempt.objects.create(question_student=question_student)
-                attempt.content = str(simplified_answer)
-                question_type_dict = {'ea': 0, 'fa':1, 'fva':8,'la':2, 'ta':3, 'ia':7}
-                answers = []
-                ea = list(question.mcq_expression_answers.filter(is_answer=True).values_list('pk', flat=True))
-                ea = [str(pk) + str(question_type_dict['ea']) for pk in ea]
-                answers.extend(ea)
-                ta = list(question.mcq_text_answers.filter(is_answer=True).values_list('pk', flat=True))
-                ta = [str(pk) + str(question_type_dict['ta']) for pk in ta]
-                answers.extend(ta)
-                fa = list(question.mcq_float_answers.filter(is_answer=True).values_list('pk', flat=True))
-                fa = [str(pk) + str(question_type_dict['fa']) for pk in fa]
-                answers.extend(fa)
-                fva = list(question.mcq_variable_float_answers.filter(is_answer=True).values_list('pk', flat=True))
-                fva = [str(pk) + str(question_type_dict['fva']) for pk in fva]
-                answers.extend(fva)
-                la = list(question.mcq_latex_answers.filter(is_answer=True).values_list('pk', flat=True))
-                la = [str(pk)+ str(question_type_dict['la']) for pk in la]
-                answers.extend(la)
-                ia = list(question.mcq_image_answers.filter(is_answer=True).values_list('pk', flat=True))
-                ia = [str(pk) + str(question_type_dict['ia']) for pk in ia]
-                answers.extend(ia)
-                if len(simplified_answer) == len(answers):
-                    s1, s2 = set(simplified_answer), set(answers)
-                    if s1 == s2:
-                        correct = True
-                        attempt.num_points = max(0, question.mcq_settings.num_points * \
-                                                 (1 - question.mcq_settings.mcq_deduct_per_attempt *
-                                                   max(0, question_student.get_num_attempts() - 1)))
-                        question_student.success = True
-                        attempt.success = True
                 question_student.save()
                 attempt.save()
+            if not (units_too_many_attempts or prev_units_success):
+                if question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
+                    units = question.float_answer.answer_unit
+                else:
+                    units = question.variable_answer.float_answer_unit
+                # the instructor may mistakenly set a maximum number of attempts to a question that doesn't even haeve
+                # units
+                if units:
+                    submitted_units = data["submitted_units"]
+                    units_correct = compare_floats(units, submitted_units)
+                    last_attempt.units_success = units_correct
+                    last_attempt.submitted_units = submitted_units
+                    # Update the number of points for this attempt
+                    if units_correct:
+                        attempt.num_points += question.struct_settings.num_points * question.struct_settings.percentage_pts_units
+                    last_attempt.save()
+
+                    if units_correct and last_attempt.success:
+                        question_student.success = True
+                        question_student.save()
         # Return a JsonResponse
         return JsonResponse({
             'correct': correct,
             'too_many_attempts': too_many_attempts,
             'previously_submitted':previously_submitted,
-            'feedback_data': feedback_data
+            'feedback_data': feedback_data,
+            'units_correct': units_correct
         })
     
 

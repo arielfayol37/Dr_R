@@ -122,6 +122,7 @@ forms.forEach((form)=>{
       // will have an attempt-mode)
       const calculatorDiv = screen.closest('#calc-container');
       const previousForm = screen.closest('.question-form');
+      var requiresUnits = false;
       var submitted_units;
       if(previousForm !=null){
         const prevSubmitBtn = previousForm.querySelector('.submit-btn');
@@ -140,11 +141,17 @@ forms.forEach((form)=>{
       calculatorDiv.classList.remove('hide');
       calculatorDiv.querySelector('.preface-content').innerHTML = form.querySelector('.answer_preface').value
       screen.value = form.querySelector('.inputed_answer_structural').value;
+      if(form.querySelector('.show_screen').value == "1"){
+        screen.style.display = "none";
+      }else{
+        screen.style.display = "block";
+      }
       if(form.querySelector('.show_unit').value ==='yes'){
         const iUsInputField = form.querySelector('.inputed_units_structural');
         calculatorDiv.querySelector('.units-screen').value = iUsInputField.value
         calculatorDiv.querySelector('.units-section').style.display='block';
         submitted_units = iUsInputField.value
+        requiresUnits = true
       }else{
         submitted_units = ''
         calculatorDiv.querySelector('.units-section').style.display='none';
@@ -166,6 +173,10 @@ forms.forEach((form)=>{
       if (question_type.startsWith('structural')){
         if(screen.value.length === 0){
           alert('Cannot submit blank answer');
+          return;
+        }
+        if(requiresUnits && submitted_units.length < 1){
+          alert('You must provide units');
           return;
         }
         const last_character = parseInt(question_type.charAt(question_type.length-1)); 
@@ -220,14 +231,29 @@ forms.forEach((form)=>{
                 resetLightsToRed(redLight,yellowLight,greenLight);
                 return;
               }
-              toggleLight(result.correct,result.too_many_attempts,redLight,yellowLight,greenLight);
+              if(requiresUnits){
+                toggleLight(result.correct,result.too_many_attempts,redLight,yellowLight,greenLight, result.units_correct, is_mcq=false);
+              }else{
+                toggleLight(result.correct,result.too_many_attempts,redLight,yellowLight,greenLight, units_correct=false, is_mcq=false);
+              }
+              
               if(!result.correct && result.feedback_data.length > 0){
                 feedbackContainerDiv.querySelector('.show-feedback-btn').style.display='block';
                 feedbackContainerDiv.querySelector('.formatted-answer-option').innerHTML = result.feedback_data;
                 feedbackContainerDiv.querySelector('.formatted-answer-option').style.display = 'block';
               }
               if(result.correct){
-                submitBtn.style.display = 'none';
+                if(requiresUnits){
+                  if(result.units_correct){
+                    submitBtn.style.display = 'none';
+                  }else{
+                    submitBtn.innerHTML = 'Submit units';
+                  }
+                  
+                }else {
+                  submitBtn.style.display = 'none';
+                }
+                
               }
           });
     } else if( question_type ==='mcq'){
@@ -358,10 +384,10 @@ displayLatex();
 
 
     /*------------------------------UTILITY FUNCTIONS ----------------------------*/
-    function toggleLight(correct, too_many_attempts,redLight, yellowLight, greenLight) {
+    function toggleLight(correct, too_many_attempts,redLight, yellowLight, greenLight, units_correct=true, is_mcq=true) {
         // Make the yellow light blink as though the program was 'thinking';
 
-          if (correct) {
+          if (correct && units_correct) {
             
             setTimeout(function () {
               // Code to execute after 1.6 seconds
@@ -377,9 +403,15 @@ displayLatex();
               yellowLight.classList.remove('blinking');
               if(too_many_attempts){
                 // Keep yellow light
-                yellowLight.classList.add('activated');
+                redLight.classList.add('activated');
                 alert('Too many attempts for this question');
-              }else {
+              }else if((!units_correct && correct)){
+                alert('Correct answer. Wrong units');
+                yellowLight.classList.add('activated');
+              }else if((units_correct && !correct && !is_mcq)){
+                alert('Wrong answer. Correct units');
+                yellowLight.classList.add('activated');
+              }else{
                 redLight.classList.add('activated');
               }
               
