@@ -118,8 +118,10 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
             note_md = markdown(note.content)
         if question.answer_type.startswith('MCQ'):
             too_many_attempts = question_student.get_num_attempts() >= question.mcq_settings.mcq_max_num_attempts
+            units_too_many_attempts = True
         else:
-            too_many_attempts = question_student.get_num_attempts() >= question.struct_settings.max_num_attempts    
+            too_many_attempts = question_student.get_num_attempts() >= question.struct_settings.max_num_attempts  
+            units_too_many_attempts = question_student.get_num_attempts() >= question.struct_settings.units_num_attempts  
         if created:
             question_student.create_instances()
         else:
@@ -213,7 +215,8 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
             'too_many_attempts':too_many_attempts,
             'sq_type':question_type[0], # structural question type used in js.
             'last_attempt_content':last_attempt.submitted_answer if last_attempt else '',
-            'last_attempt':last_attempt
+            'last_attempt':last_attempt,
+            'units_too_many_attempts':units_too_many_attempts
         }
         questions_dictionary[index] = context
     return render(request, 'deimos/answer_question.html',
@@ -236,7 +239,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
         student = get_object_or_404(Student, pk=student_id)
     
     if request.method == 'POST':
-        correct = False
+        
         units_correct = False
         previously_submitted = False
         data = json.loads(request.body)
@@ -255,10 +258,13 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
         else:
             too_many_attempts = question_student.get_num_attempts() >= question.mcq_settings.mcq_max_num_attempts
             units_too_many_attempts = True
+        correct = question_student.success
         if ( not (question_student.success)):
             last_attempt = QuestionAttempt.objects.filter(question_student=question_student).last()
             prev_success = last_attempt.success if last_attempt else False
+            correct = prev_success
             prev_units_success = last_attempt.units_success if last_attempt else False
+            units_correct = prev_units_success
             if not (too_many_attempts or prev_success):
                 if data["questionType"].startswith('structural'):
                     if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
@@ -349,28 +355,37 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     units = question.float_answer.answer_unit
                 else:
                     units = question.variable_answer.float_answer_unit
-                # the instructor may mistakenly set a maximum number of attempts to a question that doesn't even haeve
+                # the following line will retrieve the most recent attempt, which is either the attempt that has just
+                # been submitted or the last attempt before it exceeded the number of permitted attempts.
+                last_attempt = QuestionAttempt.objects.filter(question_student=question_student).last() 
+
+                # the instructor may mistakenly set a maximum number of attempts to a question that doesn't even have
                 # units
                 if units:
                     submitted_units = data["submitted_units"]
-                    units_correct = compare_floats(units, submitted_units)
+                    units_correct = compare_units(units, submitted_units)
                     last_attempt.units_success = units_correct
                     last_attempt.submitted_units = submitted_units
                     # Update the number of points for this attempt
                     if units_correct:
-                        attempt.num_points += question.struct_settings.num_points * question.struct_settings.percentage_pts_units
+                        last_attempt.num_points += question.struct_settings.num_points * question.struct_settings.percentage_pts_units
                     last_attempt.save()
 
                     if units_correct and last_attempt.success:
                         question_student.success = True
                         question_student.save()
+            elif(prev_units_success and not too_many_attempts): # that is if a new attempt has been created.
+                attempt.num_points += question.struct_settings.num_points * question.struct_settings.percentage_pts_units
+                attempt.submitted_units = last_attempt.submitted_units
+                attempt.save()
         # Return a JsonResponse
         return JsonResponse({
             'correct': correct,
             'too_many_attempts': too_many_attempts,
             'previously_submitted':previously_submitted,
             'feedback_data': feedback_data,
-            'units_correct': units_correct
+            'units_correct': units_correct,
+            'units_too_many_attempts':units_too_many_attempts
         })
     
 

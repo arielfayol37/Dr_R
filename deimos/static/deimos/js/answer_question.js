@@ -122,8 +122,6 @@ forms.forEach((form)=>{
       // will have an attempt-mode)
       const calculatorDiv = screen.closest('#calc-container');
       const previousForm = screen.closest('.question-form');
-      var requiresUnits = false;
-      var submitted_units;
       if(previousForm !=null){
         const prevSubmitBtn = previousForm.querySelector('.submit-btn');
         prevSubmitBtn.value = 'Attempt';
@@ -146,14 +144,11 @@ forms.forEach((form)=>{
       }else{
         screen.style.display = "block";
       }
-      if(form.querySelector('.show_unit').value ==='yes'){
+      if(form.querySelector('.show_unit').value === 'yes'){
         const iUsInputField = form.querySelector('.inputed_units_structural');
         calculatorDiv.querySelector('.units-screen').value = iUsInputField.value
         calculatorDiv.querySelector('.units-section').style.display='block';
-        submitted_units = iUsInputField.value
-        requiresUnits = true
       }else{
-        submitted_units = ''
         calculatorDiv.querySelector('.units-section').style.display='none';
       }
       screen.dataset.changedPart = 'true';
@@ -161,12 +156,24 @@ forms.forEach((form)=>{
 
       return;  
     }
+
+    const calculatorDiv = screen.closest('#calc-container');
+    var requiresUnits, submitted_units;
+    if(calculatorDiv.querySelector('.units-section').style.display==='block'){
+      submitted_units = calculatorDiv.querySelector('.units-screen').value 
+      requiresUnits = true;
+    }else{
+      submitted_units = ''
+      requiresUnits = false;
+    }
+    
     const yellowLight = form.querySelector('.yellow-light');
     const greenLight = form.querySelector('.green-light');
     const redLight = form.querySelector('.red-light');
+    const blueLight = form.querySelector('.blue-light'); // May be NULL
     
-    // For now, yellow light represents to many attempts
-    if(!greenLight.classList.contains('activated') && !yellowLight.classList.contains('activated')){
+    // For now, red light represents to many attempts
+    if(!greenLight.classList.contains('activated') && !redLight.classList.contains('activated')){
       // Checking whether the submitted answer is valid
       const questionType = form.querySelector('.question-type');
       const question_type = questionType.value
@@ -228,13 +235,17 @@ forms.forEach((form)=>{
               //console.log(result.correct);
               if(result.previously_submitted){
                 alert('You already attempted using that answer');
-                resetLightsToRed(redLight,yellowLight,greenLight);
+                removeAllLights(redLight,yellowLight,greenLight, blueLight);
                 return;
               }
               if(requiresUnits){
-                toggleLight(result.correct,result.too_many_attempts,redLight,yellowLight,greenLight, result.units_correct, is_mcq=false);
+                toggleLight(result.correct,result.too_many_attempts,redLight,yellowLight,
+                  greenLight,blueLight,result.units_correct, is_mcq=false, units_too_many_atempts=
+                  result.units_too_many_atempts);
               }else{
-                toggleLight(result.correct,result.too_many_attempts,redLight,yellowLight,greenLight, units_correct=false, is_mcq=false);
+                toggleLight(result.correct,result.too_many_attempts,redLight,yellowLight,
+                  greenLight,blueLight, units_correct=false, is_mcq=false,units_too_many_atempts=
+                  result.units_too_many_atempts);
               }
               
               if(!result.correct && result.feedback_data.length > 0){
@@ -274,7 +285,7 @@ forms.forEach((form)=>{
               //console.log(result.correct);
               if(result.previously_submitted){
                 alert('You already attempted using that answer');
-                resetLightsToRed(redLight,yellowLight,greenLight);
+                removeAllLights(redLight,yellowLight,greenLight, blueLight);
                 return;
               }
               toggleLight(result.correct, result.too_many_attempts, redLight, yellowLight, greenLight);
@@ -384,13 +395,16 @@ displayLatex();
 
 
     /*------------------------------UTILITY FUNCTIONS ----------------------------*/
-    function toggleLight(correct, too_many_attempts,redLight, yellowLight, greenLight, units_correct=true, is_mcq=true) {
+    function toggleLight(correct, too_many_attempts, redLight, yellowLight,
+       greenLight, blueLight, units_correct=true, is_mcq=true, units_too_many_atempts=false) {
         // Make the yellow light blink as though the program was 'thinking';
-
+        removeAllLights(redLight, yellowLight, greenLight, blueLight);
+        yellowLight.classList.add('activated');
+        yellowLight.classList.add('blinking');
           if (correct && units_correct) {
             
             setTimeout(function () {
-              // Code to execute after 1.6 seconds
+              // Code to execute after 1 seconds
               yellowLight.classList.remove('activated');
               yellowLight.classList.remove('blinking');
               greenLight.classList.add('activated');
@@ -398,23 +412,37 @@ displayLatex();
         
           } else {
             setTimeout(function () {
-              // Code to execute after 1.6 seconds
+              // Code to execute after 1 seconds
               yellowLight.classList.remove('activated');
               yellowLight.classList.remove('blinking');
-              if(too_many_attempts){
-                // Keep yellow light
+
+              if(too_many_attempts && units_too_many_atempts){
                 redLight.classList.add('activated');
                 alert('Too many attempts for this question');
-              }else if((!units_correct && correct)){
-                alert('Correct answer. Wrong units');
-                yellowLight.classList.add('activated');
-              }else if((units_correct && !correct && !is_mcq)){
-                alert('Wrong answer. Correct units');
-                yellowLight.classList.add('activated');
-              }else{
-                redLight.classList.add('activated');
-              }
               
+              }else{
+
+                if(units_too_many_atempts){
+                  alert('Units attempts exhausted.')
+                }
+
+                if(correct){
+                  // This means that the units were wrong
+                  
+                  blueLight.classList.add('activated');
+                  alert('Correct answer, but wrong units');
+                }else{
+                  if(units_correct && !is_mcq){
+                    // the answer is not correct and units are correct
+                    yellowLight.classList.add('activated');
+                    alert('wrong answer, but correct units');
+                  }else {
+                    // both answer and units were wrong
+                    redLight.classList.add('activated');
+                  }
+                }
+
+              }
             }, 1000);
         
           }
@@ -428,6 +456,21 @@ displayLatex();
       yellowLight.classList.remove('activated');
       greenLight.classList.remove('blinking');
       greenLight.classList.remove('activated');
+    }
+
+    function removeAllLights(redLight, yellowLight, greenLight, blueLight){
+      if(blueLight){
+        blueLight.classList.remove('blinking');
+        blueLight.classList.remove('activated');
+      }
+
+      redLight.classList.remove('activated');
+      redLight.classList.remove('blinking');
+      yellowLight.classList.remove('blinking');
+      yellowLight.classList.remove('activated');
+      greenLight.classList.remove('blinking');
+      greenLight.classList.remove('activated');
+
     }
 function rep(str, index, char) {
     str = setCharAt(str,index,char);

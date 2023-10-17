@@ -34,15 +34,56 @@
                   {% if question_dict.success %}
                     <div class="tf-light red-light"></div>
                     <div class="tf-light yellow-light"></div>
+                    {% if not question_dict.is_mcq or not question_dict.is_fr %}
+                      {% if question_dict.answer.answer_unit %}
+                        <div class="tf-light blue-light"></div>
+                      {% endif %}
+                    {% endif %}
                     <div class="tf-light green-light activated"></div>
                   {% else %}
-                    {% if question_dict.too_many_attempts %}
-                      <div class="tf-light red-light activated"></div>
-                      <div class="tf-light yellow-light"></div>
-                    {% else %}
-                      <div class="tf-light red-light"></div>
-                      <div class="tf-light yellow-light"></div>
-                    {% endif %}
+                      {% if not question_dict.is_mcq or not question_dict.is_fr %} <!-- if structural question -->
+                        {% if not question_dict.answer.answer_unit %} <!--if doesn't have units-->
+                          {% if question_dict.too_many_attempts %}
+                            <div class="tf-light red-light activated"></div>
+                          {% else %}
+                            <div class="tf-light red-light"></div>
+                          {% endif %}
+                          <div class="tf-light yellow-light"></div>
+                        {% else %}
+                          {% if units_too_many_attempts %}
+                            <div class="tf-light red-light activated"></div>
+                            <div class="tf-light yellow-light"></div>
+                            <div class="tf-light blue-light"></div>
+
+                          {% else %}
+                            {% if last_attempt %}
+                              {% if last_attempt.units_success %}
+                                <div class="tf-light red-light"></div>
+                                <div class="tf-light yellow-light activated"></div>
+                                <div class="tf-light blue-light"></div>
+                              {% else %}
+                                <div class="tf-light red-light"></div>
+                                <div class="tf-light yellow-light"></div>
+                                <div class="tf-light blue-light"></div>
+                              {% endif %}
+                            
+                            {% else %}
+                              <div class="tf-light red-light"></div>
+                              <div class="tf-light yellow-light"></div>
+                              <div class="tf-light blue-light"></div>
+                            {% endif %}
+                          
+                          {% endif %}
+
+                        {% endif %}
+                      {% else %}
+                        {% if question_dict.too_many_attempts %}
+                          <div class="tf-light red-light activated"></div>
+                        {% else %}
+                          <div class="tf-light red-light"></div>
+                        {% endif %}
+                        <div class="tf-light yellow-light"></div>
+                      {% endif %}
 
                     <div class="tf-light green-light"></div>
                   {% endif %}
@@ -144,13 +185,21 @@
                           {% else %}
                             <input type="hidden" class="answer_preface" value=""/>
                           {% endif %}
-                          {% if question_dict.last_attempt.units_success %}
-                            <input type="hidden" class="show_screen" value="1"/>
-                          {% else %}
-                            <input type="hidden" class="show_screen" value="0"/>
+                          {% if question_dict.too_many_attempts %}
+                              <input type="hidden" class="show_screen" value="1"/>
+                            {% else %}
+                              <input type="hidden" class="show_screen" value="0"/>
                           {% endif %}
                           {% if question_dict.answer.answer_unit %}
-                            <input type="hidden" class="show_unit" value="yes"/>
+                            {% if last_attempt %}
+                              {% if last_attempt.units_success %}
+                                <input type="hidden" class="show_unit" value="no"/>
+                              {% else %}
+                                <input type="hidden" class="show_unit" value="yes"/>
+                              {% endif %}
+                            {% else %}
+                              <input type="hidden" class="show_unit" value="yes"/>
+                            {% endif %}
                           {% else %}
                             <input type="hidden" class="show_unit" value="no"/>
                           {% endif %}

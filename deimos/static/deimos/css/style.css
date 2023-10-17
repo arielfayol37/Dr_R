@@ -657,6 +657,9 @@ more than assignment display */
 .question-status .tf-light.green-light.activated {
   background-color: rgb(41, 209, 41);
 }
+.question-status .tf-light.blue-light.activated {
+  background-color: rgb(41, 91, 216);
+}
 
 /*------------------------Style for expression_compare_test.html ------------------------- */
 .expression-comparisons{
