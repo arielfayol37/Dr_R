@@ -211,7 +211,7 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
             "answers_is_latex_question_type": zip(answers, is_latex, question_type),
             'question_type': question_type, # For structural
             'answer': answers[0],
-            'success':question_student.success,
+            'question_student':question_student,
             'too_many_attempts':too_many_attempts,
             'sq_type':question_type[0], # structural question type used in js.
             'last_attempt_content':last_attempt.submitted_answer if last_attempt else '',

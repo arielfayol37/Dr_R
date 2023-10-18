@@ -690,6 +690,35 @@ more than assignment display */
 ion-icon:hover{
   cursor:pointer;
 }
+
+.attempts-container {
+  width: 100%;
+  height: 60px !important; /* Set to the desired height */
+  overflow: hidden;
+  position: relative;
+}
+
+.p-attempt {
+  opacity: 0; 
+  position: absolute;
+  top: 100%;  /* Initially position all elements below the viewable area */
+  left: 0;
+  width: 100%;
+  transition: top 0.5s, opacity 0.3s; /* Add transition for smooth effect */
+}
+
+.p-attempt:last-child {
+  top: 0; /* Position the last one inside the viewable area */
+  opacity: 1;
+}
+
+
+.attempts-container, .buttons-directions, .p-attempt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
 /*-----------------------------MOBILE VIEW STYLE--------------------*/
 
   @media screen and (max-width: 1200px){

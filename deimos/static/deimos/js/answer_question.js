@@ -4,6 +4,72 @@ document.addEventListener('DOMContentLoaded', ()=> {
     const screen = document.querySelector('#screen'); 
     var formattedAnswerDiv;
    
+  // displaying previous submissions
+
+  const previousAttempts = document.querySelectorAll('.previous-attempts');
+  if(previousAttempts){
+
+    MathJax.typesetPromise().then(()=>{
+
+      previousAttempts.forEach((pA)=>{
+        const elements = pA.querySelectorAll(".p-attempt");
+
+        function showElement(currentIndex, newIndex) {
+            elements[currentIndex].style.top = '-100%'; // Move the current element up and out of view
+            elements[currentIndex].style.opacity = '0'; // Fade it out
+        
+            elements[newIndex].style.top = '0'; // Move the target element to the viewable area
+            elements[newIndex].style.opacity = '1'; // Fade it in
+        
+            pA.querySelector('.attempts-container').dataset.index = newIndex; // Update the dataset
+        }
+        
+        pA.querySelector('.btn-attempt-down').addEventListener('click', () => {
+            let currentIndex = parseInt(pA.querySelector('.attempts-container').dataset.index);
+            let nextIndex = (currentIndex + 1) % elements.length;
+            showElement(currentIndex, nextIndex);
+        });
+        
+        pA.querySelector('.btn-attempt-up').addEventListener('click', () => {
+            let currentIndex = parseInt(pA.querySelector('.attempts-container').dataset.index);
+            let prevIndex = (currentIndex - 1 + elements.length) % elements.length;
+            showElement(currentIndex, prevIndex);
+        });
+        
+
+        pA.querySelector('.open-attempts').addEventListener('click', (event)=>{
+          if(event.target.classList.contains('closed')){
+            pA.querySelector('.a-container').style.display = 'flex';
+            event.target.classList.remove('closed');
+          }else{
+            pA.querySelector('.a-container').style.display = 'none';
+            event.target.classList.add('closed');
+          }
+        })
+
+        try{
+          pA.querySelectorAll('.p-attempt').forEach((p)=>{
+            const content = math.parse(p.querySelector('.attempt-content').value).toTex();
+            const aUnits = p.querySelector('.attempt-units');
+            var finalDisplay = content
+            if(aUnits != null){
+              finalDisplay = content + ' ' + aUnits.value
+            }
+            p.innerHTML = MathJax.tex2chtml(finalDisplay).innerHTML // ; 
+          })
+
+        }catch (error){
+          console.log(error);
+        }
+      })
+      MathJax.typesetPromise();
+    })
+
+  }
+
+
+
+
   // Displaying the validated submissions
     MathJax.typesetPromise().then(() => {
       const passedAnswers = document.querySelectorAll('.passed-answer');
