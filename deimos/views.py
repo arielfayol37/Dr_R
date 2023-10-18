@@ -66,7 +66,7 @@ def course_management(request, course_id, show_gradebook=None):
         "assignments": assignments,
         "course": course,
         "assignment_student_grade": assignment_student_grade,
-        "course_score": course_score,
+        "course_score": round(course_score, 2),
         "show_gradebook": show_gradebook
     }
     return render(request, "deimos/course_management.html", context)
@@ -254,7 +254,10 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
         question_student, created = QuestionStudent.objects.get_or_create(student=student, question=question)
         if data["questionType"].startswith('structural'):
             too_many_attempts = question_student.get_num_attempts() >= question.struct_settings.max_num_attempts
-            units_too_many_attempts = question_student.get_num_attempts() >= question.struct_settings.units_num_attempts
+            if question_student.num_units_attempts:
+                units_too_many_attempts = question_student.num_units_attempts >= question.struct_settings.units_num_attempts
+            else: 
+                units_too_many_attempts = False
         else:
             too_many_attempts = question_student.get_num_attempts() >= question.mcq_settings.mcq_max_num_attempts
             units_too_many_attempts = True
@@ -298,10 +301,12 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                         attempt.submitted_answer = submitted_answer
                     if correct:
                         attempt.success = True
-                        if units:
+                        if question.answer_type in [QuestionChoices.STRUCTURAL_FLOAT, QuestionChoices.STRUCTURAL_VARIABLE_FLOAT] and units:
                             attempt.num_points = max(0, question.struct_settings.num_points * (1 - question.struct_settings.percentage_pts_units)\
                                                     * (1 - question.struct_settings.deduct_per_attempt *
                                                     max(0, question_student.get_num_attempts() - 1)))
+                            if prev_units_success:
+                                question_student.success = True
                         else:
                             question_student.success = True
                             attempt.num_points = max(0, question.struct_settings.num_points * (1 - question.struct_settings.deduct_per_attempt *
@@ -351,33 +356,42 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                 question_student.save()
                 attempt.save()
             if not (units_too_many_attempts or prev_units_success):
-                if question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
-                    units = question.float_answer.answer_unit
-                else:
-                    units = question.variable_answer.float_answer_unit
-                # the following line will retrieve the most recent attempt, which is either the attempt that has just
-                # been submitted or the last attempt before it exceeded the number of permitted attempts.
-                last_attempt = QuestionAttempt.objects.filter(question_student=question_student).last() 
+                if question.answer_type in [QuestionChoices.STRUCTURAL_FLOAT, QuestionChoices.STRUCTURAL_VARIABLE_FLOAT]:
+                    if question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
+                        units = question.float_answer.answer_unit
+                    else:
+                        units = question.variable_float_answer.answer_unit
+                    # the following line will retrieve the most recent attempt, which is either the attempt that has just
+                    # been submitted or the last attempt before it exceeded the number of permitted attempts.
+                    last_attempt = QuestionAttempt.objects.filter(question_student=question_student).last() 
 
-                # the instructor may mistakenly set a maximum number of attempts to a question that doesn't even have
-                # units
-                if units:
-                    submitted_units = data["submitted_units"]
-                    units_correct = compare_units(units, submitted_units)
-                    last_attempt.units_success = units_correct
-                    last_attempt.submitted_units = submitted_units
-                    # Update the number of points for this attempt
-                    if units_correct:
-                        last_attempt.num_points += question.struct_settings.num_points * question.struct_settings.percentage_pts_units
-                    last_attempt.save()
-
-                    if units_correct and last_attempt.success:
-                        question_student.success = True
+                    # the instructor may mistakenly set a maximum number of attempts to a question that doesn't even have
+                    # units
+                    if units:
+                        submitted_units = data["submitted_units"]
+                        units_correct = compare_units(units, submitted_units)
+                        last_attempt.units_success = units_correct
+                        last_attempt.submitted_units = submitted_units
+                        # Update the number of points for this attempt
+                        if units_correct:
+                            last_attempt.num_points += question.struct_settings.num_points * question.struct_settings.percentage_pts_units
+                        last_attempt.save()
+                        if question_student.num_units_attempts:
+                            question_student.num_units_attempts += 1
+                        else: 
+                            question_student.num_units_attempts = 1 
+                        if units_correct and last_attempt.success:
+                            question_student.success = True
                         question_student.save()
             elif(prev_units_success and not too_many_attempts): # that is if a new attempt has been created.
                 attempt.num_points += question.struct_settings.num_points * question.struct_settings.percentage_pts_units
                 attempt.submitted_units = last_attempt.submitted_units
+                # transferring the points over. If the points for units are left in other attempts, the overall grade of
+                # the student will be boosted.
+                last_attempt.num_points -= question.struct_settings.num_points * question.struct_settings.percentage_pts_units
                 attempt.save()
+                last_attempt.save()
+        # print(f"Correct:{correct}. Units too may attempts: {units_too_many_attempts}")
         # Return a JsonResponse
         return JsonResponse({
             'correct': correct,

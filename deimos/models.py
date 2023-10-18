@@ -118,6 +118,7 @@ class QuestionStudent(models.Model):
     success = models.BooleanField(default=False)
     var_instances = models.ManyToManyField(VariableInstance, related_name='question_students')
     instances_created = models.BooleanField(default=False)
+    num_units_attempts = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
     def create_instances(self):
         """
         Get variable instances from the variables associated to the question.

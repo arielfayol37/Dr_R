@@ -95,7 +95,7 @@ forms.forEach((form)=>{
         const holder = questionHintsDiv.dataset.seen;
         questionHintsDiv.dataset.seen = `${parseInt(holder) + 1}`;
         const hClass = `.hint-num-${parseInt(holder)}`
-        console.log(hClass)
+        // console.log(hClass)
         questionHintsDiv.querySelector(hClass).style.display='block';
         if(questionHintsDiv.dataset.counter > questionHintsDiv.dataset.seen){
           seeMoreBtn.style.display = 'block';
@@ -139,15 +139,27 @@ forms.forEach((form)=>{
       calculatorDiv.classList.remove('hide');
       calculatorDiv.querySelector('.preface-content').innerHTML = form.querySelector('.answer_preface').value
       screen.value = form.querySelector('.inputed_answer_structural').value;
-      if(form.querySelector('.show_screen').value == "1"){
-        screen.style.display = "none";
+      if(form.querySelector('.show_screen').classList.contains('show')){
+        screen.disabled = false;
+        //console.log('screen enabled');
       }else{
-        screen.style.display = "block";
+        screen.disabled = true;
+        screen.value = form.querySelector('.hidden_last_attempt_content').value
+        //console.log('screen disabled');
       }
-      if(form.querySelector('.show_unit').value === 'yes'){
+      if(form.querySelector('.show_unit').classList.contains('show')){
         const iUsInputField = form.querySelector('.inputed_units_structural');
         calculatorDiv.querySelector('.units-screen').value = iUsInputField.value
         calculatorDiv.querySelector('.units-section').style.display='block';
+        if(form.querySelector('.able_unit').classList.contains('able')){
+          calculatorDiv.querySelector('.units-screen').disabled = false;
+          //console.log('units screen enabled');
+        }else{
+          const uScreen = calculatorDiv.querySelector('.units-screen')
+          uScreen.value = form.querySelector('.hidden_units_last_attempt_content').value
+          uScreen.disabled = true;
+          //console.log('units screen disabled');
+        }
       }else{
         calculatorDiv.querySelector('.units-section').style.display='none';
       }
@@ -159,12 +171,14 @@ forms.forEach((form)=>{
 
     const calculatorDiv = screen.closest('#calc-container');
     var requiresUnits, submitted_units;
-    if(calculatorDiv.querySelector('.units-section').style.display==='block'){
+    if(calculatorDiv.querySelector('.units-section').style.display === 'block'){
       submitted_units = calculatorDiv.querySelector('.units-screen').value 
       requiresUnits = true;
+      // console.log(`Requires units: ${requiresUnits}`);
     }else{
       submitted_units = ''
       requiresUnits = false;
+      // console.log(`Requires units: ${requiresUnits}`);
     }
     
     const yellowLight = form.querySelector('.yellow-light');
@@ -173,16 +187,16 @@ forms.forEach((form)=>{
     const blueLight = form.querySelector('.blue-light'); // May be NULL
     
     // For now, red light represents to many attempts
-    if(!greenLight.classList.contains('activated') && !redLight.classList.contains('activated')){
+    if(!greenLight.classList.contains('activated')){
       // Checking whether the submitted answer is valid
       const questionType = form.querySelector('.question-type');
       const question_type = questionType.value
       if (question_type.startsWith('structural')){
-        if(screen.value.length === 0){
+        if(screen.value.length === 0 && form.querySelector('.show_screen').classList.contains('show')){
           alert('Cannot submit blank answer');
           return;
         }
-        if(requiresUnits && submitted_units.length < 1){
+        if(requiresUnits && submitted_units.length < 1 && form.querySelector('.able_unit').classList.contains('able')){
           alert('You must provide units');
           return;
         }
@@ -240,12 +254,11 @@ forms.forEach((form)=>{
               }
               if(requiresUnits){
                 toggleLight(result.correct,result.too_many_attempts,redLight,yellowLight,
-                  greenLight,blueLight,result.units_correct, is_mcq=false, units_too_many_atempts=
-                  result.units_too_many_atempts);
+                  greenLight,blueLight,result.units_correct, is_mcq=false, units_too_many_attempts=
+                  result.units_too_many_attempts);
               }else{
                 toggleLight(result.correct,result.too_many_attempts,redLight,yellowLight,
-                  greenLight,blueLight, units_correct=false, is_mcq=false,units_too_many_atempts=
-                  result.units_too_many_atempts);
+                  greenLight,blueLight, units_correct=false, is_mcq=false,units_too_many_attempts=false);
               }
               
               if(!result.correct && result.feedback_data.length > 0){
@@ -254,17 +267,38 @@ forms.forEach((form)=>{
                 feedbackContainerDiv.querySelector('.formatted-answer-option').style.display = 'block';
               }
               if(result.correct){
+                screen.disabled = true;
+                form.querySelector('.show_screen').classList.remove('show');
+                // console.log(`Requires units: ${requiresUnits}`);
                 if(requiresUnits){
                   if(result.units_correct){
                     submitBtn.style.display = 'none';
-                  }else{
-                    submitBtn.innerHTML = 'Submit units';
+                  }else if(!result.units_too_many_attempts){
+                    submitBtn.value = 'Submit units';
                   }
                   
                 }else {
                   submitBtn.style.display = 'none';
                 }
                 
+              }
+
+              if(requiresUnits){
+                if(result.units_correct){
+                  const uScreen = calculatorDiv.querySelector('.units-screen')
+                  uScreen.disabled = true;
+                }
+              }
+
+              if(result.too_many_attempts){
+                screen.disabled = true;
+                form.querySelector('.show_screen').classList.remove('show');
+              }
+              // // console.log(`units_too_many_attempts: ${result.units_too_many_atempts}`);
+              if(result.units_too_many_attempts){
+                form.querySelector('.able_unit').classList.remove('able');
+                calculatorDiv.querySelector('.units-screen').disabled = true;
+                //console.log('disabled units');
               }
           });
     } else if( question_type ==='mcq'){
@@ -396,7 +430,7 @@ displayLatex();
 
     /*------------------------------UTILITY FUNCTIONS ----------------------------*/
     function toggleLight(correct, too_many_attempts, redLight, yellowLight,
-       greenLight, blueLight, units_correct=true, is_mcq=true, units_too_many_atempts=false) {
+       greenLight, blueLight, units_correct=true, is_mcq=true, units_too_many_attempts=false) {
         // Make the yellow light blink as though the program was 'thinking';
         removeAllLights(redLight, yellowLight, greenLight, blueLight);
         yellowLight.classList.add('activated');
@@ -416,21 +450,25 @@ displayLatex();
               yellowLight.classList.remove('activated');
               yellowLight.classList.remove('blinking');
 
-              if(too_many_attempts && units_too_many_atempts){
+              if(too_many_attempts && units_too_many_attempts){
                 redLight.classList.add('activated');
-                alert('Too many attempts for this question');
+                alert('Too many attempts for this question. Screen is now disabled');
               
               }else{
 
-                if(units_too_many_atempts){
-                  alert('Units attempts exhausted.')
+                if(units_too_many_attempts){
+                  alert('Units attempts exhausted. Units screen is now disabled.')
                 }
 
                 if(correct){
                   // This means that the units were wrong
+                  if(blueLight){
+                    blueLight.classList.add('activated');
+                    alert('Correct answer, but wrong units');
+                  }else {
+                    greenLight.classList.add('activated');
+                  }
                   
-                  blueLight.classList.add('activated');
-                  alert('Correct answer, but wrong units');
                 }else{
                   if(units_correct && !is_mcq){
                     // the answer is not correct and units are correct
@@ -567,7 +605,7 @@ if (prefacesInputs !=null){
             MathJax.typesetPromise();
             
         } catch(error){
-           console.log(error)
+           // console.log(error)
         }
     })
   })
