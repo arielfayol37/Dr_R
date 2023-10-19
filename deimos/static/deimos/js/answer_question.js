@@ -12,55 +12,61 @@ document.addEventListener('DOMContentLoaded', ()=> {
     MathJax.typesetPromise().then(()=>{
 
       previousAttempts.forEach((pA)=>{
+
         const elements = pA.querySelectorAll(".p-attempt");
 
-        function showElement(currentIndex, newIndex) {
-            elements[currentIndex].style.top = '-100%'; // Move the current element up and out of view
-            elements[currentIndex].style.opacity = '0'; // Fade it out
-        
-            elements[newIndex].style.top = '0'; // Move the target element to the viewable area
-            elements[newIndex].style.opacity = '1'; // Fade it in
-        
-            pA.querySelector('.attempts-container').dataset.index = newIndex; // Update the dataset
-        }
-        
-        pA.querySelector('.btn-attempt-down').addEventListener('click', () => {
-            let currentIndex = parseInt(pA.querySelector('.attempts-container').dataset.index);
-            let nextIndex = (currentIndex + 1) % elements.length;
-            showElement(currentIndex, nextIndex);
-        });
-        
-        pA.querySelector('.btn-attempt-up').addEventListener('click', () => {
-            let currentIndex = parseInt(pA.querySelector('.attempts-container').dataset.index);
-            let prevIndex = (currentIndex - 1 + elements.length) % elements.length;
-            showElement(currentIndex, prevIndex);
-        });
-        
+        if (elements.length != 0){
 
-        pA.querySelector('.open-attempts').addEventListener('click', (event)=>{
-          if(event.target.classList.contains('closed')){
-            pA.querySelector('.a-container').style.display = 'flex';
-            event.target.classList.remove('closed');
-          }else{
-            pA.querySelector('.a-container').style.display = 'none';
-            event.target.classList.add('closed');
+          // /console.log(elements);
+        function showElement(currentIndex, newIndex) {
+          elements[currentIndex].style.top = '-100%'; // Move the current element up and out of view
+          elements[currentIndex].style.opacity = '0'; // Fade it out
+      
+          elements[newIndex].style.top = '0'; // Move the target element to the viewable area
+          elements[newIndex].style.opacity = '1'; // Fade it in
+      
+          pA.querySelector('.attempts-container').dataset.index = newIndex; // Update the dataset
+      }
+      
+      pA.querySelector('.btn-attempt-down').addEventListener('click', () => {
+          let currentIndex = parseInt(pA.querySelector('.attempts-container').dataset.index);
+          let nextIndex = (currentIndex + 1) % elements.length;
+          showElement(currentIndex, nextIndex);
+      });
+      
+      pA.querySelector('.btn-attempt-up').addEventListener('click', () => {
+          let currentIndex = parseInt(pA.querySelector('.attempts-container').dataset.index);
+          let prevIndex = (currentIndex - 1 + elements.length) % elements.length;
+          showElement(currentIndex, prevIndex);
+      });
+      
+
+      pA.querySelector('.open-attempts').addEventListener('click', (event)=>{
+        if(event.target.classList.contains('closed')){
+          pA.querySelector('.a-container').style.display = 'flex';
+          event.target.classList.remove('closed');
+        }else{
+          pA.querySelector('.a-container').style.display = 'none';
+          event.target.classList.add('closed');
+        }
+      })
+
+      try{
+        pA.querySelectorAll('.p-attempt').forEach((p)=>{
+          const content = math.parse(p.querySelector('.attempt-content').value).toTex();
+          const aUnits = p.querySelector('.attempt-units');
+          var finalDisplay = content
+          if(aUnits != null){
+            finalDisplay = content + ' ' + aUnits.value
           }
+          p.innerHTML = MathJax.tex2chtml(finalDisplay).innerHTML // ; 
         })
 
-        try{
-          pA.querySelectorAll('.p-attempt').forEach((p)=>{
-            const content = math.parse(p.querySelector('.attempt-content').value).toTex();
-            const aUnits = p.querySelector('.attempt-units');
-            var finalDisplay = content
-            if(aUnits != null){
-              finalDisplay = content + ' ' + aUnits.value
-            }
-            p.innerHTML = MathJax.tex2chtml(finalDisplay).innerHTML // ; 
-          })
-
-        }catch (error){
-          console.log(error);
+      }catch (error){
+        console.log(error);
+      }
         }
+
       })
       MathJax.typesetPromise();
     })
@@ -75,8 +81,13 @@ document.addEventListener('DOMContentLoaded', ()=> {
       const passedAnswers = document.querySelectorAll('.passed-answer');
       passedAnswers.forEach((passedAnswer)=>{
         try {
-          const latex = math.parse(passedAnswer.innerHTML).toTex()
-          passedAnswer.innerHTML = MathJax.tex2chtml(latex + '\\phantom{}').innerHTML;
+          var toDisplay = passedAnswer.querySelector('.passed-answer-content').value;
+          const tUnits = passedAnswer.querySelector('.passed-answer-units');
+          if(tUnits != null){
+            toDisplay = toDisplay + ' ' + tUnits.value
+          }
+          const latex = math.parse(toDisplay).toTex()
+          passedAnswer.innerHTML = MathJax.tex2chtml(latex).innerHTML;
       } catch (error) {
           console.log(error);
       }
@@ -359,6 +370,12 @@ forms.forEach((form)=>{
               if(result.too_many_attempts){
                 screen.disabled = true;
                 form.querySelector('.show_screen').classList.remove('show');
+                if(!result.units_too_many_attempts){ // the toggle function will take care of 
+                                                     // the alert message if the units attempts
+                                                    //  are exceeded too.
+                  alert('You exhausted your attempts for this question. Screen is now disabled');
+                }
+                
               }
               // // console.log(`units_too_many_attempts: ${result.units_too_many_atempts}`);
               if(result.units_too_many_attempts){
@@ -540,7 +557,8 @@ displayLatex();
                     // the answer is not correct and units are correct
                     yellowLight.classList.add('activated');
                     alert('wrong answer, but correct units');
-                  }else {
+                  }
+                  else {
                     // both answer and units were wrong
                     redLight.classList.add('activated');
                   }

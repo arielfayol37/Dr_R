@@ -252,14 +252,15 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
         # Normally, we should just use get() because QuestionStudent object is already created
         # whenever the user opens a question for the first time, but just to be safe.
         question_student, created = QuestionStudent.objects.get_or_create(student=student, question=question)
+        num_attempts = question_student.get_num_attempts()
         if data["questionType"].startswith('structural'):
-            too_many_attempts = question_student.get_num_attempts() >= question.struct_settings.max_num_attempts
+            too_many_attempts =  num_attempts >= question.struct_settings.max_num_attempts
             if question_student.num_units_attempts:
                 units_too_many_attempts = question_student.num_units_attempts >= question.struct_settings.units_num_attempts
             else: 
                 units_too_many_attempts = False
         else:
-            too_many_attempts = question_student.get_num_attempts() >= question.mcq_settings.mcq_max_num_attempts
+            too_many_attempts = num_attempts >= question.mcq_settings.mcq_max_num_attempts
             units_too_many_attempts = True
         correct = question_student.success
         if ( not (question_student.success)):
@@ -392,6 +393,10 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                 attempt.save()
                 last_attempt.save()
         # print(f"Correct:{correct}. Units too may attempts: {units_too_many_attempts}")
+        if(not correct and data["questionType"].startswith('structural')):
+            too_many_attempts =  num_attempts + 1 >= question.struct_settings.max_num_attempts
+            if question_student.num_units_attempts and not units_correct:
+                units_too_many_attempts = question_student.num_units_attempts + 1 >= question.struct_settings.units_num_attempts
         # Return a JsonResponse
         return JsonResponse({
             'correct': correct,

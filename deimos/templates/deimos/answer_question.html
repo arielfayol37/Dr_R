@@ -183,7 +183,7 @@
                             <div class="attempts-container" data-index="0">
                             {% for attempt in question_dict.question_student.attempts.all %}
                               <p class="p-attempt"> 
-                                <input type="hidden" value="{{attempt.content}}" class="attempt-content"/>
+                                <input type="hidden" value="{{attempt.submitted_answer}}" class="attempt-content"/>
                               {% if attempt.submitted_units %}
                                 <input type="hidden" value="{{attempt.submitted_units}}" class="attempt-units"/>
                               {% endif %}
@@ -214,6 +214,7 @@
 
                           {% if question_dict.too_many_attempts %}
                               <input type="hidden" class="show_screen"/>
+                              <input type="hidden" class="hidden_last_attempt_content" value="{{question_dict.last_attempt_content}}"/>
                             {% else %}
                               {% if question_dict.last_attempt and question_dict.last_attempt.success %}
                                   <input type="hidden" class="hidden_last_attempt_content" value="{{question_dict.last_attempt_content}}"/>
@@ -342,7 +343,7 @@
   </div>
   <div class="side">
     <div class="side-info-icon" title="Info">
-      <ion-icon name="cog"></ion-icon>
+      <ion-icon name="options-outline"></ion-icon>
     </div>
     <div class="hide side-info">
         <span class="side-info-x">X</span><br/>
