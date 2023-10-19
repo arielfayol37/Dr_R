@@ -27,7 +27,7 @@
                 <td> <a href="{% url 'deimos:assignemt_gradebook_student' student_id=student.id assignment_id=assignment.id %}">
                     <b>{{assignment.assignment_student.assignment.name}}</b></a>
                 </td> 
-                    <td> {{assignment.grade}} </td>
+                    <td> {{assignment.grade}} %</td>
             </tr>
             {% if forloop.last %}
               <input  class ="num_assignments" type="hidden" data-num_assignments="{{ forloop.counter}}">
@@ -35,7 +35,7 @@
             {% endfor %}
             <tr>
                 <td><b>COURSE SCORE</b></td>
-                <td>{{course_score}} </td>
+                <td>{{course_score}} %</td>
             </tr>
         </tbody>
     </table>
@@ -47,9 +47,8 @@
 <script>
     // Get the progress element
     var progress = document.querySelector(".progress");
-    var numOfAssignment = document.querySelector('.num_assignments').dataset.num_assignments;
     // Set the value of the progress element to the score
-    var score = parseFloat(progress.dataset.score )/ parseFloat(numOfAssignment); // computing average score
+    var score = parseFloat(progress.dataset.score)
     score = score.toFixed(2);
      // Get the progress-bar element inside the progress element
     var progressBar = progress.querySelector(".progress-bar");

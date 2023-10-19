@@ -4,13 +4,90 @@ document.addEventListener('DOMContentLoaded', ()=> {
     const screen = document.querySelector('#screen'); 
     var formattedAnswerDiv;
    
+  // displaying previous submissions
+
+  const previousAttempts = document.querySelectorAll('.previous-attempts');
+  if(previousAttempts){
+
+    MathJax.typesetPromise().then(()=>{
+
+      previousAttempts.forEach((pA)=>{
+
+        const elements = pA.querySelectorAll(".p-attempt");
+
+        if (elements.length != 0){
+
+          // /console.log(elements);
+        function showElement(currentIndex, newIndex) {
+          elements[currentIndex].style.top = '-100%'; // Move the current element up and out of view
+          elements[currentIndex].style.opacity = '0'; // Fade it out
+      
+          elements[newIndex].style.top = '0'; // Move the target element to the viewable area
+          elements[newIndex].style.opacity = '1'; // Fade it in
+      
+          pA.querySelector('.attempts-container').dataset.index = newIndex; // Update the dataset
+      }
+      
+      pA.querySelector('.btn-attempt-down').addEventListener('click', () => {
+          let currentIndex = parseInt(pA.querySelector('.attempts-container').dataset.index);
+          let nextIndex = (currentIndex + 1) % elements.length;
+          showElement(currentIndex, nextIndex);
+      });
+      
+      pA.querySelector('.btn-attempt-up').addEventListener('click', () => {
+          let currentIndex = parseInt(pA.querySelector('.attempts-container').dataset.index);
+          let prevIndex = (currentIndex - 1 + elements.length) % elements.length;
+          showElement(currentIndex, prevIndex);
+      });
+      
+
+      pA.querySelector('.open-attempts').addEventListener('click', (event)=>{
+        if(event.target.classList.contains('closed')){
+          pA.querySelector('.a-container').style.display = 'flex';
+          event.target.classList.remove('closed');
+        }else{
+          pA.querySelector('.a-container').style.display = 'none';
+          event.target.classList.add('closed');
+        }
+      })
+
+      try{
+        pA.querySelectorAll('.p-attempt').forEach((p)=>{
+          const content = math.parse(p.querySelector('.attempt-content').value).toTex();
+          const aUnits = p.querySelector('.attempt-units');
+          var finalDisplay = content
+          if(aUnits != null){
+            finalDisplay = content + ' ' + aUnits.value
+          }
+          p.innerHTML = MathJax.tex2chtml(finalDisplay).innerHTML // ; 
+        })
+
+      }catch (error){
+        console.log(error);
+      }
+        }
+
+      })
+      MathJax.typesetPromise();
+    })
+
+  }
+
+
+
+
   // Displaying the validated submissions
     MathJax.typesetPromise().then(() => {
       const passedAnswers = document.querySelectorAll('.passed-answer');
       passedAnswers.forEach((passedAnswer)=>{
         try {
-          const latex = math.parse(passedAnswer.innerHTML).toTex()
-          passedAnswer.innerHTML = MathJax.tex2chtml(latex + '\\phantom{}').innerHTML;
+          var toDisplay = passedAnswer.querySelector('.passed-answer-content').value;
+          const tUnits = passedAnswer.querySelector('.passed-answer-units');
+          if(tUnits != null){
+            toDisplay = toDisplay + ' ' + tUnits.value
+          }
+          const latex = math.parse(toDisplay).toTex()
+          passedAnswer.innerHTML = MathJax.tex2chtml(latex).innerHTML;
       } catch (error) {
           console.log(error);
       }
@@ -95,7 +172,7 @@ forms.forEach((form)=>{
         const holder = questionHintsDiv.dataset.seen;
         questionHintsDiv.dataset.seen = `${parseInt(holder) + 1}`;
         const hClass = `.hint-num-${parseInt(holder)}`
-        console.log(hClass)
+        // console.log(hClass)
         questionHintsDiv.querySelector(hClass).style.display='block';
         if(questionHintsDiv.dataset.counter > questionHintsDiv.dataset.seen){
           seeMoreBtn.style.display = 'block';
@@ -122,7 +199,6 @@ forms.forEach((form)=>{
       // will have an attempt-mode)
       const calculatorDiv = screen.closest('#calc-container');
       const previousForm = screen.closest('.question-form');
-      
       if(previousForm !=null){
         const prevSubmitBtn = previousForm.querySelector('.submit-btn');
         prevSubmitBtn.value = 'Attempt';
@@ -140,9 +216,27 @@ forms.forEach((form)=>{
       calculatorDiv.classList.remove('hide');
       calculatorDiv.querySelector('.preface-content').innerHTML = form.querySelector('.answer_preface').value
       screen.value = form.querySelector('.inputed_answer_structural').value;
-      if(form.querySelector('.show_unit').value ==='yes'){
-        calculatorDiv.querySelector('.units-screen').value = form.querySelector('.inputed_units_structural').value
+      if(form.querySelector('.show_screen').classList.contains('show')){
+        screen.disabled = false;
+        //console.log('screen enabled');
+      }else{
+        screen.disabled = true;
+        screen.value = form.querySelector('.hidden_last_attempt_content').value
+        //console.log('screen disabled');
+      }
+      if(form.querySelector('.show_unit').classList.contains('show')){
+        const iUsInputField = form.querySelector('.inputed_units_structural');
+        calculatorDiv.querySelector('.units-screen').value = iUsInputField.value
         calculatorDiv.querySelector('.units-section').style.display='block';
+        if(form.querySelector('.able_unit').classList.contains('able')){
+          calculatorDiv.querySelector('.units-screen').disabled = false;
+          //console.log('units screen enabled');
+        }else{
+          const uScreen = calculatorDiv.querySelector('.units-screen')
+          uScreen.value = form.querySelector('.hidden_units_last_attempt_content').value
+          uScreen.disabled = true;
+          //console.log('units screen disabled');
+        }
       }else{
         calculatorDiv.querySelector('.units-section').style.display='none';
       }
@@ -151,18 +245,36 @@ forms.forEach((form)=>{
 
       return;  
     }
+
+    const calculatorDiv = screen.closest('#calc-container');
+    var requiresUnits, submitted_units;
+    if(calculatorDiv.querySelector('.units-section').style.display === 'block'){
+      submitted_units = calculatorDiv.querySelector('.units-screen').value 
+      requiresUnits = true;
+      // console.log(`Requires units: ${requiresUnits}`);
+    }else{
+      submitted_units = ''
+      requiresUnits = false;
+      // console.log(`Requires units: ${requiresUnits}`);
+    }
+    
     const yellowLight = form.querySelector('.yellow-light');
     const greenLight = form.querySelector('.green-light');
     const redLight = form.querySelector('.red-light');
+    const blueLight = form.querySelector('.blue-light'); // May be NULL
     
-    // For now, yellow light represents to many attempts
-    if(!greenLight.classList.contains('activated') && !yellowLight.classList.contains('activated')){
+    // For now, red light represents to many attempts
+    if(!greenLight.classList.contains('activated')){
       // Checking whether the submitted answer is valid
       const questionType = form.querySelector('.question-type');
       const question_type = questionType.value
       if (question_type.startsWith('structural')){
-        if(screen.value.length === 0){
+        if(screen.value.length === 0 && form.querySelector('.show_screen').classList.contains('show')){
           alert('Cannot submit blank answer');
+          return;
+        }
+        if(requiresUnits && submitted_units.length < 1 && form.querySelector('.able_unit').classList.contains('able')){
+          alert('You must provide units');
           return;
         }
         const last_character = parseInt(question_type.charAt(question_type.length-1)); 
@@ -198,14 +310,14 @@ forms.forEach((form)=>{
       const qid = form.querySelector('.question-id').value;
       const baseUrl = window.location.href.replace(/#$/, '');
     if (question_type.startsWith('structural')){
-      
         fetch(`${baseUrl}/validate_answer/${qid}`, {
             method: 'POST',
             headers: { 'X-CSRFToken': getCookie('csrftoken') },
             body: JSON.stringify({
                     answer: answer_struct.toString(),
                     submitted_answer: screen.value,
-                    questionType: questionType.value    
+                    questionType: questionType.value,
+                    submitted_units: submitted_units    
             })
           })
           .then(response => response.json())
@@ -214,17 +326,62 @@ forms.forEach((form)=>{
               //console.log(result.correct);
               if(result.previously_submitted){
                 alert('You already attempted using that answer');
-                resetLightsToRed(redLight,yellowLight,greenLight);
+                removeAllLights(redLight,yellowLight,greenLight, blueLight);
                 return;
               }
-              toggleLight(result.correct,result.too_many_attempts,redLight,yellowLight,greenLight);
+              if(requiresUnits){
+                toggleLight(result.correct,result.too_many_attempts,redLight,yellowLight,
+                  greenLight,blueLight,result.units_correct, is_mcq=false, units_too_many_attempts=
+                  result.units_too_many_attempts);
+              }else{
+                toggleLight(result.correct,result.too_many_attempts,redLight,yellowLight,
+                  greenLight,blueLight, units_correct=false, is_mcq=false,units_too_many_attempts=false);
+              }
+              
               if(!result.correct && result.feedback_data.length > 0){
                 feedbackContainerDiv.querySelector('.show-feedback-btn').style.display='block';
                 feedbackContainerDiv.querySelector('.formatted-answer-option').innerHTML = result.feedback_data;
                 feedbackContainerDiv.querySelector('.formatted-answer-option').style.display = 'block';
               }
               if(result.correct){
-                submitBtn.style.display = 'none';
+                screen.disabled = true;
+                form.querySelector('.show_screen').classList.remove('show');
+                // console.log(`Requires units: ${requiresUnits}`);
+                if(requiresUnits){
+                  if(result.units_correct){
+                    submitBtn.style.display = 'none';
+                  }else if(!result.units_too_many_attempts){
+                    submitBtn.value = 'Submit units';
+                  }
+                  
+                }else {
+                  submitBtn.style.display = 'none';
+                }
+                
+              }
+
+              if(requiresUnits){
+                if(result.units_correct){
+                  const uScreen = calculatorDiv.querySelector('.units-screen')
+                  uScreen.disabled = true;
+                }
+              }
+
+              if(result.too_many_attempts){
+                screen.disabled = true;
+                form.querySelector('.show_screen').classList.remove('show');
+                if(!result.units_too_many_attempts){ // the toggle function will take care of 
+                                                     // the alert message if the units attempts
+                                                    //  are exceeded too.
+                  alert('You exhausted your attempts for this question. Screen is now disabled');
+                }
+                
+              }
+              // // console.log(`units_too_many_attempts: ${result.units_too_many_atempts}`);
+              if(result.units_too_many_attempts){
+                form.querySelector('.able_unit').classList.remove('able');
+                calculatorDiv.querySelector('.units-screen').disabled = true;
+                //console.log('disabled units');
               }
           });
     } else if( question_type ==='mcq'){
@@ -245,10 +402,10 @@ forms.forEach((form)=>{
               //console.log(result.correct);
               if(result.previously_submitted){
                 alert('You already attempted using that answer');
-                resetLightsToRed(redLight,yellowLight,greenLight);
+                removeAllLights(redLight,yellowLight,greenLight, blueLight);
                 return;
               }
-              toggleLight(result.correct,result.too_many_attempts, redLight, yellowLight, greenLight);
+              toggleLight(result.correct, result.too_many_attempts, redLight, yellowLight, greenLight);
           });
     }else {
       alert('Something went wrong');
@@ -355,13 +512,16 @@ displayLatex();
 
 
     /*------------------------------UTILITY FUNCTIONS ----------------------------*/
-    function toggleLight(correct, too_many_attempts,redLight, yellowLight, greenLight) {
+    function toggleLight(correct, too_many_attempts, redLight, yellowLight,
+       greenLight, blueLight, units_correct=true, is_mcq=true, units_too_many_attempts=false) {
         // Make the yellow light blink as though the program was 'thinking';
-
-          if (correct) {
+        removeAllLights(redLight, yellowLight, greenLight, blueLight);
+        yellowLight.classList.add('activated');
+        yellowLight.classList.add('blinking');
+          if (correct && units_correct) {
             
             setTimeout(function () {
-              // Code to execute after 1.6 seconds
+              // Code to execute after 1 seconds
               yellowLight.classList.remove('activated');
               yellowLight.classList.remove('blinking');
               greenLight.classList.add('activated');
@@ -369,17 +529,42 @@ displayLatex();
         
           } else {
             setTimeout(function () {
-              // Code to execute after 1.6 seconds
+              // Code to execute after 1 seconds
               yellowLight.classList.remove('activated');
               yellowLight.classList.remove('blinking');
-              if(too_many_attempts){
-                // Keep yellow light
-                yellowLight.classList.add('activated');
-                alert('Too many attempts for this question');
-              }else {
+
+              if(too_many_attempts && units_too_many_attempts){
                 redLight.classList.add('activated');
-              }
+                alert('Too many attempts for this question. Screen is now disabled');
               
+              }else{
+
+                if(units_too_many_attempts){
+                  alert('Units attempts exhausted. Units screen is now disabled.')
+                }
+
+                if(correct){
+                  // This means that the units were wrong
+                  if(blueLight){
+                    blueLight.classList.add('activated');
+                    alert('Correct answer, but wrong units');
+                  }else {
+                    greenLight.classList.add('activated');
+                  }
+                  
+                }else{
+                  if(units_correct && !is_mcq){
+                    // the answer is not correct and units are correct
+                    yellowLight.classList.add('activated');
+                    alert('wrong answer, but correct units');
+                  }
+                  else {
+                    // both answer and units were wrong
+                    redLight.classList.add('activated');
+                  }
+                }
+
+              }
             }, 1000);
         
           }
@@ -393,6 +578,21 @@ displayLatex();
       yellowLight.classList.remove('activated');
       greenLight.classList.remove('blinking');
       greenLight.classList.remove('activated');
+    }
+
+    function removeAllLights(redLight, yellowLight, greenLight, blueLight){
+      if(blueLight){
+        blueLight.classList.remove('blinking');
+        blueLight.classList.remove('activated');
+      }
+
+      redLight.classList.remove('activated');
+      redLight.classList.remove('blinking');
+      yellowLight.classList.remove('blinking');
+      yellowLight.classList.remove('activated');
+      greenLight.classList.remove('blinking');
+      greenLight.classList.remove('activated');
+
     }
 function rep(str, index, char) {
     str = setCharAt(str,index,char);
@@ -489,7 +689,7 @@ if (prefacesInputs !=null){
             MathJax.typesetPromise();
             
         } catch(error){
-           console.log(error)
+           // console.log(error)
         }
     })
   })

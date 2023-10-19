@@ -24,7 +24,7 @@
         <div class="var-info-div">
             <div><input class="var-symbol field-style" type="text" placeholder="enter symbol e.g. x"/></div>
             <div><input class="var-domain field-style" type="text" placeholder="enter intervals e.g.[1,3] [-8, 20]"/></div>
-            <div><input class="var-step-size field-style" type="text" placeholder ="step size (optional)" pattern="^?[0-9]*[.,]?[0-9]+" title="Please enter a valid float number."></div>
+            <div><input class="var-step-size field-style" type="number" min="0" placeholder ="step size (optional)" pattern="^?[0-9]*[.,]?[0-9]+" title="Please enter a valid float number."></div>
 
             <div class="type-selection">
               <label>
@@ -103,56 +103,56 @@
           <div class="settings-item"> 
             <div class="settings-label">Number of points:</div>
             <div class="settings-input-div">
-              <input class="field-style settings init-num-pts" type="number" name="num_points"
+              <input class="field-style settings init-num-pts" type="number" name="num_points" min="0" max="25"
               placeholder="Number of points e.g. 10" value="{{assignment.grading_scheme.num_points}}"/>
             </div>
           </div>
           <div class="settings-item">
             <div class="settings-label">Max attempts:</div>
             <div class="settings-input-div">
-              <input class="field-style settings" type="number" name="max_num_attempts"
+              <input class="field-style settings" type="number" name="max_num_attempts" min="1" 
               placeholder="Max number of attempts" value="{{assignment.grading_scheme.struct_num_attempts}}"/>
             </div>
           </div>
           <div class="settings-item">
             <div class="settings-label">% deduct per attempt:</div>
             <div class="settings-input-div">
-              <input class="field-style settings" type="number" name="deduct_per_attempt"
+              <input class="field-style settings" type="number" name="deduct_per_attempt" min="0" max="1"
               placeholder="% deduct per attempt" value="{{assignment.grading_scheme.deduct_per_attempt}}"/>
             </div>
           </div >
           <div class="settings-item">
             <div class="settings-label">% Margin error:</div>
             <div class="settings-input-div"> 
-              <input class="field-style settings" type="number" name="margin_error"
+              <input class="field-style settings" type="number" name="margin_error" min="0" max="1"
               placeholder="% margin error" value="{{assignment.grading_scheme.margin_error}}"/>
             </div>
           </div>
           <div class="settings-item">
             <div class="settings-label">% points for units:</div>
             <div class="settings-input-div">
-              <input class="field-style settings" type="number" name="percentage_pts_units"
+              <input class="field-style settings" type="number" name="percentage_pts_units" min="0" max="1"
               placeholder="% points for units" value="{{assignment.grading_scheme.percentage_pts_units}}"/>
             </div>
           </div>
           <div class="settings-item">
             <div class="settings-label">Max attempts(mcq):</div>
             <div class="settings-input-div">
-              <input class="field-style settings" type="number" name="max_mcq_num_attempts"
+              <input class="field-style settings" type="number" name="max_mcq_num_attempts" min="1"
               placeholder="Max number of attempts(mcq)" value="{{assignment.grading_scheme.mcq_num_attempts}}"/>
             </div>
           </div>
           <div class="settings-item">
             <div class="settings-label">% deduct per attempt(mcq):</div>
             <div class="settings-input-div">
-              <input class="field-style settings" type="number" name="mcq_deduct_per_attempt"
+              <input class="field-style settings" type="number" name="mcq_deduct_per_attempt" min="0" max="1"
               placeholder="% deduct per attempt(mcq)" value="{{assignment.grading_scheme.mcq_deduct_per_attempt}}"/>
             </div>
           </div>
           <div class="settings-item">
             <div class="settings-label">Max attempts(units):</div>
             <div class="settings-input-div">
-              <input class="field-style settings" type="number" name="units_num_attempts"
+              <input class="field-style settings" type="number" name="units_num_attempts" min="1"
               placeholder="Max attempts(units)" value="{{assignment.grading_scheme.units_num_attempts}}"/>
             </div>
           </div>

@@ -31,18 +31,63 @@
                 <input type="hidden" value="{{question_dict.question.id}}" class="question-id"/>
                 <p class="question-content">{{question_dict.question.text | safe}}</p>
                 <div class="question-status">
-                  {% if question_dict.success %}
+                  {% if question_dict.question_student.success %}
                     <div class="tf-light red-light"></div>
                     <div class="tf-light yellow-light"></div>
+                    {% if not question_dict.is_mcq or not question_dict.is_fr %}
+                      {% if question_dict.answer.answer_unit %}
+                        <div class="tf-light blue-light"></div>
+                      {% endif %}
+                    {% endif %}
                     <div class="tf-light green-light activated"></div>
                   {% else %}
-                    {% if question_dict.too_many_attempts %}
-                      <div class="tf-light red-light activated"></div>
-                      <div class="tf-light yellow-light"></div>
-                    {% else %}
-                      <div class="tf-light red-light"></div>
-                      <div class="tf-light yellow-light"></div>
-                    {% endif %}
+                      {% if not question_dict.is_mcq or not question_dict.is_fr %} <!-- if structural question -->
+                        {% if not question_dict.answer.answer_unit %} <!--if doesn't have units-->
+                          {% if question_dict.too_many_attempts %}
+                            <div class="tf-light red-light activated"></div>
+                          {% else %}
+                            <div class="tf-light red-light"></div>
+                          {% endif %}
+                          <div class="tf-light yellow-light"></div>
+                        {% else %}
+                          {% if question_dict.units_too_many_attempts and question_dict.too_many_attempts %}
+                            <div class="tf-light red-light activated"></div>
+                            <div class="tf-light yellow-light"></div>
+                            <div class="tf-light blue-light"></div>
+
+                          {% else %}
+                            {% if question_dict.last_attempt %}
+                              {% if question_dict.last_attempt.units_success %}
+                                <div class="tf-light red-light"></div>
+                                <div class="tf-light yellow-light activated"></div>
+                                <div class="tf-light blue-light"></div>
+                              {% else %}
+                                <div class="tf-light red-light"></div>
+                                <div class="tf-light yellow-light"></div>
+                                {% if question_dict.last_attempt.success %}
+                                  <div class="tf-light blue-light activated"></div>
+                                {% else %}
+                                  <div class="tf-light blue-light"></div>
+                                {% endif %}
+                              {% endif %}
+                            
+                            {% else %}
+                              <div class="tf-light red-light"></div>
+                              <div class="tf-light yellow-light"></div>
+                              <div class="tf-light blue-light"></div>
+                            {% endif %}
+                          
+                          {% endif %}
+
+                        {% endif %}
+                      {% else %} <!--MCQ question-->
+                        {% if question_dict.too_many_attempts %}
+                          <div class="tf-light red-light activated"></div>
+                        {% else %}
+                          <div class="tf-light red-light"></div>
+                        {% endif %}
+                        <div class="tf-light yellow-light"></div>
+                      {% endif %}
 
                     <div class="tf-light green-light"></div>
                   {% endif %}
@@ -104,7 +149,7 @@
                               <input type="hidden" value="{{answer.pk}}{{question_type}}" class="answer_id" name="mcq_answer_id_{{ forloop.counter0 }}"/>
                               <input type="hidden" value="0{{question_type}}" class="answer_info" name="mcq_answer_info_{{ forloop.counter0 }}"/>
                             </div>
-                            {% if question_dict.success %}
+                            {% if question_dict.question_student.success %}
                                 {% if answer.is_answer%}
                                     <button type="button" class="btn btn-info">True</button> 
                                 {% endif %}
@@ -116,7 +161,7 @@
                           <br/> <br/>   
                         {% endfor %}
                       </div> 
-                      {% if question_dict.success %}
+                      {% if question_dict.question_student.success %}
                         <input type="submit" class="btn btn-success exempt submit-btn" value="Submit Answer" style="display: none;">
                       {% else %}
                         <input type="submit" class="btn btn-success exempt submit-btn" value="Submit Answer">
@@ -130,7 +175,29 @@
                       <div> <input type="submit" class="btn btn-success exempt submit-btn" value="Submit Answer"></div>
                       <br/><br/>
                   {% else %}
-                      {% if not question_dict.success %}
+                      <!-- div for previous attempts -->
+                      <div class="previous-attempts">
+                        {% if question_dict.question_student.attempts.all %}
+                          <ion-icon name="play-back-circle-outline" class="open-attempts closed" title="previous submissions"></ion-icon>
+                          <div class="a-container formatted-answer" style="display: none;">
+                            <div class="attempts-container" data-index="0">
+                            {% for attempt in question_dict.question_student.attempts.all %}
+                              <p class="p-attempt"> 
+                                <input type="hidden" value="{{attempt.submitted_answer}}" class="attempt-content"/>
+                              {% if attempt.submitted_units %}
+                                <input type="hidden" value="{{attempt.submitted_units}}" class="attempt-units"/>
+                              {% endif %}
+                              </p>
+                            {% endfor %}
+                            </div>
+                            <div class="button-directions"> 
+                              <ion-icon name="chevron-up-outline" class="btn-attempt-up"></ion-icon>
+                              <ion-icon name="chevron-down-outline" class="btn-attempt-down"></ion-icon>
+                            </div>
+                          </div>
+                        {% endif %}
+                      </div>
+                      {% if not question_dict.question_student.success %}
                           <input type="hidden" value="structural_{{question_dict.sq_type}}" class="question-type"/>
                           <!--TODO: !Important. I don't think we will ever use the pk of the answer for structural questions.-->
                           <input type="hidden" value="{{question_dict.answer.pk}}" name="structural_answer_id_0"/>
@@ -144,25 +211,59 @@
                           {% else %}
                             <input type="hidden" class="answer_preface" value=""/>
                           {% endif %}
+
+                          {% if question_dict.too_many_attempts %}
+                              <input type="hidden" class="show_screen"/>
+                              <input type="hidden" class="hidden_last_attempt_content" value="{{question_dict.last_attempt_content}}"/>
+                            {% else %}
+                              {% if question_dict.last_attempt and question_dict.last_attempt.success %}
+                                  <input type="hidden" class="hidden_last_attempt_content" value="{{question_dict.last_attempt_content}}"/>
+                                  <input type="hidden" class="show_screen"/>
+                              {% else %}
+                                  <input type="hidden" class="show_screen show"/>
+                              {% endif %}
+                          {% endif %}
+
                           {% if question_dict.answer.answer_unit %}
-                            <input type="hidden" class="show_unit" value="yes"/>
+                            {% if question_dict.last_attempt %}
+                              {% if question_dict.last_attempt.units_success %}
+                                <input type="hidden" class="show_unit show"/>
+                                <input type="hidden" class="able_unit"/>
+                                <input type="hidden" class="hidden_units_last_attempt_content" value="{{question_dict.last_attempt.submitted_units}}"/>
+                              {% else %}
+                                {% if question_dict.units_too_many_attempts %}
+                                  <input type="hidden" class="hidden_units_last_attempt_content" value="{{question_dict.last_attempt.submitted_units}}"/>
+                                  <input type="hidden" class="able_unit"/>
+                                {% else %}
+                                  <input type="hidden" class="able_unit able"/>
+                                {% endif %}
+                                <input type="hidden" class="show_unit show"/>
+                              {% endif %}
+                            {% else %}
+                              <input type="hidden" class="able_unit able"/>
+                              <input type="hidden" class="show_unit show"/>
+                            {% endif %}
                           {% else %}
-                            <input type="hidden" class="show_unit" value="no"/>
+                            <input type="hidden" class="show_unit"/>
                           {% endif %}
                           <input type="hidden" class="inputed_answer_structural"/>
                           <input type="hidden" class="inputed_units_structural"/>
                         {% else %}
                             <input style="display:none;" type="submit" class="btn btn-outline-success exempt attempt-mode submit-btn" value="Attempt">
                             <div class="formatted-answer passed-answer">
-                              {{question_dict.last_attempt}}
+                              <input type="hidden" class="passed-answer-content" value="{{question_dict.last_attempt_content}}"/>
+                              {{question_dict.last_attempt_content}}
+                              {% if question_dict.answer.answer_unit %}
+                              <input type="hidden" class="passed-answer-units" value="{{question_dict.last_attempt.submitted_units}}"/>
+                                  <!--Assumption here is that there must be a unit if the student submitted and answer-->
+                                 {{ question_dict.last_attempt.submitted_units }}
+                              {% endif %}
                             </div>
                         {% endif %}
                       <br/>
                 {% endif %}
               <br/>
               </form>
-              
-              
       {% endfor %}
       <br/><br/>
       <div class="navigation">
@@ -242,7 +343,7 @@
   </div>
   <div class="side">
     <div class="side-info-icon" title="Info">
-      <ion-icon name="cog"></ion-icon>
+      <ion-icon name="options-outline"></ion-icon>
     </div>
     <div class="hide side-info">
         <span class="side-info-x">X</span><br/>
