@@ -17,13 +17,13 @@
         <div class="container-fluid">
           <ul class="navbar-nav mr-auto" style="list-style: none; display:flex;">
             <li class="nav-item " style="display:inline;">
-              <a class="nav-link home-btn" href="">Course </a>
+              <a class="nav-link home-btn" href="{% url 'phobos:gradebook' course_id=course.id %}">Course </a>
             </li>
             <li class="nav-item" style="display:inline;">
               <a class="nav-link view-notes-btn" href="{% url 'phobos:create_assignment' course_id=course.id %}">Create Assignment</a>
             </li>
             <li class="nav-item" style="display:inline;">
-                <a class="nav-link gradebook-btn" href="{% url 'phobos:gradebook' course_id=course.id %}">GradeBook</a>
+                <a class="nav-link gradebook-btn" >GradeBook</a>
             </li>
             </div>
       </nav>
