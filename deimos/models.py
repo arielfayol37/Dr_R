@@ -101,6 +101,7 @@ class AssignmentStudent(models.Model):
             self.grade = round((num_points/total) * 100, 2)
         else:
             self.grade = 0
+        self.assignment.num_points = total
         return self.grade
     def save(self, *args, **kwargs):
         if not self.due_date:
@@ -117,6 +118,7 @@ class QuestionStudent(models.Model):
     success = models.BooleanField(default=False)
     var_instances = models.ManyToManyField(VariableInstance, related_name='question_students')
     instances_created = models.BooleanField(default=False)
+    num_units_attempts = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
     def create_instances(self):
         """
         Get variable instances from the variables associated to the question.
@@ -276,6 +278,8 @@ class QuestionAttempt(models.Model):
     success = models.BooleanField(default=False, null=True)
     num_points = models.FloatField(default=0, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
+    units_success = models.BooleanField(default=False, null=True)
+    submitted_units = models.CharField(max_length=10, null=True, blank=True)
     # MCQ answers don't need submitted_answer.
     # Structural questions attempts will be simplified and stored in content
     # while the actual submission will be stored in submitted_answer.

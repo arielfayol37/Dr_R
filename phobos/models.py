@@ -226,7 +226,7 @@ class Question(models.Model):
         default = QuestionChoices.STRUCTURAL_TEXT
     )
     embedding = models.JSONField(null=True, blank=True)  # Field to store encoded representation for search
-    
+    num_points = models.IntegerField(null=True, blank=True)
 
     def default_due_date(self):
         if self.assignment:
@@ -288,19 +288,19 @@ class StructuralQuestionSettings(BaseQuestionSettings):
     Settings specific to Structural Questions
     """
     question = models.OneToOneField(Question, on_delete=models.CASCADE, related_name='struct_settings')
-    max_num_attempts = models.IntegerField(default=5)
+    max_num_attempts = models.IntegerField(default=5, validators=[MinValueValidator(1)])
     deduct_per_attempt = models.FloatField(default=0.05, blank=True, null=True)
     margin_error = models.FloatField(default=0.03, blank=True, null=True, validators=[MinValueValidator(0), MaxValueValidator(1)])
     percentage_pts_units = models.FloatField(default=0.03, blank=True, null=True, validators=[MinValueValidator(0), MaxValueValidator(1)])
-    units_num_attempts = models.IntegerField(default=2)
+    units_num_attempts = models.IntegerField(default=2, validators=[MinValueValidator(1)])
 
 class MCQQuestionSettings(BaseQuestionSettings):
     """
     Settings specific to MCQ Questions
     """
     question = models.OneToOneField(Question, on_delete=models.CASCADE, related_name='mcq_settings')
-    mcq_max_num_attempts = models.IntegerField(default=4)
-    mcq_deduct_per_attempt = models.FloatField(default=0.25, blank=True, null=True)
+    mcq_max_num_attempts = models.IntegerField(default=4, validators=[MinValueValidator(1)])
+    mcq_deduct_per_attempt = models.FloatField(default=0.25, blank=True, null=True, validators=[MinValueValidator(0), MaxValueValidator(1)])
 
 class GradingScheme(models.Model):
     """
@@ -308,14 +308,14 @@ class GradingScheme(models.Model):
     """
     # Number of points per question
     name = models.CharField(max_length=25, blank=False, null=False, default="Default")
-    num_points = models.IntegerField(default=10, validators=[MinValueValidator(0), MaxValueValidator(15)])
-    mcq_num_attempts = models.IntegerField(default=4)
-    struct_num_attempts = models.IntegerField(default=5)
-    deduct_per_attempt = models.FloatField(default=0.05, blank=True, null=True)
-    mcq_deduct_per_attempt = models.FloatField(default=0.25, blank=True, null=True)
+    num_points = models.IntegerField(default=10, validators=[MinValueValidator(0), MaxValueValidator(25)])
+    mcq_num_attempts = models.IntegerField(default=4, validators=[MinValueValidator(1)])
+    struct_num_attempts = models.IntegerField(default=5, validators=[MinValueValidator(1)])
+    deduct_per_attempt = models.FloatField(default=0.05, blank=True, null=True, validators=[MinValueValidator(0), MaxValueValidator(1)])
+    mcq_deduct_per_attempt = models.FloatField(default=0.25, blank=True, null=True, validators=[MinValueValidator(0), MaxValueValidator(1)])
     margin_error = models.FloatField(default=0.03, blank=True, null=True, validators=[MinValueValidator(0), MaxValueValidator(1)])
     percentage_pts_units = models.FloatField(default=0.1, blank=True, null=True, validators=[MinValueValidator(0), MaxValueValidator(1)])
-    units_num_attempts = models.IntegerField(default=2)
+    units_num_attempts = models.IntegerField(default=2, validators=[MinValueValidator(1)])
 
 def __str__(self):
     return f"Grading scheme {self.name}"
