@@ -74,7 +74,8 @@ def assignment_management(request, assignment_id, course_id=None):
     context = {
         "questions": questions,
         "assignment": assignment,
-        'is_question_bank':is_question_bank
+        'is_question_bank':is_question_bank,
+        'course':course
     }
     return render(request, "phobos/assignment_management.html", context)
 
@@ -196,7 +197,8 @@ def create_assignment(request, course_id):
     else:
         form = AssignmentForm(course=course)
 
-    return render(request, 'phobos/create_assignment.html', {'form': form})
+    return render(request, 'phobos/create_assignment.html', {'form': form,
+        'course':course})
 
 @login_required(login_url='astros:login')
 @csrf_exempt

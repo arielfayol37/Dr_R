@@ -11,9 +11,26 @@
         {% if not is_question_bank %}
             <li><a href="{% url 'phobos:course_management' course_id=assignment.course.id %}">Assigments</a></li>
         {% endif %}
-        <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
+        <li><a href="{% url 'phobos:search_question' %}">View Question Bank</a></li>
+        <li><a href="{% url 'astros:all_courses' %}">All Courses</a></li>
     </ul>
 </div>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light navigation" >
+    <div class="container-fluid">
+      <ul class="navbar-nav mr-auto" style="list-style: none; display:flex;">
+        <li class="nav-item " style="display:inline;">
+          <a class="nav-link home-btn" href="{% url 'phobos:course_management' course_id=course.id %}">Course</a>
+        </li>
+        <li class="nav-item" style="display:inline;">
+          <a class="nav-link view-notes-btn" href="{% url 'phobos:create_question' assignment_id=assignment.id %}">Create Question</a>
+        </li>
+        <li class="nav-item" style="display:inline;">
+            <a class="nav-link gradebook-btn" href="{% url 'phobos:gradebook' course_id=course.id %}">GradeBook</a>
+        </li>
+        </div>
+  </nav>
+
 <form action="{% url 'phobos:search_question' %}" method="post" id="search-form">
     {% csrf_token %} 
     <div id="sf-container">

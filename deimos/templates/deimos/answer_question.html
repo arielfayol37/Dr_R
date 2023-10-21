@@ -177,25 +177,23 @@
                   {% else %}
                       <!-- div for previous attempts -->
                       <div class="previous-attempts">
-                        {% if question_dict.question_student.attempts.all %}
-                          <ion-icon name="play-back-circle-outline" class="open-attempts closed" title="previous submissions"></ion-icon>
-                          <div class="a-container formatted-answer" style="display: none;">
-                            <div class="attempts-container" data-index="0">
-                            {% for attempt in question_dict.question_student.attempts.all %}
-                              <p class="p-attempt"> 
-                                <input type="hidden" value="{{attempt.submitted_answer}}" class="attempt-content"/>
-                              {% if attempt.submitted_units %}
-                                <input type="hidden" value="{{attempt.submitted_units}}" class="attempt-units"/>
-                              {% endif %}
-                              </p>
-                            {% endfor %}
-                            </div>
-                            <div class="button-directions"> 
-                              <ion-icon name="chevron-up-outline" class="btn-attempt-up"></ion-icon>
-                              <ion-icon name="chevron-down-outline" class="btn-attempt-down"></ion-icon>
-                            </div>
+                        <ion-icon name="play-back-circle-outline" class="open-attempts closed" title="previous submissions"></ion-icon>
+                        <div class="a-container formatted-answer" style="display: none;">
+                          <div class="attempts-container" data-index="0">
+                          {% for attempt in question_dict.question_student.attempts.all %}
+                            <p class="p-attempt"> 
+                              <input type="hidden" value="{{attempt.submitted_answer}}" class="attempt-content"/>
+                            {% if attempt.submitted_units %}
+                              <input type="hidden" value="{{attempt.submitted_units}}" class="attempt-units"/>
+                            {% endif %}
+                            </p>
+                          {% endfor %}
                           </div>
-                        {% endif %}
+                          <div class="button-directions"> 
+                            <ion-icon name="chevron-up-outline" class="btn-attempt-up"></ion-icon>
+                            <ion-icon name="chevron-down-outline" class="btn-attempt-down"></ion-icon>
+                          </div>
+                        </div>
                       </div>
                       {% if not question_dict.question_student.success %}
                           <input type="hidden" value="structural_{{question_dict.sq_type}}" class="question-type"/>
