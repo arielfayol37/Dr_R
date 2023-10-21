@@ -385,11 +385,11 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                             question_student.success = True
                         question_student.save()
             elif(prev_units_success and not too_many_attempts): # that is if a new attempt has been created.
-                attempt.num_points += question.struct_settings.num_points * question.struct_settings.percentage_pts_units
+                unit_points = question.struct_settings.num_points * question.struct_settings.percentage_pts_units
+                attempt.num_points += unit_points
                 attempt.submitted_units = last_attempt.submitted_units
-                # transferring the points over. If the points for units are left in other attempts, the overall grade of
-                # the student will be boosted.
-                last_attempt.num_points -= question.struct_settings.num_points * question.struct_settings.percentage_pts_units
+                # Ensure we never subtract more points than are present in the last attempt
+                last_attempt.num_points = max(0, last_attempt.num_points - unit_points)
                 attempt.save()
                 last_attempt.save()
         # print(f"Correct:{correct}. Units too may attempts: {units_too_many_attempts}")
