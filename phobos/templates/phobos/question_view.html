@@ -13,12 +13,14 @@
         <li><a href="{% url 'phobos:course_management' course_id=question.assignment.course.id %}">Assignments</a></li>
         {% endif %}
         <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
-        <li id="btn-export_question"> <a>Export this question</a> </li>
+        <li > <a>Export this question</a> </li>
     </ul>
   </div>
 
+
 <div class="export_question">
-    
+    <button id="btn-export_question" class="btn btn-primary r">Export this question</button>
+
     <div class="form-container" style="display: none;"> 
         <form action="" >
             {% csrf_token %}

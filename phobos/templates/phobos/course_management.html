@@ -16,6 +16,23 @@
             
         </ul>
     </div>
+
+    
+<nav class="navbar navbar-expand-lg navbar-light bg-light navigation" >
+    <div class="container-fluid">
+      <ul class="navbar-nav mr-auto" style="list-style: none; display:flex;">
+        <li class="nav-item " style="display:inline;">
+          <a class="nav-link home-btn" href="{% url 'deimos:course_management' course_id=course.id%}">Home </a>
+        </li>
+        <li class="nav-item" style="display:inline;">
+          <a class="nav-link view-notes-btn" href="{% url 'phobos:create_assignment' course_id=course.id %}">Create Assignment</a>
+        </li>
+        <li class="nav-item" style="display:inline;">
+            <a class="nav-link gradebook-btn" href="{% url 'phobos:gradebook' course_id=course.id %}">GradeBook</a>
+        </li>
+        </div>
+  </nav>
+
     <div id="sf-container">
         <input  id="search-field" type="text" name="search" placeholder="search assignment"/>
     </div>
@@ -29,4 +46,37 @@
         {% endfor %}
     </ul>
     
+
+    <script>
+        const navigation = document.querySelector('.navigation');
+        const homeDiv = document.querySelector('.home');
+        const gradebookDiv = document.querySelector('.gradebook')
+    
+        function initial_view() {
+            homeDiv.style.display = 'none';
+            gradebookDiv.style.display= 'none';
+        }
+    
+        navigation.addEventListener('click', () => {
+            target = event.target;
+            if (target.classList.contains('home-btn')) {
+                initial_view();
+                homeDiv.style.display = 'block';
+            }
+            else if(target.classList.contains('gradebook-btn')){
+                initial_view();
+                gradebookDiv.style.display= 'block';
+            }
+        })
+    
+        const gradebookBtn = document.querySelector('.gradebook-btn')
+        const show_gradebookEvent = new Event('click',{
+            bubbles: true,
+            cancelable: true,
+        });
+        if(gradebookBtn.dataset.show_gradebook === "1"){
+            gradebookBtn.dispatchEvent(show_gradebookEvent)
+        }
+    
+    </script>
 {% endblock %}
