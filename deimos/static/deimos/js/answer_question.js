@@ -325,7 +325,7 @@ forms.forEach((form)=>{
               // Print result
               //console.log(result.correct);
               if(result.previously_submitted){
-                alert('You already attempted using that answer');
+                displayFeedback(feedbackContainerDiv, 'You already attempted using that answer');
                 removeAllLights(redLight,yellowLight,greenLight, blueLight);
                 return;
               }
@@ -410,7 +410,7 @@ forms.forEach((form)=>{
               // Print result
               //console.log(result.correct);
               if(result.previously_submitted){
-                alert('You already attempted using that answer');
+                displayFeedback(feedbackContainerDiv, 'You already attempted using that answer');
                 removeAllLights(redLight,yellowLight,greenLight, blueLight);
                 return;
               }
