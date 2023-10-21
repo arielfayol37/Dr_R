@@ -10,6 +10,27 @@
   /* Add additional src lines for other font formats if necessary */
 }
 
+
+/* Define the keyframe animation for deimos:answer_question.html feedback */
+@keyframes borderHighlight {
+  0% {
+    border-color: #fff;  /* starting color */
+  }
+  50% {
+    border-color: rgba(23, 137, 252, 1);  /* highlight color */
+  }
+  100% {
+    border-color: #fff;  /* ending color (same as starting color) */
+  }
+}
+
+.animate-border {
+  /* Initial border setup */
+  border: 2px solid #fff;
+  /* Apply the animation */
+  animation: borderHighlight 1s infinite; /* The animation will run for 1 second and repeat infinitely */
+}
+
 body.body {
     background-color: white !important; 
     color:black;

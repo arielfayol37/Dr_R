@@ -396,7 +396,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
         if(not correct and data["questionType"].startswith('structural')):
             too_many_attempts =  num_attempts + 1 >= question.struct_settings.max_num_attempts
             if question_student.num_units_attempts and not units_correct:
-                units_too_many_attempts = question_student.num_units_attempts + 1 >= question.struct_settings.units_num_attempts
+                units_too_many_attempts = question_student.num_units_attempts >= question.struct_settings.units_num_attempts
         # Return a JsonResponse
         return JsonResponse({
             'correct': correct,
@@ -596,18 +596,21 @@ def feedback_floats(base_float, inputed_float, margin_error):
     b_0 = abs_quotient * (1 + margin_error)
     n_0 = check_int_interval(a_0, b_0)
     if n_0 and n_0 < 3:
-        return f"Your answer is {sign}{n_0}x the correct answer"
+        # return f"Your answer is {sign}{n_0}x the correct answer"
+        return f"Your answer is {sign}n times the correct answer"
     a_1 = (abs_quotient)**-1 * (1 - margin_error)
     b_1 = (abs_quotient)**-1 * (1 + margin_error)
     n_1 = check_int_interval(a_1, b_1)
     if n_1 and n_1 < 3:
-        return f"Your answer is {sign}{n_1 ** -1}x the correct answer"
+        # return f"Your answer is {sign}{n_1 ** -1}x the correct answer"
+        return f"Your answer is {sign}n times the correct answer"
     # Checking for 10^n submission mistake
     a = math.log10(abs_quotient * (1 - margin_error))
     b = math.log10(abs_quotient * (1 + margin_error))
     n = check_int_interval(a, b)
     if n:
-        return f"Your answer is {sign}10^{n} x the correct answer"
+        # return f"Your answer is {sign}10^{n} x the correct answer"
+        return f"Your answer is {sign}10<sup>n</sup> x the correct answer"
     return ""
     
 def compare_units(units_1, units_2):
@@ -837,8 +840,8 @@ def assignemt_gradebook_student(request,student_id, assignment_id):
     assignment_details={'name':assignment_student.assignment.name,'assignment_id':assignment_id,\
                         'Due_date':str(assignment_student.due_date).split(' ')[0],'grade':assignment_student.get_grade() }
     
-    question_heading=['Question_number','score','num_attempts']
-    question_details=[]
+    question_heading = ['Question_number','score','num_attempts']
+    question_details = []
     for question in questions:
         if question.answer_type.startswith('MCQ'):
             nm_pts = question.mcq_settings.num_points

@@ -212,7 +212,7 @@ forms.forEach((form)=>{
       }
       
       form.appendChild(calculatorDiv);
-      calculatorDiv.scrollIntoView({behavior: 'smooth'});
+      screen.scrollIntoView({behavior: 'smooth'});
       calculatorDiv.classList.remove('hide');
       calculatorDiv.querySelector('.preface-content').innerHTML = form.querySelector('.answer_preface').value
       screen.value = form.querySelector('.inputed_answer_structural').value;
@@ -339,9 +339,7 @@ forms.forEach((form)=>{
               }
               
               if(!result.correct && result.feedback_data.length > 0){
-                feedbackContainerDiv.querySelector('.show-feedback-btn').style.display='block';
-                feedbackContainerDiv.querySelector('.formatted-answer-option').innerHTML = result.feedback_data;
-                feedbackContainerDiv.querySelector('.formatted-answer-option').style.display = 'block';
+                displayFeedback(feedbackContainerDiv, result.feedback_data);
               }
               if(result.correct){
                 screen.disabled = true;
@@ -349,13 +347,20 @@ forms.forEach((form)=>{
                 // console.log(`Requires units: ${requiresUnits}`);
                 if(requiresUnits){
                   if(result.units_correct){
-                    submitBtn.style.display = 'none';
+                    setTimeout(()=>{
+                      submitBtn.style.display = 'none';
+                    }, 1200)
+
                   }else if(!result.units_too_many_attempts){
                     submitBtn.value = 'Submit units';
+                    displayFeedback(feedbackContainerDiv, "Correct answer, wrong units.");
                   }
                   
                 }else {
-                  submitBtn.style.display = 'none';
+                  setTimeout(()=>{
+                    submitBtn.style.display = 'none';
+                  }, 1200)
+                  
                 }
                 
               }
@@ -364,6 +369,9 @@ forms.forEach((form)=>{
                 if(result.units_correct){
                   const uScreen = calculatorDiv.querySelector('.units-screen')
                   uScreen.disabled = true;
+                  if(!result.correct){
+                    displayFeedback(feedbackContainerDiv, 'Wrong answer, correct units.');
+                  }
                 }
               }
 
@@ -373,7 +381,8 @@ forms.forEach((form)=>{
                 if(!result.units_too_many_attempts){ // the toggle function will take care of 
                                                      // the alert message if the units attempts
                                                     //  are exceeded too.
-                  alert('You exhausted your attempts for this question. Screen is now disabled');
+                  displayFeedback(feedbackContainerDiv, 'You exhausted your attempts for this question. Screen is now disabled');
+                  submitBtn.style.display = 'none';
                 }
                 
               }
@@ -381,7 +390,7 @@ forms.forEach((form)=>{
               if(result.units_too_many_attempts){
                 form.querySelector('.able_unit').classList.remove('able');
                 calculatorDiv.querySelector('.units-screen').disabled = true;
-                //console.log('disabled units');
+                displayFeedback(feedbackContainerDiv, 'You exhausted your units attempts for this question');
               }
           });
     } else if( question_type ==='mcq'){
@@ -406,12 +415,16 @@ forms.forEach((form)=>{
                 return;
               }
               toggleLight(result.correct, result.too_many_attempts, redLight, yellowLight, greenLight);
+              if(result.correct){
+                submitBtn.style.display = 'none';
+              }
           });
     }else {
       alert('Something went wrong');
     }
   }else if(greenLight.classList.contains('activated')){
-        alert('You already passed this question')
+    displayFeedback(feedbackContainerDiv, 'You already passed this question');
+        //alert('You already passed this question')
   }
 });
 
@@ -472,7 +485,18 @@ function displayLatex(){
 
 displayLatex();
 
-
+function displayFeedback(feedbackContainerDiv, message){
+  const fO = feedbackContainerDiv.querySelector('.formatted-answer-option')
+  feedbackContainerDiv.querySelector('.show-feedback-btn').style.display='block';
+  fO.innerHTML = message;
+  fO.style.display = 'block';
+  if(message != ""){
+    fO.classList.add('animate-border');
+    setTimeout(()=>{
+      fO.classList.remove('animate-border'); // remove animation after 3 seconds
+    }, 3000)
+  }
+}
 
     if (!(screen === null)){
 
@@ -535,19 +559,19 @@ displayLatex();
 
               if(too_many_attempts && units_too_many_attempts){
                 redLight.classList.add('activated');
-                alert('Too many attempts for this question. Screen is now disabled');
+               // alert('Too many attempts for this question. Screen is now disabled');
               
               }else{
 
                 if(units_too_many_attempts){
-                  alert('Units attempts exhausted. Units screen is now disabled.')
+                //  alert('Units attempts exhausted. Units screen is now disabled.')
                 }
 
                 if(correct){
                   // This means that the units were wrong
                   if(blueLight){
                     blueLight.classList.add('activated');
-                    alert('Correct answer, but wrong units');
+                    // alert('Correct answer, but wrong units');
                   }else {
                     greenLight.classList.add('activated');
                   }
@@ -556,7 +580,7 @@ displayLatex();
                   if(units_correct && !is_mcq){
                     // the answer is not correct and units are correct
                     yellowLight.classList.add('activated');
-                    alert('wrong answer, but correct units');
+                  //  alert('wrong answer, but correct units');
                   }
                   else {
                     // both answer and units were wrong
