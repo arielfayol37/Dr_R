@@ -174,9 +174,7 @@ class Assignment(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.grading_scheme:
-            self.grading_scheme, created = GradingScheme.objects.get_or_create(pk=1)
-            if created:
-                self.grading_scheme.name = "Default"
+            self.grading_scheme, created = GradingScheme.objects.get_or_create(name="Default", course=self.course)
             self.grading_scheme.save()
         super(Assignment, self).save(*args, **kwargs)
 
@@ -306,7 +304,7 @@ class GradingScheme(models.Model):
     """
     Grading scheme for assignments
     """
-    # Number of points per question
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="grading_schemes", null=True)
     name = models.CharField(max_length=25, blank=False, null=False, default="Default")
     num_points = models.IntegerField(default=10, validators=[MinValueValidator(0), MaxValueValidator(25)])
     mcq_num_attempts = models.IntegerField(default=4, validators=[MinValueValidator(1)])
@@ -316,9 +314,19 @@ class GradingScheme(models.Model):
     margin_error = models.FloatField(default=0.03, blank=True, null=True, validators=[MinValueValidator(0), MaxValueValidator(1)])
     percentage_pts_units = models.FloatField(default=0.1, blank=True, null=True, validators=[MinValueValidator(0), MaxValueValidator(1)])
     units_num_attempts = models.IntegerField(default=2, validators=[MinValueValidator(1)])
+    late_sub_deduct = models.FloatField(default=0.25, validators=[MinValueValidator(0), MaxValueValidator(1)])
+    floor_percentage = models.FloatField(default=0.35, validators=[MinValueValidator(0), MaxValueValidator(1)])
 
-def __str__(self):
-    return f"Grading scheme {self.name}"
+    def __str__(self):
+        return f"Grading scheme {self.name}"
+    
+    def print_attributes(self):
+        for attr_name, attr_value in vars(self).items():
+            # The attributes starting with '_' are either private or Django internal attributes.
+            # We can skip those to get only the fields we defined.
+            if not attr_name.startswith('_'):
+                print(f"{attr_name}: {attr_value}")
+
 
 
 class QuestionImage(models.Model):

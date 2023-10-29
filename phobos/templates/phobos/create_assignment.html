@@ -1,6 +1,7 @@
 <!-- phobos: create_assignment.html -->
 {% extends 'phobos/layout.html' %}
 {% block title%} Create Assignment {% endblock %}
+{% load static %}
 {% block body %}
 <div class="sidebar" style="display:none">
     <header class="sidebar-header">X</header>
@@ -24,7 +25,7 @@
     
     <div class="course-form">
         <h1>Create a new Assignment</h1>
-        <form method="post" enctype="multipart/form-data">
+        <form method="post" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
             <div class="form-group">
                 <label for="{{ form.name.id_for_label }}">Assignment Name:</label>
@@ -44,12 +45,198 @@
                 <label for="{{ form.difficulty_level.id_for_label }}">Difficulty Level:</label>
                 {{ form.difficulty_level }}
             </div>
-            
+            <input type="hidden" name="grading_scheme_pk" value="0"/>
             <input class= "btn btn-primary" type="submit" value="Create Assignment">
-        </form>
-    </div>
-</div>
 
+
+<div class="side">
+    <div class="side-info-icon" title="Info">
+      <ion-icon name="options-outline"></ion-icon>
+    </div>
+    <div class="hide side-info">
+        <span class="side-info-x">X</span><br/>
+        <h4 class="suggestion original-size">Settings</h4>
+        <hr/>
+
+        <select title="Scheme" name="settings-select" class="settings-select field-style" id="gradingSchemeSelect">
+            {% for grading_scheme in course.grading_schemes.all %}
+                {% if forloop.counter0 == 0 %}
+                    <option value="{{grading_scheme.name}}" data-option-index="{{forloop.counter0}}" selected>{{grading_scheme.name}}</option>
+                {% else %}
+                    <option value="{{grading_scheme.name}}" data-option-index="{{forloop.counter0}}">{{grading_scheme.name}}</option>
+                {% endif %}
+            {% endfor %}
+            <option value="new-gs" class="create-ngs-option" data-option-index="-1">Create New Grading Scheme</option>
+        </select>
+
+    {% for grading_scheme in course.grading_schemes.all %}
+        {% if forloop.counter0 == 0 %}
+            <div class="settings-modification" data-gsid ="{{grading_scheme.pk}}" data-index="{{forloop.counter0}}">
+        {% else %}
+            <div class="settings-modification" style="display: none;" data-gsid ="{{grading_scheme.pk}}" data-index="{{forloop.counter0}}">
+        {% endif %}
+            <div class="settings-item">
+                <div class="settings-label">% late submission deduct:</div>
+                <div class="settings-input-div">
+                    <input class="field-style settings" type="number" name="late_sub_deduct_{{grading_scheme.pk}}" max="1" min="0"
+                    placeholder="Max attempts(units)" value="{{grading_scheme.late_sub_deduct}}" disabled/>
+            </div>
+            </div>
+            <div class="settings-item">
+                <div class="settings-label">% late submission floor:</div>
+                <div class="settings-input-div">
+                    <input class="field-style settings" type="number" name="floor_percentage_{{grading_scheme.pk}}" max="1" min="0"
+                    placeholder="Max attempts(units)" value="{{grading_scheme.floor_percentage}}" disabled/>
+            </div>
+            </div>
+            <div class="settings-item"> 
+            <div class="settings-label">Number of points:</div>
+            <div class="settings-input-div">
+                <input class="field-style settings init-num-pts" type="number" name="num_points_{{grading_scheme.pk}}" min="0" max="25"
+                placeholder="Number of points e.g. 10" value="{{grading_scheme.num_points}}" disabled/>
+            </div>
+            </div>
+            <div class="settings-item">
+            <div class="settings-label">Max attempts:</div>
+            <div class="settings-input-div">
+                <input class="field-style settings" type="number" name="max_num_attempts_{{grading_scheme.pk}}" min="1" 
+                placeholder="Max number of attempts" value="{{grading_scheme.struct_num_attempts}}" disabled/>
+            </div>
+            </div>
+            <div class="settings-item">
+            <div class="settings-label">% deduct per attempt:</div>
+            <div class="settings-input-div">
+                <input class="field-style settings" type="number" name="deduct_per_attempt_{{grading_scheme.pk}}" min="0" max="1"
+                placeholder="% deduct per attempt" value="{{grading_scheme.deduct_per_attempt}}" disabled/>
+            </div>
+            </div >
+            <div class="settings-item">
+            <div class="settings-label">% Margin error:</div>
+            <div class="settings-input-div"> 
+                <input class="field-style settings" type="number" name="margin_error_{{grading_scheme.pk}}" min="0" max="1"
+                placeholder="% margin error" value="{{grading_scheme.margin_error}}" disabled/>
+            </div>
+            </div>
+            <div class="settings-item">
+            <div class="settings-label">% points for units:</div>
+            <div class="settings-input-div">
+                <input class="field-style settings" type="number" name="percentage_pts_units_{{grading_scheme.pk}}" min="0" max="1"
+                placeholder="% points for units" value="{{grading_scheme.percentage_pts_units}}" disabled/>
+            </div>
+            </div>
+            <div class="settings-item">
+            <div class="settings-label">Max attempts(mcq):</div>
+            <div class="settings-input-div">
+                <input class="field-style settings" type="number" name="max_mcq_num_attempts_{{grading_scheme.pk}}" min="1"
+                placeholder="Max number of attempts(mcq)" value="{{grading_scheme.mcq_num_attempts}}" disabled/>
+            </div>
+            </div>
+            <div class="settings-item">
+            <div class="settings-label">% deduct per attempt(mcq):</div>
+            <div class="settings-input-div">
+                <input class="field-style settings" type="number" name="mcq_deduct_per_attempt_{{grading_scheme.pk}}" min="0" max="1"
+                placeholder="% deduct per attempt(mcq)" value="{{grading_scheme.mcq_deduct_per_attempt}}" disabled/>
+            </div>
+            </div>
+            <div class="settings-item">
+            <div class="settings-label">Max attempts(units):</div>
+            <div class="settings-input-div">
+                <input class="field-style settings" type="number" name="units_num_attempts_{{grading_scheme.pk}}" min="1"
+                placeholder="Max attempts(units)" value="{{grading_scheme.units_num_attempts}}" disabled/>
+            </div>
+            </div>
+        </div>
+    {% endfor %}
+        <!-- Section to create a new grading scheme-->
+        <div class="settings-modification new-grading-scheme" style="display: none;" data-index="-1">
+            <div class="settings-item">
+                <div class="settings-label" style="width: 30%;">Name:</div>
+                <div class="settings-input-div" style="width: 60%;">
+                    <input class="field-style settings" type="text" name="new_scheme_name"
+                    placeholder="new scheme's name" />
+                </div>
+            </div>
+            <div class="settings-item">
+                <div class="settings-label">% late submission deduct:</div>
+                <div class="settings-input-div">
+                    <input class="field-style settings" type="number" name="late_sub_deduct" max="1" min="0"
+                    placeholder="Max attempts(units)" value="{{default_gs.late_sub_deduct}}"/>
+            </div>
+            </div>
+            <div class="settings-item">
+                <div class="settings-label">% late submission floor:</div>
+                <div class="settings-input-div">
+                    <input class="field-style settings" type="number" name="floor_percentage" max="1" min="0"
+                    placeholder="Max attempts(units)" value="{{default_gs.floor_percentage}}"/>
+            </div>
+            </div>
+            <div class="settings-item"> 
+            <div class="settings-label">Number of points:</div>
+            <div class="settings-input-div">
+                <input class="field-style settings init-num-pts" type="number" name="num_points" min="0" max="25"
+                placeholder="Number of points e.g. 10" value="{{default_gs.num_points}}"/>
+            </div>
+            </div>
+            <div class="settings-item">
+            <div class="settings-label">Max attempts:</div>
+            <div class="settings-input-div">
+                <input class="field-style settings" type="number" name="max_num_attempts" min="1" 
+                placeholder="Max number of attempts" value="{{default_gs.struct_num_attempts}}"/>
+            </div>
+            </div>
+            <div class="settings-item">
+            <div class="settings-label">% deduct per attempt:</div>
+            <div class="settings-input-div">
+                <input class="field-style settings" type="number" name="deduct_per_attempt" min="0" max="1"
+                placeholder="% deduct per attempt" value="{{default_gs.deduct_per_attempt}}"/>
+            </div>
+            </div >
+            <div class="settings-item">
+            <div class="settings-label">% Margin error:</div>
+            <div class="settings-input-div"> 
+                <input class="field-style settings" type="number" name="margin_error" min="0" max="1"
+                placeholder="% margin error" value="{{default_gs.margin_error}}"/>
+            </div>
+            </div>
+            <div class="settings-item">
+            <div class="settings-label">% points for units:</div>
+            <div class="settings-input-div">
+                <input class="field-style settings" type="number" name="percentage_pts_units" min="0" max="1"
+                placeholder="% points for units" value="{{default_gs.percentage_pts_units}}"/>
+            </div>
+            </div>
+            <div class="settings-item">
+            <div class="settings-label">Max attempts(mcq):</div>
+            <div class="settings-input-div">
+                <input class="field-style settings" type="number" name="max_mcq_num_attempts" min="1"
+                placeholder="Max number of attempts(mcq)" value="{{default_gs.mcq_num_attempts}}"/>
+            </div>
+            </div>
+            <div class="settings-item">
+            <div class="settings-label">% deduct per attempt(mcq):</div>
+            <div class="settings-input-div">
+                <input class="field-style settings" type="number" name="mcq_deduct_per_attempt" 
+                placeholder="% deduct per attempt(mcq)" value="{{default_gs.mcq_deduct_per_attempt}}"/>
+            </div>
+            </div>
+            <div class="settings-item">
+            <div class="settings-label">Max attempts(units):</div>
+            <div class="settings-input-div">
+                <input class="field-style settings" type="number" name="units_num_attempts" min="1"
+                placeholder="Max attempts(units)" value="{{default_gs.units_num_attempts}}"/>
+            </div>
+            </div>
+        </div>
+  </div>
+</div>
+</form>
+</div>
+</div>
 
 {% endblock %}
 
+{% block scripts %}
+<script src="{% static 'phobos/js/create_assignment.js' %}"></script>
+<script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+{% endblock %}
