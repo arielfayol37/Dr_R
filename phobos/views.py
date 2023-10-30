@@ -192,13 +192,51 @@ def create_assignment(request, course_id):
         if form.is_valid():
             assignment = form.save(commit=False)  # Don't save to DB yet
             assignment.course = course  # Set the course field
+            # Getting the grading scheme
+            gs_pk = int(request.POST['grading_scheme_pk'])
+            if gs_pk == -1:
+                # Creating a new grading scheme
+                name= request.POST['new_scheme_name']
+                # checking if scheme with same name already exists
+                exists = GradingScheme.objects.filter(name=name, course=course).exists()
+                if exists:
+                    old_gs = GradingScheme.objects.get(name=name, course=course)
+                    try:
+                        name = name + str(int(old_gs.name[-1]) + 1) # Not expecting the
+                                                                    # integer to be more than
+                                                                    # two digits.
+                    except:
+                        name = name + str(1)
+                scheme = GradingScheme.objects.create(
+                    course = course,
+                    name= name,
+                    num_points = request.POST['num_points'],
+                    mcq_num_attempts = request.POST['max_mcq_num_attempts'],
+                    struct_num_attempts = request.POST['max_num_attempts'],
+                    deduct_per_attempt = request.POST['deduct_per_attempt'],
+                    mcq_deduct_per_attempt = request.POST['mcq_deduct_per_attempt'],
+                    margin_error = request.POST['margin_error'],
+                    percentage_pts_units = request.POST['percentage_pts_units'],
+                    units_num_attempts = request.POST['units_num_attempts'],
+                    late_sub_deduct = request.POST['late_sub_deduct'],
+                    floor_percentage = request.POST['floor_percentage']    
+                    )
+                scheme.save()
+                
+            else:
+                scheme = GradingScheme.objects.get(pk=gs_pk)
+            assignment.grading_scheme = scheme
             assignment.save()  # Now save to DB
             return redirect('phobos:course_management', course_id=assignment.course.id)
     else:
         form = AssignmentForm(course=course)
-
+        gs_exists = GradingScheme.objects.filter(course=course).exists()
+        if not gs_exists:
+            default_gs, created = GradingScheme.objects.get_or_create(course=course, name="Default")
+            default_gs.save()
+        default_gs = GradingScheme.objects.get(course=course, name="Default")
     return render(request, 'phobos/create_assignment.html', {'form': form,
-        'course':course})
+        'course':course, 'default_gs':default_gs})
 
 @login_required(login_url='astros:login')
 @csrf_exempt

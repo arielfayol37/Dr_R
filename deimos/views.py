@@ -27,6 +27,7 @@ from django.db import transaction
 from markdown2 import markdown
 import qrcode
 import math
+from datetime import date
 
 # Create your views here.
 @login_required(login_url='astros:login') 
@@ -302,15 +303,17 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                         attempt.submitted_answer = submitted_answer
                     if correct:
                         attempt.success = True
+                        days_overdue = max(0, (date.today() - question.assignment.due_date.date()).days)
+                        overall_percentage = max(question.assignment.grading_scheme.floor_percentage, 1 - days_overdue * question.assignment.grading_scheme.late_sub_deduct)
                         if question.answer_type in [QuestionChoices.STRUCTURAL_FLOAT, QuestionChoices.STRUCTURAL_VARIABLE_FLOAT] and units:
-                            attempt.num_points = max(0, question.struct_settings.num_points * (1 - question.struct_settings.percentage_pts_units)\
+                            attempt.num_points = overall_percentage * max(0, question.struct_settings.num_points * (1 - question.struct_settings.percentage_pts_units)\
                                                     * (1 - question.struct_settings.deduct_per_attempt *
                                                     max(0, question_student.get_num_attempts() - 1)))
                             if prev_units_success:
                                 question_student.success = True
                         else:
                             question_student.success = True
-                            attempt.num_points = max(0, question.struct_settings.num_points * (1 - question.struct_settings.deduct_per_attempt *
+                            attempt.num_points = overall_percentage * max(0, question.struct_settings.num_points * (1 - question.struct_settings.deduct_per_attempt *
                                                     max(0, question_student.get_num_attempts() - 1)))                        
                         
 
@@ -348,9 +351,11 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                         s1, s2 = set(simplified_answer), set(answers)
                         if s1 == s2:
                             correct = True
-                            attempt.num_points = max(0, question.mcq_settings.num_points * \
-                                                    (1 - question.mcq_settings.mcq_deduct_per_attempt *
-                                                    max(0, question_student.get_num_attempts() - 1)))
+                            percentage_gain = (1 - question.mcq_settings.mcq_deduct_per_attempt *
+                                                    max(0, question_student.get_num_attempts() - 1))
+                            days_overdue = max(0, (date.today() - question.assignment.due_date.date()).days)
+                            overall_percentage = max(question.assignment.grading_scheme.floor_percentage, 1 - days_overdue * question.assignment.grading_scheme.late_sub_deduct)
+                            attempt.num_points = overall_percentage * max(0, question.mcq_settings.num_points * percentage_gain)
                             question_student.success = True
                             attempt.success = True
                 
@@ -389,7 +394,8 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                 attempt.num_points += unit_points
                 attempt.submitted_units = last_attempt.submitted_units
                 # Ensure we never subtract more points than are present in the last attempt
-                last_attempt.num_points = max(0, last_attempt.num_points - unit_points)
+                # last_attempt.num_points = max(0, last_attempt.num_points - unit_points)
+                last_attempt.num_points = 0
                 attempt.save()
                 last_attempt.save()
         # print(f"Correct:{correct}. Units too may attempts: {units_too_many_attempts}")
