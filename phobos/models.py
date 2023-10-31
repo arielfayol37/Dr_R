@@ -48,6 +48,7 @@ class QuestionChoices(models.TextChoices):
     MCQ_TEXT = 'MCQ_TEXT', 'MCQ Text'
     MCQ_IMAGE = 'MCQ_IMAGE', 'MCQ Image'
     
+    MATCHING_PAIRS = 'MATCHING_PAIRS', 'Matching Pairs'
 
 class AssignmentChoices(models.TextChoices):
     QUIZ = 'QUIZ', 'Quiz'
@@ -525,6 +526,18 @@ class MCQImageAnswer(MCQAnswerBase):
         if self.image:
             self.image.delete(save=False)
         super(MCQImageAnswer, self).delete(*args, **kwargs)
+
+class MatchingAnswer(models.Model):
+    """
+    A question may be a matching pairs question
+    """
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='matching_pairs')
+    part_a = models.CharField(max_length=3000, blank=False, null=False)
+    part_b = models.CharField(max_length=3000, blank=False, null=False)
+    
+    def __str__(self):
+        return f"Matching pair answer for {self.question}"
+
 class Variable(models.Model):
     """
     A `Question` may have variables associated to it. 

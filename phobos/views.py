@@ -235,8 +235,28 @@ def create_assignment(request, course_id):
             default_gs, created = GradingScheme.objects.get_or_create(course=course, name="Default")
             default_gs.save()
         default_gs = GradingScheme.objects.get(course=course, name="Default")
+        grading_schemes = list(course.grading_schemes.all())
+        grading_schemes.reverse()
     return render(request, 'phobos/create_assignment.html', {'form': form,
-        'course':course, 'default_gs':default_gs})
+        'course':course, 'default_gs':default_gs, 'grading_schemes':grading_schemes})
+
+def format_date(due_date_str):
+    # Check if due_date_str is already a datetime object
+    if isinstance(due_date_str, datetime):
+        due_date = due_date_str
+    else:
+        # Parsing the date string
+        due_date = datetime.strptime(due_date_str, '%Y-%m-%d %H:%M:%S%z')
+    # Getting the day with the appropriate suffix
+    day = int(due_date.strftime('%d'))
+    if 4 <= day <= 20 or 24 <= day <= 30:
+        suffix = 'th'
+    else:
+        suffix = ['st', 'nd', 'rd'][day % 10 - 1]
+
+    # Formatting the date in the desired format
+    formatted_date = due_date.strftime(f'%B {day}{suffix}, %Y at %I:%M%p')
+    return formatted_date
 
 @login_required(login_url='astros:login')
 @csrf_exempt
@@ -263,8 +283,8 @@ def assign_assignment(request, assignment_id, course_id=None):
         
         send_mail(
             'New Assignment',                # subject
-           f'You have {assignment.name} to be completed before {assignment.due_date}. Good luck!',    # message
-            'arielfayol37@gmail.com',      # from email
+           f'You have {assignment.name} to be completed before {format_date(assignment.due_date)}. Good luck!',    # message
+            'no.reply.dr.r.valpo@gmail.com',      # from email
              email_list,      # recipient list
              fail_silently=True,           # Raises an error if there's a problem
         )
@@ -436,6 +456,17 @@ def create_question(request, assignment_id=None, question_nums_types=None):
                 new_question.answer_type = QuestionChoices.STRUCTURAL_TEXT
                 # No answer yet, but semantic answer validation coming soon.
                 answer = TextAnswer(question=new_question, content='')
+            elif type_int == 8: # Matching Pair type
+                new_question.answer_type = QuestionChoices.MATCHING_PAIRS
+                num_of_mps_approx = int(request.POST[q_num + '_num_of_mps'])
+                for l in range(num_of_mps_approx):
+                    mp_a = request.POST.get(q_num + '_' + str(l) + '_mp_a', None)
+                    mp_b = request.POST.get(q_num + '_' + str(l) + '_mp_b', None)
+                    if not (mp_a == None or mp_b == None):
+                        answer = MatchingAnswer.objects.create(
+                            question=new_question, part_a=mp_a, part_b=mp_b
+                        )
+                        
             else:
                 return HttpResponseForbidden('Something went wrong: unexpected question type_int')
             new_question.save(save_settings=True)
@@ -520,10 +551,9 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
         question.text = question.text.replace('}@', '')
         answers = []
         is_latex = []
-        is_mcq = False
-        is_fr = False # is free response
+        qtype = ''
         if question.answer_type.startswith('MCQ'):
-            is_mcq = True
+            qtype = 'mcq'
             ea = question.mcq_expression_answers.all()
             answers.extend(ea)
             ta = question.mcq_text_answers.all()
@@ -539,12 +569,12 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
             # !Important: order matters here. Latex has to be last!
             is_latex = [0 for _ in range(ea.count()+ta.count()+fa.count()+fva.count()+ia.count())]
             is_latex.extend([1 for _ in range(la.count())])
-        else:
+        elif question.answer_type.startswith('STRUCT'):
             if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
                 answers.extend([question.expression_answer])
             elif question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
                 answers.extend([question.text_answer])
-                is_fr = True
+                qtype='fr'
             elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
                 answers.extend([question.float_answer])
             elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
@@ -559,10 +589,12 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
                 return HttpResponse('Something went wrong.')
             answers[0].preface = '' if not answers[0].preface else answers[0].preface + "\quad = \quad" # This is to display well in the front end.
             answers[0].answer_unit = '' if not answers[0].answer_unit else "\quad " + answers[0].answer_unit
-        
+        elif question.answer_type.startswith('MATCHING'):
+            qtype = 'mp'
+            answers = question.matching_pairs.all()
         questions_dictionary[index] = {'question':question,\
                       'show_answer':show_answer,
-                     'is_mcq':is_mcq, 'is_fr':is_fr,'answers': answers,\
+                     'qtype':qtype,'answers': answers,\
                          'answers_is_latex': zip(answers, is_latex) if is_latex else None}
 
     return render(request, 'phobos/question_view.html', {'courses':zip(range(len(courses)),courses),\

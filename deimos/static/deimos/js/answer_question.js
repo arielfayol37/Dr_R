@@ -2,6 +2,22 @@ document.addEventListener('DOMContentLoaded', ()=> {
     const forms = document.querySelectorAll('.question-form');
     //const validateAnswerActionURL = extractQuestionPath(window.location.href) + '/validate_answer';
     const screen = document.querySelector('#screen'); 
+    
+// Matching colors
+   var mColors = [ 
+    'rgb(255, 0, 0)',     // Bright Red
+    'rgb(0, 255, 0)',     // Bright Green
+    'rgb(0, 0, 255)',     // Bright Blue
+    'rgb(255, 255, 0)',   // Bright Yellow
+    'rgb(255, 0, 255)',   // Bright Magenta
+    'rgb(0, 255, 255)',   // Bright Cyan
+    'rgb(255, 128, 0)',   // Bright Orange
+    'rgb(128, 0, 255)',   // Bright Purple
+    'rgb(0, 255, 128)',   // Bright Turquoise
+    'rgb(255, 128, 128)', // Bright Coral
+    'rgb(128, 255, 0)',   // Bright Lime
+    'rgb(128, 128, 255)'  // Light Blue
+     ] 
     var formattedAnswerDiv;
    
   // displaying previous submissions
@@ -310,6 +326,12 @@ forms.forEach((form)=>{
       const qid = form.querySelector('.question-id').value;
       const baseUrl = window.location.href.replace(/#$/, '');
     if (question_type.startsWith('structural')){
+      // Creating a p tag to contain the attempt and 
+      // displaying in previous attempts
+      const newAttempt = document.createElement('p');
+      newAttempt.classList.add('p-attempt')
+      newAttempt.innerHTML = MathJax.tex2chtml(math.parse(screen.value).toTex() + submitted_units).innerHTML
+
         fetch(`${baseUrl}/validate_answer/${qid}`, {
             method: 'POST',
             headers: { 'X-CSRFToken': getCookie('csrftoken') },
@@ -502,7 +524,7 @@ function displayFeedback(feedbackContainerDiv, message){
 
         screen.addEventListener('input', ()=> {
           if(screen.dataset.changedPart === 'true'){
-            formattedAnswerDiv = screen.closest('.question-form').querySelector('.formatted-answer');
+            formattedAnswerDiv = screen.closest('.question-form').querySelector('.formatted-answer.calc');
             screen.dataset.changedPart = 'false';
           }
           
@@ -515,12 +537,11 @@ function displayFeedback(feedbackContainerDiv, message){
                 var parsedNode = math.parse(processed);
                 var userInputLatex = parsedNode.toTex() + '\\quad = \\quad' + userInputNode.toTex();
                 const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
-                
                 formattedAnswerDiv.innerHTML = '';
                 formattedAnswerDiv.appendChild(formattedAnswer);
                 MathJax.typesetPromise();
                 } catch (error) {
-                  // console.log(error);
+                  //console.log(error);
                 }
                 
                 });

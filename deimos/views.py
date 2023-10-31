@@ -84,6 +84,7 @@ def assignment_management(request, assignment_id, course_id=None):
     }
     return render(request, "deimos/assignment_management.html", context)
 
+
 # TODO: Add the action link in answer_question.html
 # TODO: Implement question_view as well.
 @login_required(login_url='astros:login')
