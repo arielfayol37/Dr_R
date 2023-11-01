@@ -425,7 +425,17 @@ div.c-text {
 .formatted-mp {
   flex-wrap: nowrap;
 }
+.formatted-mp .sub-part {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 45%;
+}
 .formatted-mp .mp {
+  width: 100%;
+}
+.formatted-mp .mp.success {
   width: 45%;
 }
 .formatted-mp .mp:hover{

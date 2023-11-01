@@ -1,6 +1,6 @@
-If the validation of algebraic expressions is done on
-the front-end using mathjs' symbolicEqual() function.
-So someone can modify the fetch() that gets the real answer
-from the server.
-Hence the reason why sympy is used in the backend for that,
-and not mathjs.
+    1) If the validation of algebraic expressions is done on
+    the front-end using mathjs' symbolicEqual() function.
+    So someone can modify the fetch() that gets the real answer
+    from the server.
+    Hence the reason why sympy is used in the backend for that,
+    and not mathjs.

@@ -554,7 +554,19 @@ forms.forEach((form)=>{
             const mpaId = mpDictAkey[pk]
             const mpbId = mpDictBkey[mpDictA[pk]];
             mpPartAs[mpaId].classList.add('successful');
+            
             mpPartBs[mpbId].classList.add('successful');
+            
+            const newFMP = document.createElement('div');
+            newFMP.classList.add('formatted-mp');
+            setTimeout(()=>{
+              mpPartAs[mpaId].style.backgroundColor = 'white';
+              mpPartBs[mpbId].style.backgroundColor = 'white';
+              newFMP.appendChild(mpPartAs[mpaId]);
+              newFMP.appendChild(mpPartBs[mpbId]);
+              form.querySelector('.passed-attempts').appendChild(newFMP);
+            }, toggleTime)
+            
             delete mpPartAs[mpaId];
             delete mpPartBs[mpbId];
             delete mpDictA[pk];
