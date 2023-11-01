@@ -286,7 +286,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
         submitted_answer = data["submitted_answer"]
         question = Question.objects.get(pk=question_id)
         feedback_data = ''
-        
+        return_sp = None
         # Use get_or_create() to avoid duplicating QuestionStudent instances
         # Normally, we should just use get() because QuestionStudent object is already created
         # whenever the user opens a question for the first time, but just to be safe.
