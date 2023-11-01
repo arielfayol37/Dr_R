@@ -180,20 +180,31 @@
                       <div class="suggestion"> Match the following pairs </div>
                       <div class="mp-section">
                           <!--Yet to be passed attempts -->
-                          {% for a in question_dict.answers %}
+                          
                               <div class="formatted-mp">
-                                <div class="formatted-answer mp-part-a mp" data-key="{{a.0.key}}" data-id="{{forloop.counter0}}">{{a.0.content}}</div>
-                                <div class="formatted-answer mp-part-b mp" data-key="{{a.1.key}}" data-id="{{forloop.counter0}}">{{a.1.content}}</div>
+                                <div class="partAs sub-part">
+                                  {% for a in question_dict.answers %}
+                                  <div class="formatted-answer mp-part-a mp" data-key="{{a.0.key}}" data-id="{{forloop.counter0}}">{{a.0.content}}</div>
+                                  {% endfor %}
+                                </div>
+                                <div class="partBs sub-part">
+                                  {% for a in question_dict.answers %}
+                                  <div class="formatted-answer mp-part-b mp" data-key="{{a.1.key}}" data-id="{{forloop.counter0}}">{{a.1.content}}</div>
+                                  {% endfor %}
+                                </div>
+                                
                               </div>
-                          {% endfor %}
+                          
                           <br/><hr/>
                           <!-- Passed attempts -->
-                          {% for pp in question_dict.passed_pairs %}
-                          <div class="formatted-mp">
-                            <div class="formatted-answer mp success">{{pp.contenta}}</div>
-                            <div class="formatted-answer mp success">{{pp.contentb}}</div>
+                          <div class="passed-attempts">
+                            {% for pp in question_dict.passed_pairs %}
+                              <div class="formatted-mp">
+                                <div class="formatted-answer mp success">{{pp.contenta}}</div>
+                                <div class="formatted-answer mp success">{{pp.contentb}}</div>
+                              </div>
+                            {% endfor %}
                           </div>
-                        {% endfor %}
                       </div>
                       <br/>
                     {% if question_dict.question_student.success or question_dict.too_many_attempts %}

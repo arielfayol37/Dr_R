@@ -400,6 +400,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                 elif data["questionType"] == 'mp':
                     success_pairs_strings = []
                     attempt_pairs = []
+                    
                     for part_A_pk, encrypted_B_pk in submitted_answer.items():
                         decrypted_b = decrypt_integer(int(encrypted_B_pk))
                         attempt_pairs.append(f'{part_A_pk}-{decrypted_b}')
@@ -409,6 +410,12 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     # Calculating the number of points gain and saving submission
                     num_of_correct = len(success_pairs_strings)
                     total_num_of_pairs = question.matching_pairs.count()
+                    # Checking whether current attempt has some primary keys of already
+                    # successful attempt. That scenario should not happen unless someone is trying an inject
+                    # but we need to take care of it.
+                    for previous_a in QuestionAttempt.objects.filter(question_student=question_student):
+                        sp = previous_a.success_pairs.pairs.split('&')
+                        success_pairs_strings = list(set(success_pairs_strings) - set(sp))
                     frac = (num_of_correct/total_num_of_pairs)
                     if frac == 1 or num_of_correct == len(attempt_pairs):
                         question_student.success = True
