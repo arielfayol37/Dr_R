@@ -557,6 +557,7 @@ forms.forEach((form)=>{
             mpPartBs[mpbId].classList.add('successful');
             delete mpPartAs[mpaId];
             delete mpPartBs[mpbId];
+            delete mpDictA[pk];
           })
         }else {
           setTimeout(()=>{
