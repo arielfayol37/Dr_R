@@ -45,7 +45,7 @@
                 <label for="{{ form.difficulty_level.id_for_label }}">Difficulty Level:</label>
                 {{ form.difficulty_level }}
             </div>
-            <input type="hidden" name="grading_scheme_pk" value="0"/>
+            <input type="hidden" name="grading_scheme_pk" value="{{default_gs.pk}}"/>
             <input class= "btn btn-primary" type="submit" value="Create Assignment">
 
 

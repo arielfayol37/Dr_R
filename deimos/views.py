@@ -58,7 +58,10 @@ def course_management(request, course_id, show_gradebook=None):
         assignment_student_grade.append({'id':assignment_s.id,'assignment_student':assignment_s,'grade':grade})
         course_score += assignment_s.assignment.num_points * grade
         a_sums += assignment_s.assignment.num_points
-    course_score /= a_sums
+    if a_sums == 0:
+        course_score = 0
+    else:
+        course_score /= a_sums
 
     assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student, \
                                             is_assigned=True)
