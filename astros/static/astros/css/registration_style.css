@@ -175,3 +175,24 @@ input.form-control {
   .btn.btn-primary.r {
     margin-left: 45%;
   }
+
+  @media screen and (max-width: 450px){
+  
+    div#registration-container.bs-overrides {
+      flex-direction: column;
+    }
+    .vertical-line {
+      width: 80%;
+      height:4px;
+      position: relative;
+      left:auto;
+      right: auto;
+      top:auto;
+    }
+    body.body {
+      overflow: auto;
+    }
+    .registration-form {
+      width:90%;
+    }
+  }

@@ -7,52 +7,8 @@
 
 {% block body%}
 <div id="registration-container" class="bs-overrides">
-    <div class="vertical-line"></div>
-    <div class="register-phobos registration-form main-form">
-        <p>Login as an <strong><em>instructor</em></strong> on the <strong><em>Phobos</em></strong> version</p>
-
-        {% if message_phobos %}
-        <div>{{ message_phobos }}</div>
-        {% endif %}
-        <form action="{% url 'phobos:login' %}" method="post" class="original-form">
-            {% csrf_token %}
-            <div class="form-group">
-                <input class="form-control" type="email" name="email" placeholder="Email Address">
-            </div>
-            <div class="form-group">
-                <input class="form-control" type="password" name="password" placeholder="Password">
-            </div>
-            <input class="btn btn-primary r" type="submit" value="Login">
-            <input type="hidden" name="next" value="{{ request.GET.next }}">
-        </form>
-        <u class='forgot-password-link'>forgot password?</u>
-        <br>
-        <br>
-
-        <div class="change-pwd-phobos registration-form cpwd"  style="display: none">
-            <form action="{% url 'phobos:forgot_password' %}" method="post" class="change-pwd-form">
-                {% csrf_token %}
-                <div class="form-group">
-                    <input class="form-control" type="email" name="email" placeholder="Email Address">
-                </div>
-                <div class="form-group">
-                    <input class="form-control" type="password" name="password" placeholder="New Password">
-                </div>
-                <div class="form-group">
-                    <input class="form-control" type="password" name="confirmation" placeholder="Confirm Password">
-                </div>
-                <div class="form-group authentication-area closed" style="display: none">
-                    <input class="form-control input-code" type="number" name="validation_code" placeholder="Enter code">
-                </div>
-                <div class="forgot-password-div">
-                    <button class="btn btn-primary r submit-btn-register" type="button">Submit</button>
-                    <button class="btn btn-danger r cancel-btn" type="button">Cancel</button>
-                </div>
-                
-            </form>
-        </div>
-    </div>
-
+    
+    <br/><br/>
     <div class="register-deimos registration-form main-form">
         <p>Login as a <strong><em>student</em></strong> on the <strong><em>Deimos</em></strong> version</p>
 
@@ -96,6 +52,52 @@
                     
                 </form>
             </div>
+    </div>
+
+    <br/><div class="vertical-line"></div><br/>
+    <div class="register-phobos registration-form main-form">
+        <p>Login as an <strong><em>instructor</em></strong> on the <strong><em>Phobos</em></strong> version</p>
+
+        {% if message_phobos %}
+        <div>{{ message_phobos }}</div>
+        {% endif %}
+        <form action="{% url 'phobos:login' %}" method="post" class="original-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <input class="form-control" type="email" name="email" placeholder="Email Address">
+            </div>
+            <div class="form-group">
+                <input class="form-control" type="password" name="password" placeholder="Password">
+            </div>
+            <input class="btn btn-primary r" type="submit" value="Login">
+            <input type="hidden" name="next" value="{{ request.GET.next }}">
+        </form>
+        <u class='forgot-password-link'>forgot password?</u>
+        <br>
+        <br>
+
+        <div class="change-pwd-phobos registration-form cpwd"  style="display: none">
+            <form action="{% url 'phobos:forgot_password' %}" method="post" class="change-pwd-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <input class="form-control" type="email" name="email" placeholder="Email Address">
+                </div>
+                <div class="form-group">
+                    <input class="form-control" type="password" name="password" placeholder="New Password">
+                </div>
+                <div class="form-group">
+                    <input class="form-control" type="password" name="confirmation" placeholder="Confirm Password">
+                </div>
+                <div class="form-group authentication-area closed" style="display: none">
+                    <input class="form-control input-code" type="number" name="validation_code" placeholder="Enter code">
+                </div>
+                <div class="forgot-password-div">
+                    <button class="btn btn-primary r submit-btn-register" type="button">Submit</button>
+                    <button class="btn btn-danger r cancel-btn" type="button">Cancel</button>
+                </div>
+                
+            </form>
+        </div>
     </div>
 
 </div>

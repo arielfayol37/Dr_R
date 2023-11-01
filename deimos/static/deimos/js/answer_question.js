@@ -555,7 +555,8 @@ forms.forEach((form)=>{
             const mpbId = mpDictBkey[mpDictA[pk]];
             mpPartAs[mpaId].classList.add('successful');
             mpPartBs[mpbId].classList.add('successful');
-  
+            delete mpPartAs[mpaId];
+            delete mpPartBs[mpbId];
           })
         }else {
           setTimeout(()=>{
