@@ -414,6 +414,37 @@ div.c-text {
 
 
 /* ------------------------------Style for answer_question.html-------------*/
+.formatted-mp {
+  width:100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.formatted-mp {
+  flex-wrap: nowrap;
+}
+.formatted-mp .mp {
+  width: 45%;
+}
+.formatted-mp .mp:hover{
+  cursor: pointer;
+  transform:scale(1.1);
+  z-index:3;
+}
+.formatted-mp .mp.mp-part-a:hover{
+  border-left: 2px solid #656363;
+}
+.formatted-mp .mp.mp-part-b:hover{
+  border-right: 2px solid #656363;
+}
+.formatted-mp .mp.mp-part-a.selected {
+  border-left: 2px solid #656363;
+}
+.formatted-mp .mp.mp-part-b.selected {
+  border-right: 2px solid #656363;
+}
 .variable-value {
   color:rgba(23, 137, 252, 0.7) !important;
 }

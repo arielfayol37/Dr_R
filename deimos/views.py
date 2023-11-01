@@ -84,6 +84,17 @@ def assignment_management(request, assignment_id, course_id=None):
     }
     return render(request, "deimos/assignment_management.html", context)
 
+def encrypt_integer(n:int)->int:
+    assert n >= 0
+    return (n + 137)**2
+def decrypt_integer(k: int)->int:
+    assert k >= 0
+    n = k**0.5 - 137
+    assert int(n) == n
+    return int(n)
+
+
+
 # TODO: Add the action link in answer_question.html
 # TODO: Implement question_view as well.
 @login_required(login_url='astros:login')
@@ -136,17 +147,17 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
         question.text = replace_image_labels_with_links(question.text,labels_urls_list)
         # Replace vars with values in colored tags.
         question.text = question_student.evaluate_var_expressions_in_text(question.text, add_html_style=True)
-        is_mcq = False #nis mcq
-        is_fr = False # is free response
+        questtype = ''
         answers = []
         is_latex = []
+        answers_c = None
         question_type = []
         # The dictionary question_type_dict is used for answer validation.
         # So validate_answer() takes the input from the user and kind of compares to this dictionary.
         question_type_dict = {'ea': 0, 'fa':1, 'fva':8,'la':2, 'ta':3, 'ia':7}
         question_type_count = {'ea': 0, 'fa': 0, 'fva':0, 'la': 0, 'ta': 0, 'ia': 0}
         if question.answer_type.startswith('MCQ'):
-            is_mcq = True
+            questtype='mcq'
             ea = question.mcq_expression_answers.all()
             answers.extend(ea)
             ta = question.mcq_text_answers.all()
@@ -183,7 +194,8 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
                 random.shuffle(shuffler)  
                 is_latex = [is_latex[i] for i in shuffler]
                 answers = [answers[i] for i in shuffler]
-        else:
+        elif question.answer_type.startswith('STRUCT'):
+            questtype = 'struct'
             # TODO: Subclass all structural answers to a more general class 
             # so that you may use only one if.
             if question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
@@ -200,24 +212,50 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
                 answers.extend([question.float_answer])
                 question_type = [1]
             elif question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
-                is_fr = True 
+                questtype = 'fr'
                 answers.extend([question.text_answer])
                 question_type = [4]    
             answers[0].preface = '' if answers[0].preface is None else answers[0].preface
+        elif question.answer_type.startswith('MATCHING'):
+            questtype = 'mp'
+            question_type = [8]
+            answers = question.matching_pairs.all()
+            attempts = question_student.attempts.all()
+            pk_of_success = []
+            for at in attempts:
+                pk_of_success.extend(at.success_pairs.pairs.split('&'))
+            # separating the parts a and b, then shuffling b
+            answers_a, answers_b, answers_c = [], [], []
+            for a in answers:
+                if str(a.pk) not in pk_of_success:
+                    answers_a.append({'content': a.part_a, 'key': a.pk})
+                    answers_b.append({'content': a.part_b, 'key': encrypt_integer(a.pk)})
+                else:
+                    answers_c.append({'contenta':a.part_a, 'contentb':a.part_b})
+            shuffler_a = [counter for counter in range(len(answers_b))]
+            shuffler_b = [counter for counter in range(len(answers_b))]
+            random.shuffle(shuffler_a) 
+            random.shuffle(shuffler_b)
+            answers_a = [answers_a[s] for s in shuffler_a]
+            answers_b = [answers_b[s] for s in shuffler_b]
+            answers = list(zip(answers_a, answers_b))
+        else:
+            return HttpResponse('Something went wrong')
         last_attempt = question_student.attempts.last()
         context = {
             'question':question,
-            "is_mcq": is_mcq,
-            "is_fr": is_fr, 
+            'questtype':questtype,
+            'answers': answers,
             "answers_is_latex_question_type": zip(answers, is_latex, question_type),
             'question_type': question_type, # For structural
-            'answer': answers[0],
+            'answer': answers[0] if answers else None,
             'question_student':question_student,
             'too_many_attempts':too_many_attempts,
             'sq_type':question_type[0], # structural question type used in js.
             'last_attempt_content':last_attempt.submitted_answer if last_attempt else '',
             'last_attempt':last_attempt,
-            'units_too_many_attempts':units_too_many_attempts
+            'units_too_many_attempts':units_too_many_attempts,
+            'passed_pairs':answers_c
         }
         questions_dictionary[index] = context
     return render(request, 'deimos/answer_question.html',
@@ -254,13 +292,13 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
         # whenever the user opens a question for the first time, but just to be safe.
         question_student, created = QuestionStudent.objects.get_or_create(student=student, question=question)
         num_attempts = question_student.get_num_attempts()
-        if data["questionType"].startswith('structural'):
+        if data["questionType"].startswith('structural') or data["questionType"] == 'mp':
             too_many_attempts =  num_attempts >= question.struct_settings.max_num_attempts
             if question_student.num_units_attempts:
                 units_too_many_attempts = question_student.num_units_attempts >= question.struct_settings.units_num_attempts
             else: 
                 units_too_many_attempts = False
-        else:
+        elif data["questionType"].startswith('mcq'):
             too_many_attempts = num_attempts >= question.mcq_settings.mcq_max_num_attempts
             units_too_many_attempts = True
         correct = question_student.success
@@ -304,7 +342,8 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     if correct:
                         attempt.success = True
                         days_overdue = max(0, (date.today() - question.assignment.due_date.date()).days)
-                        overall_percentage = max(question.assignment.grading_scheme.floor_percentage, 1 - days_overdue * question.assignment.grading_scheme.late_sub_deduct)
+                        overall_percentage = max(question.assignment.grading_scheme.floor_percentage, \
+                                                 1 - days_overdue * question.assignment.grading_scheme.late_sub_deduct)
                         if question.answer_type in [QuestionChoices.STRUCTURAL_FLOAT, QuestionChoices.STRUCTURAL_VARIABLE_FLOAT] and units:
                             attempt.num_points = overall_percentage * max(0, question.struct_settings.num_points * (1 - question.struct_settings.percentage_pts_units)\
                                                     * (1 - question.struct_settings.deduct_per_attempt *
@@ -358,7 +397,37 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                             attempt.num_points = overall_percentage * max(0, question.mcq_settings.num_points * percentage_gain)
                             question_student.success = True
                             attempt.success = True
-                
+                elif data["questionType"] == 'mp':
+                    success_pairs_strings = []
+                    attempt_pairs = []
+                    for part_A_pk, encrypted_B_pk in submitted_answer.items():
+                        decrypted_b = decrypt_integer(int(encrypted_B_pk))
+                        attempt_pairs.append(f'{part_A_pk}-{decrypted_b}')
+                        if int(part_A_pk) == decrypted_b:
+                            success_pairs_strings.append(part_A_pk)
+
+                    # Calculating the number of points gain and saving submission
+                    num_of_correct = len(success_pairs_strings)
+                    total_num_of_pairs = question.matching_pairs.count()
+                    frac = (num_of_correct/total_num_of_pairs)
+                    if frac == 1 or num_of_correct == len(attempt_pairs):
+                        question_student.success = True
+                        correct = True
+                    days_overdue = max(0, (date.today() - question.assignment.due_date.date()).days)
+                    overall_percentage = max(question.assignment.grading_scheme.floor_percentage,\
+                                              1 - days_overdue * question.assignment.grading_scheme.late_sub_deduct)
+                    attempt_pairs = "&".join(attempt_pairs)
+                    attempt = QuestionAttempt.objects.create(question_student=question_student)
+                    attempt.content = attempt_pairs
+                    attempt.submitted_answer = attempt_pairs
+                    attempt.num_points = frac * \
+                        overall_percentage * max(0, question.struct_settings.num_points * (1 - question.struct_settings.deduct_per_attempt *
+                                                    max(0, question_student.get_num_attempts() - 1)))                        
+                    return_sp = success_pairs_strings
+                    success_pairs_strings = "&".join(success_pairs_strings)   
+                    attempt.save()
+                    success_pairs = QASuccessPairs.objects.create(pairs=success_pairs_strings, question_attempt=attempt)
+                    success_pairs.save()
                 question_student.save()
                 attempt.save()
             if not (units_too_many_attempts or prev_units_success):
@@ -399,7 +468,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                 attempt.save()
                 last_attempt.save()
         # print(f"Correct:{correct}. Units too may attempts: {units_too_many_attempts}")
-        if(not correct and data["questionType"].startswith('structural')):
+        if(not correct and (data["questionType"].startswith('structural')) or data["questionType"]=='mp'):
             too_many_attempts =  num_attempts + 1 >= question.struct_settings.max_num_attempts
             if question_student.num_units_attempts and not units_correct:
                 units_too_many_attempts = question_student.num_units_attempts >= question.struct_settings.units_num_attempts
@@ -410,7 +479,8 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
             'previously_submitted':previously_submitted,
             'feedback_data': feedback_data,
             'units_correct': units_correct,
-            'units_too_many_attempts':units_too_many_attempts
+            'units_too_many_attempts':units_too_many_attempts,
+            'success_pairs': return_sp if return_sp else None
         })
     
 

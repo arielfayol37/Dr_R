@@ -399,6 +399,29 @@ div.c-text {
 
 
 /* -----------------Style for phobos:create_question.html--------- */
+.mp-input-div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.mp-inputs, .formatted-mp {
+  width:100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.formatted-mp {
+  flex-wrap: nowrap;
+}
+.formatted-mp .mp {
+  width: 45%;
+}
+.mp-inputs input{
+  width:49% !important;
+}
 .add-var-section {
   position:absolute;
   right: 2%;

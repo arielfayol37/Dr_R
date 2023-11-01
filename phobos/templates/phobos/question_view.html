@@ -60,7 +60,7 @@
             
             {% if question_dict.show_answer %}
             
-                {% if question_dict.is_mcq %}
+                {% if question_dict.qtype == 'mcq' %}
                     {% for answer, is_latex in question_dict.answers_is_latex %}
                         
                             {% if is_latex %}
@@ -80,12 +80,12 @@
                             <button type="button" class="btn btn-info">True</button>
                         {% endif %}
                     {% endfor %}
-                {% else %}
+                {% elif question_dict.qtype != 'mcq' and question_dict.qtype != 'mp' %}
                     <p class="question-answer">
                         {% for answer in question_dict.answers %}
                         <strong>Answer </strong>
                             <div class="formatted-answer-option unexpand question-view">
-                                {% if not question_dict.is_fr %}
+                                {% if not question_dict.qtype == 'fr' %}
                                 <input type="hidden" class="preface latex-content" value="{{answer.preface}}"/>
                                 <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}"> 
                                 <input type="hidden" class="units latex-content" value="{{answer.answer_unit}}" />
@@ -95,6 +95,18 @@
                             </div>
                         {% endfor %}
                     </p>
+                {% elif question_dict.qtype == 'mp' %}
+                    <strong>Matching pairs </strong>
+                    {% for answer in question_dict.answers %}
+                        <div class="formatted-mp">
+                            <div class="formatted-answer">
+                                {{answer.part_a}}
+                            </div>
+                            <div class="formatted-answer">
+                                {{answer.part_b}}
+                            </div>
+                        </div>
+                    {% endfor %}
                 {% endif %}
                 <br/>
                 {% if question_dict.question.hints.all%}
