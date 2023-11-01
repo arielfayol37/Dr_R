@@ -53,17 +53,20 @@ addEventListener('DOMContentLoaded', () => {
 
         if (selected_action.value === 'action-1') {
             DueDateDiv.style.display = 'inline';
-            DueDateDiv.addEventListener('click', () => {
-                if (event.target.classList.contains('save-new-due-date-field')) {
+            save_btn= DueDateDiv.querySelector('.save-new-due-date-field')
+                save_btn.addEventListener('click',()=>{
+                    console.log('kfj')
                     try {
                         list.forEach((student) => {
+                            console.log('kfjdlk')
                             if (student.checked) { extend_due_date(selected_assignments.value, student.value); }
                         })
                         alert('Done');
+
                     }
                     catch { alert('Something went wrong'); }
-                }
-            })
+                })
+
         }
 
         // add actions here

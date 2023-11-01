@@ -15,7 +15,7 @@ from .models import *
 from django.shortcuts import get_object_or_404
 from django.middleware import csrf
 from django.utils.timesince import timesince
-from phobos.models import QuestionChoices
+from phobos.models import QuestionChoices, Topic
 import random, string
 from sympy import symbols, simplify
 import numpy as np
@@ -27,6 +27,9 @@ from django.db import transaction
 from markdown2 import markdown
 import qrcode
 import math
+from phobos.views import export_question_to
+from scipy.stats import norm
+
 from datetime import date
 
 # Create your views here.
@@ -984,3 +987,102 @@ def note_management(request, course_id):
         "notes": notes,
     }
     return render(request, "deimos/note_management.html", context)
+
+def generate_practice_test(request):
+    course_id = request.POST['course_id']
+    topic_name = request.POST['topic_name']
+    num_Questions = request.POST['num_Question']
+    practice_test_name = request.POST['practice_test_name']
+    student = get_object_or_404(Student, pk = request.user.pk)
+    course = Course.objects.get(pk=course_id)
+    practice_course,is_created= Course.objects.get_or_create(name='Practice Course')
+
+    try:
+        is_enrolled= Enrollment.objects.get(course=course, student=student)
+    except Enrollment.DoesNotExist:
+        return HttpResponse('Illegal Access')
+    
+    topic = Topic.objects.get(name=topic_name)
+    question_student_topic=[]
+    question_student_topic_attempts=[]
+
+    # getting all question under this Topic
+    questions = Question.objects.filter(topic= topic)
+    question_student= QuestionStudent.objects.filter(student=student)
+
+    # creating list of questions and list of number of attempts for statistics
+    for question in questions:
+        for quest in question_student:
+            if quest.question.topic == topic:
+                question_student_topic.append(quest)
+                question_student_topic_attempts.append(quest.get_num_attempts())
+    
+    question_student_attempts= zip(question_student_topic_attempts,question_student_topic)
+
+    # computing the number of question to be selected
+    if int(num_Questions)>len(question_student):
+        k=len(question_student)
+    else:
+        k=int(num_Questions)
+    # selecting the questions based on the probability distribution
+    distribution=answered_question_statistics(question_student_topic_attempts)
+    Selected_questions= random.choices(question_student_topic,weights=distribution, k=k)
+
+    # creating a new practice test assignment
+    practice_test= Assignment.objects.create(course=practice_course, name=practice_test_name, is_assigned=True)
+    practice_test.save()
+
+    # adding selected and similar questions to the new practice test assignment and saving assignmentstudent
+    practice_questions=[]
+    for question in Selected_questions:
+        similar = similar_question(question.question)
+        select = random.choice(similar)
+        # Let's ensure a question doesnot repeat twice
+        while select in practice_questions and similar != []:
+            similar.remove(select) 
+            if similar != []:
+                select = random.choice(similar)
+        # copying te selected question into te practce test course   
+        if similar !=[]:
+            result = export_question_to(request,select['question'].id,practice_test.id)
+            practice_questions.append(select)
+
+    practice_test_student = AssignmentStudent.objects.create(assignment= practice_test, student= student)
+    practice_test_student.save()
+    practice_test_enroll = Enrollment.objects.create(student=student, course=practice_course)
+    practice_test_enroll.save()
+
+    return HttpResponseRedirect(reverse("deimos:course_management",None,None,{'course_id':practice_course.id}))
+
+def practice_test_settings(request,course_id=None):
+    topics= Topic.objects.all()
+    course= Course.objects.get(pk=course_id)
+    return render(request,"deimos/practice_test_setting.html",{'topics':topics, 'course':course})
+
+def normal_prob(x, mu, sigma):
+    p = (1 / (sigma * np.sqrt(2 * np.pi))) * np.exp(-0.5 * ((x - mu) / sigma) ** 2)
+  # return the normal probability
+    return p
+
+def answered_question_statistics(input_list):
+    array= np.array(input_list)
+    mean = np.mean(array)
+    std = np.std(array)
+    # create an empty list to store the probabilities
+    probabilities = [normal_prob(x,mean,std) for x in array]
+    mode = np.max(probabilities)
+    # the distribution is the maximum/the probability
+    return [mode/i for i in probabilities]
+
+def similar_question(input_question):
+        all_questions = Question.objects.all()
+        encoded_output_pooled= torch.tensor(input_question.embedding)
+        # Calculate cosine similarity with stored question encodings
+        similar_questions = []
+        for question in all_questions:
+            question_encoded_output_pooled = torch.tensor(question.embedding)  # Load pre-computed encoding
+            similarity_score = cosine_similarity(encoded_output_pooled, question_encoded_output_pooled).item()
+            similar_questions.append({'question': question, 'similarity': similarity_score})
+        # Sort by similarity score and get top 10
+        top_n = 3
+        return heapq.nlargest(top_n, similar_questions, key=lambda x: x['similarity'])

@@ -38,4 +38,6 @@ urlpatterns = [
          views.save_note, name='save_note'), 
    path('courses/<int:course_id>/assignments/<int:assignment_id>/questions/<int:question_id>/<int:student_id>/<int:upload_note_img>/save_note',\
          views.save_note, name='save_note'), 
+    path('courses/generate_practice_test', views.generate_practice_test, name='generate_practice_test'),
+    path('courses/practice_test_settings/<int:course_id>', views.practice_test_settings, name='practice_test_settings'),    
 ]
