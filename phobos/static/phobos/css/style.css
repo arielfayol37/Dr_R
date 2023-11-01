@@ -412,10 +412,12 @@ div.c-text {
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  gap:20px;
 }
 .formatted-mp {
   flex-wrap: nowrap;
+}
+.formatted-mp .mp {
+  width: 45%;
 }
 .mp-inputs input{
   width:49% !important;

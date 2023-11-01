@@ -999,9 +999,8 @@ addMpOptionBtn.addEventListener('click', (event)=>{
             formatted_mp.classList.add('formatted-mp', 'inputed-mp-answer');
             
             // Creating and populating hidden input fields. 
-
-            inputedMpAnswersDiv.appendChild(formatted_mp);
             formatted_mp.appendChild(delDiv);
+            inputedMpAnswersDiv.appendChild(formatted_mp);
             mpInputFieldA.value = '';
             mpInputFieldB.value = '';
             inputedMpAnswersDiv.dataset.counter = `${holder + 1}`;
@@ -1560,6 +1559,9 @@ function checkQuestionBlock(questionBlock){
             if(inputedMpAnswersDiv.dataset.mereCounter < 2){
                 alert('You must enter at least two matching pairs');
                 return false
+            } else if(inputedMpAnswersDiv.dataset.mereCounter > 14){
+                alert('That is a little excessive. The number of matching pairs must not exceed 14');
+               return false
             }else {
                 const nodeP = document.createElement('p');
                 const mpnum = `<input type='hidden' value=${inputedMpAnswersDiv.dataset.mereCounter + 1} name="${inputedMpAnswersDiv.dataset.qnumber}_num_of_mps"/>`

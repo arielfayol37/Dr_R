@@ -283,9 +283,17 @@ class QuestionAttempt(models.Model):
     # MCQ answers don't need submitted_answer.
     # Structural questions attempts will be simplified and stored in content
     # while the actual submission will be stored in submitted_answer.
-    submitted_answer =models.CharField(max_length=1000, blank=True, null=True)
+    submitted_answer =models.CharField(max_length=3000, blank=True, null=True)
     def __str__(self):
         return f"{self.question_student.student.username} attempt for {self.question_student.question}"
+
+class QASuccessPairs(models.Model):
+    """
+    For matching pair questions, we store the pairs that were correct for an attempt
+    """
+    question_attempt = models.OneToOneField(QuestionAttempt, on_delete=models.CASCADE, related_name='success_pairs')
+    pairs = models.CharField(max_length=2000, null=False, blank=False) # will store the pairs as long string
+    # of primary keys of `MatchingAnswer  separated by '&'s
     
 
 class QuestionModifiedScore(models.Model): 

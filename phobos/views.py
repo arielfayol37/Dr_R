@@ -938,7 +938,7 @@ def copy_answers(old_question, new_question):
             content=answer.content
         )
         a.save()
-    else:
+    elif old_question.answer_type.startswith('MCQ'):
         # Handle MCQ types separately as they have multiple possible answers
         mcq_answer_type_mapping = {
             QuestionChoices.MCQ_EXPRESSION: MCQExpressionAnswer,
@@ -960,7 +960,13 @@ def copy_answers(old_question, new_question):
                     new_answer.label = answer.label
                 
                 new_answer.save()
-
+    elif old_question.answer_type.startswith('MATCHING'):
+        for answer in old_question.matching_pairs.all():
+            new_answer = MatchingAnswer.objects.create(question=new_question)
+            new_answer.part_a, new_answer.part_b = answer.part_a, answer.part_b
+            new_answer.save()
+    else:
+        raise ValueError("No answer type match")
 
 @transaction.atomic
 @login_required(login_url='astros:login')
