@@ -371,6 +371,8 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     # !important: mcq answers of different type may have the same primary key.
                     # checking previous attempts
                     for previous_attempt in question_student.attempts.all():
+                        # print(f"submitted answer set: {(set(simplified_answer))},\
+                        #  prevsious answer content set: {set(eval(previous_attempt.content))}")
                         if set(simplified_answer) == set(eval(previous_attempt.content)):
                             previously_submitted = True
                             return JsonResponse({'previously_submitted': previously_submitted})
@@ -396,6 +398,8 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     ia = list(question.mcq_image_answers.filter(is_answer=True).values_list('pk', flat=True))
                     ia = [str(pk) + str(question_type_dict['ia']) for pk in ia]
                     answers.extend(ia)
+                    # print(f'Submitted answer set: {(set(simplified_answer))}, \
+                    # answers set: {set(answers)}')
                     if len(simplified_answer) == len(answers):
                         s1, s2 = set(simplified_answer), set(answers)
                         if s1 == s2:
@@ -442,6 +446,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     success_pairs.save()
                 question_student.save()
                 attempt.save()
+            print(units_too_many_attempts, prev_units_success)
             if not (units_too_many_attempts or prev_units_success):
                 if question.answer_type in [QuestionChoices.STRUCTURAL_FLOAT, QuestionChoices.STRUCTURAL_VARIABLE_FLOAT]:
                     if question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
@@ -456,6 +461,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     # units
                     if units:
                         submitted_units = data["submitted_units"]
+                        print(f"submitted units: {submitted_units}, correct units: {units}")
                         units_correct = compare_units(units, submitted_units)
                         last_attempt.units_success = units_correct
                         last_attempt.submitted_units = submitted_units

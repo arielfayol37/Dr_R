@@ -15,7 +15,7 @@
 <h4>{{course.name}}</h4><hr/>
 <div class="course code">
     <input class="expiring-date-input-field field-style" type= 'date' style="display: none;" name= 'expiring date of the code'/>
-    <button class="btn-enrollment-code btn btn-primary"> Create an Enrollment Links</button>
+    <button class="btn-enrollment-code btn btn-outline-primary"> Create an Enrollment Code</button>
 
 </div>
     <ul class=" course code-list" style="color: blue;"></ul>
@@ -42,7 +42,7 @@
             //console.log(code,code.length)
             for(i = 0; i < code.length; i++){
             code_items = document.createElement('li');
-            code_items.innerHTML =  `Code: <em style="color: red;">${code[i].code}</em> expiring date: <em style="color: red;">${code[i].ex_date}</em>`
+            code_items.innerHTML =  `Code: <em class="suggestion original-size">${code[i].code}</em> expiring date: <em>${code[i].ex_date}</em>`
             document.querySelector('.code-list').append(code_items);}
         })
 

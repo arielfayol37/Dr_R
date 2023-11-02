@@ -406,9 +406,11 @@ def create_question(request, assignment_id=None, question_nums_types=None):
                             if not vars_dict:
                                 new_question.answer_type = QuestionChoices.MCQ_FLOAT
                                 answer = MCQFloatAnswer(question=new_question, content=answer_content)
-                            else:
+                            elif answer_content.startswith('@{') and answer_content.endswith('}@'):
                                 new_question.answer_type = QuestionChoices.MCQ_VARIABLE_FLOAT
                                 answer = MCQVariableFloatAnswer(question=new_question, content=answer_content)
+                            else:
+                                raise ValueError('Expected a variable but variable expression not found')
                         elif answer_info_encoding[1] == "2": # Latex Answer
                             new_question.answer_type = QuestionChoices.MCQ_LATEX
                             answer = MCQLatexAnswer(question=new_question, content=answer_content)
@@ -445,10 +447,12 @@ def create_question(request, assignment_id=None, question_nums_types=None):
                     new_question.answer_type = QuestionChoices.STRUCTURAL_FLOAT
                     answer = FloatAnswer(question=new_question, content=question_answer, \
                                         answer_unit=answer_unit, preface=answer_preface)
-                else:
+                elif question_answer.startswith('@{') and question_answer.endswith('}@'):
                     new_question.answer_type = QuestionChoices.STRUCTURAL_VARIABLE_FLOAT
                     answer = VariableFloatAnswer(question=new_question, content=question_answer,\
                                                 answer_unit=answer_unit, preface=answer_preface)
+                else:
+                    raise ValueError('Expected a variable but variable expression not found')
             elif type_int == 2:
                 new_question.answer_type = QuestionChoices.STRUCTURAL_LATEX
                 answer = LatexAnswer(question=new_question, content=question_answer)

@@ -135,7 +135,15 @@
                       <div class="inputed-mcq-answers" data-true-counter="0">
                         {% for answer, is_latex, question_type in question_dict.answers_is_latex_question_type %}
                           <div class="mcq-option-answer">
-                            <div class="formatted-answer-option unexpand">
+                            {% if question_dict.question_student.success %}
+                                {% if answer.is_answer%}
+                                  <div class="formatted-answer-option unexpand mcq-true">
+                                {% else %}
+                                  <div class="formatted-answer-option unexpand mcq-false">
+                                {% endif %}
+                            {% else %}
+                                <div class="formatted-answer-option unexpand mcq-false hoverable"> 
+                            {% endif %}
                               {% if is_latex %}
                                   <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
                               {% else %}
@@ -148,17 +156,9 @@
                               {% endif %}
                               <input type="hidden" value="{{answer.pk}}{{question_type}}" class="answer_id" name="mcq_answer_id_{{ forloop.counter0 }}"/>
                               <input type="hidden" value="0{{question_type}}" class="answer_info" name="mcq_answer_info_{{ forloop.counter0 }}"/>
-                            </div>
-                            {% if question_dict.question_student.success %}
-                                {% if answer.is_answer%}
-                                    <button type="button" class="btn btn-info">True</button> 
-                                {% endif %}
-                            {% else %}
-                                <button type="button" class="btn btn-warning mcq-false">False</button> 
-                            {% endif %}
-                            
+                            </div> 
                           </div>
-                          <br/> <br/>   
+                          <br/> 
                         {% endfor %}
                       </div> 
                       {% if question_dict.question_student.success %}

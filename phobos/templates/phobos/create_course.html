@@ -64,26 +64,35 @@
         // Set the new height to match the scrollHeight
         textarea.style.height = textarea.scrollHeight + 'px';
     }
-
-document.querySelector('#course-image').addEventListener('change', function() {
-        const reader = new FileReader();
-        const imageFile = this.files[0];
-        reader.onload = function(event) {
-            const imageElement = document.createElement('img');
-            imageElement.src = event.target.result;
-            imageElement.style.maxWidth = '100%';
-            imageElement.style.maxHeight = '200px';
-            imageElement.style.borderRadius = '15px';
-            const imagePreview = document.querySelector('#image-preview'); 
-            //console.log(imagePreview.src);
-            imagePreview.style.display = 'block';
-            imagePreview.innerHTML = '';
-            imagePreview.appendChild(imageElement);
-        };
-        if(imageFile){
-            reader.readAsDataURL(imageFile);
-        }
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('create-course-form');
+        const imageInput = document.querySelector('#{{ form.image.id_for_label }}');
         
+        form.addEventListener('submit', function (event) {
+            if (!imageInput.value) {
+                alert('Please select an image before submitting.');
+                event.preventDefault();
+            }
+        });
+
+        imageInput.addEventListener('change', function () {
+            const reader = new FileReader();
+            const imageFile = this.files[0];
+            reader.onload = function (event) {
+                const imageElement = document.createElement('img');
+                imageElement.src = event.target.result;
+                imageElement.style.maxWidth = '100%';
+                imageElement.style.maxHeight = '200px';
+                imageElement.style.borderRadius = '15px';
+                const imagePreview = document.querySelector('#image-preview');
+                imagePreview.style.display = 'block';
+                imagePreview.innerHTML = '';
+                imagePreview.appendChild(imageElement);
+            };
+            if (imageFile) {
+                reader.readAsDataURL(imageFile);
+            }
+        });
     });
 </script>
 
