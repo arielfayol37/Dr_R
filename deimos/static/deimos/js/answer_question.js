@@ -595,20 +595,18 @@ forms.forEach((form)=>{
           event.preventDefault();
           target = event.target
           if(target.classList.contains('mcq-false')){
-              target.classList.remove('mcq-false','btn-warning');
-              target.classList.add('mcq-true', 'btn-info');
-              target.innerHTML = 'True';
+              target.classList.remove('mcq-false');
+              target.classList.add('mcq-true');
               const holder = inputedMcqAnswersDiv.dataset.trueCounter;
               inputedMcqAnswersDiv.dataset.trueCounter =  `${parseInt(holder) + 1}`;
-              const answer_info_input = target.closest('.mcq-option-answer').querySelector('.formatted-answer-option').querySelector('.answer_info');
+              const answer_info_input = target.querySelector('.answer_info');
               answer_info_input.value = rep(answer_info_input.value, 0, '1');
           } else if(target.classList.contains('mcq-true')){
-              target.classList.add('mcq-false','btn-warning');
-              target.classList.remove('mcq-true', 'btn-info');
-              target.innerHTML = 'False'; 
+              target.classList.add('mcq-false');
+              target.classList.remove('mcq-true');
               const holder = inputedMcqAnswersDiv.dataset.trueCounter;
               inputedMcqAnswersDiv.dataset.trueCounter =  `${parseInt(holder) - 1}`;
-              const answer_info_input = target.closest('.mcq-option-answer').querySelector('.formatted-answer-option').querySelector('.answer_info');
+              const answer_info_input = target.querySelector('.answer_info');
               answer_info_input.value = rep(answer_info_input.value, 0, '0');
           }
       })

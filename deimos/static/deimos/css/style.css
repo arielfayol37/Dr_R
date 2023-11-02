@@ -514,8 +514,8 @@ div.c-text {
   justify-content: center;
 }
 .formatted-answer, .formatted-answer-option {
-  margin-top: 5px;
-  padding: 20px;
+  margin-top: 3px;
+  padding: 10px;
   border-radius: 8px;
   box-shadow: 13px 13px 20px #cbced1;
   display: flex;
@@ -553,7 +553,13 @@ div.c-text {
   resize:initial;
   overflow: initial;
 }
-
+.formatted-answer-option.mcq-true.hoverable:hover, .formatted-answer-option.mcq-false.hoverable:hover {
+  transform:scale(1.1);
+  cursor: pointer;
+}
+.formatted-answer-option.mcq-true {
+  background-color: rgb(0, 255, 128);
+}
 
 .hints-feedback {
   display: flex;

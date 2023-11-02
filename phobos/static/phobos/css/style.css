@@ -530,7 +530,13 @@ textarea {
   justify-content: center;
   align-items: center;
 }
-
+.formatted-answer-option.mcq-true.hoverable:hover, .formatted-answer-option.mcq-false.hoverable:hover {
+  transform:scale(1.1);
+  cursor: pointer;
+}
+.formatted-answer-option.mcq-true {
+  background-color: rgb(0, 255, 128);
+}
 
 .image-in-formatted {
   max-width: 70%; /* Limit image width to 100% of parent div's width */
