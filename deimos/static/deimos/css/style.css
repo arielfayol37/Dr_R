@@ -10,6 +10,27 @@
   /* Add additional src lines for other font formats if necessary */
 }
 
+
+/* Define the keyframe animation for deimos:answer_question.html feedback */
+@keyframes borderHighlight {
+  0% {
+    border-color: #fff;  /* starting color */
+  }
+  50% {
+    border-color: rgba(23, 137, 252, 1);  /* highlight color */
+  }
+  100% {
+    border-color: #fff;  /* ending color (same as starting color) */
+  }
+}
+
+.animate-border {
+  /* Initial border setup */
+  border: 2px solid #fff;
+  /* Apply the animation */
+  animation: borderHighlight 1s infinite; /* The animation will run for 1 second and repeat infinitely */
+}
+
 body.body {
     background-color: white !important; 
     color:black;
@@ -393,6 +414,47 @@ div.c-text {
 
 
 /* ------------------------------Style for answer_question.html-------------*/
+.formatted-mp {
+  width:100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.formatted-mp {
+  flex-wrap: nowrap;
+}
+.formatted-mp .sub-part {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 45%;
+}
+.formatted-mp .mp {
+  width: 100%;
+}
+.formatted-mp .mp.success {
+  width: 45%;
+}
+.formatted-mp .mp:hover{
+  cursor: pointer;
+  transform:scale(1.1);
+  z-index:3;
+}
+.formatted-mp .mp.mp-part-a:hover{
+  border-left: 2px solid #656363;
+}
+.formatted-mp .mp.mp-part-b:hover{
+  border-right: 2px solid #656363;
+}
+.formatted-mp .mp.mp-part-a.selected {
+  border-left: 2px solid #656363;
+}
+.formatted-mp .mp.mp-part-b.selected {
+  border-right: 2px solid #656363;
+}
 .variable-value {
   color:rgba(23, 137, 252, 0.7) !important;
 }

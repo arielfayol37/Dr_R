@@ -83,6 +83,8 @@ math.import(replacements, {override: true})
 
 ////// END OF COPIED CODE ///////////////
 const replacementDict = {
+  'e+':'e^',
+  'e-':'e^-',
   'π':'pi',
   '√':'sqrt',
   'log':'log10', // MathJS assumes natural log by default.

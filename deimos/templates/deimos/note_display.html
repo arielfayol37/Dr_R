@@ -1,25 +1,23 @@
 <!-- deimos: question_display.html -->
-<li class="question-li course-li" data-question-id="{{ note.question_student.question.id }}">
+<li class="question-li course-li" data-question-id="{{ note.question_student.question.id }}" style="width: 70%;">
+
     <div class="course-section assigment-section">
-        <div class="image-container">
-        </div>
-        <div class="c-text q-text">
-            
-            <span class="c-name"><strong>Note {{note.question_student.question.number}}</strong>
-                
-            <p class="c-description">{% if note_md|length > 147 %}
+        <div class="note-text q-text">
+            <span class="note-name"><strong>Note {{note.question_student.question.number}}</strong>   
+            <p class="note-description">{% if note_md|length > 147 %}
                 {{ note_md|safe|slice:":147" }}...
             {% else %}
                 {{ note_md|safe|safe }}
             {% endif %}</p><br>
             <p class="timestamp" style="position:relative; float: right; right: 0%; font-size: 10px;"> From <b>question {{note.question_student.question.number}} </b>  Last edited on <b>{{note.last_edited}} </b></p>
-              
         </div>
     </div>
     <div class="edit-section il">{% csrf_token %}
         <div><a href="{% url 'deimos:answer_question' assignment_id=assignment_id course_id=course_id question_id=note.question_student.question.id%}">
             <button class="btn edit-btn co" data-question-id="{{ question.id}}">View</button></div></a>
-       
     </div>
 
+</li>
+<li>
+    <p></p>
 </li>

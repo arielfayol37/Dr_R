@@ -2,6 +2,27 @@ document.addEventListener('DOMContentLoaded', ()=> {
     const forms = document.querySelectorAll('.question-form');
     //const validateAnswerActionURL = extractQuestionPath(window.location.href) + '/validate_answer';
     const screen = document.querySelector('#screen'); 
+    const toggleTime = 1200;
+// Matching colors
+   var mColors = [ 
+    'rgb(0, 255, 0)', // Bright Green
+    'rgb(255, 255, 0)',   // Bright Yellow
+    'rgb(255, 0, 255)',   // Bright Magenta
+    'rgb(0, 255, 255)',   // Bright Cyan
+    'rgb(255, 128, 0)',   // Bright Orange
+    'rgb(0, 255, 128)',   // Bright Turquoise
+    'rgb(255, 128, 128)', // Bright Coral
+    'rgb(128, 255, 0)',   // Bright Lime
+    'rgb(128, 128, 255)',  // Light Blue
+    'rgb(255, 255, 128)', // Light Yellow
+    'rgb(255, 0, 128)',   // Bright Pink
+    'rgb(0, 128, 255)',   // Cerulean
+    'rgb(128, 255, 128)', // Light Green
+    'rgb(255, 128, 255)', // Light Magenta
+     ] 
+
+    
+
     var formattedAnswerDiv;
    
   // displaying previous submissions
@@ -134,6 +155,68 @@ forms.forEach((form)=>{
   const hintsContainerDiv = form.querySelector('.hints-container');
   const feedbackContainerDiv = form.querySelector('.feedback-container');
 
+/*----------------- MATCHING PAIRS------------------------*/
+  const mpPartAs = form.querySelectorAll('.mp-part-a');
+  const mpPartBs = form.querySelectorAll('.mp-part-b');
+  let mpDictA = {}; // matchings the pk of A to the encrypted key of B
+  let mpDictAkey = {}; // stores the corresponding id(counter) of A given A's pk
+  let mpDictB = {};
+  let mpDictBkey = {};
+  var previouslyClickedmpaID;
+  if(mpPartAs){
+    shuffleArray(mColors);
+    var mpc = 0;
+    mpPartAs.forEach((mpa)=>{
+      mpDictA[mpa.dataset.key] = '-1';
+      mpDictAkey[mpa.dataset.key] = mpc;
+      mpa.style.backgroundColor = mColors[mpc];
+      mpc += 1;
+
+      mpa.addEventListener('click', (event)=>{
+        if(!mpa.classList.contains('successful')){
+          previouslyClickedmpaID = mpa.dataset.id;
+        }
+        
+      })
+    })
+
+    mpc = 0;
+    mpPartBs.forEach((mpb)=>{
+      mpDictB[mpb.dataset.key] = '-1';
+      mpDictBkey[mpb.dataset.key] = mpc;
+      mpc += 1;
+      mpb.addEventListener('click', (event)=>{
+
+        if(!mpb.classList.contains('successful')){
+          if(previouslyClickedmpaID != null){
+            mpb.classList.add('selected');
+            mpb.style.backgroundColor = mpPartAs[previouslyClickedmpaID].style.backgroundColor;
+            mpPartAs[previouslyClickedmpaID].classList.add('selected');
+  
+            // removing the part B that was matching the clicked part A 
+  
+            if((mpDictA[mpPartAs[previouslyClickedmpaID].dataset.key] != mpb.dataset.key) 
+            && (mpDictA[mpPartAs[previouslyClickedmpaID].dataset.key] != '-1')){
+              mpDictB[mpDictA[mpPartAs[previouslyClickedmpaID].dataset.key]] = '-1';
+              mpPartBs[mpDictBkey[mpDictA[mpPartAs[previouslyClickedmpaID].dataset.key]]].classList.remove('selected');
+              mpPartBs[mpDictBkey[mpDictA[mpPartAs[previouslyClickedmpaID].dataset.key]]].style.backgroundColor = 'white';
+            }
+  
+            // removing the part A that was previously matching this selected part B
+            if(mpDictB[mpb.dataset.key] != '-1'){
+              mpDictA[mpDictB[mpb.dataset.key]] = '-1'; // set the previous matching A to nothing (-1)
+              mpPartAs[mpDictAkey[mpDictB[mpb.dataset.key]]].classList.remove('selected'); 
+            }
+  
+            mpDictB[mpb.dataset.key] = mpPartAs[previouslyClickedmpaID].dataset.key;
+            mpDictA[mpPartAs[previouslyClickedmpaID].dataset.key] = mpb.dataset.key;
+          }
+        }
+      })
+    })
+  }
+/*-----------------------------------------------------*/
+
   feedbackContainerDiv.querySelector('.show-feedback-btn').addEventListener('click', (event)=>{
     event.preventDefault();
     if(event.target.classList.contains('closed-feedback')){
@@ -212,7 +295,7 @@ forms.forEach((form)=>{
       }
       
       form.appendChild(calculatorDiv);
-      calculatorDiv.scrollIntoView({behavior: 'smooth'});
+      screen.scrollIntoView({behavior: 'smooth'});
       calculatorDiv.classList.remove('hide');
       calculatorDiv.querySelector('.preface-content').innerHTML = form.querySelector('.answer_preface').value
       screen.value = form.querySelector('.inputed_answer_structural').value;
@@ -302,6 +385,14 @@ forms.forEach((form)=>{
       } else if (questionType.value ==='mcq' && inputedMcqAnswersDiv.trueCounter===0){
         alert('Must select at least on MCQ answer as true');
         return;
+      } else if (questionType.value == 'mp'){
+        // check whether all the parts have been selected.
+        for (let key in mpDictA) {
+          if (mpDictA[key] == '-1') {
+              alert('Must match all pairs.')
+              return;  // exit the loop once '-1' is found
+          }
+      }
       }
       scrollToCenter(redLight);
       yellowLight.classList.add('activated');
@@ -310,6 +401,12 @@ forms.forEach((form)=>{
       const qid = form.querySelector('.question-id').value;
       const baseUrl = window.location.href.replace(/#$/, '');
     if (question_type.startsWith('structural')){
+      // Creating a p tag to contain the attempt and 
+      // displaying in previous attempts
+      const newAttempt = document.createElement('p');
+      newAttempt.classList.add('p-attempt')
+      newAttempt.innerHTML = MathJax.tex2chtml(math.parse(screen.value).toTex() + submitted_units).innerHTML
+
         fetch(`${baseUrl}/validate_answer/${qid}`, {
             method: 'POST',
             headers: { 'X-CSRFToken': getCookie('csrftoken') },
@@ -325,7 +422,7 @@ forms.forEach((form)=>{
               // Print result
               //console.log(result.correct);
               if(result.previously_submitted){
-                alert('You already attempted using that answer');
+                displayFeedback(feedbackContainerDiv, 'You already attempted using that answer');
                 removeAllLights(redLight,yellowLight,greenLight, blueLight);
                 return;
               }
@@ -339,9 +436,7 @@ forms.forEach((form)=>{
               }
               
               if(!result.correct && result.feedback_data.length > 0){
-                feedbackContainerDiv.querySelector('.show-feedback-btn').style.display='block';
-                feedbackContainerDiv.querySelector('.formatted-answer-option').innerHTML = result.feedback_data;
-                feedbackContainerDiv.querySelector('.formatted-answer-option').style.display = 'block';
+                displayFeedback(feedbackContainerDiv, result.feedback_data);
               }
               if(result.correct){
                 screen.disabled = true;
@@ -349,13 +444,20 @@ forms.forEach((form)=>{
                 // console.log(`Requires units: ${requiresUnits}`);
                 if(requiresUnits){
                   if(result.units_correct){
-                    submitBtn.style.display = 'none';
+                    setTimeout(()=>{
+                      submitBtn.style.display = 'none';
+                    }, toggleTime)
+
                   }else if(!result.units_too_many_attempts){
                     submitBtn.value = 'Submit units';
+                    displayFeedback(feedbackContainerDiv, "Correct answer, wrong units.");
                   }
                   
                 }else {
-                  submitBtn.style.display = 'none';
+                  setTimeout(()=>{
+                    submitBtn.style.display = 'none';
+                  }, toggleTime)
+                  
                 }
                 
               }
@@ -364,6 +466,9 @@ forms.forEach((form)=>{
                 if(result.units_correct){
                   const uScreen = calculatorDiv.querySelector('.units-screen')
                   uScreen.disabled = true;
+                  if(!result.correct){
+                    displayFeedback(feedbackContainerDiv, 'Wrong answer, correct units.');
+                  }
                 }
               }
 
@@ -373,7 +478,8 @@ forms.forEach((form)=>{
                 if(!result.units_too_many_attempts){ // the toggle function will take care of 
                                                      // the alert message if the units attempts
                                                     //  are exceeded too.
-                  alert('You exhausted your attempts for this question. Screen is now disabled');
+                  displayFeedback(feedbackContainerDiv, 'You exhausted your attempts for this question. Screen is now disabled');
+                  submitBtn.style.display = 'none';
                 }
                 
               }
@@ -381,7 +487,7 @@ forms.forEach((form)=>{
               if(result.units_too_many_attempts){
                 form.querySelector('.able_unit').classList.remove('able');
                 calculatorDiv.querySelector('.units-screen').disabled = true;
-                //console.log('disabled units');
+                displayFeedback(feedbackContainerDiv, 'You exhausted your units attempts for this question');
               }
           });
     } else if( question_type ==='mcq'){
@@ -401,17 +507,83 @@ forms.forEach((form)=>{
               // Print result
               //console.log(result.correct);
               if(result.previously_submitted){
-                alert('You already attempted using that answer');
+                displayFeedback(feedbackContainerDiv, 'You already attempted using that answer');
                 removeAllLights(redLight,yellowLight,greenLight, blueLight);
                 return;
               }
               toggleLight(result.correct, result.too_many_attempts, redLight, yellowLight, greenLight);
+              if(result.correct){
+                
+                setTimeout(()=>{
+                  submitBtn.style.display = 'none';
+                }, toggleTime)
+              }
           });
+    }else if(question_type ==='mp'){
+      fetch(`${baseUrl}/validate_answer/${qid}`, {
+        method: 'POST',
+        headers: {'X-CSRFToken':getCookie('csrftoken')},
+        body: JSON.stringify({
+          answer:mpDictA,
+          questionType:question_type,
+          submitted_answer:mpDictA
+        })  
+      })
+      .then(response => response.json())
+      .then(result =>{
+        if(result.correct){
+           // index 3 is for green light, 2 is for blue
+          setTimeout(()=>{
+            setLights(redLight, yellowLight, greenLight,null, index=3);
+            submitBtn.style.display = 'none';
+          }, toggleTime)
+        }
+        if(result.too_many_attempts){
+          setTimeout(()=>{
+            setLights(redLight, yellowLight, greenLight,null, index=0);
+          }, toggleTime) // set the lights to red
+        }
+        if(result.success_pairs && result.success_pairs.length != 0){
+          if(!result.correct){
+            setTimeout(()=>{
+              setLights(redLight, yellowLight, greenLight,null, index=1);
+            }, toggleTime) // set the lights to yellow
+          }
+
+          result.success_pairs.forEach((pk)=>{
+            const mpaId = mpDictAkey[pk]
+            const mpbId = mpDictBkey[mpDictA[pk]];
+            mpPartAs[mpaId].classList.add('successful');
+            
+            mpPartBs[mpbId].classList.add('successful');
+            
+            const newFMP = document.createElement('div');
+            newFMP.classList.add('formatted-mp');
+            setTimeout(()=>{
+              mpPartAs[mpaId].style.backgroundColor = 'white';
+              mpPartBs[mpbId].style.backgroundColor = 'white';
+              newFMP.appendChild(mpPartAs[mpaId]);
+              newFMP.appendChild(mpPartBs[mpbId]);
+              form.querySelector('.passed-attempts').appendChild(newFMP);
+            }, toggleTime)
+            
+            delete mpPartAs[mpaId];
+            delete mpPartBs[mpbId];
+            delete mpDictA[pk];
+          })
+        }else {
+          setTimeout(()=>{
+            setLights(redLight, yellowLight, greenLight,null, index=0);
+          }, toggleTime) // set the lights to red
+        }
+
+      })
     }else {
       alert('Something went wrong');
     }
   }else if(greenLight.classList.contains('activated')){
-        alert('You already passed this question')
+    displayFeedback(feedbackContainerDiv, 'You already passed this question');
+        //alert('You already passed this question')
   }
 });
 
@@ -472,13 +644,24 @@ function displayLatex(){
 
 displayLatex();
 
-
+function displayFeedback(feedbackContainerDiv, message){
+  const fO = feedbackContainerDiv.querySelector('.formatted-answer-option')
+  feedbackContainerDiv.querySelector('.show-feedback-btn').style.display='block';
+  fO.innerHTML = message;
+  fO.style.display = 'block';
+  if(message != ""){
+    fO.classList.add('animate-border');
+    setTimeout(()=>{
+      fO.classList.remove('animate-border'); // remove animation after 3 seconds
+    }, 3000)
+  }
+}
 
     if (!(screen === null)){
 
         screen.addEventListener('input', ()=> {
           if(screen.dataset.changedPart === 'true'){
-            formattedAnswerDiv = screen.closest('.question-form').querySelector('.formatted-answer');
+            formattedAnswerDiv = screen.closest('.question-form').querySelector('.formatted-answer.calc');
             screen.dataset.changedPart = 'false';
           }
           
@@ -491,12 +674,11 @@ displayLatex();
                 var parsedNode = math.parse(processed);
                 var userInputLatex = parsedNode.toTex() + '\\quad = \\quad' + userInputNode.toTex();
                 const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
-                
                 formattedAnswerDiv.innerHTML = '';
                 formattedAnswerDiv.appendChild(formattedAnswer);
                 MathJax.typesetPromise();
                 } catch (error) {
-                  // console.log(error);
+                  //console.log(error);
                 }
                 
                 });
@@ -535,19 +717,19 @@ displayLatex();
 
               if(too_many_attempts && units_too_many_attempts){
                 redLight.classList.add('activated');
-                alert('Too many attempts for this question. Screen is now disabled');
+               // alert('Too many attempts for this question. Screen is now disabled');
               
               }else{
 
                 if(units_too_many_attempts){
-                  alert('Units attempts exhausted. Units screen is now disabled.')
+                //  alert('Units attempts exhausted. Units screen is now disabled.')
                 }
 
                 if(correct){
                   // This means that the units were wrong
                   if(blueLight){
                     blueLight.classList.add('activated');
-                    alert('Correct answer, but wrong units');
+                    // alert('Correct answer, but wrong units');
                   }else {
                     greenLight.classList.add('activated');
                   }
@@ -556,7 +738,7 @@ displayLatex();
                   if(units_correct && !is_mcq){
                     // the answer is not correct and units are correct
                     yellowLight.classList.add('activated');
-                    alert('wrong answer, but correct units');
+                  //  alert('wrong answer, but correct units');
                   }
                   else {
                     // both answer and units were wrong
@@ -571,17 +753,21 @@ displayLatex();
 
       }
       
-    function resetLightsToRed(redLight, yellowLight, greenLight){
-      redLight.classList.add('activated');
-      redLight.classList.remove('blinking');
-      yellowLight.classList.remove('blinking');
-      yellowLight.classList.remove('activated');
-      greenLight.classList.remove('blinking');
-      greenLight.classList.remove('activated');
+    function setLights(redLight, yellowLight, greenLight, blueLight=null,index=0){
+      removeAllLights(redLight, yellowLight, greenLight, blueLight);
+      if(index == 0){
+        redLight.classList.add('activated');
+      }else if(index==1){
+        yellowLight.classList.add('activated');
+      }else if(index==3){
+        greenLight.classList.add('activated')
+      }else if(index == 2){
+        blueLight.classList.add('activated');
+      }
     }
 
-    function removeAllLights(redLight, yellowLight, greenLight, blueLight){
-      if(blueLight){
+    function removeAllLights(redLight, yellowLight, greenLight, blueLight=null){
+      if(blueLight != null){
         blueLight.classList.remove('blinking');
         blueLight.classList.remove('activated');
       }
@@ -929,6 +1115,8 @@ qrCodeBtn.addEventListener('click', ()=>{
   showQRCode();
 })
 
+
+
 function showQRCode() {
   const temp_note = document.querySelector('.note-textarea').value;
   const imgElement = document.getElementById("qrCodeImage");
@@ -956,6 +1144,16 @@ function showQRCode() {
   });
 }
 
+
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+      // Generate a random index
+      const j = Math.floor(Math.random() * (i + 1));
+
+      // Swap elements at i and j
+      [array[i], array[j]] = [array[j], array[i]];
+  }
+}
 
 });
 

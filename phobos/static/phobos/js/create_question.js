@@ -538,6 +538,7 @@ function addQuestionBlock(){
        <button type="button" id="expression-btn" class="expression-btn btn btn-primary exempt">Expression</button>
        <button type="button" id="float-btn" class="float-btn btn btn-info exempt">Float</button>
        <button type="button" id="mcq-btn" class="mcq-btn btn btn-light exempt">MCQ</button>
+       <button type="button" id="mp-btn" class="mp-btn btn btn-dark exempt">Matching Pairs</button>
        <button type="button" id="fr-btn" class="fr-btn btn btn-secondary exempt" style="display:none;">Free Response</button>
        <button type="button" id="survey-btn" class="survey-btn btn btn-dark exempt" style="display: none;">Survey</button>
        <button type="button" id="latex-btn" class="latex-btn btn btn-secondary exempt"  style="display: none;">Latex</button>
@@ -565,6 +566,21 @@ function addQuestionBlock(){
          <button type="button" class="btn btn-success mcq-add">add</button>
        </div>
     
+     </div>
+
+     <div class="mp-answers">
+        <div class="inputed-mp-answers" data-counter="0" data-qnumber="${num_questions}" data-mere-counter="0">
+        </div>
+        <br/>
+        <div class="mp-input-div" style="display:none;">
+            <div class="mp-inputs">
+                <input type="text" class="field-style mp-input-field-a" placeholder="Enter part A"/>
+                <input type="text" class="field-style mp-input-field-b" placeholder="Enter matching part B"/>
+            </div>
+            <div>
+                <button type="button" class="btn btn-success mp-add">add</button>
+            </div>
+        </div>
      </div>
      
      <div class="answer-fields">
@@ -608,8 +624,10 @@ function addQuestionBlock(){
     const answerFieldsDiv = questionBlock.querySelector('.answer-fields');
     const mcqAnswersDiv = questionBlock.querySelector('.mcq-answers');
     const mcqBtn = questionBlock.querySelector('.mcq-btn');
+    const mpBtn = questionBlock.querySelector('.mp-btn');
     const mcqOptionBtnsDiv = mcqAnswersDiv.querySelector('.mcq-options-button');
     const inputedMcqAnswersDiv = questionBlock.querySelector('.inputed-mcq-answers');
+    const inputedMpAnswersDiv = questionBlock.querySelector('.inputed-mp-answers');
     const imgLabelInputField = questionBlock.querySelector('.image-label-input-field');
     const questionAddImgBtn = questionBlock.querySelector('.main-question-add-image-btn');
     const questionImgUploadSection = questionBlock.querySelector('.question-image-upload-section');
@@ -620,9 +638,12 @@ function addQuestionBlock(){
 
     const addQuestionImgBtn = questionBlock.querySelector('.question-image-add');
     const addMcqOptionBtn = questionBlock.querySelector('.mcq-add');
-    
+    const addMpOptionBtn = questionBlock.querySelector('.mp-add');
     const mcqInputDiv = questionBlock.querySelector('.mcq-input-div');
     const mcqInputField = mcqInputDiv.querySelector('.mcq-input-field');
+    const mpInputDiv = questionBlock.querySelector('.mp-input-div');
+    const mpInputFieldA = mpInputDiv.querySelector('.mp-input-field-a');
+    const mpInputFieldB = mpInputDiv.querySelector('.mp-input-field-b');
     const mcqImagePreview = questionBlock.querySelector('.mcq-image-preview');
     const imageUploadInput = questionBlock.querySelector('.image-upload-input-field');
     const floatBtn = questionBlock.querySelector('.float-btn');
@@ -844,19 +865,29 @@ mcqBtn.addEventListener('click', (event)=>{
 // If the instructor chooses mcq as the answer option.
 event.preventDefault();
     inputedMcqAnswersDiv.style.display = 'block';
+    inputedMpAnswersDiv.style.display = 'none';
     mcqImagePreview.style.display = 'block';
     hiddenQuestionType.value = 'm-answer'
     formattedAnswerDiv.style.display = 'none';
     calculatorDiv.style.display = 'none';
     mcqOptionBtnsDiv.style.display = 'block';
-    // Append '/3' at the end of the URL
-    questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '3';
-    //const newAction = currentAction + '/3';
-    // Update the form's action attribute
-    //form.setAttribute('action', newAction);
-    
+    questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '3'; 
 
 });
+mpBtn.addEventListener('click', (event)=>{
+    // If the instructor chooses mcq as the answer option.
+    event.preventDefault();
+        inputedMcqAnswersDiv.style.display = 'none';
+        inputedMpAnswersDiv.style.display = 'block';
+        mcqImagePreview.style.display = 'none';
+        hiddenQuestionType.value = 'mp-answer'
+        formattedAnswerDiv.style.display = 'none';
+        calculatorDiv.style.display = 'none';
+        mcqOptionBtnsDiv.style.display = 'none';
+        mpInputDiv.style.display = 'block';
+        questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '8'; 
+    
+    });
 
 mcqOptionBtnsDiv.addEventListener('click', (event) => {
     event.preventDefault();
@@ -936,6 +967,55 @@ addMcqOptionBtn.addEventListener('click', (event)=>{
 
 })
 
+addMpOptionBtn.addEventListener('click', (event)=>{
+    event.preventDefault();
+    // Adding an mcq option after filling the input field.
+    // This may look small but it's the most dense function in this file
+    // Checkout create_inputed_mcq_div() to see what I mean.
+    if ((mpInputFieldA.value === null || mpInputFieldA.value ==='') || (mpInputFieldB.value === null || mpInputFieldB.value ==='')){
+        alert('Cannot create an empty matching pair option.')
+        
+    }
+    else{
+        try{
+            const qnumber = inputedMpAnswersDiv.dataset.qnumber
+            const holder = parseInt(inputedMpAnswersDiv.dataset.counter)
+            const holder2 = parseInt(inputedMpAnswersDiv.dataset.mereCounter)
+            // Creating the box of inputed matching pairs for the user.
+            const formatted_mp = document.createElement('div');
+            formatted_mp.innerHTML = `
+                <div class="formatted-answer">
+                <input type="hidden" value="${mpInputFieldA.value}" name="${qnumber + '_' + holder + '_mp_a'}"/>
+                ${mpInputFieldA.value}
+                </div>
+                <div class="formatted-answer">
+                <input type="hidden" value="${mpInputFieldB.value}" name="${qnumber + '_' + holder + '_mp_b'}"/>
+                ${mpInputFieldB.value}
+                </div>
+            `
+            const delDiv = document.createElement('div');
+            delDiv.innerHTML = '<button  type="button" class="btn btn-danger mp-delete exempt">delete</button><br/>'
+            delDiv.classList.add('add-delete-btns')
+            formatted_mp.classList.add('formatted-mp', 'inputed-mp-answer');
+            
+            // Creating and populating hidden input fields. 
+            formatted_mp.appendChild(delDiv);
+            inputedMpAnswersDiv.appendChild(formatted_mp);
+            mpInputFieldA.value = '';
+            mpInputFieldB.value = '';
+            inputedMpAnswersDiv.dataset.counter = `${holder + 1}`;
+            inputedMpAnswersDiv.dataset.mereCounter = `${holder2 + 1}`;
+        }
+        catch(error){
+            console.log(error)
+            alert('Make sure you enter the correct format of the answer type you selected.')
+        }
+        
+    }
+
+
+})
+
 inputedMcqAnswersDiv.addEventListener('click', (event)=>{
     event.preventDefault();
     // Here adding the ability to change the status of an mcq option as true or false
@@ -971,7 +1051,14 @@ inputedMcqAnswersDiv.addEventListener('click', (event)=>{
     }
 })
 
-
+inputedMpAnswersDiv.addEventListener('click', (event)=>{
+    event.preventDefault();
+    if(event.target.classList.contains('mp-delete')){
+        const holder = parseInt(inputedMpAnswersDiv.dataset.mereCounter);
+        inputedMpAnswersDiv.dataset.mereCounter = `${holder -1}`;
+        inputedMpAnswersDiv.removeChild(event.target.closest('.inputed-mp-answer'));
+    }
+})
 
 ///EVENT LISTENERS ////////////////////////////////////////////////////////////////////////////////
 
@@ -991,10 +1078,12 @@ frBtn.addEventListener('click', (event)=>{
     event.preventDefault();
     hiddenQuestionType.value = 'fr-answer';  
     inputedMcqAnswersDiv.style.display = 'none';
+    inputedMpAnswersDiv.style.display = 'none';
     formattedAnswerDiv.innerHTML = 'Free response mode selected.'
     formattedAnswerDiv.style.display = 'block';
     mcqOptionBtnsDiv.style.display = 'none';
     mcqInputDiv.style.display = 'none';
+    mpInputDiv.style.display = 'none';
     mcqImagePreview.style.display = 'none';
     calculatorDiv.style.display = 'none';
     answerFieldsDiv.innerHTML = '';
@@ -1009,9 +1098,11 @@ expressionBtn.addEventListener('click', (event)=> {
     event.preventDefault();
     hiddenQuestionType.value = 'e-answer';
     inputedMcqAnswersDiv.style.display = 'none';
+    inputedMpAnswersDiv.style.display = 'none';
     formattedAnswerDiv.style.display = 'block';
     mcqOptionBtnsDiv.style.display = 'none';
     mcqInputDiv.style.display = 'none';
+    mpInputDiv.style.display = 'none';
     mcqImagePreview.style.display = 'none';
     calculatorDiv.style.display = 'flex';
     answerFieldsDiv.innerHTML = '';
@@ -1027,9 +1118,11 @@ floatBtn.addEventListener('click', function(event) {
     event.preventDefault();
     hiddenQuestionType.value = 'f-answer';
     inputedMcqAnswersDiv.style.display = 'none';
+    inputedMpAnswersDiv.style.display = 'none';
     formattedAnswerDiv.style.display = 'block';
     mcqOptionBtnsDiv.style.display = 'none';
     mcqInputDiv.style.display = 'none';
+    mpInputDiv.style.display ='none';
     mcqImagePreview.style.display = 'none';
     calculatorDiv.style.display = 'flex';
     answerFieldsDiv.innerHTML = '';
@@ -1043,10 +1136,11 @@ floatBtn.addEventListener('click', function(event) {
 latexBtn.addEventListener('click', (event)=> {
     event.preventDefault();
     hiddenQuestionType.value = 'l-answer'
-    inputedMcqAnswersDiv.style.display = 'none';
+    inputedMpAnswersDiv.style.display = 'none';
     formattedAnswerDiv.style.display = 'block';
     mcqOptionBtnsDiv.style.display = 'none';
     mcqInputDiv.style.display = 'none';
+    mpInputDiv.style.display = 'none';
     mcqImagePreview.style.display = 'none';
     calculatorDiv.style.display = 'none';
     answerFieldsDiv.innerHTML = latexAnswerDiv;
@@ -1397,6 +1491,7 @@ function checkQuestionBlock(questionBlock){
         const questionTextArea = questionBlock.querySelector('.question-textarea');
         const hiddenQuestionType = questionBlock.querySelector('.hidden-q-type');
         const inputedMcqAnswersDiv = questionBlock.querySelector('.inputed-mcq-answers');
+        const inputedMpAnswersDiv = questionBlock.querySelector('.inputed-mp-answers');
         const structuralAnswerInput = questionBlock.querySelector('.q-answer-hidden');
         if (questionTextArea.value.length <= 5){
             alert('A question cannot be this short!');
@@ -1460,7 +1555,21 @@ function checkQuestionBlock(questionBlock){
                 alert('Must select at least one MCQ answer as correct.');
                 return false;
             }
-        }else if(hiddenQuestionType.value==='none'){
+        } else if(hiddenQuestionType.value=='mp-answer'){
+            if(inputedMpAnswersDiv.dataset.mereCounter < 2){
+                alert('You must enter at least two matching pairs');
+                return false
+            } else if(inputedMpAnswersDiv.dataset.mereCounter > 14){
+                alert('That is a little excessive. The number of matching pairs must not exceed 14');
+               return false
+            }else {
+                const nodeP = document.createElement('p');
+                const mpnum = `<input type='hidden' value=${inputedMpAnswersDiv.dataset.mereCounter + 1} name="${inputedMpAnswersDiv.dataset.qnumber}_num_of_mps"/>`
+                nodeP.innerHTML = mpnum
+                questionBlock.appendChild(nodeP);
+            }
+
+        } else if(hiddenQuestionType.value==='none'){
             alert('You must enter an answer');
             return false;
         }
@@ -1490,6 +1599,8 @@ settingsXBtn.addEventListener('click', (event)=>{
       behavior: 'smooth'
     });
   })
+
+
 
 
 
