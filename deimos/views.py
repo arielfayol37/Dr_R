@@ -81,6 +81,10 @@ def assignment_management(request, assignment_id, course_id=None):
     student = get_object_or_404(Student, pk = request.user.pk)
     assignment = get_object_or_404(Assignment, pk = assignment_id)
     questions = Question.objects.filter(assignment = assignment, parent_question=None)
+    for question in questions:
+        if assignment.course != 'Question Bank':
+            qs, created = QuestionStudent.objects.get_or_create(question=question, student=student)
+            question.text = qs.evaluate_var_expressions_in_text(question.text, add_html_style=True)
     context = {
         "questions": questions,
         "assignment": assignment
@@ -290,6 +294,12 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
         question = Question.objects.get(pk=question_id)
         feedback_data = ''
         return_sp = None
+        try:
+            days_overdue = max(0, (date.today() - question.assignment.due_date.date()).days)
+            overall_percentage = max(question.assignment.grading_scheme.floor_percentage, \
+                                        1 - days_overdue * question.assignment.grading_scheme.late_sub_deduct)
+        except:
+            overall_percentage = 1
         # Use get_or_create() to avoid duplicating QuestionStudent instances
         # Normally, we should just use get() because QuestionStudent object is already created
         # whenever the user opens a question for the first time, but just to be safe.
@@ -344,9 +354,6 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                         attempt.submitted_answer = submitted_answer
                     if correct:
                         attempt.success = True
-                        days_overdue = max(0, (date.today() - question.assignment.due_date.date()).days)
-                        overall_percentage = max(question.assignment.grading_scheme.floor_percentage, \
-                                                 1 - days_overdue * question.assignment.grading_scheme.late_sub_deduct)
                         if question.answer_type in [QuestionChoices.STRUCTURAL_FLOAT, QuestionChoices.STRUCTURAL_VARIABLE_FLOAT] and units:
                             attempt.num_points = overall_percentage * max(0, question.struct_settings.num_points * (1 - question.struct_settings.percentage_pts_units)\
                                                     * (1 - question.struct_settings.deduct_per_attempt *
@@ -395,8 +402,6 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                             correct = True
                             percentage_gain = (1 - question.mcq_settings.mcq_deduct_per_attempt *
                                                     max(0, question_student.get_num_attempts() - 1))
-                            days_overdue = max(0, (date.today() - question.assignment.due_date.date()).days)
-                            overall_percentage = max(question.assignment.grading_scheme.floor_percentage, 1 - days_overdue * question.assignment.grading_scheme.late_sub_deduct)
                             attempt.num_points = overall_percentage * max(0, question.mcq_settings.num_points * percentage_gain)
                             question_student.success = True
                             attempt.success = True
@@ -423,9 +428,6 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     if frac == 1 or num_of_correct == len(attempt_pairs):
                         question_student.success = True
                         correct = True
-                    days_overdue = max(0, (date.today() - question.assignment.due_date.date()).days)
-                    overall_percentage = max(question.assignment.grading_scheme.floor_percentage,\
-                                              1 - days_overdue * question.assignment.grading_scheme.late_sub_deduct)
                     attempt_pairs = "&".join(attempt_pairs)
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
                     attempt.content = attempt_pairs
@@ -493,8 +495,6 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
             'success_pairs': return_sp if return_sp else None
         })
     
-
-
            
 def login_view(request):
     if request.method == "POST":
