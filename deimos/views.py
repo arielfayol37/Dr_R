@@ -1066,7 +1066,8 @@ def generate_practice_test(request):
     practice_questions=[]
     for question in Selected_questions:
         similar = similar_question(question.question)
-        print(similar)
+        if not similar:  # If the list is empty, continue to the next iteration
+            continue
         select = random.choice(similar)
         # Let's ensure a question doesnot repeat twice
         while select in practice_questions and similar != []:
@@ -1096,19 +1097,30 @@ def normal_prob(x, mu, sigma):
     return p
 
 def answered_question_statistics(input_list):
-    array= np.array(input_list)
+    # Check if the input list is empty
+    if not input_list:
+        # Return a default distribution or handle the empty case appropriately
+        return [1]  # or any other default you deem appropriate
+
+    array = np.array(input_list)
     mean = np.mean(array)
     std = np.std(array)
-    if not std:
-        std=1
-    # create an empty list to store the probabilities
-    probabilities = [normal_prob(x,mean,std) for x in array]
-    try:
-        mode = np.max(probabilities)
-    except:
-        mode=probabilities[1]
-    # the distribution is the maximum/the probability
-    return [mode/i for i in probabilities]
+    
+    # Handle the case where standard deviation is zero (all values are the same)
+    if std == 0:
+        std = 1
+
+    # Calculate the probabilities
+    probabilities = [normal_prob(x, mean, std) for x in array]
+
+    # Handle the case where all probabilities are zero
+    if all(prob == 0 for prob in probabilities):
+        return [1] * len(probabilities)
+
+    mode = np.max(probabilities)
+    # Calculate the distribution as the maximum probability divided by each probability
+    distribution = [mode / i if i != 0 else 1 for i in probabilities]
+    return distribution
 
 def similar_question(input_question):
         all_questions = Question.objects.all()
