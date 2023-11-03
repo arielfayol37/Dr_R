@@ -5,6 +5,7 @@ function table_generator(question, assignment_id) {
 
     div = document.createElement('div');
     div.id = 'table' + assignment_id;
+    div.className='generated_assignment_table';
 
     title = document.createElement('div');
     title.innerHTML = `</br><h3>${question[0].name} details </h3>
@@ -100,7 +101,9 @@ addEventListener("DOMContentLoaded", assignment_details)
 
 // implementing due date extension function
 document.body.addEventListener('click', (event) => {
+
     target = event.target;
+    event.preventDefault();
     DueDateDiv = target.parentNode.querySelector('div[class=due-date-div]');
     if (target.classList.contains('due_date-btn')) {
         DueDateDiv.style.display = 'inline';
@@ -138,6 +141,12 @@ document.body.addEventListener('click', (event) => {
         const cell = target.closest('td');
         const questionNumCell = row.firstElementChild;
         const question_student_id = target.dataset.question_student_id
+
+        //positioning Edit question box
+        position= event.target.closest('table').parentNode;
+        console.log(position)
+        EditQuestionDiv.parentNode.removeChild(EditQuestionDiv)
+        position.parentNode.insertBefore(EditQuestionDiv,position)
 
         //initial Views
         EditQuestionDiv.style.display = 'block';
@@ -187,7 +196,6 @@ document.body.addEventListener('click', (event) => {
             EditQuestionDiv.style.display = 'none';
         }
     }
-
 
 })
 

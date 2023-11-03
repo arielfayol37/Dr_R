@@ -25,8 +25,12 @@ from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
 import heapq
 from django.db import transaction
 from markdown2 import markdown
+from phobos.models import Topic, SubTopic
 import qrcode
 import math
+from phobos.views import export_question_to
+from scipy.stats import norm
+
 from datetime import date
 
 # Create your views here.
@@ -166,7 +170,6 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
         is_latex = []
         answers_c = None
         question_type = []
-
         if question.answer_type.startswith('MCQ'):
             questtype='mcq'
             # List of answer types that require content evaluation
@@ -417,8 +420,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                         success_pairs_strings = list(set(success_pairs_strings) - set(sp))
                     frac = (num_of_correct/total_num_of_pairs)
                     if frac == 1 or num_of_correct == len(attempt_pairs):
-                        question_student.success = True
-                        
+                        question_student.success = True                        
                         correct = True
                     attempt_pairs = "&".join(attempt_pairs)
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
@@ -986,3 +988,149 @@ def note_management(request, course_id):
         "notes": notes,
     }
     return render(request, "deimos/note_management.html", context)
+
+
+@login_required(login_url='astros:login') 
+def note_management(request, course_id):
+    course = get_object_or_404(Course, pk=course_id)
+
+    # Check if there is any Enrollment entry that matches the given student and course
+    student = get_object_or_404(Student, pk = request.user.pk)
+    is_enrolled = Enrollment.objects.filter(student=student, course=course).exists()
+    
+    if not is_enrolled:
+        return HttpResponseForbidden('You are not enrolled in this course.')
+    assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student, \
+                                            is_assigned=True)
+    # this is needed to display notes
+    Notes = Note.objects.all()
+    notes=[]
+    for note in Notes:
+        if note.question_student.student == student:
+             notes.append({'Note':note,"note_md":markdown(note.content)})
+    
+    context = {
+        "student":student,
+        "assignments": assignments,
+        "course": course,
+        "notes": notes,
+    }
+    return render(request, "deimos/note_management.html", context)
+
+def generate_practice_test(request):
+    course_id = request.POST['course_id']
+    topic_name = request.POST['topic_name']
+    num_Questions = request.POST['num_Question']
+    practice_test_name = request.POST['practice_test_name']
+    student = get_object_or_404(Student, pk = request.user.pk)
+    course = Course.objects.get(pk=course_id)
+    practice_course,is_created= Course.objects.get_or_create(name='Practice Course')
+
+    # try:
+    #     is_enrolled= Enrollment.objects.get(course=course, student=student)
+    # except Enrollment.DoesNotExist:
+    #     return HttpResponse('Illegal Access')
+    
+    topic = Topic.objects.get(name=topic_name)
+    question_student_topic=[]
+    question_student_topic_attempts=[]
+
+    # Check if there are any questions under this topic
+    if not Question.objects.filter(topic=topic).exists():
+        error = "There are currently no questions under this topic. Please select another."
+        return HttpResponseRedirect(reverse("deimos:practice_test_settings", args=(course.id,), kwargs={'error_message': error}))
+
+    # Get all QuestionStudent objects for the student and topic with the number of attempts
+    question_student_topic = QuestionStudent.objects.filter(
+        student=student,
+        question__topic=topic
+    ).annotate(num_attempts=Count('attempts'))
+
+    # Extract the number of attempts for statistics
+    question_student_topic_attempts = [qs.num_attempts for qs in question_student_topic]
+
+    # computing the number of question to be selected
+    if int(num_Questions)>len(question_student_topic):
+        k=len(question_student_topic)
+    else:
+        k=int(num_Questions)
+    # selecting the questions based on the probability distribution
+    distribution=answered_question_statistics(question_student_topic_attempts)
+    Selected_questions= random.choices(question_student_topic,weights=distribution, k=k)
+
+    # creating a new practice test assignment
+    practice_test= Assignment.objects.create(course=practice_course, name=practice_test_name, is_assigned=True)
+    practice_test.save()
+
+    # adding selected and similar questions to the new practice test assignment and saving assignmentstudent
+    practice_questions=[]
+    for question in Selected_questions:
+        similar = similar_question(question.question)
+        if not similar:  # If the list is empty, continue to the next iteration
+            continue
+        select = random.choice(similar)
+        # Let's ensure a question doesnot repeat twice
+        while select in practice_questions and similar != []:
+            similar.remove(select) 
+            if similar != []:
+                select = random.choice(similar)
+        # copying te selected question into te practce test course   
+        if similar !=[]:
+            result = export_question_to(request,select['question'].id,practice_test.id)
+            practice_questions.append(select)
+
+    practice_test_student = AssignmentStudent.objects.create(assignment= practice_test, student= student)
+    practice_test_student.save()
+    practice_test_enroll = Enrollment.objects.create(student=student, course=practice_course)
+    practice_test_enroll.save()
+
+    return HttpResponseRedirect(reverse("deimos:course_management",None,None,{'course_id':practice_course.id}))
+
+def practice_test_settings(request,course_id=None,error_message=None):
+    topics= Topic.objects.all()
+    course= Course.objects.get(pk=course_id)
+    return render(request,"deimos/practice_test_setting.html",{'topics':topics, 'course':course, 'error_message':error_message})
+
+def normal_prob(x, mu, sigma):
+    p = (1 / (sigma * np.sqrt(2 * np.pi))) * np.exp(-0.5 * ((x - mu) / sigma) ** 2)
+  # return the normal probability
+    return p
+
+def answered_question_statistics(input_list):
+    # Check if the input list is empty
+    if not input_list:
+        # Return a default distribution or handle the empty case appropriately
+        return [1]  # or any other default you deem appropriate
+
+    array = np.array(input_list)
+    mean = np.mean(array)
+    std = np.std(array)
+    
+    # Handle the case where standard deviation is zero (all values are the same)
+    if std == 0:
+        std = 1
+
+    # Calculate the probabilities
+    probabilities = [normal_prob(x, mean, std) for x in array]
+
+    # Handle the case where all probabilities are zero
+    if all(prob == 0 for prob in probabilities):
+        return [1] * len(probabilities)
+
+    mode = np.max(probabilities)
+    # Calculate the distribution as the maximum probability divided by each probability
+    distribution = [mode / i if i != 0 else 1 for i in probabilities]
+    return distribution
+
+def similar_question(input_question):
+        all_questions = Question.objects.all()
+        encoded_output_pooled= torch.tensor(input_question.embedding)
+        # Calculate cosine similarity with stored question encodings
+        similar_questions = []
+        for question in all_questions:
+            question_encoded_output_pooled = torch.tensor(question.embedding)  # Load pre-computed encoding
+            similarity_score = cosine_similarity(encoded_output_pooled, question_encoded_output_pooled).item()
+            similar_questions.append({'question': question, 'similarity': similarity_score})
+        # Sort by similarity score and get top 10
+        top_n = 3
+        return heapq.nlargest(top_n, similar_questions, key=lambda x: x['similarity'])
