@@ -64,10 +64,19 @@
                     {% for answer, is_latex in question_dict.answers_is_latex %}
                         
                             {% if is_latex %}
-                            <div class="formatted-answer-option unexpand">
-                                <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
+                                {% if answer.is_answer %}
+                                    <div class="formatted-answer-option unexpand mcq-true">
+                                {% else %}
+                                    <div class="formatted-answer-option unexpand mcq-false">
+                                {% endif %}
+                                    <input type="hidden" class="latex-answer-question-view pure-latex" value="{{answer.content}}">
                             {% else %}  
-                            <div class="formatted-answer-option">
+                                {% if answer.is_answer%}
+                                    <div class="formatted-answer-option mcq-true">
+                                {% else %}
+                                    <div class="formatted-answer-option mcq-false">     
+                                {% endif %}
+                            
                                 {% if answer.image %}
                                     {{answer.label}}
                                     <img src="{{answer.image.url}}" class="mcq-image-answer image-in-formatted" alt="{{answer.image.label}}"/>
@@ -76,9 +85,7 @@
                                 {% endif %}
                             {% endif %}
                         </div>
-                        {% if answer.is_answer%}
-                            <button type="button" class="btn btn-info">True</button>
-                        {% endif %}
+
                     {% endfor %}
                 {% elif question_dict.qtype != 'mcq' and question_dict.qtype != 'mp' %}
                     <p class="question-answer">
