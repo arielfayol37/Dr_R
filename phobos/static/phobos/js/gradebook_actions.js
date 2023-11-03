@@ -7,13 +7,18 @@ addEventListener('DOMContentLoaded', () => {
     const selected_action = document.querySelector('.selected-action');
     const button_action = document.querySelector('.action-button');
 
+    //adding an event dispatcher
+    const button_select = document.querySelector('.select-button');
+    const CancelEvent = new Event('click',{
+        bubbles: true,
+        cancelable: true,
+    });
+
     // for extend due date function
     const selected_assignments = document.querySelector('.selected-assignments');
     const DueDateDiv = document.querySelector('.due-date-div');
+
     //add elements of other actions here
-    //
-
-
     document.addEventListener('click', (event) => {
 
         if (event.target.classList.contains('select-button')) { // button to start selecting students and perform action
@@ -55,14 +60,12 @@ addEventListener('DOMContentLoaded', () => {
             DueDateDiv.style.display = 'inline';
             save_btn= DueDateDiv.querySelector('.save-new-due-date-field')
                 save_btn.addEventListener('click',()=>{
-                    console.log('kfj')
                     try {
                         list.forEach((student) => {
-                            console.log('kfjdlk')
                             if (student.checked) { extend_due_date(selected_assignments.value, student.value); }
                         })
                         alert('Done');
-
+                        button_select.dispatchEvent(CancelEvent);
                     }
                     catch { alert('Something went wrong'); }
                 })

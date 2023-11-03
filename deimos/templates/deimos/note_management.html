@@ -36,10 +36,10 @@
     <br/>
     <h4 class="suggestion" style="font-size: large;">{{course.name}} - Notes</h4><hr/>
     
-
-    <ul class="courses course-list">
+    <ul class="courses couse-list">
         {% for assignment in assignments %}
         <h4>{{assignment.name}}</h4>
+        <br>
             <!-- Display assignment's questions -->
             {% for note in notes %}
             {% if note.Note.question_student.question.assignment.id == assignment.id %}
@@ -47,6 +47,7 @@
             {% endif %}
             {% endfor %}
         {% endfor %}
+        <br>
     </ul>
 
 {% endblock %}

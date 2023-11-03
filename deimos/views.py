@@ -15,7 +15,7 @@ from .models import *
 from django.shortcuts import get_object_or_404
 from django.middleware import csrf
 from django.utils.timesince import timesince
-from phobos.models import QuestionChoices, Topic
+from phobos.models import QuestionChoices
 import random, string
 from sympy import symbols, simplify
 import numpy as np
@@ -25,6 +25,7 @@ from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
 import heapq
 from django.db import transaction
 from markdown2 import markdown
+from phobos.models import Topic, SubTopic
 import qrcode
 import math
 from phobos.views import export_question_to
@@ -169,7 +170,6 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
         is_latex = []
         answers_c = None
         question_type = []
-
         if question.answer_type.startswith('MCQ'):
             questtype='mcq'
             # List of answer types that require content evaluation
@@ -420,8 +420,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                         success_pairs_strings = list(set(success_pairs_strings) - set(sp))
                     frac = (num_of_correct/total_num_of_pairs)
                     if frac == 1 or num_of_correct == len(attempt_pairs):
-                        question_student.success = True
-                        
+                        question_student.success = True                        
                         correct = True
                     attempt_pairs = "&".join(attempt_pairs)
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
@@ -990,6 +989,34 @@ def note_management(request, course_id):
     }
     return render(request, "deimos/note_management.html", context)
 
+
+@login_required(login_url='astros:login') 
+def note_management(request, course_id):
+    course = get_object_or_404(Course, pk=course_id)
+
+    # Check if there is any Enrollment entry that matches the given student and course
+    student = get_object_or_404(Student, pk = request.user.pk)
+    is_enrolled = Enrollment.objects.filter(student=student, course=course).exists()
+    
+    if not is_enrolled:
+        return HttpResponseForbidden('You are not enrolled in this course.')
+    assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student, \
+                                            is_assigned=True)
+    # this is needed to display notes
+    Notes = Note.objects.all()
+    notes=[]
+    for note in Notes:
+        if note.question_student.student == student:
+             notes.append({'Note':note,"note_md":markdown(note.content)})
+    
+    context = {
+        "student":student,
+        "assignments": assignments,
+        "course": course,
+        "notes": notes,
+    }
+    return render(request, "deimos/note_management.html", context)
+
 def generate_practice_test(request):
     course_id = request.POST['course_id']
     topic_name = request.POST['topic_name']
@@ -999,10 +1026,10 @@ def generate_practice_test(request):
     course = Course.objects.get(pk=course_id)
     practice_course,is_created= Course.objects.get_or_create(name='Practice Course')
 
-    try:
-        is_enrolled= Enrollment.objects.get(course=course, student=student)
-    except Enrollment.DoesNotExist:
-        return HttpResponse('Illegal Access')
+    # try:
+    #     is_enrolled= Enrollment.objects.get(course=course, student=student)
+    # except Enrollment.DoesNotExist:
+    #     return HttpResponse('Illegal Access')
     
     topic = Topic.objects.get(name=topic_name)
     question_student_topic=[]
@@ -1012,14 +1039,21 @@ def generate_practice_test(request):
     questions = Question.objects.filter(topic= topic)
     question_student= QuestionStudent.objects.filter(student=student)
 
+    if questions == []:
+        error= "There are currently no questions under this topic, Please Select another"
+        return HttpResponseRedirect(reverse("deimos:practice_test_settings",None,None,{'course_id':course.id,'error_message':error}))
+
     # creating list of questions and list of number of attempts for statistics
     for question in questions:
         for quest in question_student:
             if quest.question.topic == topic:
                 question_student_topic.append(quest)
                 question_student_topic_attempts.append(quest.get_num_attempts())
-    
     question_student_attempts= zip(question_student_topic_attempts,question_student_topic)
+    # if student attempted no question, 
+    if question_student_topic ==[]:
+        question_student_topic=question_student
+        question_student_topic_attempts=[1 for i in question_student_topic] 
 
     # computing the number of question to be selected
     if int(num_Questions)>len(question_student):
@@ -1038,6 +1072,7 @@ def generate_practice_test(request):
     practice_questions=[]
     for question in Selected_questions:
         similar = similar_question(question.question)
+        print(similar)
         select = random.choice(similar)
         # Let's ensure a question doesnot repeat twice
         while select in practice_questions and similar != []:
@@ -1056,10 +1091,10 @@ def generate_practice_test(request):
 
     return HttpResponseRedirect(reverse("deimos:course_management",None,None,{'course_id':practice_course.id}))
 
-def practice_test_settings(request,course_id=None):
+def practice_test_settings(request,course_id=None,error_message=None):
     topics= Topic.objects.all()
     course= Course.objects.get(pk=course_id)
-    return render(request,"deimos/practice_test_setting.html",{'topics':topics, 'course':course})
+    return render(request,"deimos/practice_test_setting.html",{'topics':topics, 'course':course, 'error_message':error_message})
 
 def normal_prob(x, mu, sigma):
     p = (1 / (sigma * np.sqrt(2 * np.pi))) * np.exp(-0.5 * ((x - mu) / sigma) ** 2)
@@ -1070,9 +1105,14 @@ def answered_question_statistics(input_list):
     array= np.array(input_list)
     mean = np.mean(array)
     std = np.std(array)
+    if not std:
+        std=1
     # create an empty list to store the probabilities
     probabilities = [normal_prob(x,mean,std) for x in array]
-    mode = np.max(probabilities)
+    try:
+        mode = np.max(probabilities)
+    except:
+        mode=probabilities[1]
     # the distribution is the maximum/the probability
     return [mode/i for i in probabilities]
 
