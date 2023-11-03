@@ -7,7 +7,7 @@
             
             <span class="c-name"><strong>Question {{question.number}}</strong>
                 
-            <p class="c-description">{% if question.text|length > 147 %}
+            <p class="c-description question-content">{% if question.text|length > 147 %}
                 {{ question.text|safe|slice:":147" }}...
             {% else %}
                 {{ question.text|safe }}

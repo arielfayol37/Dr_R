@@ -577,7 +577,7 @@ function addQuestionBlock(){
                 <input type="text" class="field-style mp-input-field-a" placeholder="Enter part A"/>
                 <input type="text" class="field-style mp-input-field-b" placeholder="Enter matching part B"/>
             </div>
-            <div>
+            <div class="mp-add-div">
                 <button type="button" class="btn btn-success mp-add">add</button>
             </div>
         </div>
