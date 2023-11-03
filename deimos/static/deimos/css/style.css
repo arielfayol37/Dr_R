@@ -419,7 +419,7 @@ div.c-text {
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: center;
+  justify-content: space-evenly;
   flex-wrap: wrap;
 }
 .formatted-mp {
