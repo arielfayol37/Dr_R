@@ -1023,18 +1023,16 @@ inputedMcqAnswersDiv.addEventListener('click', (event)=>{
     target = event.target
     if(target.classList.contains('mcq-false')){
         // changing an mcq option from false to true.
-        target.classList.remove('mcq-false','btn-warning');
-        target.classList.add('mcq-true', 'btn-info');
-        target.innerHTML = 'True';
+        target.classList.remove('mcq-false');
+        target.classList.add('mcq-true');
         const holder =  parseInt(inputedMcqAnswersDiv.dataset.trueCounter)
         inputedMcqAnswersDiv.dataset.trueCounter = `${holder + 1}`;
         const answer_info_input = target.closest('.inputed-mcq-answer').querySelector('.answer_info');
         answer_info_input.value = rep(answer_info_input.value, 0, '1');
     } else if(target.classList.contains('mcq-true')){
         // changing an mcq option from true to false.
-        target.classList.add('mcq-false','btn-warning');
-        target.classList.remove('mcq-true', 'btn-info');
-        target.innerHTML = 'False'; 
+        target.classList.add('mcq-false');
+        target.classList.remove('mcq-true');
         const holder = parseInt(inputedMcqAnswersDiv.dataset.trueCounter);
         inputedMcqAnswersDiv.dataset.trueCounter = `${holder - 1}`;    
         const answer_info_input = target.closest('.inputed-mcq-answer').querySelector('.answer_info');
@@ -1419,22 +1417,20 @@ function create_inputed_mcq_div(input_field, answer_type) {
             if (answer_type != 'i-answer'){
                 mcqAnswerDiv.innerHTML = `
                 <br/>
-                <div class="formatted-answer-option unexpand"></div>
+                <div class="formatted-answer-option unexpand mcq-false hoverable"></div>
                 <input value="${answer_value}" type="hidden" name="${qnum}_answer_value_${inputedMcqAnswersDiv.dataset.counter}"/>
                 <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="${qnum}_answer_info_${inputedMcqAnswersDiv.dataset.counter}"/>
                 <div class="add-delete-btns">
-                    <button type="button" class="btn btn-warning mcq-status mcq-false exempt">False</button>
                     <button  type="button" class="btn btn-danger mcq-delete exempt">delete</button>
                 </div>
             `;
              }else {
                 mcqAnswerDiv.innerHTML = `
                 <br/>
-                <div class="formatted-answer-option"></div>
+                <div class="formatted-answer-option mcq-false hoverable"></div>
                 <input value="${display_value}" type="hidden" name="${qnum}_image_label_${inputedMcqAnswersDiv.dataset.counter}"/>
                 <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="${qnum}_answer_info_${inputedMcqAnswersDiv.dataset.counter}"/>
                 <div class="add-delete-btns">
-                    <button type="button" class="btn btn-warning mcq-status mcq-false exempt">False</button>
                     <button  type="button" class="btn btn-danger mcq-delete exempt">delete</button>
                 </div>
             `;
@@ -1451,7 +1447,7 @@ function create_inputed_mcq_div(input_field, answer_type) {
                     throw 'Image expected to be selected but wasn\'t'
                 }
                 const image_input_field_clone = imageUploadInput.cloneNode(true);
-                image_input_field_clone.name = `${qnum}_answer_value_${inputedMcqAnswersDiv.counter}`;
+                image_input_field_clone.name = `${qnum}_answer_value_${inputedMcqAnswersDiv.dataset.counter}`;
                 image_input_field_clone.style.display = 'none';
                 formattedAnswerDiv.appendChild(image_input_field_clone);
                 imageUploadInput.value = '';
@@ -1559,8 +1555,8 @@ function checkQuestionBlock(questionBlock){
             if(inputedMpAnswersDiv.dataset.mereCounter < 2){
                 alert('You must enter at least two matching pairs');
                 return false
-            } else if(inputedMpAnswersDiv.dataset.mereCounter > 14){
-                alert('That is a little excessive. The number of matching pairs must not exceed 14');
+            } else if(inputedMpAnswersDiv.dataset.mereCounter > 10){
+                alert('That is a little excessive. The number of matching pairs must not exceed 10');
                return false
             }else {
                 const nodeP = document.createElement('p');
