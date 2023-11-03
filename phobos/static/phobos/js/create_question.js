@@ -1555,8 +1555,8 @@ function checkQuestionBlock(questionBlock){
             if(inputedMpAnswersDiv.dataset.mereCounter < 2){
                 alert('You must enter at least two matching pairs');
                 return false
-            } else if(inputedMpAnswersDiv.dataset.mereCounter > 14){
-                alert('That is a little excessive. The number of matching pairs must not exceed 14');
+            } else if(inputedMpAnswersDiv.dataset.mereCounter > 10){
+                alert('That is a little excessive. The number of matching pairs must not exceed 10');
                return false
             }else {
                 const nodeP = document.createElement('p');

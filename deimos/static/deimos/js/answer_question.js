@@ -10,13 +10,9 @@ document.addEventListener('DOMContentLoaded', ()=> {
     'rgb(255, 0, 255)',   // Bright Magenta
     'rgb(0, 255, 255)',   // Bright Cyan
     'rgb(255, 128, 0)',   // Bright Orange
-    'rgb(0, 255, 128)',   // Bright Turquoise
-    'rgb(255, 128, 128)', // Bright Coral
-    'rgb(128, 255, 0)',   // Bright Lime
     'rgb(128, 128, 255)',  // Light Blue
-    'rgb(255, 255, 128)', // Light Yellow
     'rgb(255, 0, 128)',   // Bright Pink
-    'rgb(0, 128, 255)',   // Cerulean
+    'rgb(17, 149, 243)', // Deimos's color
     'rgb(128, 255, 128)', // Light Green
     'rgb(255, 128, 255)', // Light Magenta
      ] 
@@ -295,7 +291,7 @@ forms.forEach((form)=>{
       }
       
       form.appendChild(calculatorDiv);
-      screen.scrollIntoView({behavior: 'smooth'});
+      calculatorDiv.scrollIntoView({behavior: 'smooth'});
       calculatorDiv.classList.remove('hide');
       calculatorDiv.querySelector('.preface-content').innerHTML = form.querySelector('.answer_preface').value
       screen.value = form.querySelector('.inputed_answer_structural').value;
