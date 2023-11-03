@@ -1035,29 +1035,23 @@ def generate_practice_test(request):
     question_student_topic=[]
     question_student_topic_attempts=[]
 
-    # getting all question under this Topic
-    questions = Question.objects.filter(topic= topic)
-    question_student= QuestionStudent.objects.filter(student=student)
+    # Check if there are any questions under this topic
+    if not Question.objects.filter(topic=topic).exists():
+        error = "There are currently no questions under this topic. Please select another."
+        return HttpResponseRedirect(reverse("deimos:practice_test_settings", args=(course.id,), kwargs={'error_message': error}))
 
-    if questions == []:
-        error= "There are currently no questions under this topic, Please Select another"
-        return HttpResponseRedirect(reverse("deimos:practice_test_settings",None,None,{'course_id':course.id,'error_message':error}))
+    # Get all QuestionStudent objects for the student and topic with the number of attempts
+    question_student_topic = QuestionStudent.objects.filter(
+        student=student,
+        question__topic=topic
+    ).annotate(num_attempts=Count('attempts'))
 
-    # creating list of questions and list of number of attempts for statistics
-    for question in questions:
-        for quest in question_student:
-            if quest.question.topic == topic:
-                question_student_topic.append(quest)
-                question_student_topic_attempts.append(quest.get_num_attempts())
-    question_student_attempts= zip(question_student_topic_attempts,question_student_topic)
-    # if student attempted no question, 
-    if question_student_topic ==[]:
-        question_student_topic=question_student
-        question_student_topic_attempts=[1 for i in question_student_topic] 
+    # Extract the number of attempts for statistics
+    question_student_topic_attempts = [qs.num_attempts for qs in question_student_topic]
 
     # computing the number of question to be selected
-    if int(num_Questions)>len(question_student):
-        k=len(question_student)
+    if int(num_Questions)>len(question_student_topic):
+        k=len(question_student_topic)
     else:
         k=int(num_Questions)
     # selecting the questions based on the probability distribution
