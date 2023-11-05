@@ -80,6 +80,13 @@ def assignment_management(request, assignment_id, course_id=None):
     }
     return render(request, "phobos/assignment_management.html", context)
 
+@login_required(login_url='astros:login')
+def question_bank(request):
+    if not Professor.objects.filter(pk=request.user.pk).exists():
+        return HttpResponse('You are not allowed to view the QUESTION BANK')
+    qbank_course_id = Course.objects.get(name='Question Bank').pk
+    return course_management(request, qbank_course_id)
+
 def login_view(request):
     if request.method == "POST":
 
@@ -145,6 +152,12 @@ def register(request):
         first_name = request.POST["first_name"].strip()
         last_name = request.POST["last_name"].strip()
         department = request.POST["department"].strip()
+
+        try: 
+            prof = Professor.objects.get(username=username)
+            username = str(username) + str(random.randint(1, 1000000))
+        except:
+            pass
 
         try:
             checking_prof = Professor.objects.get(email=email)
@@ -294,6 +307,72 @@ def assign_assignment(request, assignment_id, course_id=None):
             'message':'Assignment assigned successfully.', 'success':True
         })
     return JsonResponse({'message':'Something went wrong.','success':False})
+
+def create_mcq_expression_answer(new_question, answer_content):
+    return MCQExpressionAnswer(question=new_question, content=answer_content)
+
+def create_mcq_float_answer(new_question, answer_content):
+    return MCQFloatAnswer(question=new_question, content=answer_content)
+
+def create_mcq_variable_float_answer(new_question, answer_content):
+    return MCQVariableFloatAnswer(question=new_question, content=answer_content)
+
+def create_mcq_latex_answer(new_question, answer_content):
+    return MCQLatexAnswer(question=new_question, content=answer_content)
+
+def create_mcq_text_answer(new_question, answer_content): 
+    return MCQTextAnswer(question=new_question, content=answer_content)
+
+# Function to determine which MCQ float answer to create
+def create_appropriate_mcq_float_answer(new_question, answer_content, vars_dict):
+    if not vars_dict:
+        return create_mcq_float_answer(new_question, answer_content)
+    elif answer_content.startswith('@{') and answer_content.endswith('}@'):
+        return create_mcq_variable_float_answer(new_question, answer_content)
+    else:
+        raise ValueError('Expected a variable but variable expression not found')
+
+
+def create_expression_answer(new_question, question_answer, answer_unit, answer_preface):
+    return ExpressionAnswer(question=new_question, content=question_answer,
+                            answer_unit=answer_unit, preface=answer_preface)
+
+def create_float_answer(new_question, question_answer, answer_unit, answer_preface):
+    return FloatAnswer(question=new_question, content=question_answer,
+                       answer_unit=answer_unit, preface=answer_preface)
+
+def create_variable_float_answer(new_question, question_answer, answer_unit, answer_preface):
+    return VariableFloatAnswer(question=new_question, content=question_answer,
+                               answer_unit=answer_unit, preface=answer_preface)
+
+def create_latex_answer(new_question, question_answer):
+    return LatexAnswer(question=new_question, content=question_answer)
+
+def create_text_answer(new_question):
+    return TextAnswer(question=new_question, content='')
+
+def create_appropriate_float_answer(new_question, question_answer, answer_unit, answer_preface,vars_dict):
+    if not vars_dict:
+        return create_float_answer(new_question, question_answer, answer_unit, answer_preface)
+    elif question_answer.startswith('@{') and question_answer.endswith('}@'):
+        return create_variable_float_answer(new_question, question_answer, answer_unit, answer_preface)
+    else:
+        raise ValueError('Expected a variable but variable expression not found')
+
+def create_matching_pairs(request, new_question, q_num):
+    num_of_mps_approx = int(request.POST[q_num + '_num_of_mps'])
+    for l in range(num_of_mps_approx):
+        mp_a = request.POST.get(q_num + '_' + str(l) + '_mp_a')
+        mp_b = request.POST.get(q_num + '_' + str(l) + '_mp_b')
+        if mp_a is not None and mp_b is not None:
+            answer = MatchingAnswer.objects.create(
+                question=new_question, part_a=mp_a, part_b=mp_b
+            )
+    return answer
+
+
+
+
 @transaction.atomic
 @login_required(login_url='astros:login')
 def create_question(request, assignment_id=None, question_nums_types=None):
@@ -398,29 +477,40 @@ def create_question(request, assignment_id=None, question_nums_types=None):
                             # 1) If there are different types of mcq answers which is often the case
                             #     the answer_type will end up being just the type of the last answer
                             # 2) All what the other parts of the programs care about is whether the question
-                            #     is an MCQ or not.
-                        if answer_info_encoding[1] == "0": # Expression Answer
-                            new_question.answer_type = QuestionChoices.MCQ_EXPRESSION
-                            answer = MCQExpressionAnswer(question=new_question, content=answer_content)
-                        elif answer_info_encoding[1] == "1": # Float Answer
-                            if not vars_dict:
-                                new_question.answer_type = QuestionChoices.MCQ_FLOAT
-                                answer = MCQFloatAnswer(question=new_question, content=answer_content)
-                            elif answer_content.startswith('@{') and answer_content.endswith('}@'):
-                                new_question.answer_type = QuestionChoices.MCQ_VARIABLE_FLOAT
-                                answer = MCQVariableFloatAnswer(question=new_question, content=answer_content)
+                            #     is an MCQ or not.    
+                        # Map encoding values to functions and QuestionChoices
+                        # Map encoding values to functions and QuestionChoices
+                        answer_creation_map = {
+                            "0": (create_mcq_expression_answer, QuestionChoices.MCQ_EXPRESSION),
+                            "1": (create_appropriate_mcq_float_answer, None),  # Placeholder for QuestionChoices, determined in function
+                            "2": (create_mcq_latex_answer, QuestionChoices.MCQ_LATEX),
+                            "3": (create_mcq_text_answer, QuestionChoices.MCQ_TEXT)
+                        }
+
+                        # Get the answer type encoding
+                        answer_type_encoding = answer_info_encoding[1]
+
+                        # Create the answer based on the encoding
+                        if answer_type_encoding in answer_creation_map:
+                            creation_func, question_choice = answer_creation_map[answer_type_encoding]
+                            # Special handling for float answers to determine the correct QuestionChoices
+                            if answer_type_encoding == "1":
+                                answer = creation_func(new_question, answer_content, vars_dict)
+                                if not vars_dict:
+                                    new_question.answer_type = QuestionChoices.MCQ_FLOAT
+                                elif answer_content.startswith('@{') and answer_content.endswith('}@'):
+                                    new_question.answer_type = QuestionChoices.MCQ_VARIABLE_FLOAT
+                                else:
+                                    raise ValueError('Expected a variable but variable expression not found')
                             else:
-                                raise ValueError('Expected a variable but variable expression not found')
-                        elif answer_info_encoding[1] == "2": # Latex Answer
-                            new_question.answer_type = QuestionChoices.MCQ_LATEX
-                            answer = MCQLatexAnswer(question=new_question, content=answer_content)
-                        elif answer_info_encoding[1] == "3": # Text Answer
-                            new_question.answer_type = QuestionChoices.MCQ_TEXT
-                            answer = MCQTextAnswer(question=new_question, content=answer_content)
+                                new_question.answer_type = question_choice
+                                answer = creation_func(new_question, answer_content)
                         else:
                             return HttpResponseForbidden('Something went wrong: unexpected mcq encoding')
-                        answer.is_answer = True if answer_info_encoding[0] == '1' else False
-                        answer.save() # Needed here.
+
+                        # Set if the answer is correct based on the encoding
+                        answer.is_answer = answer_info_encoding[0] == '1'
+                        answer.save()  # Save the answer
                 
                 # Getting the MCQ images
                 for key, value in request.FILES.items():
@@ -438,42 +528,48 @@ def create_question(request, assignment_id=None, question_nums_types=None):
                             return HttpResponseForbidden('Something went wrong: unexpected encoding for mcq image answer')
                         answer.is_answer = True if answer_info_encoding[0] == '1' else False
                         answer.save() # Needed here.                
-            elif type_int == 0:
-                new_question.answer_type = QuestionChoices.STRUCTURAL_EXPRESSION
-                answer = ExpressionAnswer(question=new_question, content=question_answer,\
-                                        answer_unit=answer_unit, preface=answer_preface)
-            elif type_int == 1:
-                if not vars_dict:
-                    new_question.answer_type = QuestionChoices.STRUCTURAL_FLOAT
-                    answer = FloatAnswer(question=new_question, content=question_answer, \
-                                        answer_unit=answer_unit, preface=answer_preface)
-                elif question_answer.startswith('@{') and question_answer.endswith('}@'):
-                    new_question.answer_type = QuestionChoices.STRUCTURAL_VARIABLE_FLOAT
-                    answer = VariableFloatAnswer(question=new_question, content=question_answer,\
-                                                answer_unit=answer_unit, preface=answer_preface)
-                else:
-                    raise ValueError('Expected a variable but variable expression not found')
-            elif type_int == 2:
-                new_question.answer_type = QuestionChoices.STRUCTURAL_LATEX
-                answer = LatexAnswer(question=new_question, content=question_answer)
-            elif type_int == 4:
-                # 'Free' response question
-                new_question.answer_type = QuestionChoices.STRUCTURAL_TEXT
-                # No answer yet, but semantic answer validation coming soon.
-                answer = TextAnswer(question=new_question, content='')
-            elif type_int == 8: # Matching Pair type
-                new_question.answer_type = QuestionChoices.MATCHING_PAIRS
-                num_of_mps_approx = int(request.POST[q_num + '_num_of_mps'])
-                for l in range(num_of_mps_approx):
-                    mp_a = request.POST.get(q_num + '_' + str(l) + '_mp_a', None)
-                    mp_b = request.POST.get(q_num + '_' + str(l) + '_mp_b', None)
-                    if not (mp_a == None or mp_b == None):
-                        answer = MatchingAnswer.objects.create(
-                            question=new_question, part_a=mp_a, part_b=mp_b
-                        )
                         
             else:
-                return HttpResponseForbidden('Something went wrong: unexpected question type_int')
+                # Map type_int values to functions and QuestionChoices
+                answer_creation_map = {
+                    0: (create_expression_answer, QuestionChoices.STRUCTURAL_EXPRESSION),
+                    1: (create_appropriate_float_answer, None),  # Placeholder for QuestionChoices, determined in function,
+                    2: (create_latex_answer, QuestionChoices.STRUCTURAL_LATEX),
+                    4: (create_text_answer, QuestionChoices.STRUCTURAL_TEXT),
+                    8: (create_matching_pairs, QuestionChoices.MATCHING_PAIRS)
+                }
+                # Create the answer based on type_int
+                if type_int in answer_creation_map:
+                    creation_func, question_choice = answer_creation_map[type_int]
+                    if type_int != 1: # will handle this particular case below
+                        new_question.answer_type = question_choice
+                    if type_int == 8:
+                        answer = creation_func(request, new_question, q_num)
+                    elif type_int == 4:
+                        answer = creation_func(new_question)
+                    elif type_int == 2:
+                        answer = creation_func(new_question, question_answer)
+                    else:
+                        if type_int == 1:
+                            answer = creation_func(new_question, question_answer,\
+                                                answer_unit, answer_preface, vars_dict)
+                            if not vars_dict:
+                                new_question.answer_type = QuestionChoices.STRUCTURAL_FLOAT_FLOAT
+                            elif answer_content.startswith('@{') and answer_content.endswith('}@'):
+                                new_question.answer_type = QuestionChoices.STRUCTURAL_VARIABLE_FLOAT
+                            else:
+                                raise ValueError('Expected a variable but variable expression not found')
+                        else:
+                            answer = creation_func(new_question, question_answer,\
+                                                answer_unit, answer_preface)
+
+                else:
+                    return HttpResponseForbidden('Something went wrong: unexpected question type_int')
+                
+                # Handle special case for variable float answer
+                if type_int == 1 and vars_dict and not (question_answer.startswith('@{') and question_answer.endswith('}@')):
+                    raise ValueError('Expected a variable but variable expression not found')
+                
             new_question.save(save_settings=True)
             
             if counter == 1:
@@ -525,6 +621,21 @@ def create_question(request, assignment_id=None, question_nums_types=None):
 #     return JsonResponse("{'assignments':content}")
 
 
+# Define a mapping of answer types to their corresponding attributes
+answer_type_to_attributes = {
+    'MCQ': [
+        'mcq_expression_answers', 'mcq_text_answers', 'mcq_float_answers',
+        'mcq_variable_float_answers', 'mcq_image_answers', 'mcq_latex_answers'
+    ],
+    'STRUCT':{
+        QuestionChoices.STRUCTURAL_EXPRESSION: 'expression_answer',
+        QuestionChoices.STRUCTURAL_TEXT: 'text_answer',
+        QuestionChoices.STRUCTURAL_FLOAT: 'float_answer',
+        QuestionChoices.STRUCTURAL_LATEX: 'latex_answer',
+        QuestionChoices.STRUCTURAL_VARIABLE_FLOAT: 'variable_float_answer'
+    }
+}
+
 @login_required(login_url='astros:login')
 def question_view(request, question_id, assignment_id=None, course_id=None):
     # Making sure the request is done by a professor.
@@ -540,7 +651,7 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
         assignments.append((course_.id, Assignment.objects.filter(course = course_)))                  #for front-end Export question implementation
         
     question_0 = Question.objects.get(pk=question_id)
-    if question_0.parent_question: # if question has no parent question(the question itself 
+    if question_0.parent_question: 
         question_0 = question_0.parent_question
     questions = list(Question.objects.filter(parent_question=question_0))
     questions.insert(0, question_0)
@@ -555,58 +666,95 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
         question.text = question.text.replace('@{', '')
         question.text = question.text.replace('}@', '')
         answers = []
-        is_latex = []
         qtype = ''
+        # Check if the answer type starts with MCQ or STRUCT
         if question.answer_type.startswith('MCQ'):
             qtype = 'mcq'
-            ea = question.mcq_expression_answers.all()
-            answers.extend(ea)
-            ta = question.mcq_text_answers.all()
-            answers.extend(ta)
-            fa = question.mcq_float_answers.all()
-            answers.extend(fa)
-            fva = question.mcq_variable_float_answers.all()
-            answers.extend(fva)
-            ia = question.mcq_image_answers.all()
-            answers.extend(ia)
-            la = question.mcq_latex_answers.all()
-            answers.extend(la)
-            # !Important: order matters here. Latex has to be last!
-            is_latex = [0 for _ in range(ea.count()+ta.count()+fa.count()+fva.count()+ia.count())]
-            is_latex.extend([1 for _ in range(la.count())])
+            for attr in answer_type_to_attributes['MCQ']:
+                answer_list = getattr(question, attr).all()
+                answers.extend(answer_list)
+
         elif question.answer_type.startswith('STRUCT'):
-            if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
-                answers.extend([question.expression_answer])
-            elif question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
-                answers.extend([question.text_answer])
-                qtype='fr'
-            elif question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
-                answers.extend([question.float_answer])
-            elif question.answer_type == QuestionChoices.STRUCTURAL_LATEX:# Probably never used (because disabled on frontend)
-                answers.extend([question.latex_answer])
-                is_latex.extend([1])
-            elif question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
-                a = question.variable_float_answer
-                a.content = a.content.replace('@{', '')
-                a.content = a.content.replace('}@', '')
-                answers.extend([a])
-            else:
-                return HttpResponse('Something went wrong.')
+            qtype = 'struct'
+            attr = answer_type_to_attributes['STRUCT'][question.answer_type]
+            answer = getattr(question, attr)
+            # Special handling for variable float answers
+            if question.answer_type == QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:
+                answer.content = answer.content.replace('@{', '').replace('}@', '')
+            answers.extend([answer])
+            # Set qtype for text answers
+            if question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
+                qtype = 'fr'
             answers[0].preface = '' if not answers[0].preface else answers[0].preface + "\quad = \quad" # This is to display well in the front end.
             answers[0].answer_unit = '' if not answers[0].answer_unit else "\quad " + answers[0].answer_unit
         elif question.answer_type.startswith('MATCHING'):
             qtype = 'mp'
             answers = question.matching_pairs.all()
+        else:
+            return HttpResponse('Something went wrong.')
         questions_dictionary[index] = {'question':question,\
                       'show_answer':show_answer,
-                     'qtype':qtype,'answers': answers,\
-                         'answers_is_latex': zip(answers, is_latex) if is_latex else None}
+                     'qtype':qtype,'answers': answers}
 
     return render(request, 'phobos/question_view.html', {'courses':zip(range(len(courses)),courses),\
                                                          'questions_dict':questions_dictionary, \
                                                          'question':questions[0],
                                                          'assignments':assignments,
                                                          'is_questionbank': True if course.name=='Question Bank' else False })
+
+
+@login_required(login_url='astros:login') 
+def edit_question(request, question_id):
+    question = Question.objects.get(pk = question_id)
+    question_0 = Question.objects.get(pk=question_id)
+    if question_0.parent_question: 
+        question_0 = question_0.parent_question
+    questions = list(Question.objects.filter(parent_question=question_0))
+    questions.insert(0, question_0)
+    question_difficulties = ['EASY', 'MEDIUM', 'DIFFICULT']
+    questions_dictionary = {}
+    js_qtype = ''
+    for index, question in enumerate(questions):
+        answers = []
+        qtype = ''
+        # Check if the answer type starts with MCQ or STRUCT
+        if question.answer_type.startswith('MCQ'):
+            qtype, js_qtype = 'mcq', 'm-answer'
+            for attr in answer_type_to_attributes['MCQ']:
+                answer_list = getattr(question, attr).all()
+                answers.extend(answer_list)
+                # Add to is_latex list, 1 if latex answers, else 0
+        elif question.answer_type.startswith('STRUCT'):
+            qtype = 'struct'
+            attr = answer_type_to_attributes['STRUCT'][question.answer_type]
+            answer = getattr(question, attr)
+            answers.extend([answer])
+            # Set qtype for text answers
+            if question.answer_type == QuestionChoices.STRUCTURAL_TEXT:
+                qtype = 'fr'
+            elif question.answer_type in [QuestionChoices.STRUCTURAL_VARIABLE_FLOAT, QuestionChoices.STRUCTURAL_FLOAT]:
+                js_qtype = 'f-answer'
+            elif question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
+                js_qtype = 'e-answer'
+            else:
+                raise ValueError(f'Expected structural answer type, but got {question.answer_type}')
+        elif question.answer_type.startswith('MATCHING'):
+            qtype, js_qtype = 'mp', 'mp-answer'
+            answers = question.matching_pairs.all()
+        else:
+            return HttpResponse('Something went wrong.')
+        questions_dictionary[index] = {'question':question,\
+                     'qtype':qtype,'answers': answers, 'js_qtype':js_qtype,     
+                     'answer':answers[0], # for structural
+                     }
+
+    return render(request, 'phobos/edit_question.html', {
+    'question': questions[0],
+    'questions':questions,
+    'question_difficulties': question_difficulties,
+    'questions_dict':questions_dictionary
+    })  
+
 
 
 @login_required(login_url='astros:login')  

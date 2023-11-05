@@ -1,0 +1,380 @@
+<!-- phobos: modify_question.html -->
+{% extends 'phobos/layout.html' %}
+{% load static %}
+{% block title%} Modify question {% endblock %}
+{% block body %}
+
+<div class="sidebar" style="display:none">
+  <header class="sidebar-header">X</header>
+  <ul>
+      <li><a href="{% url 'phobos:question_view' assignment_id=question.assignment.id course_id=question.assignment.course.id question_id=question.id%}">Cancel</a></li>
+      <li><a href="{% url 'phobos:index' %}">Home</a></li>
+      <li><a href="{% url 'phobos:assignment_management' assignment_id=question.assignment.id course_id=question.assignment.course.id %}">Questions</a></li>
+      <li><a href="{% url 'phobos:course_management' course_id=question.assignment.course.id %}">Assignments</a></li>
+      <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
+  </ul>
+</div>
+
+<div class="settings-icon side-info-icon" title="Settings">
+  <ion-icon name="settings"></ion-icon>
+</div>
+    <!-- TODO: Include buttons and invent listeners to create subquestions.-->
+    <h3 class="original-size">Modify Question</h3>
+    <div class="page-container" id="create-question">
+      
+      <div class="add-var-section" title="variables">
+        <button type="button" class="btn var-btn">+</button>
+        <div class="var-info-div">
+            <div><input class="var-symbol field-style" type="text" placeholder="enter symbol e.g. x"/></div>
+            <div><input class="var-domain field-style" type="text" placeholder="enter intervals e.g.[1,3] [-8, 20]"/></div>
+            <div><input class="var-step-size field-style" type="number" min="0" placeholder ="step size (optional)" pattern="^?[0-9]*[.,]?[0-9]+" title="Please enter a valid float number."></div>
+
+            <div class="type-selection">
+              <label>
+                  <input type="radio" name="varType" value="float" checked> Float
+              </label>
+              <label>
+                  <input type="radio" name="varType" value="int"> Int
+              </label>
+            </div>
+            <div><button type="button" class="btn btn-outline-success btn-create-var">Create var</button></div>
+            
+        </div>
+        
+      </div>
+    <br/>
+
+    <form method="post" enctype="multipart/form-data" id="question-form" action="{% url 'phobos:create_question' assignment_id=question.assignment.id %}">
+      {% csrf_token %}
+      
+      <div class="question">
+        <div id="topics-subtopics">
+            <div class="topics_dropdown option-section">
+              <label for="topic" class="option-label">Topic: </label>
+              
+              <select title="select topic" name="topic" id="topicSelect" class="option-field">
+                  {% for topic in question.assignment.course.topics.all %}
+                      {% if topic == question.topic %}
+                          <option value="{{topic}}" selected>
+                      {% else %}
+                          <option value="{{topic}}">
+                      {% endif %}
+                        {{topic}}
+                      </option>
+                  {% endfor %}
+              </select>
+            </div>
+          
+            <div class="sub_topics_dropdown option-section">
+              <label for="sub topic" class="option-label">Subtopic: </label>
+              <select title="select subtopic" name="sub_topic" id="subTopicSelect" class="option-field">
+                {% for subtopic in question.topic.sub_topics.all %}
+                  {% if subtopic == question.sub_topic %}
+                     <option value="{{subtopic}}" selected>
+                  {% else %}
+                     <option value="{{subtopic}}">
+                  {% endif %}
+                     {{subtopic}}
+                    </option>
+                {% endfor %}
+              </select>
+
+            </div>
+            <div class="question_difficulty option-section">
+              <label for="difficulty" class="option-label">Difficulty: </label>
+              <select title="Difficulty" name="question_difficulty" class="option-field">
+                {% for question_difficulty in question_difficulties %}
+                  <option value="{{question_difficulty}}">
+                    {{question_difficulty}}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+        </div>
+         <br/>
+         <div class="question-content form-group">
+            <br/>
+            <div class="created-vars"></div>
+            <br/>
+          </div>
+          <div id="all-question-blocks">
+
+            {% for index, question_dict in questions_dict.items %}
+              <div class="question-block">
+                
+                <input type="hidden" value="{{forloop.counter}}" class="question-number-value"/>
+                <div class="question-content form-group">
+                  <label class="q-label-title"> Question {{question_dict.question.number}}</label>
+                  <textarea placeholder="Enter the content of the question" class="question-textarea w-100 question-input-field" name="{{forloop.counter}}_question_text">{{question_dict.question.text}}</textarea>
+                </div>
+                <div class="main-question-image-preview" data-counter="0">
+                    {% for image_object in question_dict.question.images.all %}
+                      <div class="question-image">
+                        <br/>
+                        <div class="formatted-answer-option">
+                          <p>{{image_object.label}}</p>
+                          <img src="{{image_object.image.url}}" class="question-image image-in-formatted"/>
+                        </div>
+                        <input value="{{image_object.pk}}" type="hidden" name="image_pk"/>
+                        <div class="add-delete-btns">
+                            <button  type="button" class="btn btn-danger img-delete exempt">delete</button>
+                        </div> 
+                      </div>
+                    {% endfor %}
+                </div>
+                <div class="uploaded-question-preview"></div>
+                <button type="button" class="main-question-add-image-btn btn btn-light open">Upload Image</button>
+                <div class="question-image-upload-section" style="display: none;">
+                  <input type="text" placeholder="Enter image label" class="image-label-input-field field-style"/>
+                  <input type="file" accept="image/*" class="main-question-image-input">
+                  <button type="button" class="btn btn-success question-image-add">add</button>
+                </div>
+              </div>
+
+                  
+            <div class="answer-options">
+              
+              <label>Select answer type</label><br/>
+              <input type="hidden" value="{{question_dict.js_qtype}}" class="hidden-q-type"/>
+              {% if question_dict.qtype == "struct" %}
+                  <input type="hidden" placeholder="0" name="{{forloop.counter}}_answer" class="q-answer-hidden" value="{{question_dict.answer.content}}"/>
+                  <input type="hidden" placeholder="units" name="{{forloop.counter}}_answer_unit" class="q-answer-units-hidden" value="{{question_dict.answer.answer_unit}}"/>
+                  <input type="hidden" placeholder="latex preface" name="{{forloop.counter}}_answer_preface" class="q-answer-preface-hidden" value="{{question_dict.answer.preface}}"/>
+              {% else %}
+                  <input type="hidden" placeholder="0" name="{{forloop.counter}}_answer" class="q-answer-hidden"/>
+                  <input type="hidden" placeholder="units" name="{{forloop.counter}}_answer_unit" class="q-answer-units-hidden"/>
+                  <input type="hidden" placeholder="latex preface" name="{{forloop.counter}}_answer_preface" class="q-answer-preface-hidden"/>
+              {% endif %}
+
+              <button type="button" id="expression-btn" class="expression-btn btn btn-primary exempt">Expression</button>
+              <button type="button" id="float-btn" class="float-btn btn btn-info exempt">Float</button>
+              <button type="button" id="mcq-btn" class="mcq-btn btn btn-light exempt">MCQ</button>
+              <button type="button" id="mp-btn" class="mp-btn btn btn-dark exempt">Matching Pairs</button>
+              <button type="button" id="fr-btn" class="fr-btn btn btn-secondary exempt" style="display:none;">Free Response</button>
+              <button type="button" id="survey-btn" class="survey-btn btn btn-dark exempt" style="display: none;">Survey</button>
+              <button type="button" id="latex-btn" class="latex-btn btn btn-secondary exempt"  style="display: none;">Latex</button>
+              
+            </div>
+            <div class="mcq-answers">
+              <div class="mcq-options-button" style="display: none;">
+                <label>Select MCQ type</label><br/>
+                <button type="button" data-qid="mcq-expression-btn" class="mcq-expression-btn btn-primary exempt">Expression mode</button>
+                <button type="button" data-qid="mcq-float-btn" class="mcq-float-btn btn-info exempt">Float mode</button>
+                <button type="button" data-qid="mcq-text-btn" class="mcq-text-btn btn-light exempt">Text mode</button>
+                <button type="button" data-qid="mcq-latex-btn" class="mcq-latex-btn btn-secondary exempt">Latex mode</button>
+                <button type="button" data-qid="mcq-image-btn" class="mcq-image-btn btn-dark exempt">Image mode</button>
+              </div>
+              <div class="inputed-mcq-answers" data-counter="0" data-true-counter="0">
+                {% if question_dict.qtype == 'mcq' %}
+                  {% for answer in question_dict.answers %}
+                    <div class="inputed-mcq-answer">
+                      <br/>
+                      {% if answer.is_answer %}
+                          <div class="formatted-answer-option mcq-true hoverable">
+                      {% else %}
+                          <div class="formatted-answer-option mcq-false hoverable">
+                      {% endif %}
+                            {% if answer.get_answer_code == 2 %}<!--for latex -->
+                                <input type="hidden" class="hidden_answer latex" value="{{answer.content}}"/></div>
+                            {% elif answer.get_answer_code == 7 %}<!--for image-->
+                              {{answer.label}}
+                              <img src="{{answer.image.url}}" class="mcq-image-answer image-in-formatted"/></div>
+                            {% elif answer.get_answer_code == 0 %}
+                                <input type="hidden" class="hidden_answer expression" value="{{answer.content}}"/></div>
+                            {% else %}
+                                {{answer.content}}</div>
+                            {% endif %}
+                              
+                      <input type="hidden" name="answer_pk_type" value="{{answer.pk}}_{{answer.get_answer_code}}"/>
+                      <div class="add-delete-btns">
+                          <button  type="button" class="btn btn-danger mcq-delete exempt">delete</button>
+                      </div>
+
+                    </div>
+                  {% endfor %}
+                {% endif %}
+              </div>
+              <br/>
+              <div class="mcq-image-preview"></div>
+              <br/>
+              <div class="mcq-input-div" style="display: none;">
+                <input style="width: 100%; box-sizing: border-box;" type="text" class="mcq-input-field field-style" 
+                data-answer-type="t-answer" placeholder="Enter text and click add"/>
+                <input type="file" accept="image/*" class="image-upload-input-field" style="display:none;"/>
+                <button type="button" class="btn btn-success mcq-add">add</button>
+              </div>
+
+
+              <div class="mp-answers">
+                <div class="inputed-mp-answers" data-counter="0" data-qnumber="{{forloop.counter}}" data-mere-counter="0">
+                  {% if question_dict.qtype == 'mp' %}
+                    {% for answer in question_dict.answers %}
+                      <div class="formatted-mp inputed-mp-answer">
+                        <div class="formatted-answer">
+                          {{answer.part_a}}
+                        </div>
+                        <div class="formatted-answer">
+                          {{answer.part_b}}
+                        </div>
+                        <input type="hidden" name="answer_pk_type" value="{{answer.pk}}_{{answer.get_answer_code}}"/>
+                        <button  type="button" class="btn btn-danger mp-delete exempt">delete</button><br/>
+                      </div>
+                    {% endfor %}
+                  {% endif %}
+                </div>
+                <br/>
+                <div class="mp-input-div" style="display:none;">
+                    <div class="mp-inputs">
+                        <input type="text" class="field-style mp-input-field-a" placeholder="Enter part A"/>
+                        <input type="text" class="field-style mp-input-field-b" placeholder="Enter matching part B"/>
+                    </div>
+                    <div class="mp-add-div">
+                        <button type="button" class="btn btn-success mp-add">add</button>
+                    </div>
+                </div>
+             </div>
+             
+             <div class="answer-fields">
+                 
+             </div>
+             <div class="formatted-answer-option unexpand structural-formatted-answer">
+                {% if question_dict.qtype == "struct"%}
+                  {% if question_dict.answer.get_answer_code == 2%}<!--if latex-->
+                      <input type="hidden" class="hidden_answer latex" value="{{question_dict.answer.content}}"/>
+                  {% else %}<!-- if expression or float -->
+                      <input type="hidden" class="hidden_answer expression" value="{{question_dict.answer.content}}"/>
+                  {% endif %}
+                {% endif %}
+             </div>
+             <br/>
+             <div class="calculator-area-div"></div><br/>
+             <div class="hints-section"  data-counter="0">
+                <div class="inputed-hints">
+                  {% for hint in question_dict.question.hints.all %}
+                    <div class="hint-div">
+                      <br/>
+                      <div class="formatted-answer-option">{{hint.text}}</div>
+                      <input type="hidden" value="" name=""/>
+                      <div class="add-delete-btns">
+                          <button type="button" class="delete-hint-btn btn btn-danger">delete</button>
+                      </div>
+                      <br/>
+                    </div>
+                  {% endfor %}
+                </div>
+                <div class="add-hint-section" style="display:none;">
+                    <input type="text" placeholder="Enter hint and click add" class="field-style add-hint-input-field"/>
+                    <br/>
+                    <button type="button" class="add-inputed-hint-btn btn btn-success"> add </button>
+                </div>
+                <button type="button" class="add-hint-btn btn btn-outline-info open"> Add Hint </button>
+             </div>
+             <hr/>
+             <button class="btn btn-outline-success check-question-btn">Add Part</button>
+             <br/><br/>
+             <div class="hidden-settings">
+                    <input class="field-style hidden-settings h-num-pts" type="hidden" name="{{forloop.counter}}_num_points" value="{{question_dict.question.num_points}}"/>
+                    <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_max_num_attempts"/>
+                    <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_deduct_per_attempt"/>
+                    <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_margin_error"/>
+                    <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_percentage_pts_units"/>
+                    <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_max_mcq_num_attempts">
+                    <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_mcq_deduct_per_attempt"/>
+                    <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_units_num_attempts"/>
+             </div>
+           
+            </div>
+            {% endfor %}
+
+          </div>
+      </div>
+ 
+
+    {% include 'phobos/calci.html' %}
+    <br/>
+    <input type="submit" class="btn btn-success create-question-btn" value="Create Question">
+    <br/>
+    <div class="question-settings hide">
+
+      <span id="close-x-settings">X</span><br/>
+      <h4 class="suggestion original-size">Settings</h4>
+      <hr/>
+      <select title="Part" name="settings-select" class="settings-select field-style">
+      </select>
+      <div class="settings-modification">
+          <div class="settings-item"> 
+            <div class="settings-label">Number of points:</div>
+            <div class="settings-input-div">
+              <input class="field-style settings init-num-pts" type="number" name="num_points" min="0" max="25"
+              placeholder="Number of points e.g. 10" value="{{assignment.grading_scheme.num_points}}"/>
+            </div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-label">Max attempts:</div>
+            <div class="settings-input-div">
+              <input class="field-style settings" type="number" name="max_num_attempts" min="1" 
+              placeholder="Max number of attempts" value="{{assignment.grading_scheme.struct_num_attempts}}"/>
+            </div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-label">% deduct per attempt:</div>
+            <div class="settings-input-div">
+              <input class="field-style settings" type="number" name="deduct_per_attempt" min="0" max="1"
+              placeholder="% deduct per attempt" value="{{assignment.grading_scheme.deduct_per_attempt}}"/>
+            </div>
+          </div >
+          <div class="settings-item">
+            <div class="settings-label">% Margin error:</div>
+            <div class="settings-input-div"> 
+              <input class="field-style settings" type="number" name="margin_error" min="0" max="1"
+              placeholder="% margin error" value="{{assignment.grading_scheme.margin_error}}"/>
+            </div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-label">% points for units:</div>
+            <div class="settings-input-div">
+              <input class="field-style settings" type="number" name="percentage_pts_units" min="0" max="1"
+              placeholder="% points for units" value="{{assignment.grading_scheme.percentage_pts_units}}"/>
+            </div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-label">Max attempts(mcq):</div>
+            <div class="settings-input-div">
+              <input class="field-style settings" type="number" name="max_mcq_num_attempts" min="1"
+              placeholder="Max number of attempts(mcq)" value="{{assignment.grading_scheme.mcq_num_attempts}}"/>
+            </div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-label">% deduct per attempt(mcq):</div>
+            <div class="settings-input-div">
+              <input class="field-style settings" type="number" name="mcq_deduct_per_attempt" min="0" max="1"
+              placeholder="% deduct per attempt(mcq)" value="{{assignment.grading_scheme.mcq_deduct_per_attempt}}"/>
+            </div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-label">Max attempts(units):</div>
+            <div class="settings-input-div">
+              <input class="field-style settings" type="number" name="units_num_attempts" min="1"
+              placeholder="Max attempts(units)" value="{{assignment.grading_scheme.units_num_attempts}}"/>
+            </div>
+          </div>
+          
+      </div>
+    </div>
+    </form>
+
+  </div>
+
+{% endblock %}
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.9.1/math.js"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script src="{% static 'phobos/js/subtopics.js' %}"></script>
+<script src="{% static 'phobos/js/create_question.js' %}"></script>
+<script src="{% static 'phobos/js/question.js' %}"></script>
+<script src="{% static 'phobos/js/calci.js' %}"></script>
+<script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+{% endblock %}

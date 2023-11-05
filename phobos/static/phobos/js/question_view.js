@@ -11,15 +11,20 @@ document.addEventListener('DOMContentLoaded', () => {
             formattedAnswerDivs.forEach((formattedAnswerDiv) => {
 
                 try {
-                    const inputElement = formattedAnswerDiv.querySelector('.latex-answer-question-view');
+                    const inputElement = formattedAnswerDiv.querySelector('.hidden_answer');
                     const preface = formattedAnswerDiv.querySelector('.preface');
                     const units = formattedAnswerDiv.querySelector('.units');
                     if (inputElement != null) {
-                        if(inputElement.classList.contains('pure-latex')){
+                        if(inputElement.classList.contains('latex')){
                             const latex = inputElement.value;
                             const answer_latex = MathJax.tex2chtml(latex + '\\phantom{}');
                             var formatted_answer = `<span>${answer_latex.innerHTML}</span>`;
-                        } else {
+                        } else if(inputElement.classList.contains('mcq-expression')){
+                            const latex = math.parse(inputElement.value).toTex();
+                            const answer_latex = MathJax.tex2chtml(latex + '\\phantom{}');
+                            var formatted_answer = `<span>${answer_latex.innerHTML}</span>`;
+                        } 
+                        else {
                             const latex = math.parse(inputElement.value).toTex();
                             const units_latex = MathJax.tex2chtml(units.value);
                             const preface_latex = MathJax.tex2chtml(preface.value);

@@ -8,6 +8,8 @@
   <header class="sidebar-header">X</header>
   <ul>
       <li><a href="{% url 'phobos:index' %}">Home</a></li>
+      <li><a href="{% url 'phobos:assignment_management' assignment_id=assignment.id course_id=assignment.course.id %}">Questions</a></li>
+      <li><a href="{% url 'phobos:course_management' course_id=assignment.course.id %}">Assignments</a></li>
       <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
   </ul>
 </div>

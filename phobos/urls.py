@@ -16,6 +16,10 @@ urlpatterns = [
     path('create_question/<int:assignment_id>/<str:question_nums_types>',views.create_question,
          name='create_question'
     ),
+    path('edit_question/<int:question_id>',views.edit_question,
+         name='edit_question'
+    ),
+    path('question_bank', views.question_bank, name='question_bank'),
     path('courses/<int:course_id>', views.course_management, name='course_management'),
     path('courses/<int:course_id>/create_assignment',\
          views.create_assignment, name='create_assignment'),

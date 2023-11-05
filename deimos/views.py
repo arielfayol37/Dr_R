@@ -103,7 +103,7 @@ def decrypt_integer(k: int)->int:
 # List of all answer types
 all_mcq_answer_types = {
     'ea': ('mcq_expression_answers', 0),
-    'ta': ('mcq_text_answers',0),
+    'ta': ('mcq_text_answers',3),
     'fa':('mcq_float_answers',1),
     'fva': ('mcq_variable_float_answers',8),
     'ia': ('mcq_image_answers',7),
@@ -163,20 +163,16 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
         question.text = question_student.evaluate_var_expressions_in_text(question.text, add_html_style=True)
         questtype = ''
         answers = []
-        is_latex = []
         answers_c = None
-        question_type = []
 
         if question.answer_type.startswith('MCQ'):
             questtype='mcq'
             # List of answer types that require content evaluation
             answer_types_to_evaluate = ['mcq_expression_answers', 'mcq_variable_float_answers']
-            question_type_count = {}
             # Loop through each answer type
             for key, answer_type in all_mcq_answer_types.items():
                 # Get the related manager for the answer type
                 answer_queryset = getattr(question, answer_type[0]).all()
-                question_type_count[key] = getattr(question, answer_type[0]).count()
                 # If the answer type requires content evaluation, process each answer
                 if answer_type[0] in answer_types_to_evaluate:
                     for answer in answer_queryset:
@@ -184,44 +180,32 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
                 
                 # Extend the answers list with the processed or unprocessed answers
                 answers.extend(answer_queryset)
-            for q_type, answer_type in all_mcq_answer_types.items():
-                for _ in range(question_type_count[q_type]):
-                    question_type.append(answer_type[1])
-                    if q_type == 'la': # for latex
-                        is_latex.append(1)
-                    else:
-                        is_latex.append(0)
-            assert len(is_latex) == len(answers) == len(question_type)
-            alq = list(zip(answers, is_latex, question_type))
             if not question_student.success: # Do not need to randomize the order if student has already passed.
-                random.shuffle(alq)  
+                random.shuffle(answers)  
         elif question.answer_type.startswith('STRUCT'):
             questtype = 'struct'
             # TODO: Subclass all structural answers to a more general class 
             # so that you may use only one if.
             # Define a mapping from answer_type to the corresponding attribute and question type value
             answer_type_mapping = {
-                QuestionChoices.STRUCTURAL_LATEX: ('latex_answer', 1, 2),
-                QuestionChoices.STRUCTURAL_EXPRESSION: ('expression_answer', 0, 0),
-                QuestionChoices.STRUCTURAL_VARIABLE_FLOAT: ('variable_float_answer', 0, 5),
-                QuestionChoices.STRUCTURAL_FLOAT: ('float_answer', 0, 1),
-                QuestionChoices.STRUCTURAL_TEXT: ('text_answer', 0, 4),
+                QuestionChoices.STRUCTURAL_LATEX: 'latex_answer',
+                QuestionChoices.STRUCTURAL_EXPRESSION: 'expression_answer',
+                QuestionChoices.STRUCTURAL_VARIABLE_FLOAT: 'variable_float_answer',
+                QuestionChoices.STRUCTURAL_FLOAT: 'float_answer',
+                QuestionChoices.STRUCTURAL_TEXT: 'text_answer',
             }
 
-            # Get the attribute name and question type based on the answer_type
-            attribute_name, is_latex_value, question_type_value = answer_type_mapping.get(question.answer_type, (None, 0, None))
+            # Get the attribute name based on the answer_type
+            attribute_name = answer_type_mapping.get(question.answer_type, None)
 
             # If the attribute name is valid, get the attribute value and extend the lists
             if attribute_name:
                 answers.extend([getattr(question, attribute_name)])
-                is_latex.extend([is_latex_value])
-                question_type = [question_type_value]
             else:
                 raise ValueError('Unexpected answer type. Expected a type of Structural')
             answers[0].preface = '' if answers[0].preface is None else answers[0].preface
         elif question.answer_type.startswith('MATCHING'):
             questtype = 'mp'
-            question_type = [9]
             answers = question.matching_pairs.all()
             attempts = question_student.attempts.all()
             pk_of_success = []
@@ -245,12 +229,9 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
             'question':question,
             'questtype':questtype,
             'answers': answers,
-            "answers_is_latex_question_type": alq if questtype=='mcq' else zip(answers, is_latex, question_type),
-            'question_type': question_type, # For structural
             'answer': answers[0] if answers else None,
             'question_student':question_student,
             'too_many_attempts':too_many_attempts,
-            'sq_type':question_type[0], # structural question type used in js.
             'last_attempt_content':last_attempt.submitted_answer if last_attempt else '',
             'last_attempt':last_attempt,
             'units_too_many_attempts':units_too_many_attempts,
@@ -557,6 +538,12 @@ def register(request):
         password = request.POST["password"].strip()
         first_name = request.POST["first_name"].strip()
         last_name = request.POST["last_name"].strip()
+        
+        try: 
+            stud = Student.objects.get(username=username)
+            username = str(username) + str(random.randint(1, 1000000))
+        except:
+            pass
         try:
             checking_student = Student.objects.get(email=email)
             if checking_student:
