@@ -1131,20 +1131,8 @@ def edit_grading_scheme(request,course_id,assignment_id):
                 
             else:
                 scheme, is_created = GradingScheme.objects.get_or_create(pk=gs_pk)
-                name= request.POST['new_scheme_name'+'_'+str(gs_pk)]
-                # checking if scheme with same name already exists
-                exists = GradingScheme.objects.filter(name=name, course=course).exists()
-                if exists:
-                    old_gs = GradingScheme.objects.get(name=name, course=course)
-                    try:
-                        name = name + str(int(old_gs.name[-1]) + 1) # Not expecting the
-                                                                    # integer to be more than
-                                                                    # two digits.
-                    except:
-                        name = name + str(1)
                 try:
                     scheme.course = course
-                    scheme.name= name
                     scheme.num_points = request.POST['num_points'+'_'+str(gs_pk)]
                     scheme.mcq_num_attempts = request.POST['max_mcq_num_attempts'+'_'+str(gs_pk)]
                     scheme.struct_num_attempts = request.POST['max_num_attempts'+'_'+str(gs_pk)]
