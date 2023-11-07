@@ -30,6 +30,7 @@ from markdown2 import markdown
 import string
 
 from django.core.mail import send_mail
+from django.core.files.storage import default_storage
 
 
 
@@ -1221,3 +1222,88 @@ def edit_student_assignment_due_date(request,course_id,assignment_id,new_date,st
                 return JsonResponse({'message':'something went wrong','success':False})
             return JsonResponse({'message':'Due date successfully edited','success':True})
 
+def edit_course_cover(request):
+    if request.method == 'POST':
+        course_id= request.POST['course_id']
+        new_course_name= request.POST['new_course_name']
+        new_course_description= request.POST['new_course_description']
+        image= request.FILES.get('new_course_image')
+        new_course_image = default_storage.save(image.name, image)
+
+        print(new_course_image)
+        course= Course.objects.get(pk=course_id)
+        course.name= new_course_name
+        course.description= new_course_description
+        course.image = new_course_image
+        course.save()
+
+    return HttpResponseRedirect(reverse("phobos:index"))
+
+def edit_course_cover_page(request,course_id):
+    course= Course.objects.get(pk=course_id)
+    return render(request, "phobos/course_cover.html",{'course':course})
+
+def edit_grading_scheme(request,course_id,assignment_id):
+    assignment = get_object_or_404(Assignment, pk=assignment_id)  # Don't save to DB yet
+    course = assignment.course
+    if request.method == 'POST':
+            gs_pk = int(request.POST['grading_scheme_pk'])
+            if gs_pk == -1:
+                # Creating a new grading scheme
+                name= request.POST['new_scheme_name']
+                # checking if scheme with same name already exists
+                exists = GradingScheme.objects.filter(name=name, course=course).exists()
+                if exists:
+                    old_gs = GradingScheme.objects.get(name=name, course=course)
+                    try:
+                        name = name + str(int(old_gs.name[-1]) + 1) # Not expecting the
+                                                                    # integer to be more than
+                                                                    # two digits.
+                    except:
+                        name = name + str(1)
+                scheme = GradingScheme.objects.create(
+                    course = course,
+                    name= name,
+                    num_points = request.POST['num_points'],
+                    mcq_num_attempts = request.POST['max_mcq_num_attempts'],
+                    struct_num_attempts = request.POST['max_num_attempts'],
+                    deduct_per_attempt = request.POST['deduct_per_attempt'],
+                    mcq_deduct_per_attempt = request.POST['mcq_deduct_per_attempt'],
+                    margin_error = request.POST['margin_error'],
+                    percentage_pts_units = request.POST['percentage_pts_units'],
+                    units_num_attempts = request.POST['units_num_attempts'],
+                    late_sub_deduct = request.POST['late_sub_deduct'],
+                    floor_percentage = request.POST['floor_percentage']    
+                    )
+                scheme.save()
+                
+            else:
+                scheme, is_created = GradingScheme.objects.get_or_create(pk=gs_pk)
+                try:
+                    scheme.course = course
+                    scheme.num_points = request.POST['num_points'+'_'+str(gs_pk)]
+                    scheme.mcq_num_attempts = request.POST['max_mcq_num_attempts'+'_'+str(gs_pk)]
+                    scheme.struct_num_attempts = request.POST['max_num_attempts'+'_'+str(gs_pk)]
+                    scheme.deduct_per_attempt = request.POST['deduct_per_attempt'+'_'+str(gs_pk)]
+                    scheme.mcq_deduct_per_attempt = request.POST['mcq_deduct_per_attempt'+'_'+str(gs_pk)]
+                    scheme.margin_error = request.POST['margin_error'+'_'+str(gs_pk)]
+                    scheme.percentage_pts_units = request.POST['percentage_pts_units'+'_'+str(gs_pk)]
+                    scheme.units_num_attempts = request.POST['units_num_attempts'+'_'+str(gs_pk)]
+                    scheme.late_sub_deduct = request.POST['late_sub_deduct'+'_'+str(gs_pk)]
+                    scheme.floor_percentage = request.POST['floor_percentage']+'_'+str(gs_pk) 
+                    scheme.save()
+                except:
+                    return JsonResponse("Something went wrong. Can't modify scheme")
+            assignment.grading_scheme = scheme
+            assignment.save()  # Now save to DB
+            return HttpResponseRedirect(reverse('phobos:assignment_management',None,None, {'assignment_id':assignment.id, 'course_id':assignment.course.id}))
+    else:
+        gs_exists = GradingScheme.objects.filter(course=course).exists()
+        if not gs_exists:
+            default_gs, created = GradingScheme.objects.get_or_create(course=course, name="Default")
+            default_gs.save()
+        default_gs = GradingScheme.objects.get(course=course, name="Default")
+        grading_schemes = list(course.grading_schemes.all())
+        grading_schemes.reverse()
+    return render(request, 'phobos/grading_scheme.html', {'course':course,
+                         'default_gs':default_gs, 'grading_schemes':grading_schemes})
