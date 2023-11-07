@@ -146,7 +146,7 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
         if index==0:
             note, note_created = Note.objects.get_or_create(question_student=question_student)
             note_md = markdown(note.content)
-        if question.answer_type.startswith('MCQ'):
+        if question.answer_type.startswith(('MCQ', 'MATCHING')):
             too_many_attempts = question_student.get_num_attempts() >= question.mcq_settings.mcq_max_num_attempts
             units_too_many_attempts = True
         else:
@@ -918,7 +918,7 @@ def assignemt_gradebook_student(request,student_id, assignment_id):
     question_heading = ['Question_number','score','num_attempts']
     question_details = []
     for question in questions:
-        if question.answer_type.startswith('MCQ'):
+        if question.answer_type.startswith(('MCQ', 'MATCHING')):
             nm_pts = question.mcq_settings.num_points
         else:
             nm_pts = question.struct_settings.num_points
