@@ -333,7 +333,9 @@
     {% endif %}
       <span id="close-x-note" class="side-info-x">X</span><br/>
       <button type="button" class="btn btn-outline-success note-edit-btn" style="position:absolute; right:2%;"> {{note_comment}} </button><br/><br/>
-      <div class="suggestion note-last-edited">Last edited on {{note.last_edited}}</div>
+      {% if note.content %}
+        <div class="suggestion note-last-edited">Last edited on {{note.last_edited}}</div>
+      {% endif %}
       <div class="previous-notes">
         <div class="note-content formatted-answer-option">
           {{note_md|safe}}

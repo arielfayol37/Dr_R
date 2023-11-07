@@ -11,14 +11,9 @@
     </ul>
 </div>
 
-<nav class="navbar navbar-expand-lg navbar-light bg-light navigation" >
-    <div class="container-fluid">
-      <ul class="navbar-nav mr-auto" style="list-style: none; display:flex;">
-        <li class="nav-item " style="display:inline;">
-          <a class="nav-link home-btn" href="{% url 'phobos:course_management' course_id=course.id %}">Course </a>
-        </li>
-
-  </nav>  
+<nav class="navbar-custom" >
+    <a class="nav-link home-btn" href="{% url 'phobos:course_management' course_id=course.id %}">Course </a>
+</nav>  
   
 <div class="page-container">
  
