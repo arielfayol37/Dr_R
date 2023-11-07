@@ -55,7 +55,7 @@ def course_management(request, course_id, show_gradebook=None):
     # needed student's gradebook
     course_score=0
     assignment_student_grade=[]
-    assignment_student = AssignmentStudent.objects.filter(student=student)
+    assignment_student = AssignmentStudent.objects.filter(student=student, assignment__course=course)
     a_sums = 0
     for assignment_s in assignment_student:
         grade = assignment_s.get_grade()
@@ -463,7 +463,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                 attempt.save()
                 last_attempt.save()
         # print(f"Correct:{correct}. Units too may attempts: {units_too_many_attempts}")
-        if(not correct and (data["questionType"].startswith('structural')) or data["questionType"]=='mp'):
+        if(not correct and (data["questionType"].startswith('structural'))):
             too_many_attempts =  num_attempts + 1 >= question.struct_settings.max_num_attempts
             if question_student.num_units_attempts and not units_correct:
                 units_too_many_attempts = question_student.num_units_attempts >= question.struct_settings.units_num_attempts
@@ -910,7 +910,7 @@ def assignemt_gradebook_student(request,student_id, assignment_id):
 
     questions= Question.objects.filter(assignment= assignment_student.assignment ) 
     student= Student.objects.get(pk=student_id)
-    assignments= AssignmentStudent.objects.filter(student=student)
+    assignments= AssignmentStudent.objects.filter(student=student, assignment__course=course)
 
     assignment_details={'name':assignment_student.assignment.name,'assignment_id':assignment_id,\
                         'Due_date':str(assignment_student.due_date).split(' ')[0],'grade':assignment_student.get_grade() }

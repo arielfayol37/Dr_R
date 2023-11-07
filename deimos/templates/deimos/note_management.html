@@ -43,6 +43,9 @@
             {% for note_dict in note_dict_list %} 
                 {% include 'deimos/note_display.html' with note=note_dict.Note note_md=note_dict.note_md assignment_id=assignment.pk course_id=assignment.course.id %}
             {% endfor %}
+
+        {% empty %}
+            <h4 class="suggestion original-size"> You have not saved any notes yet. </h4>
         {% endfor %}
         <br>
     </ul>

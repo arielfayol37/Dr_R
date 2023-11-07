@@ -103,7 +103,7 @@ class CourseInfo(models.Model):
     Class to store extra information about a course. 
     these info is provided by professor and viewed by students.
     """
-    course= models.ForeignKey(Course, on_delete=models.CASCADE, related_name='course_info')
+    course= models.OneToOneField(Course, on_delete=models.CASCADE, related_name='course_info')
     course_skills= models.CharField(max_length=2000, default="")
     about_course= models.CharField(max_length=2000, default="")
     course_plan=models.CharField(max_length=2000, default="")
