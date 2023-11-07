@@ -953,57 +953,31 @@ def assignemt_gradebook_student(request,student_id, assignment_id):
 @login_required(login_url='astros:login') 
 def note_management(request, course_id):
     course = get_object_or_404(Course, pk=course_id)
-
     # Check if there is any Enrollment entry that matches the given student and course
     student = get_object_or_404(Student, pk = request.user.pk)
     is_enrolled = Enrollment.objects.filter(student=student, course=course).exists()
     
     if not is_enrolled:
         return HttpResponseForbidden('You are not enrolled in this course.')
-    assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student, \
-                                            is_assigned=True)
+    assignments_dict = {}
     # this is needed to display notes
-    Notes = Note.objects.all()
-    notes=[]
+    Notes = Note.objects.filter(question_student__student=student)
     for note in Notes:
-        if note.question_student.student == student:
-             notes.append({'Note':note,"note_md":markdown(note.content)})
-    
+        assignment = note.question_student.question.assignment
+        if note.content:
+            a_list = assignments_dict.get(assignment, None)
+            n_dict = {'Note':note, "note_md":markdown(note.content)}
+            if a_list:
+                a_list.append(n_dict)
+            else:
+                assignments_dict[assignment] = [n_dict]
     context = {
         "student":student,
-        "assignments": assignments,
         "course": course,
-        "notes": notes,
+        "assignments_dict":assignments_dict
     }
     return render(request, "deimos/note_management.html", context)
 
-
-@login_required(login_url='astros:login') 
-def note_management(request, course_id):
-    course = get_object_or_404(Course, pk=course_id)
-
-    # Check if there is any Enrollment entry that matches the given student and course
-    student = get_object_or_404(Student, pk = request.user.pk)
-    is_enrolled = Enrollment.objects.filter(student=student, course=course).exists()
-    
-    if not is_enrolled:
-        return HttpResponseForbidden('You are not enrolled in this course.')
-    assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student, \
-                                            is_assigned=True)
-    # this is needed to display notes
-    Notes = Note.objects.all()
-    notes=[]
-    for note in Notes:
-        if note.question_student.student == student:
-             notes.append({'Note':note,"note_md":markdown(note.content)})
-    
-    context = {
-        "student":student,
-        "assignments": assignments,
-        "course": course,
-        "notes": notes,
-    }
-    return render(request, "deimos/note_management.html", context)
 
 def generate_practice_test(request):
     course_id = request.POST['course_id']

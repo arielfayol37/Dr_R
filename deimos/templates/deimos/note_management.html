@@ -37,14 +37,11 @@
     <h4 class="suggestion" style="font-size: large;">{{course.name}} - Notes</h4><hr/>
     
     <ul class="courses couse-list">
-        {% for assignment in assignments %}
+        {% for assignment, note_dict_list in assignments_dict.items %}
         <h4>{{assignment.name}}</h4>
         <br>
-            <!-- Display assignment's questions -->
-            {% for note in notes %}
-            {% if note.Note.question_student.question.assignment.id == assignment.id %}
-            {% include 'deimos/note_display.html' with note=note.Note note_md=note.note_md assignment_id=assignment.id course_id=assignment.course.id%}
-            {% endif %}
+            {% for note_dict in note_dict_list %} 
+                {% include 'deimos/note_display.html' with note=note_dict.Note note_md=note_dict.note_md assignment_id=assignment.pk course_id=assignment.course.id %}
             {% endfor %}
         {% endfor %}
         <br>
