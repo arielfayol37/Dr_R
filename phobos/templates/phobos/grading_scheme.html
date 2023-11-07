@@ -1,6 +1,5 @@
-<!-- phobos: create_assignment.html -->
 {% extends 'phobos/layout.html' %}
-{% block title%} Create Assignment {% endblock %}
+{% block title%} Grading Schemes {% endblock %}
 {% block body %}
 
 <div class="sidebar" style="display:none">
@@ -23,20 +22,21 @@
 
         <select title="Scheme" name="settings-select" class="settings-select field-style" id="gradingSchemeSelect">
             {% for grading_scheme in grading_schemes %}
-                {% if forloop.counter0 == 0 %}
+                {% if grading_scheme.pk == assignment.grading_scheme.pk %}
                     <option value="{{grading_scheme.name}}" data-option-index="{{forloop.counter0}}" data-option-real-index="{{grading_scheme.pk}}" selected>{{grading_scheme.name}}</option>
                 {% else %}
                     <option value="{{grading_scheme.name}}" data-option-index="{{forloop.counter0}}" data-option-real-index="{{grading_scheme.pk}}" >{{grading_scheme.name}}</option>
                 {% endif %}
             {% endfor %}
-            <option value="new-gs" class="create-ngs-option" data-option-index="-1">Create New Grading Scheme</option>
+            <option value="new-gs" class="create-ngs-option" data-option-index="-1" data-option-real-index="-1">Create New Grading Scheme</option>
         </select>
-
+    
     {% for grading_scheme in grading_schemes %}
-        {% if forloop.counter0 == 0 %}
+        {% if grading_scheme.pk == assignment.grading_scheme.pk %}
+            <input type="hidden" class="previous-option-index" value="{{forloop.counter0}}"/>
             <div class="settings-modification" data-gsid ="{{grading_scheme.pk}}" data-index="{{forloop.counter0}}">
         {% else %}
-            <div class="settings-modification" style="display: block;" data-gsid ="{{grading_scheme.pk}}" data-index="{{forloop.counter0}}">
+            <div class="settings-modification" style="display: none;" data-gsid ="{{grading_scheme.pk}}" data-index="{{forloop.counter0}}">
         {% endif %}
 
             <div class="settings-item">
@@ -82,6 +82,13 @@
             </div>
             </div>
             <div class="settings-item">
+                <div class="settings-label">Max attempts(units):</div>
+                <div class="settings-input-div">
+                    <input class="field-style settings" type="number" name="units_num_attempts_{{grading_scheme.pk}}" min="1"
+                    placeholder="Max attempts(units)" value="{{grading_scheme.units_num_attempts}}" />
+                </div>
+            </div>
+            <div class="settings-item">
             <div class="settings-label">% points for units:</div>
             <div class="settings-input-div">
                 <input class="field-style settings" type="number" name="percentage_pts_units_{{grading_scheme.pk}}" min="0" max="1"
@@ -100,13 +107,6 @@
             <div class="settings-input-div">
                 <input class="field-style settings" type="number" name="mcq_deduct_per_attempt_{{grading_scheme.pk}}" min="0" max="1"
                 placeholder="% deduct per attempt(mcq)" value="{{grading_scheme.mcq_deduct_per_attempt}}" />
-            </div>
-            </div>
-            <div class="settings-item">
-            <div class="settings-label">Max attempts(units):</div>
-            <div class="settings-input-div">
-                <input class="field-style settings" type="number" name="units_num_attempts_{{grading_scheme.pk}}" min="1"
-                placeholder="Max attempts(units)" value="{{grading_scheme.units_num_attempts}}" />
             </div>
             </div>
         </div>
@@ -200,17 +200,17 @@
 <script>
 
         const selectElement = document.getElementById('gradingSchemeSelect'); // Get the select element by its id
-        var previousOptionIndex = 0;
+        var previousOptionIndex = parseInt(document.querySelector('.previous-option-index').value);
         selectElement.addEventListener('change', function(event) { // Add an event listener for the "change" event
           const selectedValue = event.target.value; // Get the value of the selected option
           const selectedOption = event.target.options[event.target.selectedIndex];
           if (selectedValue === 'new-gs') { // Check if the selected value is "new-gs"
             // console.log("New grading scheme creating selected");
           }
-          
+ 
           document.querySelector(`[data-index="${previousOptionIndex}"]`).style.display = 'none';
           previousOptionIndex = selectedOption.dataset.optionIndex;
-          realOptionIndex = selectedOption.dataset.optionRealIndex;
+          const realOptionIndex = selectedOption.dataset.optionRealIndex;
           document.querySelector('input[name="grading_scheme_pk"]').value = realOptionIndex;
           document.querySelector(`[data-index="${previousOptionIndex}"]`).style.display = 'flex';
         });

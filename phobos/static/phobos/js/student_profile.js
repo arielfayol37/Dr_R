@@ -16,7 +16,7 @@ function table_generator(question, assignment_id) {
 
    <div  class="due-date-div" style="display: none; position:relative; float: right" >
        <input type="datetime-local"  class="input-new-due-date-field">
-       <input type="button" class="save-new-due-date-field" value="OK">
+       <input type="button" class="save-new-due-date-field btn btn-outline-success" value="apply">
        </div>
    </div>`;
 
@@ -96,7 +96,7 @@ function assignment_details() {
     }
 }
 
-addEventListener("DOMContentLoaded", assignment_details)
+document.addEventListener("DOMContentLoaded", assignment_details)
 
 
 // implementing due date extension function

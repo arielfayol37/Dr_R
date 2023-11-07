@@ -58,7 +58,7 @@ urlpatterns = [
 
          path('courses/<int:course_id>/assignments/<int:assignment_id>/<str:new_date>/edit_assignment_due_date', \
          views.edit_assignment_due_date, name='assignment_due_date'),
-          path('courses/<int:course_id>/<int:student_id>/student_profile/<int:assignment_id>/<str:new_date>/edit_student_assignment_due_date', \
+          path('courses/<int:course_id>/student_profile/<int:assignment_id>/edit_student_assignment_due_date', \
          views.edit_student_assignment_due_date, name='assignmentstudent_due_date'),
          
      path('courses/edit_course_cover', views.edit_course_cover, name='edit_course_cover'),

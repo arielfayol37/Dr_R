@@ -578,7 +578,7 @@ def create_question(request, assignment_id=None, question_nums_types=None):
             answer.save() # Needed here too.
            
             # Saving the settings.
-            if new_question.answer_type.startswith('MCQ') or new_question.answer_type.startswith('MATCHING'): # if MCQ or Matching Pair
+            if new_question.answer_type.startswith(('MCQ', 'MATCHING')): # if MCQ or Matching Pair
                 question_settings = new_question.mcq_settings
                 question_settings.mcq_max_num_attempts = int(mcq_max_num_attempts)
                 question_settings.mcq_deduct_per_attempt = float(mcq_deduct_per_attempt)
@@ -879,7 +879,7 @@ def get_questions(request, student_id, assignment_id, course_id=None):
     assignment_student, created = AssignmentStudent.objects.get_or_create(assignment=assignment, student=student)
     question_details=[{'name':assignment.name,'assignment_id':assignment_id,'Due_date':str(assignment_student.due_date).split(' ')[0]}]
     for question in questions:
-        if question.answer_type.startswith('MCQ'):
+        if question.answer_type.startswith(('MCQ', 'MATCHING')):
             num_pts = question.mcq_settings.num_points
         else:
             num_pts = question.struct_settings.num_points
@@ -1152,7 +1152,7 @@ def export_question_to(request, question_id, exp_assignment_id, course_id=None, 
         copy_variables(question, new_question)
         copy_answers(question, new_question)
         # Saving the settings.
-        if new_question.answer_type.startswith('MCQ'): # if MCQ
+        if new_question.answer_type.startswith(('MCQ', 'MATCHING')): # if MCQ or Matching pair
             question_settings = new_question.mcq_settings
             question_settings.num_points = question.mcq_settings.num_points
             question_settings.difficulty_level = question.mcq_settings.difficulty_level
@@ -1180,8 +1180,13 @@ def export_question_to(request, question_id, exp_assignment_id, course_id=None, 
 
     
 def change_due_date(assignment, new_date):
+    # Assign the timezone-aware datetime to assignment.due_date and save
+    assignment.due_date = parse_date(new_date)
+    assignment.save()
+
+def parse_date(date):
     # Decode any URL-encoded characters in the date string
-    decoded_date = unquote(new_date)
+    decoded_date = unquote(date)
 
     # Adjust the format string to handle the new date format with time
     format_string = "%Y-%m-%dT%H:%M" if 'T' in decoded_date else "%Y-%m-%d"
@@ -1192,49 +1197,65 @@ def change_due_date(assignment, new_date):
     # Make the datetime object timezone-aware
     aware_datetime = timezone.make_aware(naive_datetime)
 
-    # Assign the timezone-aware datetime to assignment.due_date and save
-    assignment.due_date = aware_datetime
-    assignment.save()
+    return aware_datetime
+
+
+@transaction.atomic
+def edit_student_assignment_due_date(request, course_id, assignment_id):
+    try:
+        data = json.loads(request.body)
+        new_date = data['new_date']
+        # Ensure that selected_ids are integers if the primary keys are integers
+        student_pks = [int(pk) for pk in data['selected_ids']]
+        # Get the assignment and the students
+        assignment = Assignment.objects.get(pk=assignment_id)
+        students = Student.objects.filter(pk__in=student_pks)
+        # Create or get AssignmentStudent instances
+        assignment_students = [
+            AssignmentStudent.objects.get_or_create(assignment=assignment, student=student)[0]
+            for student in students
+        ]
+
+        # Change the due date for all assignment_students
+        for assignment_student in assignment_students:
+            assignment_student.due_date = parse_date(new_date)
+
+        # Bulk update all assignment_students
+        AssignmentStudent.objects.bulk_update(assignment_students, ['due_date'])
+
+        return JsonResponse({'message': 'Due date successfully edited', 'success': True})
+
+    except Exception as e:
+        # Log the exception here
+        return JsonResponse({'message': str(e), 'success': False})
 
 def edit_assignment_due_date(request,course_id,assignment_id,new_date):
         assignment= Assignment.objects.get(pk=assignment_id)
         if not assignment.course.professors.filter(pk=request.user.pk).exists():
             return JsonResponse({'message': 'You are not allowed to change the due date', 'success':False})
-        change_due_date(assignment,new_date)
-        for assignment_student in AssignmentStudent.objects.filter(assignment= assignment):
+        assignment.due_date = parse_date(new_date)
+        assignment.save()
+        assignment_students = AssignmentStudent.objects.filter(assignment= assignment)
+        for assignment_student in assignment_students:
             try:
-                change_due_date(assignment_student,new_date)
+               assignment_student.due_date = parse_date(new_date)
             except:
                 return JsonResponse({'message':'something went wrong','success':False})
+        AssignmentStudent.objects.bulk_update(assignment_students, ['due_date'])
         return JsonResponse({'message':'Due date successfully edited','success':True})
-
-def edit_student_assignment_due_date(request,course_id,assignment_id,new_date,student_id=None):
-            assignment = Assignment.objects.get(pk= assignment_id)
-            student= Student.objects.get(pk= student_id)
-            # If a professor takes time to go extend someone's assignment
-            # then it's worth creating the AssignmentStudent.
-            assignment_student, created = AssignmentStudent.objects.get_or_create(assignment=assignment, student=student)
-            if created:
-                assignment_student.save()
-            try:
-                change_due_date(assignment_student,new_date)
-            except:
-                return JsonResponse({'message':'something went wrong','success':False})
-            return JsonResponse({'message':'Due date successfully edited','success':True})
 
 def edit_course_cover(request):
     if request.method == 'POST':
         course_id= request.POST['course_id']
-        new_course_name= request.POST['new_course_name']
-        new_course_description= request.POST['new_course_description']
-        image= request.FILES.get('new_course_image')
-        new_course_image = default_storage.save(image.name, image)
-
-        print(new_course_image)
-        course= Course.objects.get(pk=course_id)
-        course.name= new_course_name
-        course.description= new_course_description
-        course.image = new_course_image
+        new_course_name = request.POST['new_course_name']
+        new_course_description = request.POST['new_course_description']
+        image = request.FILES.get('new_course_image')
+        course = Course.objects.get(pk=course_id)
+        course.name = new_course_name
+        course.description = new_course_description
+        if image:
+            new_course_image = default_storage.save(image.name, image)
+            course.image = new_course_image
         course.save()
 
     return HttpResponseRedirect(reverse("phobos:index"))
@@ -1306,4 +1327,4 @@ def edit_grading_scheme(request,course_id,assignment_id):
         grading_schemes = list(course.grading_schemes.all())
         grading_schemes.reverse()
     return render(request, 'phobos/grading_scheme.html', {'course':course,
-                         'default_gs':default_gs, 'grading_schemes':grading_schemes})
+                         'default_gs':default_gs, 'grading_schemes':grading_schemes, 'assignment':assignment})
