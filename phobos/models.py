@@ -225,7 +225,6 @@ class Question(models.Model):
         default = QuestionChoices.STRUCTURAL_TEXT
     )
     embedding = models.JSONField(null=True, blank=True)  # Field to store encoded representation for search
-    num_points = models.IntegerField(null=True, blank=True)
 
     def default_due_date(self):
         if self.assignment:
@@ -236,7 +235,7 @@ class Question(models.Model):
         save_settings = kwargs.pop('save_settings', False)
         super(Question, self).save(*args, **kwargs)
         if save_settings:
-            if self.answer_type.startswith('MCQ'):
+            if self.answer_type.startswith('MCQ') or self.answer_type.startswith('MATCHING'):
                 settings, created = MCQQuestionSettings.objects.get_or_create(question=self)
             else:
                 settings, created = StructuralQuestionSettings.objects.get_or_create(question=self)
@@ -256,6 +255,12 @@ class Question(models.Model):
             self.embedding = question_encoded_output_pooled.tolist()
 
             super(Question, self).save(*args, **kwargs)
+
+    def get_num_points(self):
+        if self.answer_type.startswith('MCQ') or self.answer_type.startswith('MATCHING'):
+            return self.mcq_settings.num_points
+        else:
+            return self.struct_settings.num_points
 
 
     def __str__(self):
@@ -564,6 +569,9 @@ class MatchingAnswer(models.Model):
     
     def __str__(self):
         return f"Matching pair answer for {self.question}"
+    
+    def get_answer_code(self):
+        return 9
 
 class Variable(models.Model):
     """

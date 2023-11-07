@@ -577,7 +577,7 @@ def create_question(request, assignment_id=None, question_nums_types=None):
             answer.save() # Needed here too.
            
             # Saving the settings.
-            if new_question.answer_type.startswith('MCQ'): # if MCQ
+            if new_question.answer_type.startswith('MCQ') or new_question.answer_type.startswith('MATCHING'): # if MCQ or Matching Pair
                 question_settings = new_question.mcq_settings
                 question_settings.mcq_max_num_attempts = int(mcq_max_num_attempts)
                 question_settings.mcq_deduct_per_attempt = float(mcq_deduct_per_attempt)

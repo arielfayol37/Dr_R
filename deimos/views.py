@@ -278,13 +278,13 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
         # whenever the user opens a question for the first time, but just to be safe.
         question_student, created = QuestionStudent.objects.get_or_create(student=student, question=question)
         num_attempts = question_student.get_num_attempts()
-        if data["questionType"].startswith('structural') or data["questionType"] == 'mp':
+        if data["questionType"].startswith('structural'):
             too_many_attempts =  num_attempts >= question.struct_settings.max_num_attempts
             if question_student.num_units_attempts:
                 units_too_many_attempts = question_student.num_units_attempts >= question.struct_settings.units_num_attempts
             else: 
                 units_too_many_attempts = False
-        elif data["questionType"].startswith('mcq'):
+        elif data["questionType"].startswith('mcq')  or data["questionType"] == 'mp':
             too_many_attempts = num_attempts >= question.mcq_settings.mcq_max_num_attempts
             units_too_many_attempts = True
         correct = question_student.success
@@ -406,7 +406,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     attempt.content = attempt_pairs
                     attempt.submitted_answer = attempt_pairs
                     attempt.num_points = frac * \
-                        overall_percentage * max(0, question.struct_settings.num_points * (1 - question.struct_settings.deduct_per_attempt *
+                        overall_percentage * max(0, question.mcq_settings.num_points * (1 - question.mcq_settings.mcq_deduct_per_attempt *
                                                     max(0, question_student.get_num_attempts() - 1)))                        
                     return_sp = success_pairs_strings
                     success_pairs_strings = "&".join(success_pairs_strings)   

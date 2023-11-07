@@ -1,7 +1,7 @@
 <!-- phobos: modify_question.html -->
 {% extends 'phobos/layout.html' %}
 {% load static %}
-{% block title%} Modify question {% endblock %}
+{% block title%} Edit question {% endblock %}
 {% block body %}
 
 <div class="sidebar" style="display:none">
@@ -95,7 +95,22 @@
          <br/>
          <div class="question-content form-group">
             <br/>
-            <div class="created-vars"></div>
+            <div class="created-vars">
+              {% for var in question.variables.all %}
+                <div class="variable" data-symbol="{{var.symbol}}">
+                  <button type="button" class="btn btn-warning">
+                    {{var.symbol}}
+                    
+                    <input type="hidden" class="var-symbol" value="{{var.symbol}}"/>
+                    <input type="hidden" name="var_pk" value="{{var.pk}}"/>
+                    {% for interval in var.intervals.all %}
+                      <input type="hidden" name="domain#lb#{{var.symbol}}{{forloop.counter0}}" value="{{interval.lower_bound}}"/>
+                      <input type="hidden" name="domain#ub#{{var.symbol}}{{forloop.counter0}}" value="{{interval.upper_bound}}"/>
+                    {% endfor %}
+                  </button>
+                </div>
+              {% endfor %}
+            </div>
             <br/>
           </div>
           <div id="all-question-blocks">
@@ -274,15 +289,35 @@
              <button class="btn btn-outline-success check-question-btn">Add Part</button>
              <br/><br/>
              <div class="hidden-settings">
-                    <input class="field-style hidden-settings h-num-pts" type="hidden" name="{{forloop.counter}}_num_points" value="{{question_dict.question.num_points}}"/>
-                    <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_max_num_attempts"/>
-                    <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_deduct_per_attempt"/>
-                    <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_margin_error"/>
-                    <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_percentage_pts_units"/>
-                    <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_max_mcq_num_attempts">
-                    <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_mcq_deduct_per_attempt"/>
-                    <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_units_num_attempts"/>
-             </div>
+                  {% if question_dict.qtype == 'struct' %}
+                      <input class="field-style hidden-settings h-num-pts" type="hidden" name="{{forloop.counter}}_num_points" value="{{question_dict.question.struct_settings.num_points}}"/>
+                      <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_max_num_attempts" value="{{question_dict.question.struct_settings.max_num_attempts}}"/>
+                      <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_deduct_per_attempt" value="{{question.struct_settings.deduct_per_attempt}}"/>
+                      <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_margin_error" value="{{question.struct_settings.maring_error}}"/>
+                      <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_units_num_attempts" value="{{question.assignment.grading_scheme.units_num_attempts}}"/>
+                      <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_percentage_pts_units" value="{{question.struct_settings.percentage_pts_units}}"/>
+                      <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_max_mcq_num_attempts" value="{{question.assignment.grading_scheme.mcq_num_attempts}}">
+                      <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_mcq_deduct_per_attempt" value="{{question.assignment.grading_scheme.mcq_deduct_per_attempt}}"/>
+                  {% elif question_dict.qtype == 'mcq' or question_dict.qtype == 'mp' %}
+                      <input class="field-style hidden-settings h-num-pts" type="hidden" name="{{forloop.counter}}_num_points" value="{{question.assignment.grading_scheme.num_points}}"/>
+                      <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_max_num_attempts" value="{{question.assignment.grading_scheme.struct_num_attempts}}"/>
+                      <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_deduct_per_attempt" value="{{question.assignment.grading_scheme.deduct_per_attempt}}"/>
+                      <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_margin_error" value="{{question.assignment.grading_scheme.margin_error}}"/>
+                      <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_units_num_attempts" value="{{question.assignment.grading_scheme.units_num_attempts}}"/>
+                      <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_percentage_pts_units" value="{{question.assignment.grading_scheme.percentage_pts_units}}"/>
+                      <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_max_mcq_num_attempts" value="{{question_dict.question.mcq_settings.mcq_max_num_attempts}}">
+                      <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_mcq_deduct_per_attempt" value="{{question_dict.question.mcq_settings.mcq_deduct_per_attempt}}"/>
+                  {% else %}
+                      <input class="field-style hidden-settings h-num-pts" type="hidden" name="{{forloop.counter}}_num_points" value="{{question.assignment.grading_scheme.num_points}}"/>
+                      <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_max_num_attempts" value="{{question.assignment.grading_scheme.struct_num_attempts}}"/>
+                      <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_deduct_per_attempt" value="{{question.assignment.grading_scheme.deduct_per_attempt}}"/>
+                      <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_margin_error" value="{{question.assignment.grading_scheme.margin_error}}"/>
+                      <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_units_num_attempts" value="{{question.assignment.grading_scheme.units_num_attempts}}"/>
+                      <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_percentage_pts_units" value="{{question.assignment.grading_scheme.percentage_pts_units}}"/>
+                      <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_max_mcq_num_attempts" value="{{question.assignment.grading_scheme.mcq_num_attempts}}">
+                      <input class="field-style hidden-settings" type="hidden" name="{{forloop.counter}}_mcq_deduct_per_attempt" value="{{question.assignment.grading_scheme.mcq_deduct_per_attempt}}"/>
+                  {% endif %}
+              </div>
            
             </div>
             {% endfor %}
@@ -293,7 +328,7 @@
 
     {% include 'phobos/calci.html' %}
     <br/>
-    <input type="submit" class="btn btn-success create-question-btn" value="Create Question">
+    <input type="submit" class="btn btn-success create-question-btn" value="Save">
     <br/>
     <div class="question-settings hide">
 
@@ -307,56 +342,56 @@
             <div class="settings-label">Number of points:</div>
             <div class="settings-input-div">
               <input class="field-style settings init-num-pts" type="number" name="num_points" min="0" max="25"
-              placeholder="Number of points e.g. 10" value="{{assignment.grading_scheme.num_points}}"/>
+              placeholder="Number of points e.g. 10" value="{{question.assignment.grading_scheme.num_points}}"/>
             </div>
           </div>
           <div class="settings-item">
             <div class="settings-label">Max attempts:</div>
             <div class="settings-input-div">
               <input class="field-style settings" type="number" name="max_num_attempts" min="1" 
-              placeholder="Max number of attempts" value="{{assignment.grading_scheme.struct_num_attempts}}"/>
+              placeholder="Max number of attempts" value="{{question.assignment.grading_scheme.struct_num_attempts}}"/>
             </div>
           </div>
           <div class="settings-item">
             <div class="settings-label">% deduct per attempt:</div>
             <div class="settings-input-div">
               <input class="field-style settings" type="number" name="deduct_per_attempt" min="0" max="1"
-              placeholder="% deduct per attempt" value="{{assignment.grading_scheme.deduct_per_attempt}}"/>
+              placeholder="% deduct per attempt" value="{{question.assignment.grading_scheme.deduct_per_attempt}}"/>
             </div>
           </div >
           <div class="settings-item">
             <div class="settings-label">% Margin error:</div>
             <div class="settings-input-div"> 
               <input class="field-style settings" type="number" name="margin_error" min="0" max="1"
-              placeholder="% margin error" value="{{assignment.grading_scheme.margin_error}}"/>
-            </div>
-          </div>
-          <div class="settings-item">
-            <div class="settings-label">% points for units:</div>
-            <div class="settings-input-div">
-              <input class="field-style settings" type="number" name="percentage_pts_units" min="0" max="1"
-              placeholder="% points for units" value="{{assignment.grading_scheme.percentage_pts_units}}"/>
-            </div>
-          </div>
-          <div class="settings-item">
-            <div class="settings-label">Max attempts(mcq):</div>
-            <div class="settings-input-div">
-              <input class="field-style settings" type="number" name="max_mcq_num_attempts" min="1"
-              placeholder="Max number of attempts(mcq)" value="{{assignment.grading_scheme.mcq_num_attempts}}"/>
-            </div>
-          </div>
-          <div class="settings-item">
-            <div class="settings-label">% deduct per attempt(mcq):</div>
-            <div class="settings-input-div">
-              <input class="field-style settings" type="number" name="mcq_deduct_per_attempt" min="0" max="1"
-              placeholder="% deduct per attempt(mcq)" value="{{assignment.grading_scheme.mcq_deduct_per_attempt}}"/>
+              placeholder="% margin error" value="{{question.assignment.grading_scheme.margin_error}}"/>
             </div>
           </div>
           <div class="settings-item">
             <div class="settings-label">Max attempts(units):</div>
             <div class="settings-input-div">
               <input class="field-style settings" type="number" name="units_num_attempts" min="1"
-              placeholder="Max attempts(units)" value="{{assignment.grading_scheme.units_num_attempts}}"/>
+              placeholder="Max attempts(units)" value="{{question.assignment.grading_scheme.units_num_attempts}}"/>
+            </div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-label">% points for units:</div>
+            <div class="settings-input-div">
+              <input class="field-style settings" type="number" name="percentage_pts_units" min="0" max="1"
+              placeholder="% points for units" value="{{question.assignment.grading_scheme.percentage_pts_units}}"/>
+            </div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-label">Max attempts(mcq):</div>
+            <div class="settings-input-div">
+              <input class="field-style settings" type="number" name="max_mcq_num_attempts" min="1"
+              placeholder="Max number of attempts(mcq)" value="{{question.assignment.grading_scheme.mcq_num_attempts}}"/>
+            </div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-label">% deduct per attempt(mcq):</div>
+            <div class="settings-input-div">
+              <input class="field-style settings" type="number" name="mcq_deduct_per_attempt" min="0" max="1"
+              placeholder="% deduct per attempt(mcq)" value="{{question.assignment.grading_scheme.mcq_deduct_per_attempt}}"/>
             </div>
           </div>
           

@@ -903,21 +903,22 @@ inputedMcqAnswersDiv.addEventListener('click', (event)=>{
     // Here adding the ability to change the status of an mcq option as true or false
     // Also, there's a delete button.
     target = event.target
-    if(target.classList.contains('mcq-false')){
+    const fdiv = target.closest('.formatted-answer-option');
+    if(fdiv !=null && fdiv.classList.contains('mcq-false')){
         // changing an mcq option from false to true.
-        target.classList.remove('mcq-false');
-        target.classList.add('mcq-true');
+        fdiv.classList.remove('mcq-false');
+        fdiv.classList.add('mcq-true');
         const holder =  parseInt(inputedMcqAnswersDiv.dataset.trueCounter)
         inputedMcqAnswersDiv.dataset.trueCounter = `${holder + 1}`;
-        const answer_info_input = target.closest('.inputed-mcq-answer').querySelector('.answer_info');
+        const answer_info_input = fdiv.closest('.inputed-mcq-answer').querySelector('.answer_info');
         answer_info_input.value = rep(answer_info_input.value, 0, '1');
-    } else if(target.classList.contains('mcq-true')){
+    } else if(fdiv !=null && fdiv.classList.contains('mcq-true')){
         // changing an mcq option from true to false.
-        target.classList.add('mcq-false');
-        target.classList.remove('mcq-true');
+        fdiv.classList.add('mcq-false');
+        fdiv.classList.remove('mcq-true');
         const holder = parseInt(inputedMcqAnswersDiv.dataset.trueCounter);
         inputedMcqAnswersDiv.dataset.trueCounter = `${holder - 1}`;    
-        const answer_info_input = target.closest('.inputed-mcq-answer').querySelector('.answer_info');
+        const answer_info_input = fdiv.closest('.inputed-mcq-answer').querySelector('.answer_info');
         answer_info_input.value = rep(answer_info_input.value, 0, '0');
     } else if (target.classList.contains('mcq-delete')){
         // deleting an mcq option.
