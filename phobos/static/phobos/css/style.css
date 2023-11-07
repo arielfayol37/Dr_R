@@ -781,6 +781,8 @@ more than assignment display */
 
 .original-size {
   font-size: initial;
+  width: initial;
+  height: initial;
 }
 
 

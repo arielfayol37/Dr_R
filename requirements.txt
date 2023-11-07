@@ -4,6 +4,7 @@ sympy
 pillow
 torch
 transformers
+transformers[torch]
 numpy
 scikit-learn
 PyPDF2

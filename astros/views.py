@@ -71,11 +71,11 @@ def course_enroll(request, course_id, code):
             return HttpResponse(json.dumps({'state':False,'response':'Invalid code'}))
         if code.expiring_date >= date.today():
             # If not enrolled, create a new Enrollment instance
-            enrollment = Enrollment.objects.create(student=student, course=course)
+            enrollment, created = Enrollment.objects.get_or_create(student=student, course=course)
             enrollment.save()
             for assignment in course.assignments.all():
                  if assignment.is_assigned == True:
-                    assign = AssignmentStudent.objects.create(assignment=assignment, student=student)
+                    assign, created = AssignmentStudent.objects.get_or_create(assignment=assignment, student=student)
                     assign.save()
 
             return HttpResponse(json.dumps({'state': True, 'response':'valid code',\
@@ -138,14 +138,14 @@ def generate_auth_code(request):
                 code_base[str_email] = []
             code_base[str_email].append(code)
             send_mail(
-            'Authentify',                # subject
+            'Authentication',                # subject
            f'Enter the following authentification code on DR-R: {code}',    # message
             'no.reply.dr.r.valpo@gmail.com',      # from email
              [email],      # recipient list
              fail_silently=False,           # Raises an error if there's a problem
         )
             return JsonResponse({'success':True,
-                         'message':'An authentification code was sent to email. Please enter the code in the field that will appear at the bottom.'})
+                         'message':'An authentication code was sent to email. Please enter the code in the field that will appear at the bottom.'})
         except:
             return JsonResponse({'success':False,
                          'message':'Something went wrong during the mailing process'})

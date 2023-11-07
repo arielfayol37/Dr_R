@@ -133,7 +133,7 @@
                 {% if question_dict.questtype == 'mcq' %}
                       <input type="hidden" value="mcq" class="question-type"/>
                       <div class="inputed-mcq-answers" data-true-counter="0">
-                        {% for answer, is_latex, question_type in question_dict.answers_is_latex_question_type %}
+                        {% for answer in question_dict.answers %}
                           <div class="mcq-option-answer">
                             {% if question_dict.question_student.success %}
                                 {% if answer.is_answer%}
@@ -144,7 +144,7 @@
                             {% else %}
                                 <div class="formatted-answer-option unexpand mcq-false hoverable"> 
                             {% endif %}
-                              {% if is_latex %}
+                              {% if answer.get_answer_code == 2 %} <!--If latex-->
                                   <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
                               {% else %}
                                 {% if answer.image %}
@@ -154,8 +154,8 @@
                                   {{answer.content|safe}}
                                 {% endif %}
                               {% endif %}
-                              <input type="hidden" value="{{answer.pk}}{{question_type}}" class="answer_id" name="mcq_answer_id_{{ forloop.counter0 }}"/>
-                              <input type="hidden" value="0{{question_type}}" class="answer_info" name="mcq_answer_info_{{ forloop.counter0 }}"/>
+                              <input type="hidden" value="{{answer.pk}}{{answer.get_answer_code}}" class="answer_id" name="mcq_answer_id_{{ forloop.counter0 }}"/>
+                              <input type="hidden" value="0{{answer.get_answer_code}}" class="answer_info" name="mcq_answer_info_{{ forloop.counter0 }}"/>
                             </div> 
                           </div>
                           <br/> 
@@ -234,12 +234,10 @@
                         </div>
                       </div>
                       {% if not question_dict.question_student.success %}
-                          <input type="hidden" value="structural_{{question_dict.sq_type}}" class="question-type"/>
+                          <input type="hidden" value="structural_{{question_dict.answer.get_answer_code}}" class="question-type"/>
                           <!--TODO: !Important. I don't think we will ever use the pk of the answer for structural questions.-->
                           <input type="hidden" value="{{question_dict.answer.pk}}" name="structural_answer_id_0"/>
-                          {% for q_type in question_dict.question_type %} <!--expecting to iterate only over one item-->
-                            <input type="hidden" value="{{q_type}}" name="structural_answer_info_0"/>
-                          {% endfor %}
+                          <input type="hidden" value="{{question_dict.answer.get_answer_code}}" name="structural_answer_info_0"/>
                           <input type="submit" class="btn btn-outline-success exempt attempt-mode submit-btn" value="Attempt">
                           <div class="formatted-answer calc"></div>
                           {% if question_dict.answer.preface %}

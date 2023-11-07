@@ -1,0 +1,84 @@
+<!-- phobos: course_management.html-->
+{% extends 'phobos/layout.html' %}
+{% load static %}
+{% block title %} Course {% endblock %}
+{% block body%}
+
+<style>
+    .uploaded-image-display{
+      width: 300px;
+      height: 300px;
+      object-fit: contain;
+    }
+    .course-image-container {
+        display: flex;
+        flex-direction: column;
+    }
+    </style>
+
+    <div class="sidebar" style="display:none">
+        <header class="sidebar-header">X</header>
+        <ul>
+            <li><a href="{% url 'phobos:course_management' course_id=course.id %}">Back</a></li>
+            <li><a href="{% url 'phobos:index' %}">Home</a></li>
+            <li><a href="{% url 'phobos:create_assignment' course_id=course.id %}">Create Assignment</a></li> 
+            <li><a href="{% url 'phobos:gradebook' course_id=course.id %}">Gradebook</a></li>
+            <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
+            <li><a href="{% url 'phobos:manage_enrollment_codes' course_id=course.id %}">Enrollment Codes</a></li>
+        </ul>
+    </div>
+
+    <br/>
+    
+    <h4>{{course.name}}</h4><hr/>
+    
+    
+    <div id="edit-section" style="margin-left: 1%; width: 95%;">
+       <t/> <h4 class="suggestion original-size">Edit course's cover</h4>
+        <br/>
+     
+        <form class="course_cover-form" action="{% url 'phobos:edit_course_cover' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+            <input type="hidden" value="{{course.id}}" name="course_id">
+            <h5 class="suggestion original-size"> Course Name</h5>
+            <input type="text" class="field-style text-info" style="width: 30%" name="new_course_name" value="{{course.name}}"/>
+            <br/><br>
+            <h5 class="suggestion original-size"> Course Description</h5>
+            <textarea class="field-style text-info" style="width: 90%; border-radius: 10px;" name="new_course_description">{{course.description}} </textarea>
+            <br/><br>
+            <h5 class="suggestion original-size"> Course image</h5>
+            <div class="course-image-container"> 
+                
+                {% if course.image %}
+                    <img src="{{ course.image.url }}" alt="Course Image" class="uploaded-image-display" style="object-fit: contain;">
+                {% else %}
+                    <img src="" alt="Course Image" class="uploaded-image-display" style="object-fit: contain;"><br/>
+                {% endif %}
+                <input type="file" class="upload-image" name="new_course_image" accept="image/*"/>
+            </div>
+            
+            <br>
+            <input type="submit" class="btn btn-success" value="Save"/>
+            <input type="button" class="btn btn-danger cancel-btn" value="Cancel"/>
+
+        </form>
+    </div>
+    <script>
+        const display = document.querySelector(".uploaded-image-display")
+
+        document.querySelector(".upload-image").addEventListener('change',()=>{
+          var file = document.querySelector(".upload-image").files[0];
+          var reader = new FileReader();
+          reader.onload = function(event) {
+            display.src = event.target.result;
+          };
+          reader.readAsDataURL(file);
+          display.scrollIntoView({behavior:"smooth"})
+        })
+
+        </script>
+
+<script src="{% static 'phobos/js/manage_course_info.js' %}"></script>
+
+    
+{% endblock %}

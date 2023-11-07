@@ -13,6 +13,7 @@
         <li><a href="{% url 'phobos:course_management' course_id=question.assignment.course.id %}">Assignments</a></li>
         {% endif %}
         <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
+        <li><a href="{% url 'phobos:edit_question' question_id=question.id %}">Edit Question</a></li>
         <li id="btn-export_question"> <a>Export this question</a> </li>
     </ul>
   </div>
@@ -61,32 +62,41 @@
             {% if question_dict.show_answer %}
             
                 {% if question_dict.qtype == 'mcq' %}
-                    {% for answer, is_latex in question_dict.answers_is_latex %}
-                        
-                            {% if is_latex %}
-                                {% if answer.is_answer %}
-                                    <div class="formatted-answer-option unexpand mcq-true">
-                                {% else %}
-                                    <div class="formatted-answer-option unexpand mcq-false">
-                                {% endif %}
-                                    <input type="hidden" class="latex-answer-question-view pure-latex" value="{{answer.content}}">
-                            {% else %}  
-                                {% if answer.is_answer%}
-                                    <div class="formatted-answer-option mcq-true">
-                                {% else %}
-                                    <div class="formatted-answer-option mcq-false">     
-                                {% endif %}
-                            
-                                {% if answer.image %}
-                                    {{answer.label}}
-                                    <img src="{{answer.image.url}}" class="mcq-image-answer image-in-formatted" alt="{{answer.image.label}}"/>
-                                {% else %}
-                                    {{answer.content|safe}}
-                                {% endif %}
+                <div class="mcq-div">
+                    {% for answer in question_dict.answers %}
+                        {% if answer.get_answer_code == 2 %}
+                            {% if answer.is_answer %}
+                                <div class="formatted-answer-option unexpand mcq-true">
+                            {% else %}
+                                <div class="formatted-answer-option unexpand mcq-false">
                             {% endif %}
-                        </div>
-
+                                <input type="hidden" class="hidden_answer latex" value="{{ answer.content }}"/>
+                            </div> <!-- This closes the div opened within the if-else block -->
+                        {% elif answer.get_answer_code == 0 %}
+                            {% if answer.is_answer %}
+                                <div class="formatted-answer-option unexpand mcq-true">
+                            {% else %}
+                                <div class="formatted-answer-option unexpand mcq-false">
+                            {% endif %}
+                            <input type="hidden" class="hidden_answer mcq-expression" value="{{ answer.content }}"/></div>            
+                        {% else %}  
+                            {% if answer.is_answer %}
+                                <div class="formatted-answer-option mcq-true">
+                            {% else %}
+                                <div class="formatted-answer-option mcq-false">     
+                            {% endif %}
+                        
+                            {% if answer.image %}
+                                {{ answer.label }}
+                                <img src="{{ answer.image.url }}" class="mcq-image-answer image-in-formatted" alt="{{ answer.image.label }}"/>
+                            {% else %}
+                                {{ answer.content|safe }}
+                            {% endif %}
+                            </div> <!-- This closes the div opened within the if-else block -->
+                        {% endif %}
                     {% endfor %}
+                </div>
+                
                 {% elif question_dict.qtype != 'mcq' and question_dict.qtype != 'mp' %}
                     <p class="question-answer">
                         {% for answer in question_dict.answers %}
@@ -94,10 +104,10 @@
                             <div class="formatted-answer-option unexpand question-view">
                                 {% if not question_dict.qtype == 'fr' %}
                                 <input type="hidden" class="preface latex-content" value="{{answer.preface}}"/>
-                                <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}"> 
+                                <input type="hidden" class="hidden_answer" value="{{answer.content}}"> 
                                 <input type="hidden" class="units latex-content" value="{{answer.answer_unit}}" />
                                 {% else %}
-                                <input type="hidden" class="latex-answer-question-view" value="Free Response Question.">
+                                <input type="hidden" class="hidden_answer" value="Free Response Question.">
                                 {% endif %}
                             </div>
                         {% endfor %}

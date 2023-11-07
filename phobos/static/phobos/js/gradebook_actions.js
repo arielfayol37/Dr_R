@@ -1,24 +1,24 @@
 
 
-addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
 
     const ExtraFunctionDiv = document.querySelector('.extra-functions');
     const list = document.querySelectorAll('.selected-students');
     const selected_action = document.querySelector('.selected-action');
     const button_action = document.querySelector('.action-button');
 
+    //adding an event dispatcher
+    const selectBtn = document.querySelector('.select-button');
+
     // for extend due date function
     const selected_assignments = document.querySelector('.selected-assignments');
     const DueDateDiv = document.querySelector('.due-date-div');
+
+    const checkboxes = document.querySelectorAll('.td-checkbox');
     //add elements of other actions here
-    //
-
-
     document.addEventListener('click', (event) => {
 
-        if (event.target.classList.contains('select-button')) { // button to start selecting students and perform action
-            checkboxes = document.querySelectorAll('.td-checkbox');
-            selectBtn = event.target;
+        if (event.target == selectBtn) { // button to start selecting students and perform action
             if (selectBtn.innerHTML === 'Select Students') {
                 button_action.style.display = 'inline';
                 ExtraFunctionDiv.style.display = 'inline';
@@ -46,24 +46,41 @@ addEventListener('DOMContentLoaded', () => {
         }
     })
 
+    const save_btn= DueDateDiv.querySelector('.save-new-due-date-field');
+    save_btn.addEventListener('click',()=>{
+        try {
+            let selectedPksArray = []
+            list.forEach((student) => {
+                if (student.checked) {
+                selectedPksArray.push(student.value);   
+                } 
+            });
+            console.log(selectedPksArray);
+            if(selectedPksArray.length != 0){
+                extend_due_date(selected_assignments.value, selectedPksArray);
+                ExtraFunctionDiv.style.display = 'none'; // hiding checkboxes
+                selectBtn.innerHTML = 'Select Students';
+                checkboxes.forEach((checkbox) => { checkbox.style.display = 'none'; })
+            } else{
+                alert('You did not select any student');
+                return;
+            }
+        }
+        catch (error) { // Make sure to capture the error object
+            console.error('Something went wrong:', error);
+            // If you still want to alert the user, keep the alert line, otherwise remove it.
+            alert('Something went wrong');
+        }
+    })
     // To sELECT AND display a particular action, and it's associate elements.
 
     selected_action.addEventListener('click', (event) => {
+        event.preventDefault();
         DueDateDiv.style.display = 'none';
 
         if (selected_action.value === 'action-1') {
             DueDateDiv.style.display = 'inline';
-            DueDateDiv.addEventListener('click', () => {
-                if (event.target.classList.contains('save-new-due-date-field')) {
-                    try {
-                        list.forEach((student) => {
-                            if (student.checked) { extend_due_date(selected_assignments.value, student.value); }
-                        })
-                        alert('Done');
-                    }
-                    catch { alert('Something went wrong'); }
-                }
-            })
+
         }
 
         // add actions here
@@ -73,33 +90,60 @@ addEventListener('DOMContentLoaded', () => {
 
     /***************************************** FUNCTIONS OF DIFFERENT ACTIONS******************************/
 
-    function extend_due_date(assignmentid, student_id) {
-
-        new_date_field = DueDateDiv.querySelector('input[class=input-new-due-date-field]');
-        // rearranging the url before fetching
-        url = window.location.href;
-        Url = '';
-        for (o = 0; o < url.length - '/gradebook'.length; o++) {
-            Url = Url + url[o]
-        }
-        //fecthing
-             fetch(Url + '/' + student_id + '/student_profile/' + assignmentid + '/'
-            + encodeURIComponent(new_date_field.value) +'/edit_student_assignment_due_date')
-            .then(response => response.json())
-            .then(result => {
-                if (result.error) {
-                    alert(result.error)
-                }
-                else {
-                    if (!result.success) {
-                        alert(result.message);
-                    }
-                }
+    function extend_due_date(assignmentid, selected_pks) {
+        const new_date_field = DueDateDiv.querySelector('.input-new-due-date-field');
+        
+        const baseUrl = window.location.href.replace('/gradebook', '');
+        
+        // Fetching
+        fetch(`${baseUrl}/student_profile/${assignmentid}/edit_student_assignment_due_date`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                new_date: new_date_field.value,
+                selected_ids: selected_pks
             })
-            .catch(error => console.error('Error', error));
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok.');
+            }
+            return response.json();
+        })
+        .then(result => {
+            if (result.success) {
+                // Handle success
+                console.log('Due date extended successfully.');
+            } else {
+                // Handle failure
+                alert(result.message || 'An error occurred while extending the due date.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred: ' + error.message);
+        });
     }
+    
 
-    //Add functions here
-    //
+    function getCookie(name) {
+        if (!document.cookie) {
+          return null;
+        }
+    
+        const csrfCookie = document.cookie
+          .split(';')
+          .map(c => c.trim())
+          .find(c => c.startsWith(name + '='));
+    
+        if (!csrfCookie) {
+          return null;
+        }
+    
+        return decodeURIComponent(csrfCookie.split('=')[1]);
+      }
 
 }) 

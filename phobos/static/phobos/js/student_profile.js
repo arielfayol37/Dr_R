@@ -3,10 +3,11 @@
 
 function table_generator(question, assignment_id) {
 
-    div = document.createElement('div');
+    const div = document.createElement('div');
     div.id = 'table' + assignment_id;
+    div.className='generated_assignment_table';
 
-    title = document.createElement('div');
+    const title = document.createElement('div');
     title.innerHTML = `</br><h3>${question[0].name} details </h3>
    <br/>
    <b class='Due-date-display'>Due by: ${question[0].Due_date} </b> <button class="btn edit-btn co due_date-btn"  data-assignmentId="${assignment_id}" style="display: inline; position:relative; float: right">Extend Due Date</button>
@@ -15,7 +16,7 @@ function table_generator(question, assignment_id) {
 
    <div  class="due-date-div" style="display: none; position:relative; float: right" >
        <input type="datetime-local"  class="input-new-due-date-field">
-       <input type="button" class="save-new-due-date-field" value="OK">
+       <input type="button" class="save-new-due-date-field btn btn-outline-success" value="apply">
        </div>
    </div>`;
 
@@ -24,11 +25,11 @@ function table_generator(question, assignment_id) {
     // adding due date extend functionality
 
 
-    table = document.createElement('table');
+    const table = document.createElement('table');
     table.className = "table table-striped table-bordered table-hover";
 
-    thead = document.createElement('thead');
-    tr = document.createElement('tr');
+    const thead = document.createElement('thead');
+    var tr = document.createElement('tr');
     var column = [];
     for (i = 1; i < question.length; i++) {
         for (var col in question[i]) {
@@ -42,17 +43,17 @@ function table_generator(question, assignment_id) {
     }
     thead.appendChild(tr)
     table.appendChild(thead)
-
-    tbody = document.createElement('tbody');
+    var td;
+    const tbody = document.createElement('tbody');
     for (i = 1; i < question.length; i++) {
         tr = document.createElement('tr');
         for (j = 0; j < column.length; j++) {
             td = document.createElement('td');
 
             // We place and edit button under elements of the score column
-            field_heading = thead.querySelectorAll('th')[j];
-            score_field_heading = thead.querySelectorAll('th')[1];
-            questionNum_field_heading = thead.querySelectorAll('th')[0];
+            const field_heading = thead.querySelectorAll('th')[j];
+            const score_field_heading = thead.querySelectorAll('th')[1];
+            const questionNum_field_heading = thead.querySelectorAll('th')[0];
 
             if (field_heading.innerHTML === score_field_heading.innerHTML) {
                 td.dataset.original_score = question[i]['original_score']
@@ -95,25 +96,35 @@ function assignment_details() {
     }
 }
 
-addEventListener("DOMContentLoaded", assignment_details)
+document.addEventListener("DOMContentLoaded", assignment_details)
 
 
 // implementing due date extension function
 document.body.addEventListener('click', (event) => {
+
     target = event.target;
-    DueDateDiv = target.parentNode.querySelector('div[class=due-date-div]');
+    // event.preventDefault();
+    var DueDateDiv = target.parentNode.querySelector('.due-date-div');
     if (target.classList.contains('due_date-btn')) {
         DueDateDiv.style.display = 'inline';
-        dueDateBtn = target;
         target.style.display = 'none';
     }
 
     if (target.classList.contains('save-new-due-date-field')) {
         DueDateDiv = target.parentNode;
-        dueDateBtn = target.parentNode.parentNode.querySelector('.due_date-btn');
-        new_date_field = DueDateDiv.querySelector('input[class=input-new-due-date-field]');
-        console.log(dueDateBtn.dataset.assignmentid)
-        fetch(window.location.href + '/' + dueDateBtn.dataset.assignmentid + '/' + encodeURIComponent(new_date_field.value) + '/edit_student_assignment_due_date')
+        const dueDateBtn = target.parentNode.parentNode.querySelector('.due_date-btn');
+        const new_date_field = DueDateDiv.querySelector('.input-new-due-date-field');
+        // console.log(dueDateBtn.dataset.assignmentid)
+        fetch(window.location.href + '/' + dueDateBtn.dataset.assignmentid + '/edit_student_assignment_due_date', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                new_date: new_date_field.value,
+            })
+        })
             .then(response => response.json())
             .then(result => {
                 alert(result.message);
@@ -138,6 +149,12 @@ document.body.addEventListener('click', (event) => {
         const cell = target.closest('td');
         const questionNumCell = row.firstElementChild;
         const question_student_id = target.dataset.question_student_id
+
+        //positioning Edit question box
+        position= event.target.closest('table').parentNode;
+        // console.log(position)
+        EditQuestionDiv.parentNode.removeChild(EditQuestionDiv)
+        position.parentNode.insertBefore(EditQuestionDiv,position)
 
         //initial Views
         EditQuestionDiv.style.display = 'block';
@@ -188,6 +205,22 @@ document.body.addEventListener('click', (event) => {
         }
     }
 
+    function getCookie(name) {
+        if (!document.cookie) {
+          return null;
+        }
+    
+        const csrfCookie = document.cookie
+          .split(';')
+          .map(c => c.trim())
+          .find(c => c.startsWith(name + '='));
+    
+        if (!csrfCookie) {
+          return null;
+        }
+    
+        return decodeURIComponent(csrfCookie.split('=')[1]);
+      }
 
 })
 

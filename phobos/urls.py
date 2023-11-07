@@ -16,6 +16,10 @@ urlpatterns = [
     path('create_question/<int:assignment_id>/<str:question_nums_types>',views.create_question,
          name='create_question'
     ),
+    path('edit_question/<int:question_id>',views.edit_question,
+         name='edit_question'
+    ),
+    path('question_bank', views.question_bank, name='question_bank'),
     path('courses/<int:course_id>', views.course_management, name='course_management'),
     path('courses/<int:course_id>/create_assignment',\
          views.create_assignment, name='create_assignment'),
@@ -52,10 +56,17 @@ urlpatterns = [
      path('courses/<int:course_id>/manage_course_info', views.manage_course_info, name='manage_course_info'),
      path('courses/<int:course_id>/save_course_info', views.save_course_info, name='save_course_info'),
 
-         path('courses/<int:course_id>/assignments/<int:assignment_id>/<str:new_date>/edit_assignment_due_date', \
+     path('courses/<int:course_id>/assignments/<int:assignment_id>/<str:new_date>/edit_assignment_due_date', \
          views.edit_assignment_due_date, name='assignment_due_date'),
-          path('courses/<int:course_id>/<int:student_id>/student_profile/<int:assignment_id>/<str:new_date>/edit_student_assignment_due_date', \
+     path('courses/<int:course_id>/student_profile/<int:assignment_id>/edit_student_assignment_due_date', \
          views.edit_student_assignment_due_date, name='assignmentstudent_due_date'),
-         
+     path('courses/<int:course_id>/<int:student_id>/student_profile/<int:assignment_id>/edit_student_assignment_due_date', \
+         views.edit_student_assignment_due_date, name='assignmentstudent_due_date'),   
+     path('courses/edit_course_cover', views.edit_course_cover, name='edit_course_cover'),
+     path('courses/<int:course_id>/edit_course_cover_page', views.edit_course_cover_page, name='edit_course_cover_page'),
+
+     path('courses/<int:course_id>/assignments/<int:assignment_id>/edit_grading_scheme', \
+         views.edit_grading_scheme, name='edit_grading_scheme'),
+
     
 ]

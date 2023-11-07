@@ -8,6 +8,8 @@
   <header class="sidebar-header">X</header>
   <ul>
       <li><a href="{% url 'phobos:index' %}">Home</a></li>
+      <li><a href="{% url 'phobos:assignment_management' assignment_id=assignment.id course_id=assignment.course.id %}">Questions</a></li>
+      <li><a href="{% url 'phobos:course_management' course_id=assignment.course.id %}">Assignments</a></li>
       <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
   </ul>
 </div>
@@ -129,6 +131,13 @@
             </div>
           </div>
           <div class="settings-item">
+            <div class="settings-label">Max attempts(units):</div>
+            <div class="settings-input-div">
+              <input class="field-style settings" type="number" name="units_num_attempts" min="1"
+              placeholder="Max attempts(units)" value="{{assignment.grading_scheme.units_num_attempts}}"/>
+            </div>
+          </div>
+          <div class="settings-item">
             <div class="settings-label">% points for units:</div>
             <div class="settings-input-div">
               <input class="field-style settings" type="number" name="percentage_pts_units" min="0" max="1"
@@ -147,13 +156,6 @@
             <div class="settings-input-div">
               <input class="field-style settings" type="number" name="mcq_deduct_per_attempt" min="0" max="1"
               placeholder="% deduct per attempt(mcq)" value="{{assignment.grading_scheme.mcq_deduct_per_attempt}}"/>
-            </div>
-          </div>
-          <div class="settings-item">
-            <div class="settings-label">Max attempts(units):</div>
-            <div class="settings-input-div">
-              <input class="field-style settings" type="number" name="units_num_attempts" min="1"
-              placeholder="Max attempts(units)" value="{{assignment.grading_scheme.units_num_attempts}}"/>
             </div>
           </div>
           

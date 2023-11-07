@@ -25,8 +25,12 @@ from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
 import heapq
 from django.db import transaction
 from markdown2 import markdown
+from phobos.models import Topic, SubTopic
 import qrcode
 import math
+from phobos.views import export_question_to
+from scipy.stats import norm
+
 from datetime import date
 
 # Create your views here.
@@ -51,7 +55,7 @@ def course_management(request, course_id, show_gradebook=None):
     # needed student's gradebook
     course_score=0
     assignment_student_grade=[]
-    assignment_student = AssignmentStudent.objects.filter(student=student)
+    assignment_student = AssignmentStudent.objects.filter(student=student, assignment__course=course)
     a_sums = 0
     for assignment_s in assignment_student:
         grade = assignment_s.get_grade()
@@ -103,7 +107,7 @@ def decrypt_integer(k: int)->int:
 # List of all answer types
 all_mcq_answer_types = {
     'ea': ('mcq_expression_answers', 0),
-    'ta': ('mcq_text_answers',0),
+    'ta': ('mcq_text_answers',3),
     'fa':('mcq_float_answers',1),
     'fva': ('mcq_variable_float_answers',8),
     'ia': ('mcq_image_answers',7),
@@ -142,7 +146,7 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
         if index==0:
             note, note_created = Note.objects.get_or_create(question_student=question_student)
             note_md = markdown(note.content)
-        if question.answer_type.startswith('MCQ'):
+        if question.answer_type.startswith(('MCQ', 'MATCHING')):
             too_many_attempts = question_student.get_num_attempts() >= question.mcq_settings.mcq_max_num_attempts
             units_too_many_attempts = True
         else:
@@ -163,20 +167,16 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
         question.text = question_student.evaluate_var_expressions_in_text(question.text, add_html_style=True)
         questtype = ''
         answers = []
-        is_latex = []
         answers_c = None
-        question_type = []
 
         if question.answer_type.startswith('MCQ'):
             questtype='mcq'
             # List of answer types that require content evaluation
             answer_types_to_evaluate = ['mcq_expression_answers', 'mcq_variable_float_answers']
-            question_type_count = {}
             # Loop through each answer type
             for key, answer_type in all_mcq_answer_types.items():
                 # Get the related manager for the answer type
                 answer_queryset = getattr(question, answer_type[0]).all()
-                question_type_count[key] = getattr(question, answer_type[0]).count()
                 # If the answer type requires content evaluation, process each answer
                 if answer_type[0] in answer_types_to_evaluate:
                     for answer in answer_queryset:
@@ -184,44 +184,32 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
                 
                 # Extend the answers list with the processed or unprocessed answers
                 answers.extend(answer_queryset)
-            for q_type, answer_type in all_mcq_answer_types.items():
-                for _ in range(question_type_count[q_type]):
-                    question_type.append(answer_type[1])
-                    if q_type == 'la': # for latex
-                        is_latex.append(1)
-                    else:
-                        is_latex.append(0)
-            assert len(is_latex) == len(answers) == len(question_type)
-            alq = list(zip(answers, is_latex, question_type))
             if not question_student.success: # Do not need to randomize the order if student has already passed.
-                random.shuffle(alq)  
+                random.shuffle(answers)  
         elif question.answer_type.startswith('STRUCT'):
             questtype = 'struct'
             # TODO: Subclass all structural answers to a more general class 
             # so that you may use only one if.
             # Define a mapping from answer_type to the corresponding attribute and question type value
             answer_type_mapping = {
-                QuestionChoices.STRUCTURAL_LATEX: ('latex_answer', 1, 2),
-                QuestionChoices.STRUCTURAL_EXPRESSION: ('expression_answer', 0, 0),
-                QuestionChoices.STRUCTURAL_VARIABLE_FLOAT: ('variable_float_answer', 0, 5),
-                QuestionChoices.STRUCTURAL_FLOAT: ('float_answer', 0, 1),
-                QuestionChoices.STRUCTURAL_TEXT: ('text_answer', 0, 4),
+                QuestionChoices.STRUCTURAL_LATEX: 'latex_answer',
+                QuestionChoices.STRUCTURAL_EXPRESSION: 'expression_answer',
+                QuestionChoices.STRUCTURAL_VARIABLE_FLOAT: 'variable_float_answer',
+                QuestionChoices.STRUCTURAL_FLOAT: 'float_answer',
+                QuestionChoices.STRUCTURAL_TEXT: 'text_answer',
             }
 
-            # Get the attribute name and question type based on the answer_type
-            attribute_name, is_latex_value, question_type_value = answer_type_mapping.get(question.answer_type, (None, 0, None))
+            # Get the attribute name based on the answer_type
+            attribute_name = answer_type_mapping.get(question.answer_type, None)
 
             # If the attribute name is valid, get the attribute value and extend the lists
             if attribute_name:
                 answers.extend([getattr(question, attribute_name)])
-                is_latex.extend([is_latex_value])
-                question_type = [question_type_value]
             else:
                 raise ValueError('Unexpected answer type. Expected a type of Structural')
             answers[0].preface = '' if answers[0].preface is None else answers[0].preface
         elif question.answer_type.startswith('MATCHING'):
             questtype = 'mp'
-            question_type = [9]
             answers = question.matching_pairs.all()
             attempts = question_student.attempts.all()
             pk_of_success = []
@@ -245,12 +233,9 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
             'question':question,
             'questtype':questtype,
             'answers': answers,
-            "answers_is_latex_question_type": alq if questtype=='mcq' else zip(answers, is_latex, question_type),
-            'question_type': question_type, # For structural
             'answer': answers[0] if answers else None,
             'question_student':question_student,
             'too_many_attempts':too_many_attempts,
-            'sq_type':question_type[0], # structural question type used in js.
             'last_attempt_content':last_attempt.submitted_answer if last_attempt else '',
             'last_attempt':last_attempt,
             'units_too_many_attempts':units_too_many_attempts,
@@ -297,13 +282,13 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
         # whenever the user opens a question for the first time, but just to be safe.
         question_student, created = QuestionStudent.objects.get_or_create(student=student, question=question)
         num_attempts = question_student.get_num_attempts()
-        if data["questionType"].startswith('structural') or data["questionType"] == 'mp':
+        if data["questionType"].startswith('structural'):
             too_many_attempts =  num_attempts >= question.struct_settings.max_num_attempts
             if question_student.num_units_attempts:
                 units_too_many_attempts = question_student.num_units_attempts >= question.struct_settings.units_num_attempts
             else: 
                 units_too_many_attempts = False
-        elif data["questionType"].startswith('mcq'):
+        elif data["questionType"].startswith('mcq')  or data["questionType"] == 'mp':
             too_many_attempts = num_attempts >= question.mcq_settings.mcq_max_num_attempts
             units_too_many_attempts = True
         correct = question_student.success
@@ -417,15 +402,14 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                         success_pairs_strings = list(set(success_pairs_strings) - set(sp))
                     frac = (num_of_correct/total_num_of_pairs)
                     if frac == 1 or num_of_correct == len(attempt_pairs):
-                        question_student.success = True
-                        
+                        question_student.success = True                        
                         correct = True
                     attempt_pairs = "&".join(attempt_pairs)
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
                     attempt.content = attempt_pairs
                     attempt.submitted_answer = attempt_pairs
                     attempt.num_points = frac * \
-                        overall_percentage * max(0, question.struct_settings.num_points * (1 - question.struct_settings.deduct_per_attempt *
+                        overall_percentage * max(0, question.mcq_settings.num_points * (1 - question.mcq_settings.mcq_deduct_per_attempt *
                                                     max(0, question_student.get_num_attempts() - 1)))                        
                     return_sp = success_pairs_strings
                     success_pairs_strings = "&".join(success_pairs_strings)   
@@ -479,7 +463,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                 attempt.save()
                 last_attempt.save()
         # print(f"Correct:{correct}. Units too may attempts: {units_too_many_attempts}")
-        if(not correct and (data["questionType"].startswith('structural')) or data["questionType"]=='mp'):
+        if(not correct and (data["questionType"].startswith('structural'))):
             too_many_attempts =  num_attempts + 1 >= question.struct_settings.max_num_attempts
             if question_student.num_units_attempts and not units_correct:
                 units_too_many_attempts = question_student.num_units_attempts >= question.struct_settings.units_num_attempts
@@ -557,6 +541,12 @@ def register(request):
         password = request.POST["password"].strip()
         first_name = request.POST["first_name"].strip()
         last_name = request.POST["last_name"].strip()
+        
+        try: 
+            stud = Student.objects.get(username=username)
+            username = str(username) + str(random.randint(1, 1000000))
+        except:
+            pass
         try:
             checking_student = Student.objects.get(email=email)
             if checking_student:
@@ -920,7 +910,7 @@ def assignemt_gradebook_student(request,student_id, assignment_id):
 
     questions= Question.objects.filter(assignment= assignment_student.assignment ) 
     student= Student.objects.get(pk=student_id)
-    assignments= AssignmentStudent.objects.filter(student=student)
+    assignments= AssignmentStudent.objects.filter(student=student, assignment__course=course)
 
     assignment_details={'name':assignment_student.assignment.name,'assignment_id':assignment_id,\
                         'Due_date':str(assignment_student.due_date).split(' ')[0],'grade':assignment_student.get_grade() }
@@ -928,7 +918,7 @@ def assignemt_gradebook_student(request,student_id, assignment_id):
     question_heading = ['Question_number','score','num_attempts']
     question_details = []
     for question in questions:
-        if question.answer_type.startswith('MCQ'):
+        if question.answer_type.startswith(('MCQ', 'MATCHING')):
             nm_pts = question.mcq_settings.num_points
         else:
             nm_pts = question.struct_settings.num_points
@@ -963,26 +953,146 @@ def assignemt_gradebook_student(request,student_id, assignment_id):
 @login_required(login_url='astros:login') 
 def note_management(request, course_id):
     course = get_object_or_404(Course, pk=course_id)
-
     # Check if there is any Enrollment entry that matches the given student and course
     student = get_object_or_404(Student, pk = request.user.pk)
     is_enrolled = Enrollment.objects.filter(student=student, course=course).exists()
     
     if not is_enrolled:
         return HttpResponseForbidden('You are not enrolled in this course.')
-    assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student, \
-                                            is_assigned=True)
+    assignments_dict = {}
     # this is needed to display notes
-    Notes = Note.objects.all()
-    notes=[]
+    Notes = Note.objects.filter(question_student__student=student)
     for note in Notes:
-        if note.question_student.student == student:
-             notes.append({'Note':note,"note_md":markdown(note.content)})
-    
+        assignment = note.question_student.question.assignment
+        if note.content:
+            a_list = assignments_dict.get(assignment, None)
+            n_dict = {'Note':note, "note_md":markdown(note.content)}
+            if a_list:
+                a_list.append(n_dict)
+            else:
+                assignments_dict[assignment] = [n_dict]
     context = {
         "student":student,
-        "assignments": assignments,
         "course": course,
-        "notes": notes,
+        "assignments_dict":assignments_dict
     }
     return render(request, "deimos/note_management.html", context)
+
+
+def generate_practice_test(request):
+    course_id = request.POST['course_id']
+    topic_name = request.POST['topic_name']
+    num_Questions = request.POST['num_Question']
+    practice_test_name = request.POST['practice_test_name']
+    student = get_object_or_404(Student, pk = request.user.pk)
+    course = Course.objects.get(pk=course_id)
+    practice_course,is_created= Course.objects.get_or_create(name='Practice Course')
+
+    # try:
+    #     is_enrolled= Enrollment.objects.get(course=course, student=student)
+    # except Enrollment.DoesNotExist:
+    #     return HttpResponse('Illegal Access')
+    
+    topic = Topic.objects.get(name=topic_name)
+    question_student_topic=[]
+    question_student_topic_attempts=[]
+
+    # Check if there are any questions under this topic
+    if not Question.objects.filter(topic=topic).exists():
+        error = "There are currently no questions under this topic. Please select another."
+        return HttpResponseRedirect(reverse("deimos:practice_test_settings", args=(course.id,), kwargs={'error_message': error}))
+
+    # Get all QuestionStudent objects for the student and topic with the number of attempts
+    question_student_topic = QuestionStudent.objects.filter(
+        student=student,
+        question__topic=topic
+    ).annotate(num_attempts=Count('attempts'))
+
+    # Extract the number of attempts for statistics
+    question_student_topic_attempts = [qs.num_attempts for qs in question_student_topic]
+
+    # computing the number of question to be selected
+    if int(num_Questions)>len(question_student_topic):
+        k=len(question_student_topic)
+    else:
+        k=int(num_Questions)
+    # selecting the questions based on the probability distribution
+    distribution=answered_question_statistics(question_student_topic_attempts)
+    Selected_questions= random.choices(question_student_topic,weights=distribution, k=k)
+
+    # creating a new practice test assignment
+    practice_test= Assignment.objects.create(course=practice_course, name=practice_test_name, is_assigned=True)
+    practice_test.save()
+
+    # adding selected and similar questions to the new practice test assignment and saving assignmentstudent
+    practice_questions=[]
+    for question in Selected_questions:
+        similar = similar_question(question.question)
+        if not similar:  # If the list is empty, continue to the next iteration
+            continue
+        select = random.choice(similar)
+        # Let's ensure a question doesnot repeat twice
+        while select in practice_questions and similar != []:
+            similar.remove(select) 
+            if similar != []:
+                select = random.choice(similar)
+        # copying te selected question into te practce test course   
+        if similar !=[]:
+            result = export_question_to(request,select['question'].id,practice_test.id)
+            practice_questions.append(select)
+
+    practice_test_student = AssignmentStudent.objects.create(assignment= practice_test, student= student)
+    practice_test_student.save()
+    practice_test_enroll = Enrollment.objects.create(student=student, course=practice_course)
+    practice_test_enroll.save()
+
+    return HttpResponseRedirect(reverse("deimos:course_management",None,None,{'course_id':practice_course.id}))
+
+def practice_test_settings(request,course_id=None,error_message=None):
+    topics= Topic.objects.all()
+    course= Course.objects.get(pk=course_id)
+    return render(request,"deimos/practice_test_setting.html",{'topics':topics, 'course':course, 'error_message':error_message})
+
+def normal_prob(x, mu, sigma):
+    p = (1 / (sigma * np.sqrt(2 * np.pi))) * np.exp(-0.5 * ((x - mu) / sigma) ** 2)
+  # return the normal probability
+    return p
+
+def answered_question_statistics(input_list):
+    # Check if the input list is empty
+    if not input_list:
+        # Return a default distribution or handle the empty case appropriately
+        return [1]  # or any other default you deem appropriate
+
+    array = np.array(input_list)
+    mean = np.mean(array)
+    std = np.std(array)
+    
+    # Handle the case where standard deviation is zero (all values are the same)
+    if std == 0:
+        std = 1
+
+    # Calculate the probabilities
+    probabilities = [normal_prob(x, mean, std) for x in array]
+
+    # Handle the case where all probabilities are zero
+    if all(prob == 0 for prob in probabilities):
+        return [1] * len(probabilities)
+
+    mode = np.max(probabilities)
+    # Calculate the distribution as the maximum probability divided by each probability
+    distribution = [mode / i if i != 0 else 1 for i in probabilities]
+    return distribution
+
+def similar_question(input_question):
+        all_questions = Question.objects.all()
+        encoded_output_pooled= torch.tensor(input_question.embedding)
+        # Calculate cosine similarity with stored question encodings
+        similar_questions = []
+        for question in all_questions:
+            question_encoded_output_pooled = torch.tensor(question.embedding)  # Load pre-computed encoding
+            similarity_score = cosine_similarity(encoded_output_pooled, question_encoded_output_pooled).item()
+            similar_questions.append({'question': question, 'similarity': similarity_score})
+        # Sort by similarity score and get top 10
+        top_n = 3
+        return heapq.nlargest(top_n, similar_questions, key=lambda x: x['similarity'])

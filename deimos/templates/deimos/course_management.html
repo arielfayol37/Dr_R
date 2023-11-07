@@ -15,6 +15,7 @@
         <li><a href="{% url 'deimos:index' %}">Home</a></li>
         <li><a href="{% url 'astros:course_info' course_id=course.id %}">Course Info</a></li>
         <li><a href="{% url 'deimos:search_question' %}">Search Question</a></li>
+        <li><a href="{% url 'deimos:practice_test_settings' course_id=course.id %}">Practice Test</a></li>
     </ul>
 </div>
 
@@ -22,7 +23,7 @@
     <div class="container-fluid">
       <ul class="navbar-nav mr-auto" style="list-style: none; display:flex;">
         <li class="nav-item " style="display:inline;">
-          <a class="nav-link home-btn" href="{% url 'deimos:course_management' course_id=course.id%}">Home </a>
+          <a class="nav-link home-btn" href="{% url 'deimos:index' %}">Home </a>
         </li>
         <li class="nav-item" style="display:inline;">
           <a class="nav-link view-notes-btn" href="{% url 'deimos:note_management' course_id=course.id%}">View notes</a>

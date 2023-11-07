@@ -11,7 +11,7 @@
         {% if not is_question_bank %}
             <li><a href="{% url 'phobos:course_management' course_id=assignment.course.id %}">Assigments</a></li>
         {% endif %}
-        <li><a href="{% url 'phobos:search_question' %}">View Question Bank</a></li>
+        <li><a href="{% url 'phobos:question_bank' %}">Question Bank</a></li>
         <li><a href="{% url 'astros:all_courses' %}">All Courses</a></li>
     </ul>
 </div>
@@ -28,8 +28,13 @@
         <li class="nav-item" style="display:inline;">
             <a class="nav-link gradebook-btn" href="{% url 'phobos:gradebook' course_id=course.id %}">GradeBook</a>
         </li>
+        
         </div>
   </nav>
+
+  <div class="side-info-icon" title="Info">
+    <a href="{% url 'phobos:edit_grading_scheme' course_id=course.id assignment_id=assignment.id %}"><ion-icon name="options-outline"></a></ion-icon>
+  </div>
 
 <form action="{% url 'phobos:search_question' %}" method="post" id="search-form">
     {% csrf_token %} 
@@ -52,7 +57,7 @@
             <input type="button" class="save-new-due-date-field btn btn-outline-info" value="OK">
         </div>
     </div>
-
+   
     <ul class="courses course-list">
         {% for question in questions %}
             {% include 'phobos/question_display.html' with question=question assignment_id=assignment.id course_id=assignment.course.id%}
@@ -69,5 +74,7 @@
 <script src="{% static 'phobos/js/assign_question.js' %}"></script>
 {% endif %}
 <script src="{% static 'phobos/js/extend_due_date.js' %}"></script>
+<script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
 {% endblock %}
 
