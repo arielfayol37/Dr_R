@@ -1201,12 +1201,15 @@ def parse_date(date):
 
 
 @transaction.atomic
-def edit_student_assignment_due_date(request, course_id, assignment_id):
+def edit_student_assignment_due_date(request, course_id, assignment_id, student_id=None):
     try:
         data = json.loads(request.body)
         new_date = data['new_date']
-        # Ensure that selected_ids are integers if the primary keys are integers
-        student_pks = [int(pk) for pk in data['selected_ids']]
+        if student_id:
+            student_pks = [student_id]
+        else:
+            # Ensure that selected_ids are integers if the primary keys are integers
+            student_pks = [int(pk) for pk in data['selected_ids']]
         # Get the assignment and the students
         assignment = Assignment.objects.get(pk=assignment_id)
         students = Student.objects.filter(pk__in=student_pks)
@@ -1229,7 +1232,7 @@ def edit_student_assignment_due_date(request, course_id, assignment_id):
         # Log the exception here
         return JsonResponse({'message': str(e), 'success': False})
 
-def edit_assignment_due_date(request,course_id,assignment_id,new_date):
+def edit_assignment_due_date(request, course_id, assignment_id, new_date):
         assignment= Assignment.objects.get(pk=assignment_id)
         if not assignment.course.professors.filter(pk=request.user.pk).exists():
             return JsonResponse({'message': 'You are not allowed to change the due date', 'success':False})

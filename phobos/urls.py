@@ -56,11 +56,12 @@ urlpatterns = [
      path('courses/<int:course_id>/manage_course_info', views.manage_course_info, name='manage_course_info'),
      path('courses/<int:course_id>/save_course_info', views.save_course_info, name='save_course_info'),
 
-         path('courses/<int:course_id>/assignments/<int:assignment_id>/<str:new_date>/edit_assignment_due_date', \
+     path('courses/<int:course_id>/assignments/<int:assignment_id>/<str:new_date>/edit_assignment_due_date', \
          views.edit_assignment_due_date, name='assignment_due_date'),
-          path('courses/<int:course_id>/student_profile/<int:assignment_id>/edit_student_assignment_due_date', \
+     path('courses/<int:course_id>/student_profile/<int:assignment_id>/edit_student_assignment_due_date', \
          views.edit_student_assignment_due_date, name='assignmentstudent_due_date'),
-         
+     path('courses/<int:course_id>/<int:student_id>/student_profile/<int:assignment_id>/edit_student_assignment_due_date', \
+         views.edit_student_assignment_due_date, name='assignmentstudent_due_date'),   
      path('courses/edit_course_cover', views.edit_course_cover, name='edit_course_cover'),
      path('courses/<int:course_id>/edit_course_cover_page', views.edit_course_cover_page, name='edit_course_cover_page'),
 
