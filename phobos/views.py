@@ -1304,17 +1304,16 @@ def edit_grading_scheme(request,course_id,assignment_id):
             else:
                 scheme, is_created = GradingScheme.objects.get_or_create(pk=gs_pk)
                 try:
-                    scheme.course = course
-                    scheme.num_points = request.POST['num_points'+'_'+str(gs_pk)]
-                    scheme.mcq_num_attempts = request.POST['max_mcq_num_attempts'+'_'+str(gs_pk)]
-                    scheme.struct_num_attempts = request.POST['max_num_attempts'+'_'+str(gs_pk)]
-                    scheme.deduct_per_attempt = request.POST['deduct_per_attempt'+'_'+str(gs_pk)]
-                    scheme.mcq_deduct_per_attempt = request.POST['mcq_deduct_per_attempt'+'_'+str(gs_pk)]
-                    scheme.margin_error = request.POST['margin_error'+'_'+str(gs_pk)]
-                    scheme.percentage_pts_units = request.POST['percentage_pts_units'+'_'+str(gs_pk)]
-                    scheme.units_num_attempts = request.POST['units_num_attempts'+'_'+str(gs_pk)]
-                    scheme.late_sub_deduct = request.POST['late_sub_deduct'+'_'+str(gs_pk)]
-                    scheme.floor_percentage = request.POST['floor_percentage']+'_'+str(gs_pk) 
+                    scheme.num_points = request.POST['num_points_' + str(gs_pk)]
+                    scheme.mcq_num_attempts = request.POST['max_mcq_num_attempts_' + str(gs_pk)]
+                    scheme.struct_num_attempts = request.POST['max_num_attempts_' + str(gs_pk)]
+                    scheme.deduct_per_attempt = request.POST['deduct_per_attempt_' + str(gs_pk)]
+                    scheme.mcq_deduct_per_attempt = request.POST['mcq_deduct_per_attempt_' + str(gs_pk)]
+                    scheme.margin_error = request.POST['margin_error_' + str(gs_pk)]
+                    scheme.percentage_pts_units = request.POST['percentage_pts_units_' + str(gs_pk)]
+                    scheme.units_num_attempts = request.POST['units_num_attempts_' + str(gs_pk)]
+                    scheme.late_sub_deduct = request.POST['late_sub_deduct_' + str(gs_pk)]
+                    scheme.floor_percentage = request.POST['floor_percentage_' + str(gs_pk)] 
                     scheme.save()
                 except:
                     return JsonResponse("Something went wrong. Can't modify scheme")
