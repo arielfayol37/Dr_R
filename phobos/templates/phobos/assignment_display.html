@@ -4,7 +4,7 @@
         <div class="image-container">
         </div>
         <div class="c-text a-text">
-            <span class="c-name"><strong>{{assignment.name | safe}}</strong></span>
+            <span class="c-name assignment-name"><strong>{{assignment.name | safe}}</strong></span>
             <p class="timestamp" style="display: none;">Created on {{ assignment.timestamp|date:"m/d/Y" }}</p>
             {% if assignment.assigned_date %}
                 <p class="timestamp">Assigned on {{ assignment.assigned_date|date:"m/d/Y" }}</p>

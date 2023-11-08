@@ -1,13 +1,9 @@
 <!-- deimos: course_management.html-->
 {% extends 'deimos/layout.html' %}
 {% load my_custom_tags %}
+{% load static %}
 {% block title %} Course {% endblock %}
 {% block body%}
-<style>
-    .nav-link:hover {
-    cursor: pointer;
-  }
-</style>
 <div class="sidebar" style="display:none">
     <header class="sidebar-header">X</header>
     <ul>
@@ -27,7 +23,7 @@
 
   <div class="home">
     <div id="sf-container">
-        <input id="search-field" type="text" name="search" placeholder="search assignment" />
+        <input id="search-field" type="text" name="search" class="page-search" data-name="assignment-name" placeholder="search assignment" />
     </div>
     <br />
     <h4>{{course.name}}</h4>
@@ -36,7 +32,7 @@
     <!-- Display course's assignments -->
     <ul class="courses course-list">
         {% for assignment in assignments %}
-        {% include 'deimos/assignment_display.html' with assignment=assignment course=course %}
+            {% include 'deimos/assignment_display.html' with assignment=assignment course=course %}
         {% endfor %}
     </ul>
 </div>
@@ -78,4 +74,6 @@
 
 </script>
 {% endblock %}
-
+{% block scripts %}
+    <script src="{% static 'deimos/js/search_generic.js' %}"></script>
+{% endblock %}

@@ -183,6 +183,7 @@ input.form-control {
 .nav-link:hover{
   color:white;
   transform: scale(1.1);
+  cursor:pointer;
 }
 div.glass-container {
     background-color: black;
@@ -573,7 +574,7 @@ div.c-text {
   transform:scale(1.1);
   cursor: pointer;
 }
-.formatted-answer-option.mcq-true {
+.formatted-answer-option.mcq-true, .formatted-answer-option.green {
   background-color: rgb(0, 255, 128);
 }
 

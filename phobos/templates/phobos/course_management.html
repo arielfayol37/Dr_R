@@ -24,9 +24,9 @@
     <a class="nav-link gradebook-btn" href="{% url 'phobos:gradebook' course_id=course.id %}">GradeBook</a>
 </nav>
 
-    <div id="sf-container">
-        <input  id="search-field" type="text" name="search" placeholder="search assignment"/>
-    </div>
+<div id="sf-container">
+    <input id="search-field" type="text" name="search" class="page-search" data-name="assignment-name" placeholder="search assignment" />
+</div>
     <br/>
     
     <h4>{{course.name}}</h4><hr/>
@@ -70,4 +70,7 @@
         }
     
     </script>
+{% endblock %}
+{% block scripts %}
+    <script src="{% static 'phobos/js/search_generic.js' %}"></script>
 {% endblock %}

@@ -5,7 +5,7 @@
         </div>
         <div class="c-text q-text">
             
-            <span class="c-name"><strong>Question {{question.number}}</strong>
+            <span class="c-name question-name"><strong>Question {{question.number}}</strong>
                 
             <p class="c-description question-content">{% if question.text|length > 147 %}
                 {{ question.text|safe|slice:":147" }}...

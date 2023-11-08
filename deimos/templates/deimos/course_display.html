@@ -7,7 +7,7 @@
             {% endif %}
         </div>
         <div class="c-text">
-            <span class="c-name"><strong>{{course.name}}</strong></span>
+            <span class="c-name course-name"><strong>{{course.name}}</strong></span>
             <p class="c-description">{{ course.description|slice:":100" }}</p>
         
             <p class="timestamp" style="display: none;">Created on {{ course.timestamp|date:"m/d/Y" }}</p>

@@ -3,7 +3,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     const form = document.getElementById('search-form');
     const searchField = document.getElementById('search-field');
 
-    // Add an event listener to the search field for the 'keydown' event
+    if(searchField != null){
+            // Add an event listener to the search field for the 'keydown' event
     searchField.addEventListener('keydown', function(event) {
         // Check if the pressed key is Enter (key code 13)
         if (event.key === 'Enter') {
@@ -25,4 +26,6 @@ document.addEventListener('DOMContentLoaded',()=>{
         searchField.style.height = (searchField.scrollHeight) + 'px'; // Set the height to match the content
     });
     searchField.dispatchEvent(new Event('input'));
+        
+    }
 })
