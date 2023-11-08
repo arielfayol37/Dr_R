@@ -15,7 +15,7 @@
     </ul>
 </div>
     <div id="sf-container">
-        <input  id="search-field" type="text" name="search" placeholder="search course"/>
+        <input  id="search-field" type="text" name="search" class="page-search" data-name="course-name" placeholder="search course"/>
     </div>
     <br/>
     <h4>All courses</h4>
@@ -41,4 +41,5 @@
 {% endblock %}
 {% block scripts %}
 <script src="{% static 'astros/js/course_enroll.js' %}"></script>
+<script src="{% static 'deimos/js/search_generic.js' %}"></script>
 {% endblock %}

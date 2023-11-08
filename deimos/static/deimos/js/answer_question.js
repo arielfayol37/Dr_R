@@ -590,19 +590,20 @@ forms.forEach((form)=>{
       inputedMcqAnswersDiv.addEventListener('click', (event)=>{
           event.preventDefault();
           target = event.target
-          if(target.classList.contains('mcq-false')){
-              target.classList.remove('mcq-false');
-              target.classList.add('mcq-true');
+          const fdiv = target.closest('.formatted-answer-option')
+          if(fdiv !=null && fdiv.classList.contains('mcq-false')){
+              fdiv.classList.remove('mcq-false');
+              fdiv.classList.add('mcq-true');
               const holder = inputedMcqAnswersDiv.dataset.trueCounter;
               inputedMcqAnswersDiv.dataset.trueCounter =  `${parseInt(holder) + 1}`;
-              const answer_info_input = target.querySelector('.answer_info');
+              const answer_info_input = fdiv.querySelector('.answer_info');
               answer_info_input.value = rep(answer_info_input.value, 0, '1');
-          } else if(target.classList.contains('mcq-true')){
-              target.classList.add('mcq-false');
-              target.classList.remove('mcq-true');
+          } else if(fdiv != null && fdiv.classList.contains('mcq-true')){
+              fdiv.classList.add('mcq-false');
+              fdiv.classList.remove('mcq-true');
               const holder = inputedMcqAnswersDiv.dataset.trueCounter;
               inputedMcqAnswersDiv.dataset.trueCounter =  `${parseInt(holder) - 1}`;
-              const answer_info_input = target.querySelector('.answer_info');
+              const answer_info_input = fdiv.querySelector('.answer_info');
               answer_info_input.value = rep(answer_info_input.value, 0, '0');
           }
       })

@@ -133,18 +133,18 @@
                 {% if question_dict.questtype == 'mcq' %}
                       <input type="hidden" value="mcq" class="question-type"/>
                       <div class="inputed-mcq-answers" data-true-counter="0">
-                        {% for answer, is_latex, question_type in question_dict.answers_is_latex_question_type %}
+                        {% for answer in question_dict.answers %}
                           <div class="mcq-option-answer">
                             {% if question_dict.question_student.success %}
                                 {% if answer.is_answer%}
-                                  <div class="formatted-answer-option unexpand mcq-true">
+                                  <div class="formatted-answer-option unexpand green">
                                 {% else %}
-                                  <div class="formatted-answer-option unexpand mcq-false">
+                                  <div class="formatted-answer-option unexpand">
                                 {% endif %}
                             {% else %}
                                 <div class="formatted-answer-option unexpand mcq-false hoverable"> 
                             {% endif %}
-                              {% if is_latex %}
+                              {% if answer.get_answer_code == 2 %} <!--If latex-->
                                   <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
                               {% else %}
                                 {% if answer.image %}
@@ -154,8 +154,8 @@
                                   {{answer.content|safe}}
                                 {% endif %}
                               {% endif %}
-                              <input type="hidden" value="{{answer.pk}}{{question_type}}" class="answer_id" name="mcq_answer_id_{{ forloop.counter0 }}"/>
-                              <input type="hidden" value="0{{question_type}}" class="answer_info" name="mcq_answer_info_{{ forloop.counter0 }}"/>
+                              <input type="hidden" value="{{answer.pk}}{{answer.get_answer_code}}" class="answer_id" name="mcq_answer_id_{{ forloop.counter0 }}"/>
+                              <input type="hidden" value="0{{answer.get_answer_code}}" class="answer_info" name="mcq_answer_info_{{ forloop.counter0 }}"/>
                             </div> 
                           </div>
                           <br/> 
@@ -234,12 +234,10 @@
                         </div>
                       </div>
                       {% if not question_dict.question_student.success %}
-                          <input type="hidden" value="structural_{{question_dict.sq_type}}" class="question-type"/>
+                          <input type="hidden" value="structural_{{question_dict.answer.get_answer_code}}" class="question-type"/>
                           <!--TODO: !Important. I don't think we will ever use the pk of the answer for structural questions.-->
                           <input type="hidden" value="{{question_dict.answer.pk}}" name="structural_answer_id_0"/>
-                          {% for q_type in question_dict.question_type %} <!--expecting to iterate only over one item-->
-                            <input type="hidden" value="{{q_type}}" name="structural_answer_info_0"/>
-                          {% endfor %}
+                          <input type="hidden" value="{{question_dict.answer.get_answer_code}}" name="structural_answer_info_0"/>
                           <input type="submit" class="btn btn-outline-success exempt attempt-mode submit-btn" value="Attempt">
                           <div class="formatted-answer calc"></div>
                           {% if question_dict.answer.preface %}
@@ -325,7 +323,7 @@
 
 
     <div class="note-pencil side-info-icon" title="Notes">
-      <ion-icon name="book"></ion-icon>
+      <ion-icon name="book" size="large"></ion-icon>
     </div>
   
     {% if upload_note_img != 1%}
@@ -335,7 +333,11 @@
     {% endif %}
       <span id="close-x-note" class="side-info-x">X</span><br/>
       <button type="button" class="btn btn-outline-success note-edit-btn" style="position:absolute; right:2%;"> {{note_comment}} </button><br/><br/>
-      <div class="suggestion note-last-edited">Last edited on {{note.last_edited}}</div>
+        <div class="suggestion note-last-edited">
+          {% if note.content %}
+            Last edited on {{note.last_edited}}
+          {% endif %}
+        </div>
       <div class="previous-notes">
         <div class="note-content formatted-answer-option">
           {{note_md|safe}}
@@ -379,7 +381,7 @@
   </div>
   <div class="side">
     <div class="side-info-icon" title="Info">
-      <ion-icon name="options-outline"></ion-icon>
+      <ion-icon name="options-outline" size="large"></ion-icon>
     </div>
     <div class="hide side-info">
         <span class="side-info-x">X</span><br/>
@@ -465,7 +467,7 @@
 
 
 {% endblock %}
-{% block scripts%}
+{% block scripts %}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.9.1/math.js"></script>
 <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>

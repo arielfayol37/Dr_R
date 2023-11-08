@@ -141,14 +141,14 @@ def generate_auth_code(request):
                 code_base[str_email] = []
             code_base[str_email].append(code)
             send_mail(
-            'Authentify',                # subject
+            'Authentication',                # subject
            f'Enter the following authentification code on DR-R: {code}',    # message
             'no.reply.dr.r.valpo@gmail.com',      # from email
              [email],      # recipient list
              fail_silently=False,           # Raises an error if there's a problem
         )
             return JsonResponse({'success':True,
-                         'message':'An authentification code was sent to email. Please enter the code in the field that will appear at the bottom.'})
+                         'message':'An authentication code was sent to email. Please enter the code in the field that will appear at the bottom.'})
         except:
             return JsonResponse({'success':False,
                          'message':'Something went wrong during the mailing process'})

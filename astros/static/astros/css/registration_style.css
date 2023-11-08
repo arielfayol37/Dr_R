@@ -177,7 +177,9 @@ input.form-control {
   }
 
   @media screen and (max-width: 450px){
-  
+    .landing-container {
+      margin-top:20%;
+    }
     div#registration-container.bs-overrides {
       flex-direction: column;
     }

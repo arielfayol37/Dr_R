@@ -11,14 +11,9 @@
     </ul>
 </div>
 
-<nav class="navbar navbar-expand-lg navbar-light bg-light navigation" >
-    <div class="container-fluid">
-      <ul class="navbar-nav mr-auto" style="list-style: none; display:flex;">
-        <li class="nav-item " style="display:inline;">
-          <a class="nav-link home-btn" href="{% url 'phobos:course_management' course_id=course.id %}">Course </a>
-        </li>
-
-  </nav>  
+<nav class="navbar-custom" >
+    <a class="nav-link home-btn" href="{% url 'phobos:course_management' course_id=course.id %}">Course </a>
+</nav>  
   
 <div class="page-container">
  
@@ -118,6 +113,13 @@
             </div>
             </div>
             <div class="settings-item">
+                <div class="settings-label">Max attempts(units):</div>
+                <div class="settings-input-div">
+                    <input class="field-style settings" type="number" name="units_num_attempts_{{grading_scheme.pk}}" min="1"
+                    placeholder="Max attempts(units)" value="{{grading_scheme.units_num_attempts}}" disabled/>
+                </div>
+                </div>
+            <div class="settings-item">
             <div class="settings-label">% points for units:</div>
             <div class="settings-input-div">
                 <input class="field-style settings" type="number" name="percentage_pts_units_{{grading_scheme.pk}}" min="0" max="1"
@@ -136,13 +138,6 @@
             <div class="settings-input-div">
                 <input class="field-style settings" type="number" name="mcq_deduct_per_attempt_{{grading_scheme.pk}}" min="0" max="1"
                 placeholder="% deduct per attempt(mcq)" value="{{grading_scheme.mcq_deduct_per_attempt}}" disabled/>
-            </div>
-            </div>
-            <div class="settings-item">
-            <div class="settings-label">Max attempts(units):</div>
-            <div class="settings-input-div">
-                <input class="field-style settings" type="number" name="units_num_attempts_{{grading_scheme.pk}}" min="1"
-                placeholder="Max attempts(units)" value="{{grading_scheme.units_num_attempts}}" disabled/>
             </div>
             </div>
         </div>
@@ -199,6 +194,13 @@
             </div>
             </div>
             <div class="settings-item">
+                <div class="settings-label">Max attempts(units):</div>
+                <div class="settings-input-div">
+                    <input class="field-style settings" type="number" name="units_num_attempts" min="1"
+                    placeholder="Max attempts(units)" value="{{default_gs.units_num_attempts}}"/>
+                </div>
+                </div>
+            <div class="settings-item">
             <div class="settings-label">% points for units:</div>
             <div class="settings-input-div">
                 <input class="field-style settings" type="number" name="percentage_pts_units" min="0" max="1"
@@ -217,13 +219,6 @@
             <div class="settings-input-div">
                 <input class="field-style settings" type="number" name="mcq_deduct_per_attempt" 
                 placeholder="% deduct per attempt(mcq)" value="{{default_gs.mcq_deduct_per_attempt}}"/>
-            </div>
-            </div>
-            <div class="settings-item">
-            <div class="settings-label">Max attempts(units):</div>
-            <div class="settings-input-div">
-                <input class="field-style settings" type="number" name="units_num_attempts" min="1"
-                placeholder="Max attempts(units)" value="{{default_gs.units_num_attempts}}"/>
             </div>
             </div>
         </div>

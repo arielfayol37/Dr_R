@@ -1,14 +1,9 @@
 <!-- deimos: course_management.html-->
 {% extends 'deimos/layout.html' %}
 {% load my_custom_tags %}
+{% load static %}
 {% block title %} Course {% endblock %}
-{% block style %} <link rel="stylesheet" href=""/> {% endblock %}
 {% block body%}
-<style>
-    .nav-link:hover {
-    cursor: pointer;
-  }
-</style>
 <div class="sidebar" style="display:none">
     <header class="sidebar-header">X</header>
     <ul>
@@ -19,24 +14,16 @@
     </ul>
 </div>
 
-<nav class="navbar navbar-expand-lg navbar-light bg-light navigation" >
-    <div class="container-fluid">
-      <ul class="navbar-nav mr-auto" style="list-style: none; display:flex;">
-        <li class="nav-item " style="display:inline;">
-          <a class="nav-link home-btn" href="{% url 'deimos:course_management' course_id=course.id%}">Home </a>
-        </li>
-        <li class="nav-item" style="display:inline;">
-          <a class="nav-link view-notes-btn" href="{% url 'deimos:note_management' course_id=course.id%}">View notes</a>
-        </li>
-        <li class="nav-item" style="display:inline;">
-            <a class="nav-link gradebook-btn" data-show_gradebook="{{show_gradebook}}">GradeBook</a>
-        </li>
-        </div>
+<nav class="navbar-custom">
+    <a class="nav-link home-btn" href="{% url 'deimos:index' %}">Home </a>
+    <a class="nav-link" href="{% url 'deimos:course_management' course_id=course.id%}">Assignments</a>
+    <a class="nav-link view-notes-btn" href="{% url 'deimos:note_management' course_id=course.id%}">View notes</a>
+    <a class="nav-link gradebook-btn" data-show_gradebook="{{show_gradebook}}" style="color:white">GradeBook</a>
   </nav>
 
   <div class="home">
     <div id="sf-container">
-        <input id="search-field" type="text" name="search" placeholder="search assignment" />
+        <input id="search-field" type="text" name="search" class="page-search" data-name="assignment-name" placeholder="search assignment" />
     </div>
     <br />
     <h4>{{course.name}}</h4>
@@ -45,7 +32,7 @@
     <!-- Display course's assignments -->
     <ul class="courses course-list">
         {% for assignment in assignments %}
-        {% include 'deimos/assignment_display.html' with assignment=assignment course=course %}
+            {% include 'deimos/assignment_display.html' with assignment=assignment course=course %}
         {% endfor %}
     </ul>
 </div>
@@ -55,7 +42,7 @@
 </div>
 
 <script>
-    const navigation = document.querySelector('.navigation');
+    const navigation = document.querySelector('.navbar-custom');
     const homeDiv = document.querySelector('.home');
     const gradebookDiv = document.querySelector('.gradebook')
 
@@ -87,4 +74,6 @@
 
 </script>
 {% endblock %}
-
+{% block scripts %}
+    <script src="{% static 'deimos/js/search_generic.js' %}"></script>
+{% endblock %}

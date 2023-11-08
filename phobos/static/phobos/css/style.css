@@ -148,6 +148,23 @@ input.form-control {
 
 
   /* ------------------------------------ TOP OF THE PAGE -----------------------------*/
+.navbar-custom {
+  display: flex;
+  flex-direction:row;
+  flex-wrap: wrap;
+  background-color:rgba(249, 105, 0, 1);
+  width:90%;
+  margin-left: 5%;
+  border-radius: 10px;
+}
+.nav-link {
+  color:white;
+}
+.nav-link:hover{
+  color:white;
+  transform: scale(1.1);
+  cursor:pointer;
+}
 div.glass-container {
     background-color: black;
     width: 100%;
@@ -410,7 +427,7 @@ div.c-text {
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: center;
+  justify-content: space-evenly;
   flex-wrap: wrap;
 }
 .formatted-mp {
@@ -418,6 +435,12 @@ div.c-text {
 }
 .formatted-mp .mp {
   width: 45%;
+}
+.mp-add-div{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
 }
 .mp-inputs input{
   width:49% !important;
@@ -775,6 +798,8 @@ more than assignment display */
 
 .original-size {
   font-size: initial;
+  width: initial;
+  height: initial;
 }
 
 

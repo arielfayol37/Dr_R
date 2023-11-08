@@ -103,7 +103,7 @@ class CourseInfo(models.Model):
     Class to store extra information about a course. 
     these info is provided by professor and viewed by students.
     """
-    course= models.ForeignKey(Course, on_delete=models.CASCADE, related_name='course_info')
+    course= models.OneToOneField(Course, on_delete=models.CASCADE, related_name='course_info')
     course_skills= models.CharField(max_length=2000, default="")
     about_course= models.CharField(max_length=2000, default="")
     course_plan=models.CharField(max_length=2000, default="")
@@ -225,7 +225,6 @@ class Question(models.Model):
         default = QuestionChoices.STRUCTURAL_TEXT
     )
     embedding = models.JSONField(null=True, blank=True)  # Field to store encoded representation for search
-    num_points = models.IntegerField(null=True, blank=True)
 
     def default_due_date(self):
         if self.assignment:
@@ -236,7 +235,7 @@ class Question(models.Model):
         save_settings = kwargs.pop('save_settings', False)
         super(Question, self).save(*args, **kwargs)
         if save_settings:
-            if self.answer_type.startswith('MCQ'):
+            if self.answer_type.startswith('MCQ') or self.answer_type.startswith('MATCHING'):
                 settings, created = MCQQuestionSettings.objects.get_or_create(question=self)
             else:
                 settings, created = StructuralQuestionSettings.objects.get_or_create(question=self)
@@ -257,10 +256,16 @@ class Question(models.Model):
 
             super(Question, self).save(*args, **kwargs)
 
+    def get_num_points(self):
+        if self.answer_type.startswith('MCQ') or self.answer_type.startswith('MATCHING'):
+            return self.mcq_settings.num_points
+        else:
+            return self.struct_settings.num_points
+
 
     def __str__(self):
         return f"Question {self.number} for {self.assignment}"
-
+    
 class BaseQuestionSettings(models.Model):
     """
     Base settings for a `Question`.
@@ -381,6 +386,8 @@ class FloatAnswer(AnswerBase):
     def __str__(self):
             
         return f"Float Answer for {self.question}: {self.content}"
+    def get_answer_code(self):
+        return 1
     
 class VariableFloatAnswer(AnswerBase):
     """
@@ -394,7 +401,9 @@ class VariableFloatAnswer(AnswerBase):
     def __str__(self):
         return f"Variable Float answer for {self.question}: {self.content}"
         
-            
+    def get_answer_code(self):
+        return 5   
+         
 class ExpressionAnswer(AnswerBase):
     """
     An expression for a `structural Question` may just be interpreted as text. The math.js library
@@ -407,7 +416,10 @@ class ExpressionAnswer(AnswerBase):
     def __str__(self):
         
         return f"Expression Answer for {self.question}: {self.content}"
-
+    
+    def get_answer_code(self):
+        return 0
+    
 class LatexAnswer(AnswerBase):
     """
     An answer may a latex string that will later be rendered in the JavaScript.
@@ -420,6 +432,9 @@ class LatexAnswer(AnswerBase):
 
         return f"Latex Answer for {self.question}: {self.content}"
     
+    def get_answer_code(self):
+        return 2
+    
 class TextAnswer(AnswerBase):
     """
     Probably less common, but a `Question` may have a text answer.
@@ -431,6 +446,9 @@ class TextAnswer(AnswerBase):
     def __str__(self):
         return f"Text Answer for {self.question}: {self.content}"
     
+    def get_answer_code(self):
+        return 4
+
 class MCQAnswerBase(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     content = models.TextField(blank=False, null=False)
@@ -452,7 +470,10 @@ class MCQFloatAnswer(MCQAnswerBase):
             return f"Correct MCQ Float Answer for {self.question}: {self.content}"
         else:
             return f"Incorrect MCQ Float Answer for {self.question}: {self.content}" 
-        
+    
+    def get_answer_code(self):
+        return 1    
+    
 class MCQVariableFloatAnswer(MCQAnswerBase):
     """
     Answer to a `structural Question` or `MCQ Question` may be a variable float. 
@@ -466,7 +487,9 @@ class MCQVariableFloatAnswer(MCQAnswerBase):
             return f"Correct MCQ Variable Float Answer for {self.question}: {self.content}"
         else:
             return f"Incorrect MCQ Variable Float Answer for {self.question}: {self.content}" 
-        
+
+    def get_answer_code(self):
+        return 8    
             
 class MCQExpressionAnswer(MCQAnswerBase):
     """
@@ -480,6 +503,9 @@ class MCQExpressionAnswer(MCQAnswerBase):
         else:
             return f"Incorrect MCQ Expression Answer for {self.question}: {self.content}" 
 
+    def get_answer_code(self):
+        return 0
+    
 class MCQLatexAnswer(MCQAnswerBase):
     """
     Latex answer for `MCQ Question`.
@@ -492,6 +518,9 @@ class MCQLatexAnswer(MCQAnswerBase):
             return f"Correct MCQ Latex Answer for {self.question}: {self.content}"
         else:
             return f"Incorrect MCQ Latex Answer for {self.question}: {self.content}" 
+    
+    def get_answer_code(self):
+        return 2
     
 class MCQTextAnswer(MCQAnswerBase):
     """
@@ -506,6 +535,9 @@ class MCQTextAnswer(MCQAnswerBase):
         else:
             return f"Incorrect MCQ Text Answer for {self.question}: {self.content}"    
     
+    def get_answer_code(self):
+        return 3
+    
 class MCQImageAnswer(MCQAnswerBase):
     """
     An answer to an `MCQ Question` may simply be an image.
@@ -518,12 +550,15 @@ class MCQImageAnswer(MCQAnswerBase):
 
     def __str__(self):
         return f"Image answer for {self.question} with url {self.image.url}" 
+    
     def delete(self, *args, **kwargs):
         # Delete the image file from storage
         if self.image:
             self.image.delete(save=False)
         super(MCQImageAnswer, self).delete(*args, **kwargs)
-
+    
+    def get_answer_code(self):
+        return 7
 class MatchingAnswer(models.Model):
     """
     A question may be a matching pairs question
@@ -534,6 +569,9 @@ class MatchingAnswer(models.Model):
     
     def __str__(self):
         return f"Matching pair answer for {self.question}"
+    
+    def get_answer_code(self):
+        return 9
 
 class Variable(models.Model):
     """

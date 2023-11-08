@@ -1,13 +1,25 @@
 <!-- phobos: course_display.html -->
 <li class="course-li" data-course-id="{{ course.id }}">
+
+
+    <div class="dropdown"  style="position: relative; left:95%;">
+        <ion-icon name="options-outline" class="btn btn-secondary dropdown-toggle" id="dropdownMenuButton" data-toggle="dropdown"></ion-icon>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <a class="dropdown-item" href="{%url 'phobos:edit_course_cover_page' course_id=course.id %}">Edit</a><br>
+            <!--<a class="dropdown-item" href="#">delete</a><br>
+            <a class="dropdown-item" href="#">Something else here</a><br>-->
+        </div>
+      </div>
+
     <div class="course-section">
+
         <div class="image-container">
             {% if course.image %}
                 <img src="{{ course.image.url }}" alt="Course Image" class="course-image">
             {% endif %}
         </div>
         <div class="c-text">
-            <span class="c-name"><strong>{{course.name}}</strong></span>
+            <span class="c-name course-name"><strong>{{course.name}}</strong></span>
             <p class="c-description">{% if course.description|length > 90 %}
                 {{ course.description|slice:":90" }}...
             {% else %}

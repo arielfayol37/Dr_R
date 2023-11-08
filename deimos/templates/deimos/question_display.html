@@ -1,13 +1,13 @@
 <!-- deimos: question_display.html -->
 <li class="question-li course-li" data-question-id="{{ question.id }}">
-    <div class="course-section assigment-section">
+    <div class="course-section assignment-section">
         <div class="image-container">
         </div>
         <div class="c-text q-text">
             
-            <span class="c-name"><strong>Question {{question.number}}</strong>
+            <span class="c-name question-name"><strong>Question {{question.number}}</strong>
                 
-            <p class="c-description">{% if question.text|length > 147 %}
+            <p class="c-description question-content">{% if question.text|length > 147 %}
                 {{ question.text|safe|slice:":147" }}...
             {% else %}
                 {{ question.text|safe }}
