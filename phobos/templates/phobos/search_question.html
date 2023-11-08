@@ -9,13 +9,13 @@
             <li><a href="{% url 'phobos:index'%}">Home</a></li>
         </ul>
     </div>
-    <form action="{% url 'phobos:search_question' %}" method="post" id="search-form">
+    <form action="{% url 'phobos:search_question' %}" method="post" class="search-form">
         {% csrf_token %} 
-        <div id="sf-container">
+        <div class="sf-container">
             {% if search_text %}
-                <input  id="search-field" type="text" name="search_question" placeholder="search question" value="{{search_text}}"/>
+                <input  class="search-field" type="text" name="search_question" placeholder="search question" value="{{search_text}}"/>
             {% else %}
-                <input  id="search-field" type="text" name="search_question" placeholder="search question" />
+                <input  class="search-field" type="text" name="search_question" placeholder="search question" />
             {% endif %}
         </div>
     </form>

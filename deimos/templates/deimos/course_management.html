@@ -16,14 +16,13 @@
 
 <nav class="navbar-custom">
     <a class="nav-link home-btn" href="{% url 'deimos:index' %}">Home </a>
-    <a class="nav-link" href="{% url 'deimos:course_management' course_id=course.id%}">Assignments</a>
     <a class="nav-link view-notes-btn" href="{% url 'deimos:note_management' course_id=course.id%}">View notes</a>
-    <a class="nav-link gradebook-btn" data-show_gradebook="{{show_gradebook}}" style="color:white">GradeBook</a>
+    <a class="nav-link gradebook-btn" href="{% url 'deimos:gradebook' course_id=course.id%}">GradeBook</a>
   </nav>
 
   <div class="home">
-    <div id="sf-container">
-        <input id="search-field" type="text" name="search" class="page-search" data-name="assignment-name" placeholder="search assignment" />
+    <div class="sf-container">
+        <input type="text" name="search" class="page-search search-field" data-name="assignment-name" placeholder="search assignment" />
     </div>
     <br />
     <h4>{{course.name}}</h4>
@@ -37,42 +36,6 @@
     </ul>
 </div>
 
-<div class="gradebook" style="display: none;">
-    {% include 'deimos/gradebook.html' with student=student assignment_student_grade=assignment_student_grade course_score=course_score %}
-</div>
-
-<script>
-    const navigation = document.querySelector('.navbar-custom');
-    const homeDiv = document.querySelector('.home');
-    const gradebookDiv = document.querySelector('.gradebook')
-
-    function initial_view() {
-        homeDiv.style.display = 'none';
-        gradebookDiv.style.display= 'none';
-    }
-
-    navigation.addEventListener('click', () => {
-        target = event.target;
-        if (target.classList.contains('home-btn')) {
-            initial_view();
-            homeDiv.style.display = 'block';
-        }
-        else if(target.classList.contains('gradebook-btn')){
-            initial_view();
-            gradebookDiv.style.display= 'block';
-        }
-    })
-
-    const gradebookBtn = document.querySelector('.gradebook-btn')
-    const show_gradebookEvent = new Event('click',{
-        bubbles: true,
-        cancelable: true,
-    });
-    if(gradebookBtn.dataset.show_gradebook === "1"){
-        gradebookBtn.dispatchEvent(show_gradebookEvent)
-    }
-
-</script>
 {% endblock %}
 {% block scripts %}
     <script src="{% static 'deimos/js/search_generic.js' %}"></script>

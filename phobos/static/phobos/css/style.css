@@ -148,6 +148,10 @@ input.form-control {
 
 
   /* ------------------------------------ TOP OF THE PAGE -----------------------------*/
+.do-margin {
+  width: 80%;
+  margin-left: 10%;
+}
 .navbar-custom {
   display: flex;
   flex-direction:row;
@@ -309,7 +313,7 @@ div.tol {
     background-color: #AA4400;
 }
 
-#search-field {
+.search-field {
     position: absolute;
     margin-top: 3vh !important;
     right: 3vw;
@@ -322,10 +326,10 @@ div.tol {
     font-weight: 100 !important;
   }
 
-#search-field:hover {
+.search-field:hover {
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.3) !important;
   }
-#search-field.active {
+.search-field.active {
   width: 90%;
   box-sizing: border-box;
 }
@@ -856,7 +860,7 @@ more than assignment display */
       top: 15%;
     }
 
-    #sf-container {
+    .sf-container {
       display: flex;
       flex-direction: row;
       justify-content: center;
@@ -864,7 +868,7 @@ more than assignment display */
       width:100vw;
       position: relative;
     }
-    #search-field {
+    .search-field {
       position: relative;
       width:80%;
     }
