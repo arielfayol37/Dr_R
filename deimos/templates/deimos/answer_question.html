@@ -339,12 +339,29 @@
           {% endif %}
         </div>
       <div class="previous-notes">
+        <br/>
+        <h5 class="n-title">
+          {% if note.title %}
+            {{ note.title }}
+          {% endif %}
+        </h5>
+        <br/>
         <div class="note-content formatted-answer-option">
           {{note_md|safe}}
         </div>
         {% if not temp_note %}
+            {% if note.title %}
+              <input class="field-style note-title" value="{{note.title}}" placeholder="Note Title" style="width:30%; display: none;"/>
+            {% else %}
+              <input class="field-style note-title" placeholder="Note Title" style="width:30%; display: none;"/>
+            {% endif %}
           <textarea placeholder="Enter notes (markdown supported)" class="field-style note-textarea" style="display: none;">{{note.content}}</textarea>
         {% else %}
+          {% if temp_note.title %}
+            <input class="field-style note-title" value="{{temp_note.title}}" placeholder="Note Title" style="width:30%; display: none;"/>
+          {% else %}
+            <input class="field-style note-title" placeholder="Note Title" style="width:30%; display: none;"/>
+          {% endif %}
           <textarea placeholder="Enter notes (markdown supported)" class="field-style note-textarea" style="display: none;">{{temp_note.content}}</textarea>
         {% endif %}
         <div class="main-question-image-preview">

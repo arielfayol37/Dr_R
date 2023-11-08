@@ -906,6 +906,7 @@ const noteSection = document.querySelector('.note-section');
 const noteEditBtn = noteSection.querySelector('.note-edit-btn');
 const noteContent = noteSection.querySelector('.note-content');
 const editHandlingSection = noteSection.querySelector('.edit-handling-section');
+const noteTitle = noteSection.querySelector('.note-title')
 const noteTextArea = noteSection.querySelector('.note-textarea');
 const saveNoteBtn = noteSection.querySelector('.save-note-btn');
 const noteLastEdited = noteSection.querySelector('.note-last-edited');
@@ -921,6 +922,7 @@ if(noteSection.classList.contains('dispatch-upload')){
 // mainQuestionImageInput.click();
 maintain_base_url = true
 noteTextArea.style.display = 'block';
+noteTitle.style.display = 'block';
 noteContent.style.display = 'none';
 editHandlingSection.style.display = 'block';
 noteSection.querySelectorAll('.add-delete-btns').forEach((btn)=>{
@@ -932,7 +934,9 @@ noteEditBtn.style.display = 'none';
 
 noteEditBtn.addEventListener('click', (event)=>{
   event.preventDefault();
+  noteSection.querySelector('.n-title').style.display = 'none';
   noteTextArea.style.display = 'block';
+  noteTitle.style.display = 'block';
   noteContent.style.display = 'none';
   editHandlingSection.style.display = 'block';
   noteSection.querySelectorAll('.add-delete-btns').forEach((btn)=>{
@@ -982,6 +986,7 @@ saveNoteBtn.addEventListener('click', ()=>{
       }
   });
   formData.append('content', noteTextArea.value);
+  formData.append('title', noteTitle.value)
   formData.append('kept_images_pk', imagePkArray);
   const baseUrl = window.location.href.replace(/#$/, ''); // To strip of # at the end
   const fetchUrl = `${baseUrl}/save_note`;
@@ -992,12 +997,14 @@ saveNoteBtn.addEventListener('click', ()=>{
     .then(data => {
         noteContent.innerHTML = data.md;
         noteLastEdited.innerHTML = `Last edited on ${data.last_edited}`;
+        noteSection.querySelector('.n-title').innerHTML = data.title;
         if (noteSection.classList.contains('dispatch-upload')){
           alert(`${data.message}\n Reload other device to see change.`)
         }
-        
+        noteSection.querySelector('.n-title').style.display = 'block';
         noteEditBtn.style.display = 'block';
         noteTextArea.style.display = 'none';
+        noteTitle.style.display = 'none';
         noteContent.style.display = 'block';
         editHandlingSection.style.display = 'none';
         noteSection.querySelectorAll('.add-delete-btns').forEach((btn)=>{
@@ -1114,6 +1121,7 @@ qrCodeBtn.addEventListener('click', ()=>{
 
 function showQRCode() {
   const temp_note = document.querySelector('.note-textarea').value;
+  const temp_title = document.querySelector('.note-title').value;
   const imgElement = document.getElementById("qrCodeImage");
   
   // Construct the URL based on your Django URL pattern. Replace with the correct variable if not `main_question_id`.
@@ -1124,6 +1132,7 @@ function showQRCode() {
     headers: { 'X-CSRFToken': getCookie('csrftoken') },
     body: JSON.stringify({
             temp_note: temp_note,
+            temp_title:temp_title,
             base_link: baseUrl,
             same_url: maintain_base_url   
     })

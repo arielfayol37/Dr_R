@@ -854,6 +854,8 @@ def save_note(request, question_id, course_id=None, assignment_id=None, student_
         with transaction.atomic():
             note, created = Note.objects.get_or_create(question_student=question_student)
             content = request.POST.get('content')
+            title = request.POST.get('title', '')
+            note.title = title
             note.content = content
             note.save()
             
@@ -883,7 +885,7 @@ def save_note(request, question_id, course_id=None, assignment_id=None, student_
             md = markdown(content)
                 
         return JsonResponse({'message': 'Notes successfully saved', 'success': True, 'md':md,\
-                             'last_edited':note.last_edited})
+                             'last_edited':note.last_edited, 'title':title})
     else:
         return JsonResponse({'message': f'Error: Expected POST method, not {request.method}', 'success':False})
 @csrf_exempt    
@@ -893,6 +895,7 @@ def generate_note_qr(request, question_id, course_id, assignment_id, student_id=
     student = get_object_or_404(Student,pk=request.user.id)
     question_student = QuestionStudent.objects.get(question=question, student=student)
     data_temp_note = data['temp_note']
+    data_temp_title = data['temp_title']
     base_link = data['base_link']
     if data['same_url']:
         custom_link = base_link
@@ -901,6 +904,7 @@ def generate_note_qr(request, question_id, course_id, assignment_id, student_id=
     note = Note.objects.get(question_student=question_student)
     temp_note, created = NoteTemporary.objects.get_or_create(note=note)
     temp_note.content = data_temp_note
+    temp_note.title = data_temp_title
     temp_note.save()
     img = qrcode.make(custom_link)  # replace with your custom link
     response = HttpResponse(content_type="image/png")

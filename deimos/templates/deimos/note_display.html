@@ -2,7 +2,13 @@
 <li class="question-li course-li" data-question-id="{{ note.question_student.question.id }}">
     <div class="course-section assignment-section">
         <div class="note-text q-text">
-            <span class="note-name"><strong>Note {{note.question_student.question.number}}</strong>   
+            <span class="note-name"><strong>
+                {% if note.title %}
+                    {{note.title}}
+                {% else %}
+                    Note {{note.question_student.question.number}}
+                {% endif %}
+                </strong>   
             <p class="note-description">{% if note_md|length > 147 %}
                 {{ note_md|safe|slice:":147" }}...
             {% else %}
