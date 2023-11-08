@@ -362,7 +362,7 @@
           {% else %}
             <input class="field-style note-title" placeholder="Note Title" style="width:30%; display: none;"/>
           {% endif %}
-          <textarea placeholder="Enter notes (markdown supported)" class="field-style note-textarea" style="display: none;">{{temp_note.content}}</textarea>
+          <textarea placeholder="type notes" class="field-style note-textarea" style="display: none;">{{temp_note.content}}</textarea>
         {% endif %}
         <div class="main-question-image-preview">
           {% for image_object in note.images.all %}
@@ -381,14 +381,12 @@
         </div>
       </div>
       <div class="edit-handling-section" style="display: none;">
-        <div class="uploaded-question-preview"></div><br/>
         <ion-icon name="camera" class="main-question-add-image-btn btn btn-light open"></ion-icon>
         <ion-icon name="qr-code-outline" class="qr-code-btn"></ion-icon>
         
         <img id="qrCodeImage" style="display:none;" />
         <div class="question-image-upload-section" style="display: none;">
-          <input type="file" accept="image/*" class="main-question-image-input">
-          <button type="button" class="btn btn-success question-image-add">add</button>
+          <input type="file" accept="image/*" class="main-question-image-input" hidden="hidden">
         </div>
       <br/><br/>
       <button type="button" class="btn btn-outline-success save-note-btn"> Save </button>

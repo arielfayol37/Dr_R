@@ -1,3 +1,7 @@
+{% extends 'deimos/layout.html' %}
+{% load static %}
+{% block title %} GradeBook {% endblock %}
+{% block body %}
 <div>
     <style>
             .progress {
@@ -6,42 +10,61 @@
               margin-left:10%;
             }
       </style>
-<br>
-<div class="progress" data-score="{{course_score}}"><!-- Please calculate total score/100-->
-    <div class="progress-bar bg-success" role="progressbar" style="width: 25%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
-</div>
 
-<br>
-    <div class="title"><u><h1>{{student.first_name}} {{student.last_name}}'s Report</h1></u></div>
-<br>
+    <div class="sidebar" style="display:none">
+      <header class="sidebar-header">X</header>
+      <ul>
+          <li><a href="{% url 'deimos:index' %}">Home</a></li>
+          <a class="nav-link" href="{% url 'deimos:course_management' course_id=course.id%}">Assignments</a>
+          <li><a href="{% url 'astros:course_info' course_id=course.id %}">Course Info</a></li>
+          <li><a href="{% url 'deimos:search_question' %}">Search Question</a></li>
+      </ul>
+  </div>
+  
+  <nav class="navbar-custom">
+      <a class="nav-link home-btn" href="{% url 'deimos:index' %}">Home </a>
+      <a class="nav-link" href="{% url 'deimos:course_management' course_id=course.id%}">Assignments</a>
+      <a class="nav-link view-notes-btn" href="{% url 'deimos:note_management' course_id=course.id%}">View notes</a>
+  </nav>
+    <div class="progress" data-score="{{course_score}}"><!-- Please calculate total score/100-->
+        <div class="progress-bar bg-success" role="progressbar" style="width: 25%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+    </div>
+    <div class="sf-container">
+      <input type="text" name="search" class="search-field page-search" data-display="table-row"
+      data-parent="assignment-row" data-name="assignment-name" placeholder="search by assignment name" />
+    </div>
+      <div class="do-margin">
+        <br>
+            <div class="suggestion original-size"><h5>{{student.first_name}} {{student.last_name}}'s Report</h5></div>
+        <br>
 
-    <table class="table table-striped table-bordered table-hover">
-        <thead>
-            <tr>
-                <th> Assignments</th>
-                <th> Grades </th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for assignment in assignment_student_grade %}
-            <tr>
-                <td> <a href="{% url 'deimos:assignemt_gradebook_student' student_id=student.id assignment_id=assignment.id %}">
-                    <b>{{assignment.assignment_student.assignment.name}}</b></a>
-                </td> 
-                    <td> {{assignment.grade}} %</td>
-            </tr>
-            {% if forloop.last %}
-              <input  class ="num_assignments" type="hidden" data-num_assignments="{{ forloop.counter}}">
-            {% endif %}
-            {% endfor %}
-            <tr>
-                <td><b>COURSE SCORE</b></td>
-                <td>{{course_score}} %</td>
-            </tr>
-        </tbody>
-    </table>
+            <table class="table table-striped table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th> Assignments</th>
+                        <th> Grades </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for assignment in assignment_student_grade %}
+                    <tr class="assignment-row">
+                        <td> <a href="{% url 'deimos:assignment_gradebook_student' student_id=student.id assignment_id=assignment.id %}">
+                            <b class="assignment-name">{{assignment.assignment_student.assignment.name}}</b></a>
+                        </td> 
+                            <td> {{assignment.grade}} %</td>
+                    </tr>
+                    {% if forloop.last %}
+                      <input  class ="num_assignments" type="hidden" data-num_assignments="{{ forloop.counter}}">
+                    {% endif %}
+                    {% endfor %}
+                    <tr>
+                        <td><b>COURSE SCORE</b></td>
+                        <td>{{course_score}} %</td>
+                    </tr>
+                </tbody>
+            </table>
 
-
+      </div>
 </div>
 
 
@@ -79,3 +102,8 @@
     }
     console.log(progressBar.className)
   </script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'deimos/js/search_generic.js' %}"></script>
+{% endblock %}

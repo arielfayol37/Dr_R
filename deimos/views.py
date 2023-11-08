@@ -44,7 +44,25 @@ def index(request):
     return render(request, "deimos/index.html", context)
 
 @login_required(login_url='astros:login') 
-def course_management(request, course_id, show_gradebook=None):
+def course_management(request, course_id):
+    course = get_object_or_404(Course, pk=course_id)
+    # Check if there is any Enrollment entry that matches the given student and course
+    student = get_object_or_404(Student, pk = request.user.pk)
+    is_enrolled = Enrollment.objects.filter(student=student, course=course).exists()
+    if not is_enrolled:
+        return HttpResponseForbidden('You are not enrolled in this course.')
+
+    assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student, \
+                                            is_assigned=True)
+    context = {
+        "student":student,
+        "assignments": assignments,
+        "course": course,
+    }
+    return render(request, "deimos/course_management.html", context)
+
+@login_required(login_url='astros:login')
+def gradebook(request, course_id):
     course = get_object_or_404(Course, pk=course_id)
 
     # Check if there is any Enrollment entry that matches the given student and course
@@ -67,17 +85,11 @@ def course_management(request, course_id, show_gradebook=None):
     else:
         course_score /= a_sums
 
-    assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student, \
-                                            is_assigned=True)
-    context = {
-        "student":student,
-        "assignments": assignments,
-        "course": course,
-        "assignment_student_grade": assignment_student_grade,
+    return render(request, 'deimos/gradebook.html', {
+        'student': student, 'course':course,
+                "assignment_student_grade": assignment_student_grade,
         "course_score": round(course_score, 2),
-        "show_gradebook": show_gradebook
-    }
-    return render(request, "deimos/course_management.html", context)
+    })
 
 @login_required(login_url='astros:login') 
 def assignment_management(request, assignment_id, course_id=None):
@@ -912,7 +924,7 @@ def generate_note_qr(request, question_id, course_id, assignment_id, student_id=
     return response
 
 @login_required(login_url='astros:login')
-def assignemt_gradebook_student(request,student_id, assignment_id):
+def assignment_gradebook_student(request,student_id, assignment_id):
 
     assignment_student, created = AssignmentStudent.objects.get_or_create(pk=assignment_id)
     course= assignment_student.assignment.course.id

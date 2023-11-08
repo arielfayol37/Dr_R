@@ -17,19 +17,17 @@
         <a class="nav-link home-btn" href="{% url 'phobos:index' %}">Home</a>
         <a class="nav-link course-btn" href="{% url 'phobos:course_management' course_id=course.id %}">Course </a>
         <a class="nav-link view-notes-btn" href="{% url 'phobos:create_assignment' course_id=course.id %}">Create Assignment</a>
-        <a class="nav-link gradebook-btn" style="color:white;">GradeBook</a>
         <a class="nav-link" id="export-button" data-course-name="{{course.name}}" style="color:white;">Download gradebook</a>
     </nav>
 <br>
-<div id="sf-container">
-    <input id="search-field" type="text" name="search" class="page-search" data-display="table-row"
-    data-parent="student-row" data-name="student-name" placeholder="search by last name" />
+<div class="sf-container">
+    <input type="text" name="search" class="page-search search-field" data-display="table-row"
+    data-parent="student-row" data-name="student-name" placeholder="search by first name" />
 </div>
-    <h1 class="suggestion original-size"> GradeBook</h1>
+    <h4 class="suggestion original-size"> GradeBook</h4>
     <br/>
-
 <!-- extra functionalities-->    
-    <button class="select-button btn btn-outline-primary" style="position: relative; float: left; margin:10px">Select Students</button>
+    <button class="select-button btn btn-outline-primary" style="position: relative; float: right; margin:10px">Select Students</button>
 <br/>
 <div class="extra-functions">
 
@@ -75,8 +73,8 @@
             <tr class="student-row">
                 <td ><div class="td-checkbox" style="display: none;"><input class="selected-students" type="checkbox" value="{{student.pk}}"/></div></td>
                 <td>{{ student.email }}</td>
-                <td class="student-name"><a href="{% url 'phobos:student_profile' course_id=course.id  student_id=student.id %} ">{{ student.last_name}}</a></td>
-                <td><a href="{% url 'phobos:student_profile' course_id=course.id  student_id=student.id %} ">{{student.first_name}} </a></td>
+                <td><a href="{% url 'phobos:student_profile' course_id=course.id  student_id=student.id %} ">{{ student.last_name}}</a></td>
+                <td class="student-name"><a href="{% url 'phobos:student_profile' course_id=course.id  student_id=student.id %} ">{{student.first_name}} </a></td>
                 {% for grade in grade_list %}
                     <td> {{grade}} </td>
                 {% endfor %}

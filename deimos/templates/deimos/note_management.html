@@ -14,11 +14,10 @@
 <nav class="navbar-custom">
     <a class="nav-link home-btn" href="{% url 'deimos:index'%}">Home </a>
     <a class="nav-link" href="{% url 'deimos:course_management' course_id=course.id %}">Assignments</a>
-    <a class="nav-link view-notes-btn" href="{% url 'deimos:note_management' course_id=course.id%}">View notes</a>
-    <a class="nav-link grabebook-btn" href="{% url 'deimos:course_management' course_id=course.id show_gradebook=1%}">GradeBook</a>
+    <a class="nav-link grabebook-btn" href="{% url 'deimos:gradebook' course_id=course.id %}">GradeBook</a>
 </nav>
-<div id="sf-container">
-    <input id="search-field" type="text" name="search" class="page-search" data-name="note-name" placeholder="search note" />
+<div class="sf-container">
+    <input type="text" name="search" class="page-search search-field" data-name="note-name" placeholder="search note" />
 </div>
     <br/>
 
