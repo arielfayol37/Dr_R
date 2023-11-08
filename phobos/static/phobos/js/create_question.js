@@ -1569,7 +1569,7 @@ function createQuestionBlock(){
      <div class="question-image-upload-section" style="display: none;">
        <input type="text" placeholder="Enter image label" class="image-label-input-field field-style"/>
        <input type="file" accept="image/*" class="main-question-image-input">
-       <button type="button" class="btn btn-success question-image-add">add</button>
+       <button type="button" class="btn btn-outline-success question-image-add">confirm</button>
      </div>
      <br/>
     

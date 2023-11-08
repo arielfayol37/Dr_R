@@ -13,9 +13,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
         // Add an event listener to the search field for the 'keydown' event
         searchField.addEventListener('input', function(event) {
                 itemsSearch.forEach((item)=>{
-                    const itemString = item.textContent.toLocaleLowerCase();
+                    const itemString = item.textContent.toLocaleLowerCase().trim();
                     // console.log(itemString);
-                    if(itemString.includes(searchField.value.toLowerCase())){
+                    if(itemString.includes(searchField.value.toLowerCase().trim())){
                         item.closest(`.${parentDivName}`).style.display = displayProperty;
                     }else {
                         item.closest(`.${parentDivName}`).style.display = 'none';
