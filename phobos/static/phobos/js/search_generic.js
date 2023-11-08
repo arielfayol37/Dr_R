@@ -11,9 +11,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }                                                                            // corresponding to searchField.dataset.name 
     if(searchField != null){
         // Add an event listener to the search field for the 'keydown' event
-        searchField.addEventListener('change', function(event) {
-                // Prevent the default form submission
-                event.preventDefault();
+        searchField.addEventListener('input', function(event) {
                 itemsSearch.forEach((item)=>{
                     const itemString = item.textContent.toLocaleLowerCase();
                     // console.log(itemString);
