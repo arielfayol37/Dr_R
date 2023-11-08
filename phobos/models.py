@@ -260,9 +260,6 @@ class Question(models.Model):
 
     def __str__(self):
         return f"Question {self.number} for {self.assignment}"
-    
-from django.db import models
-from django.core.validators import MinValueValidator, MaxValueValidator
 
 class BaseQuestionSettings(models.Model):
     """

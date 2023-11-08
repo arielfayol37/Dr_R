@@ -61,7 +61,10 @@ def all_courses(request):
 @login_required(login_url='astros:login')
 def course_enroll(request, course_id, code):
     # Making sure the request is done by a Student.
-    student = get_object_or_404(Student, pk=request.user.pk)
+    try:
+        student = get_object_or_404(Student, pk=request.user.pk)
+    except:
+        return HttpResponse(json.dumps({'state':False, 'response': 'LOGIN FIRST'}))
     course = get_object_or_404(Course, pk = course_id)
     if not Enrollment.objects.filter(student=student, course=course).exists():
         # Checking whether code is valid.
@@ -71,11 +74,11 @@ def course_enroll(request, course_id, code):
             return HttpResponse(json.dumps({'state':False,'response':'Invalid code'}))
         if code.expiring_date >= date.today():
             # If not enrolled, create a new Enrollment instance
-            enrollment = Enrollment.objects.create(student=student, course=course)
+            enrollment, created = Enrollment.objects.get_or_create(student=student, course=course)
             enrollment.save()
             for assignment in course.assignments.all():
                  if assignment.is_assigned == True:
-                    assign = AssignmentStudent.objects.create(assignment=assignment, student=student)
+                    assign, created = AssignmentStudent.objects.get_or_create(assignment=assignment, student=student)
                     assign.save()
 
             return HttpResponse(json.dumps({'state': True, 'response':'valid code',\

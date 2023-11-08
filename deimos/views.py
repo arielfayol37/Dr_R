@@ -560,6 +560,11 @@ def register(request):
         first_name = request.POST["first_name"].strip()
         last_name = request.POST["last_name"].strip()
         try:
+            s = Student.objects.get(username=username)
+            username = str(username) + str(random.randint(1, 10000000))
+        except Student.DoesNotExist:
+            pass
+        try:
             checking_student = Student.objects.get(email=email)
             if checking_student:
                 return render(request, "astros/register.html", {
