@@ -13,36 +13,23 @@
         </ul>
     </div>
 
-    <nav class="navbar navbar-expand-lg navbar-light bg-light navigation" >
-        <div class="container-fluid">
-          <ul class="navbar-nav mr-auto" style="list-style: none; display:flex;">
-            <li class="nav-item " style="display:inline;">
-              <a class="nav-link home-btn" href="{% url 'phobos:course_management' course_id=course.id %}">Course </a>
-            </li>
-            <li class="nav-item" style="display:inline;">
-              <a class="nav-link view-notes-btn" href="{% url 'phobos:create_assignment' course_id=course.id %}">Create Assignment</a>
-            </li>
-            <li class="nav-item" style="display:inline;">
-                <a class="nav-link gradebook-btn" >GradeBook</a>
-            </li>
-            <li class="nav-item" style="display:inline;">
-                <a id="export-button" class="btn btn-outline-info" data-course-name="{{course.name}}">Download gradebook</a>
-            </li>
-            </div>
-      </nav>
+    <nav class="navbar-custom " >
+        <a class="nav-link home-btn" href="{% url 'phobos:index' %}">Home</a>
+        <a class="nav-link course-btn" href="{% url 'phobos:course_management' course_id=course.id %}">Course </a>
+        <a class="nav-link view-notes-btn" href="{% url 'phobos:create_assignment' course_id=course.id %}">Create Assignment</a>
+        <a class="nav-link gradebook-btn" style="color:white;">GradeBook</a>
+        <a class="nav-link" id="export-button" data-course-name="{{course.name}}" style="color:white;">Download gradebook</a>
+    </nav>
 <br>
-<br>
+<div id="sf-container">
+    <input id="search-field" type="text" name="search" class="page-search" data-display="table-row"
+    data-parent="student-row" data-name="student-name" placeholder="search by last name" />
+</div>
     <h1 class="suggestion original-size"> GradeBook</h1>
-    <br/>
-    <div id= "search-bar">
-                <form action="{% url 'phobos:student_search' course_id=course.id %}" method="get">
-                    <input id="search" type="text" name="q" placeholder="Looking for a student? Search Here" class="field-style">
-                </form>
-    </div>
     <br/>
 
 <!-- extra functionalities-->    
-    <button class="select-button btn btn-outline-primary" style="position: relative; float: right">Select Students</button>
+    <button class="select-button btn btn-outline-primary" style="position: relative; float: left; margin:10px">Select Students</button>
 <br/>
 <div class="extra-functions">
 
@@ -71,13 +58,13 @@
 </div> <!-- END OF extra-functionalities-->
     <br/>
     
-        <table class="table table-striped table-bordered table-hover">
+    <table class="table table-striped table-bordered table-hover" style="margin-left: 1%;">
         <thead>
             <tr>
                 <td><div class="td-checkbox"  style="display: none;"><input class="select-all-students" type="checkbox" /></div></td>
                <td><b>Email</b></td>
-                <td><b>First Name</b></td>
                 <td><b>Last Name</b></td>
+                <td><b>First Name</b></td>
                 {% for assignment in assignments %}
                 <td> <b>{{assignment.name}}</b> </td>
                 {% endfor %}
@@ -85,11 +72,11 @@
         </thead>
         <tbody>
             {% for student, grade_list in students_grades %}
-            <tr>
+            <tr class="student-row">
                 <td ><div class="td-checkbox" style="display: none;"><input class="selected-students" type="checkbox" value="{{student.pk}}"/></div></td>
                 <td>{{ student.email }}</td>
-                <td><a href="{% url 'phobos:student_profile' course_id=course.id  student_id=student.id %} ">{{ student.first_name}} </a></td>
-                <td><a href="{% url 'phobos:student_profile' course_id=course.id  student_id=student.id %} ">{{ student.last_name}} </a></td>
+                <td class="student-name"><a href="{% url 'phobos:student_profile' course_id=course.id  student_id=student.id %} ">{{ student.last_name}}</a></td>
+                <td><a href="{% url 'phobos:student_profile' course_id=course.id  student_id=student.id %} ">{{student.first_name}} </a></td>
                 {% for grade in grade_list %}
                     <td> {{grade}} </td>
                 {% endfor %}
@@ -106,5 +93,5 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="{% static 'phobos/js/gradebook_export.js' %}"></script>
 <script src="{% static 'phobos/js/gradebook_actions.js' %}"></script>
-
+<script src="{% static 'phobos/js/search_generic.js' %}"></script>
 {% endblock %}
