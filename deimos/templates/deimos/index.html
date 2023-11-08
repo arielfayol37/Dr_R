@@ -1,6 +1,6 @@
 <!-- deimos: index.html-->
 {% extends 'deimos/layout.html' %}
-
+{% load static %}
 {% block body%}
 
 <div class="sidebar" style="display:none">
@@ -9,6 +9,9 @@
         <li><a href="{% url 'deimos:index' %}">Home</a></li>
         <li><a href="{% url 'astros:all_courses' %}">All courses</a></li>
     </ul>
+</div>
+<div id="sf-container">
+    <input id="search-field" type="text" name="search" class="page-search" data-name="course-name" placeholder="search course" />
 </div>
     <h4>My courses</h4> 
    <!-- Display Student's courses -->
@@ -22,4 +25,7 @@
         {% endfor %}
     </ul>
 
+{% endblock %}
+{% block scripts %}
+    <script src="{% static 'deimos/js/search_generic.js' %}"></script>
 {% endblock %}

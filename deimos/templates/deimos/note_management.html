@@ -11,46 +11,31 @@
         <li><a href="{% url 'deimos:search_question' %}">Search Question</a></li>
     </ul>
 </div>
-<form action="{% url 'deimos:search_question' %}" method="post" id="search-form">
-    {% csrf_token %} 
-    <div id="sf-container">
-        <input  id="search-field" type="text" name="search_question" placeholder="search question"/>
-    </div>
-</form>
+<nav class="navbar-custom">
+    <a class="nav-link home-btn" href="{% url 'deimos:index'%}">Home </a>
+    <a class="nav-link" href="{% url 'deimos:course_management' course_id=course.id %}">Assignments</a>
+    <a class="nav-link view-notes-btn" href="{% url 'deimos:note_management' course_id=course.id%}">View notes</a>
+    <a class="nav-link grabebook-btn" href="{% url 'deimos:course_management' course_id=course.id show_gradebook=1%}">GradeBook</a>
+</nav>
+<div id="sf-container">
+    <input id="search-field" type="text" name="search" class="page-search" data-name="note-name" placeholder="search note" />
+</div>
+    <br/>
 
-<nav class="navbar navbar-expand-lg navbar-light bg-light" >
-    <div class="container-fluid">
-      <ul class="navbar-nav mr-auto" style="list-style: none; display:flex;">
-        <li class="nav-item " style="display:inline;">
-          <a class="nav-link home-btn" href="{% url 'deimos:course_management' course_id=course.id%}">Home </a>
-        </li>
-        <li class="nav-item" style="display:inline;">
-          <a class="nav-link view-notes-btn" href="{% url 'deimos:note_management' course_id=course.id%}">View notes</a>
-        </li>
-        <li class="nav-item" style="display:inline;">
-            <a class="nav-link grabebook-btn" href="{% url 'deimos:course_management' course_id=course.id show_gradebook=1%}">GradeBook</a>
-        </li>
-        </div>
-  </nav>
-    <br/>
-    <br/>
-    <h4 class="suggestion" style="font-size: large;">{{course.name}} - Notes</h4><hr/>
+    <h4 class="suggestion original-size">{{course.name}}   Notes</h4><hr/>
     
-    <ul class="courses couse-list">
         {% for assignment, note_dict_list in assignments_dict.items %}
-        <h4>{{assignment.name}}</h4>
-        <br>
-            {% for note_dict in note_dict_list %} 
-                {% include 'deimos/note_display.html' with note=note_dict.Note note_md=note_dict.note_md assignment_id=assignment.pk course_id=assignment.course.id %}
-            {% endfor %}
-
+            <h4>{{assignment.name}}</h4>
+            <ul class="courses course-list" style="padding:2%;">
+                {% for note_dict in note_dict_list %} 
+                    {% include 'deimos/note_display.html' with note=note_dict.Note note_md=note_dict.note_md assignment_id=assignment.pk course_id=assignment.course.id %}
+                {% endfor %}
+            </ul>
         {% empty %}
             <h4 class="suggestion original-size"> You have not saved any notes yet. </h4>
         {% endfor %}
-        <br>
-    </ul>
-
+ 
 {% endblock %}
 {% block scripts%}
-<script src="{% static 'deimos/js/search_question.js' %}"></script>
+<script src="{% static 'deimos/js/search_generic.js' %}"></script>
 {% endblock %}

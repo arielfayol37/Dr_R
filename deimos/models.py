@@ -242,6 +242,7 @@ class Note(models.Model):
     This may be helpful when they are preparing for exams.
     """
     question_student = models.OneToOneField(QuestionStudent, on_delete=models.CASCADE, related_name="note")
+    title = models.CharField(max_length=200, blank=True, null=True)
     content = models.TextField()
     last_edited = models.DateField(auto_now=True)
 
@@ -262,6 +263,7 @@ class NoteTemporary(models.Model):
     """
     Used to store notes temporarily when user uses QR Code to change device.
     """
+    title = models.CharField(max_length=200, blank=True, null=True)
     note = models.OneToOneField(Note, on_delete=models.CASCADE, related_name='temp_note')
     content = models.TextField()
     
