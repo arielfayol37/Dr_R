@@ -17,15 +17,14 @@
     <a class="nav-link grabebook-btn" href="{% url 'deimos:gradebook' course_id=course.id %}">GradeBook</a>
 </nav>
 <div class="sf-container">
-    <input type="text" name="search" class="page-search search-field" data-name="note-name" placeholder="search note" />
+    <input type="text" name="search" class="page-search search-field w-limit-50" data-name="note-name" placeholder="search note" />
 </div>
     <br/>
 
-    <h4 class="suggestion original-size">{{course.name}}   Notes</h4><hr/>
-    
+    <h4 class="suggestion original-size page-title">{{course.name}}: Notes</h4><hr/>
         {% for assignment, note_dict_list in assignments_dict.items %}
-            <h4>{{assignment.name}}</h4>
-            <ul class="courses course-list" style="padding:2%;">
+            <h4 class="suggestion original-size page-title">{{assignment.name}}</h4>
+            <ul class="courses course-list" style="padding-top:5%;">
                 {% for note_dict in note_dict_list %} 
                     {% include 'deimos/note_display.html' with note=note_dict.Note note_md=note_dict.note_md assignment_id=assignment.pk course_id=assignment.course.id %}
                 {% endfor %}

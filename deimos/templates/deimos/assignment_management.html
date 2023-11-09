@@ -11,13 +11,19 @@
         <li><a href="{% url 'deimos:search_question' %}">Search Question</a></li>
     </ul>
 </div>
+<nav class="navbar-custom">
+    <a class="nav-link home-btn" href="{% url 'deimos:index' %}">Home </a>
+    <a class="nav-link" href="{% url 'deimos:course_management' course_id=assignment.course.id %}">Assignments</a>
+    <a class="nav-link view-notes-btn" href="{% url 'deimos:note_management' course_id=assignment.course.id%}">View notes</a>
+    <a class="nav-link gradebook-btn" href="{% url 'deimos:gradebook' course_id=assignment.course.id%}">GradeBook</a>
+</nav>
     <div class="sf-container">
-        <input type="text" name="search_question" class="page-search search-field" data-name="question-name" placeholder="search question"/>
+        <input type="text" name="search_question" class="page-search search-field w-limit-50" data-name="question-name" placeholder="search question"/>
     </div>
     <br/>
     <br/>
-    <h4 class="suggestion" style="font-size: large;">{{assignment.course.name}} - {{assignment.name}}</h4><hr/>
-    
+    <h4 class="suggestion original-size page-title">{{assignment.course.name}}: {{assignment.name}}</h4>
+    <hr/>
     <!-- Display assignment's questions -->
     <ul class="courses course-list">
         {% for question in questions %}

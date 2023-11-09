@@ -59,6 +59,10 @@ body.body {
 }
 ul.courses {
   padding: 5%;
+  margin-top: -4%;
+}
+.page-title {
+  padding-left: 5%; /* This padding has to be the same as ul.courses */
 }
 
 .page-container {
@@ -349,6 +353,9 @@ div.tol {
 
 .search-field:hover {
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.3) !important;
+  }
+.search-field.w-limit-50 {
+    max-width: 50%;
   }
 
 h4{

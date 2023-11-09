@@ -95,7 +95,7 @@
                 <div class="hints-feedback">
                   <div class="hints-container">
                     {% if question_dict.question.hints.all %}
-                      <ion-icon name="caret-forward-outline" class="show-hint-btn closed-hints" title="Hints"></ion-icon>
+                      <button type="button" style="margin: 2px; transform: scale(0.8);" class="show-hint-btn closed-hints btn btn-outline-info" title="Hints">Hints</button>
                       <div class="question-hints" data-counter="{{question_dict.question.hints.all.count}}" data-seen="1" style="display:none">
                         {% for hint in question_dict.question.hints.all %}
                             {% if forloop.counter0 == 0%}
@@ -110,7 +110,7 @@
 
                         {% endfor %}
                         <br/>
-                        <button type="button" class="see-more-hint-btn btn btn-outline-info" style="display: none;"> see more </button>
+                        <button type="button" class="see-more-hint-btn btn btn-outline-info" style="display: none; transform: scale(0.8);"> see more </button>
                       </div>
                     {% endif %}
                   </div>
@@ -396,7 +396,7 @@
   </div>
   <div class="side">
     <div class="side-info-icon" title="Info">
-      <ion-icon name="options-outline" size="large"></ion-icon>
+      <ion-icon name="options-outline"></ion-icon>
     </div>
     <div class="hide side-info">
         <span class="side-info-x">X</span><br/>
@@ -414,7 +414,7 @@
             {% else %}
               <div class="settings-modification grading-number-{{forloop.counter0}}" style="display: none;"> 
             {% endif %}
-              {% if not question_dict.questtype == 'mcq' %}
+              {% if question_dict.questtype == 'struct' %}
                   <div class="settings-item"> 
                     <div class="settings-label">Number of points:</div>
                     <div class="settings-input-div suggestion">
@@ -433,24 +433,28 @@
                   {{question_dict.question.struct_settings.deduct_per_attempt|multiply:"100" }}%
                     </div>
                   </div >
+                  
                   <div class="settings-item">
                     <div class="settings-label">% Margin error:</div>
                     <div class="settings-input-div suggestion"> 
                     {{question_dict.question.struct_settings.margin_error|multiply:"100" }}%
                     </div>
                   </div>
-                  <div class="settings-item">
-                    <div class="settings-label">% points for units:</div>
-                    <div class="settings-input-div suggestion">
-                  {{question_dict.question.struct_settings.percentage_pts_units|multiply:"100" }}%
-                    </div>
-                  </div>
-                  <div class="settings-item">
-                    <div class="settings-label">Max attempts(units):</div>
-                    <div class="settings-input-div suggestion">
-                  {{question_dict.question.struct_settings.units_num_attempts}}
-                    </div>
-                  </div>
+                  {% if question_dict.answer.answer_unit %}
+                      <div class="settings-item">
+                        <div class="settings-label">Max attempts(units):</div>
+                        <div class="settings-input-div suggestion">
+                      {{question_dict.question.struct_settings.units_num_attempts}}
+                        </div>
+                      </div>
+                      <div class="settings-item">
+                        <div class="settings-label">% points for units:</div>
+                        <div class="settings-input-div suggestion">
+                      {{question_dict.question.struct_settings.percentage_pts_units|multiply:"100" }}%
+                        </div>
+                      </div>
+                  {% endif %}
+                  
               {% else %}
                 <div class="settings-item"> 
                   <div class="settings-label">Number of points:</div>
@@ -459,13 +463,13 @@
                   </div>
                 </div>
                 <div class="settings-item">
-                  <div class="settings-label">Max attempts(mcq):</div>
+                  <div class="settings-label">Max attempts:</div>
                   <div class="settings-input-div suggestion">
                   {{question_dict.question.mcq_settings.mcq_max_num_attempts}}
                   </div>
                 </div>
                 <div class="settings-item">
-                  <div class="settings-label">% deduct per attempt(mcq):</div>
+                  <div class="settings-label">% deduct per attempt:</div>
                   <div class="settings-input-div suggestion">
                     {{ question_dict.question.mcq_settings.mcq_deduct_per_attempt|multiply:"100" }}%
                   </div>

@@ -36,8 +36,15 @@ body.body {
   cursor: pointer;
   margin-right: 10px;
 }
+td.assignment:hover {
+  cursor: pointer;
+}
 ul.courses {
   padding: 5%;
+  margin-top: -4%;
+}
+.page-title {
+  padding-left: 5%; /* This padding has to be the same as ul.courses */
 }
 .page-container {
     background-color: white;
@@ -332,6 +339,9 @@ div.tol {
 .search-field.active {
   width: 90%;
   box-sizing: border-box;
+}
+.search-field.w-limit-50 {
+  max-width: 50%;
 }
 
 h4{
