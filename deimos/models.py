@@ -1,7 +1,7 @@
 from django.db import models
 from phobos.models import Course, Question, User, Assignment, VariableInstance, QuestionChoices
 from django.core.validators import MaxValueValidator, MinValueValidator
-import re
+from .utils import *
 class Student(User):
     """
     Student class to handle students in the platform.
@@ -308,55 +308,3 @@ class QuestionModifiedScore(models.Model):
             self.is_modified = False
         return f"{self.question_student.student.username} score: {self.score} is modified? {self.is_modified}"
 
-
-def transform_expression(expr):
-    """Insert multiplication signs between combined characters, except within trig functions."""
-    expression = remove_extra_spaces_around_operators(expr)
-    expression = expression.replace(', ', '')
-    expression = expression.replace(' ', '*')
-    expression = re.sub(r'1e\+?(-?\d+)', r'10^\1', expression)
-    trig_functions = {
-        'asin': 'ò', 'acos': 'ë', 'atan': 'à', 'arcsin': 'ê', 'arccos': 'ä',
-        'arctan': 'ï', 'sinh': 'ù', 'cosh': 'ô', 'tanh': 'ü', 'sin': 'î', 'cos': 'â', 'tan': 'ö', 'log': 'ÿ', 'ln': 'è',
-        'cosec': 'é', 'sec': 'ç', 'cot': 'û', 'sqrt':'у́', 'pi': 'я',
-    }
-
-    expression = encode(expression, trig_functions)
-    transformed_expression = ''.join(
-        char if index == 0 or not needs_multiplication(expression, index, trig_functions)
-        else '*' + char for index, char in enumerate(expression)
-    )
-    transformed_expression = transformed_expression.replace('^', '**')
-    return decode(transformed_expression, trig_functions)
-
-def remove_extra_spaces_around_operators(text):
-    pattern = r'(\s*([-+*/^])\s*)'
-    return re.sub(pattern, lambda match: match.group(2), text)
-
-def needs_multiplication(expr, index, trig_functions):
-    char = expr[index]
-    prev_char = expr[index - 1]
-    return (
-        (char.isalpha() or char in trig_functions.values()) and prev_char.isalnum() or
-        char.isdigit() and prev_char.isalpha() or
-        char == "(" and (prev_char.isalpha() and not prev_char in trig_functions.values())
-    )
-
-def encode(text, trig_functions):
-    """Takes a string and replaces trig functions with their corresponding special character."""
-    result = text
-    for key, value in trig_functions.items():
-        result = result.replace(key, value)
-    return result
-
-def decode(text, trig_functions):
-    """Takes a string and replaces special character with their corresponding trig function."""
-    special_chars = {'e':'E', 'i':'((-1)^0.5)'}
-    result = text
-    # !Important.  special_chars for loop must come before 
-    # the trig_functions for loop!
-    for sc, value in special_chars.items():
-        result = result.replace(sc, value)
-    for key, value in trig_functions.items():
-        result = result.replace(value, key)
-    return result

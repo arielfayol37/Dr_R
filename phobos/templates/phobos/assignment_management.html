@@ -26,15 +26,15 @@
     <a href="{% url 'phobos:edit_grading_scheme' course_id=course.id assignment_id=assignment.id %}"><ion-icon name="settings"></ion-icon></a>
   </div>
     <div class="sf-container">
-        <input type="text" name="search_question" class="page-search search-field" data-name="question-name" placeholder="search question"/>
+        <input type="text" name="search_question" class="page-search search-field w-limit-50" data-name="question-name" placeholder="search question"/>
     </div>
     <br/>
     <br/>
-    <h4 class="suggestion original-size">{{assignment.course.name}} - {{assignment.name}}</h4><hr/>
-    <div>
+    <h4 class="suggestion original-size page-title">{{assignment.course.name}}: {{assignment.name}}</h4>
+    <hr/>
+    <div class="assignment-options page-title">
     {% if not assignment.is_assigned %}
-        
-            <button class="btn btn-outline-success assign-btn" data-assignment-id="{{assignment.id}}">Assign</button>
+        <button class="btn btn-outline-success assign-btn" data-assignment-id="{{assignment.id}}">Assign</button>
     {% endif %}
 <!-- Due Date functionalities-->
     <button class="btn btn-outline-info due_date-btn"  data-assignment-id="{{assignment.id}}">Change Due Date</button>

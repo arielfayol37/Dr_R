@@ -8,11 +8,12 @@
                 {% else %}
                     Note {{note.question_student.question.number}}
                 {% endif %}
-                </strong>   
+                </strong>
+            </span>
             <p class="note-description">{% if note_md|length > 147 %}
                 {{ note_md|safe|slice:":147" }}...
             {% else %}
-                {{ note_md|safe|safe }}
+                {{ note_md|safe }}
             {% endif %}</p><br>
             <p class="timestamp" style="position:relative; float: right; right: 0%; font-size: 10px;"> From <b>question {{note.question_student.question.number}} </b>  Last edited on <b>{{note.last_edited}} </b></p>
         </div>

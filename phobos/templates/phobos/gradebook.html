@@ -1,7 +1,14 @@
 {% extends 'phobos/layout.html' %}
 {% load static %}
 {% block title %} Gradebook {% endblock %}
-{% block style %} <link rel="stylesheet" href="{% static 'phobos/css/gradebook.css' %}"/> {% endblock %}
+{% block style %} <link rel="stylesheet" href="{% static 'phobos/css/gradebook.css' %}"/> 
+    <style>
+        .body-container {
+            width: 90%;
+            margin-left: 5%;
+        }
+    </style>
+{% endblock %}
 
 <div id="gradebook-page-container">
     {% block body %}
@@ -18,16 +25,16 @@
         <a class="nav-link course-btn" href="{% url 'phobos:course_management' course_id=course.id %}">Course </a>
         <a class="nav-link view-notes-btn" href="{% url 'phobos:create_assignment' course_id=course.id %}">Create Assignment</a>
         <a class="nav-link" id="export-button" data-course-name="{{course.name}}" style="color:white;">Download gradebook</a>
-    </nav>
-<br>
+    </nav><br/><hr/>
 <div class="sf-container">
-    <input type="text" name="search" class="page-search search-field" data-display="table-row"
+    <input type="text" name="search" class="page-search search-field w-limit-50" data-display="table-row"
     data-parent="student-row" data-name="student-name" placeholder="search by first name" />
 </div>
-    <h4 class="suggestion original-size"> GradeBook</h4>
-    <br/>
-<!-- extra functionalities-->    
-    <button class="select-button btn btn-outline-primary" style="position: relative; float: right; margin:10px">Select Students</button>
+    <h4 class="suggestion original-size page-title">{{course.name}}: GradeBook</h4>
+<div class="body-container">
+
+    <!-- extra functionalities-->    
+    <button class="select-button btn btn-outline-primary" style="position: relative; float: left; margin:10px">Select Students</button>
 <br/>
 <div class="extra-functions">
 
@@ -83,7 +90,7 @@
         </tbody>
     </table>
     {% endblock %}
-
+</div>
 </div>
 
 
