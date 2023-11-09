@@ -18,11 +18,11 @@
     <a class="nav-link home-btn" href="{% url 'deimos:index' %}">Home </a>
     <a class="nav-link view-notes-btn" href="{% url 'deimos:note_management' course_id=course.id%}">View notes</a>
     <a class="nav-link gradebook-btn" href="{% url 'deimos:gradebook' course_id=course.id%}">GradeBook</a>
-  </nav>
+</nav>
 
   <div class="home">
     <div class="sf-container">
-        <input type="text" name="search" class="page-search search-field" data-name="assignment-name" placeholder="search assignment" />
+        <input type="text" name="search" class="page-search search-field w-limit-50" data-name="assignment-name" placeholder="search assignment" />
     </div>
     <br />
     <h4>{{course.name}}</h4>

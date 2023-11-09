@@ -1,6 +1,5 @@
 #python3 phobos:views.py
 import json
-from urllib.parse import urlparse
 from urllib.parse import unquote  # Import unquote for URL decoding
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
@@ -27,8 +26,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
 import heapq
 from markdown2 import markdown
-import string
-
+from .utils import *
 from django.core.mail import send_mail
 from django.core.files.storage import default_storage
 
@@ -807,39 +805,7 @@ def gradebook(request, course_id):
                 {'students_grades': zip(enrolled_students,student_grades),\
                 'assignments':assignments, 'course':course})
 
-#--------------HELPER FUNCTIONS--------------------------------#
-def replace_links_with_html(text):
-    # Find all URLs in the input text
-    words = text.split()
-    new_words = []
-    for word in words:
-        if word.startswith('http://') or word.startswith('https://'):
-            parsed_url = urlparse(word)
-            link_tag = f'<a href="{word}">{parsed_url.netloc}{parsed_url.path}</a>'
-            new_words.append(link_tag)
-        else:
-            new_words.append(word)
 
-    return ' '.join(new_words)
-def replace_image_labels_with_links(text, labels_url_pairs):
-    """
-    Returns the text with labels within html link tags.
-    labels_url_pairs = ("john_image", "astros/images/jjs.png")
-    """
-    for label, url in labels_url_pairs:
-        replacement = f"<a href=\"#{url}\">{label}</a>"
-        text = text.replace(label, replacement)
-    return text
-
-def upload_image(request):
-    # Depecrated (Never used actually but just keeping here)
-    if request.method == 'POST' and request.FILES.get('image'):
-        image = request.FILES['image']
-        # You can perform any image processing or validation here
-        
-        # Return the URL of the uploaded image in the response
-        return JsonResponse({'image_url': image.url})
-    return JsonResponse({'error': 'Invalid request'}, status=400)
 
 def student_profile(request,course_id,student_id):
     student = Student.objects.get(pk =student_id)

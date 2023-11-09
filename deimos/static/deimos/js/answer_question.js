@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
           if(showHintBtn.classList.contains('closed-hints')){
             questionHintsDiv.style.display = 'block';
             showHintBtn.classList.remove('closed-hints');
-            showHintBtn.name = 'caret-down-outline';
+            showHintBtn.textContent = 'hide';
             if(questionHintsDiv.dataset.counter > questionHintsDiv.dataset.seen){
               seeMoreBtn.style.display = 'block';
             }else{
@@ -244,7 +244,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
           }else{
             questionHintsDiv.style.display = 'none';
             showHintBtn.classList.add('closed-hints');
-            showHintBtn.name = 'caret-forward-outline';
+            showHintBtn.textContent = 'Hints';
           }
         })
         seeMoreBtn.addEventListener('click', (event)=>{

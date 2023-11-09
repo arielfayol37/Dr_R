@@ -10,9 +10,9 @@ function table_generator(question, assignment_id) {
     const title = document.createElement('div');
     title.innerHTML = `</br><h3>${question[0].name} details </h3>
    <br/>
-   <b class='Due-date-display'>Due by: ${question[0].Due_date} </b> <button class="btn edit-btn co due_date-btn"  data-assignmentId="${assignment_id}" style="display: inline; position:relative; float: right">Extend Due Date</button>
+   <span class='Due-date-display suggestion original-size'>Due by: ${question[0].Due_date} </span> <button class="btn btn-outline-info due_date-btn"  data-assignmentId="${assignment_id}" style="display: inline; position:relative; float: right">Extend Due Date</button>
    
-   <button class="btn edit-btn co edit-score-btn"  style="display: inline; position:relative; float: right">Edit Scores</button>
+   <button class="btn btn-outline-success edit-score-btn"  style="display: inline; position:relative; float: right">Edit Scores</button>
 
    <div  class="due-date-div" style="display: none; position:relative; float: right" >
        <input type="datetime-local"  class="input-new-due-date-field">
@@ -72,7 +72,7 @@ function table_generator(question, assignment_id) {
     table.appendChild(tbody);
 
     div.appendChild(table);
-    document.body.appendChild(div);
+    document.querySelector('.body-container').appendChild(div);
     div.scrollIntoView({behavior:'smooth'})
 
 }

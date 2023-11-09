@@ -1,7 +1,15 @@
 {% extends 'phobos/layout.html' %}
 {% load static %}
 {% block title %} Student_Profile {% endblock %}
-{% block style %} <link rel="stylesheet" href="{% static 'phobos/css/gradebook.css' %}"/> {% endblock %}
+{% block style %} <link rel="stylesheet" href="{% static 'phobos/css/gradebook.css' %}"/> 
+<style>
+    .body-container {
+        width: 80%;
+        margin-left: 10%;
+    }
+</style>    
+
+{% endblock %}
 {% block body%}
     <div class="sidebar" style="display:none">
         <header class="sidebar-header">X</header>
@@ -10,56 +18,61 @@
             <li><a href="{% url 'phobos:course_management' course_id=course.id %}">Assigments</a></li>
         </ul>
     </div>
-<h4> {{ student.first_name}} {{student.last_name}} </h4>
-<h5 class="suggestion"> Student Profile - {{course.name}} </h5>
 
-<table class="table table-striped table-bordered table-hover">
-    <thead>
-        <tr>
-            <td><b>Assignments</b></td>
-            <td><b>Grades</b></td>
-            <td><b>Remark</b></td>
-        </tr>
-    </thead>
-    <tbody>
-    {% for assignment, grade in student_grade %}
-    <tr>
-        <td class="assignment" id='{{assignment.id}}'>{{ assignment.name}} </td>
-        <td> {{grade}} </td>
-        {% if grade > 70 %}
-            <td> Passed </td>
-        {% else %}
-            <td> Failed</td>
-        {% endif %}
-        <td> {{due_date}} </td>
-    </tr>
-    {% endfor %}
-    </tbody>
-</table>
-<hr/>
-<!-- edit score implementation-->
-</br>
-<div class="edit_questions_details sf-container" style="display: none; width: 70%;">
-    <div>
-        <b style="color: blueviolet;">MODIFYING: <div class="question-num" style="display: inline;"></div></b>
-    </div>
-    <div class="row">
-        <div class="col-sm-4"><b> original score: </b><div class="original-score"></div></div>
-        <div class="col-sm-4"><b> actual score:</b><div class="actual-score"></div></div>
-        <div class="col-sm-4"><b>new score:</b> <input class='new-score-input-field field-style' type='number'> </div>
-    </div>
-    <br>
-    <button class="apply-btn btn btn-outline-success">apply</button>
-    <button class="cancel-btn btn btn-outline-danger"> cancel</button>
-    <br>
+<div class="sf-container">
+    <input type="text" name="search" class="page-search search-field w-limit-50" data-display="table-row"
+    data-parent="assignment-row" data-name="assignment-name" placeholder="search assignment"/>
 </div>
-<!-- end -->
 
-{% block script %}
-<script src="{% static 'phobos/js/student_profile.js' %}"></script>  
+<div class="body-container">
+    <h5 class="suggestion original-size">{{ student.first_name}} {{student.last_name}} </h5>
+    <h5 class="suggestion">{{course.name}}: Student Profile </h5>
 
-
+    <table class="table table-striped table-bordered table-hover">
+        <thead>
+            <tr>
+                <td><b>Assignments</b></td>
+                <td><b>Grades</b></td>
+                <td><b>Remark</b></td>
+            </tr>
+        </thead>
+        <tbody>
+        {% for assignment, grade in student_grade %}
+        <tr class="assignment-row">
+            <td class="assignment assignment-name" id='{{assignment.id}}'>{{ assignment.name}} </td>
+            <td> {{grade}} </td>
+            {% if grade > 70 %}
+                <td> Passed </td>
+            {% else %}
+                <td> Failed</td>
+            {% endif %}
+            <td class="suggestion original-size"> {{due_date}} </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <hr/>
+    <!-- edit score implementation-->
+    </br>
+    <div class="edit_questions_details sf-container" style="display: none; width: 70%;">
+        <div>
+            <b style="color: blueviolet;">MODIFYING: <div class="question-num" style="display: inline;"></div></b>
+        </div>
+        <div class="row">
+            <div class="col-sm-4"><b> original score: </b><div class="original-score"></div></div>
+            <div class="col-sm-4"><b> actual score:</b><div class="actual-score"></div></div>
+            <div class="col-sm-4"><b>new score:</b> <input class='new-score-input-field field-style' type='number'> </div>
+        </div>
+        <br>
+        <button class="apply-btn btn btn-outline-success">apply</button>
+        <button class="cancel-btn btn btn-outline-danger"> cancel</button>
+        <br>
+    </div>
+    <!-- end -->
+</div>
 {% endblock %}
 
-    
+{% block scripts %}
+<script src="{% static 'phobos/js/student_profile.js' %}"></script>  
+<script src="{% static 'phobos/js/search_generic.js' %}"></script> 
 {% endblock %}
