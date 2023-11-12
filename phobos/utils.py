@@ -1,4 +1,19 @@
 from urllib.parse import urlparse
+from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
+import torch
+
+def attention_pooling(hidden_states, attention_mask):
+    # Apply attention mask to hidden states
+    attention_mask_expanded = attention_mask.unsqueeze(-1).expand(hidden_states.size())
+    masked_hidden_states = hidden_states * attention_mask_expanded
+    
+    # Calculate attention scores and apply softmax
+    attention_scores = torch.nn.functional.softmax(masked_hidden_states, dim=1)
+    
+    # Weighted sum using attention scores
+    pooled_output = (masked_hidden_states * attention_scores).sum(dim=1)
+    return pooled_output
+
 #--------------HELPER FUNCTIONS--------------------------------#
 def replace_links_with_html(text):
     # Find all URLs in the input text

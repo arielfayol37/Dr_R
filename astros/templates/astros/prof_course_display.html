@@ -8,12 +8,8 @@
         </div>
         <div class="c-text">
             <span class="c-name course-name"><strong>{{course.name}}</strong></span>
-            <p class="c-description">{% if course.description|length > 90 %}
-                {{ course.description|slice:":90" }}...
-            {% else %}
-                {{ course.description }}
-            {% endif %}</p>
-        
+            <p class="c-description">
+                {{ course.description }}</p>
             <p class="timestamp" style="display: none;">Created on {{ course.timestamp|date:"m/d/Y" }}</p>
         </div>
     </div>

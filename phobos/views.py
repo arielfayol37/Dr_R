@@ -553,7 +553,7 @@ def create_question(request, assignment_id=None, question_nums_types=None):
                             answer = creation_func(new_question, question_answer,\
                                                 answer_unit, answer_preface, vars_dict)
                             if not vars_dict:
-                                new_question.answer_type = QuestionChoices.STRUCTURAL_FLOAT_FLOAT
+                                new_question.answer_type = QuestionChoices.STRUCTURAL_FLOAT
                             elif answer_content.startswith('@{') and answer_content.endswith('}@'):
                                 new_question.answer_type = QuestionChoices.STRUCTURAL_VARIABLE_FLOAT
                             else:
@@ -907,9 +907,9 @@ def modify_question_student_score(request,question_student_id,new_score,course_i
 def search_question(request):
     if request.method == 'POST':
         input_text = request.POST.get('search_question','')
-
         # Tokenize and encode the input text
-        input_tokens = BERT_TOKENIZER.encode(input_text, add_special_tokens=True)
+        max_length = 512  # BERT's maximum sequence length
+        input_tokens = BERT_TOKENIZER.encode(input_text, add_special_tokens=True, max_length=max_length, truncation=True, padding='max_length')
         with torch.no_grad():
             input_tensor = torch.tensor([input_tokens])
             attention_mask = (input_tensor != 0).float()  # Create attention mask

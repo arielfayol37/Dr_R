@@ -265,12 +265,12 @@ li{
   height: 60vh;
   padding: 20px;
   border-radius: 5px;
-  /*box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);*/
   background-color: white;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  
   position:relative;
-
+  display: flex;
+  flex-direction: column;
+  
 }
 /* Assignment displays need less height */
 .assignment-li {
@@ -279,14 +279,13 @@ li{
 
 
 div.course-section {
+  display: flex;
+  flex-direction: column;
   position: relative;
   height: 70%;
 }
 /* Set the height of .image-container to 50% of the height of .course-li */
 div.image-container {
-  position: absolute;
-  top: 0;
-  left: 0;
   height: 85%;
   width: 100%; /* Make the image container full-width within .course-li */
   overflow: hidden; /* Ensure the image doesn't overflow the container */
@@ -295,22 +294,16 @@ div.image-container {
 /* Style the image to fill the .image-container */
 div.image-container img.course-image {
   height: 100%;
-  width: 100%;
-  /*max-height: 100%;  Ensure the image height fits within the container */
-  /*max-width: 100%;  Ensure the image width fits within the container */
+  width: 100%; 
   object-fit: cover; /* Maintain aspect ratio and cover the container */
-  border-radius: 10px 10px 10px 10px; /* Optional: Add border radius to the top corners */
+  border-radius: 10px; /* Optional: Add border radius to the top corners */
 }
-div.c-text {
-  position: absolute;
-  top: 87%;
-  height: 30%;
+.c-text {
+  height: 15%;
 }
-
-.a-text.c-text {
-  top: 25%;
+.c-description {
+  overflow: hidden;
 }
-
 .edit-section {
   bottom: 5%;
   position: absolute;

@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
         parentDivName = 'course-li'; // most pages will have course-li 
     }
     if(displayProperty == null){
-        displayProperty = 'block';
+        displayProperty = 'flex';
     }                                                                            // corresponding to searchField.dataset.name 
     if(searchField != null){
         // Add an event listener to the search field for the 'keydown' event

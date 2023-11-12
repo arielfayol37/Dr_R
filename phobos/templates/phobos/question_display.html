@@ -1,24 +1,15 @@
 <!-- phobos: question_display.html -->
 <li class="question-li course-li" data-question-id="{{ question.id }}">
-    <div class="course-section assigment-section">
-        <div class="image-container">
-        </div>
-        <div class="c-text q-text">
-            
-            <span class="c-name question-name"><strong>Question {{question.number}}</strong></span>
+    <a href="{% url 'phobos:question_view' assignment_id=assignment_id course_id=course_id question_id=question.id%}">
+        <div class="course-section assigment-section">
+            <div class="q-text">
                 
-            <p class="c-description question-content">{% if question.text|length > 147 %}
-                {{ question.text|safe|slice:":147" }}...
-            {% else %}
-                {{ question.text|safe }}
-            {% endif %}</p><br/>
-            <p class="timestamp" style="display: none;">Created on {{ question.timestamp|date:"m/d/Y" }}</p>
+                <span class="c-name question-name"><strong>Question {{question.number}}</strong></span>
+                    
+                <p class="c-description question-content">
+                    {{ question.text|safe }}</p><br/>
+                <p class="timestamp" style="display: none;">Created on {{ question.timestamp|date:"m/d/Y" }}</p>
+            </div>
         </div>
-    </div>
-    <div class="edit-section il">{% csrf_token %}
-        <div><a href="{% url 'phobos:question_view' assignment_id=assignment_id course_id=course_id question_id=question.id%}">
-            <button class="btn edit-btn co" data-question-id="{{ question.id}}">View</button></div></a>
-       
-    </div>
-
+    </a>
 </li>

@@ -486,7 +486,13 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 calculatorDiv.querySelector('.units-screen').disabled = true;
                 displayFeedback(feedbackContainerDiv, 'You exhausted your units attempts for this question');
               }
-          });
+          
+              setTimeout(()=>{
+                updateQuestionStatus(form, result);
+              }, toggleTime)
+              
+          
+            });
     } else if( question_type ==='mcq'){
         // TODO make sure some mcqs are selected as true.
         const ids_ = getSelectedTrueAnswerIds(form)
@@ -515,7 +521,10 @@ document.addEventListener('DOMContentLoaded', ()=> {
                   submitBtn.style.display = 'none';
                 }, toggleTime)
               }
-          });
+              setTimeout(()=>{
+                updateQuestionStatus(form, result);
+              }, toggleTime)
+            });
     }else if(question_type ==='mp'){
       fetch(`${baseUrl}/validate_answer/${qid}`, {
         method: 'POST',
@@ -573,7 +582,9 @@ document.addEventListener('DOMContentLoaded', ()=> {
             setLights(redLight, yellowLight, greenLight,null, index=0);
           }, toggleTime) // set the lights to red
         }
-
+        setTimeout(()=>{
+          updateQuestionStatus(form, result);
+        }, toggleTime)
       })
     }else {
       alert('Something went wrong');
@@ -703,7 +714,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
               yellowLight.classList.remove('activated');
               yellowLight.classList.remove('blinking');
               greenLight.classList.add('activated');
-            }, 1000);
+            }, toggleTime);
         
           } else {
             setTimeout(function () {
@@ -743,7 +754,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 }
 
               }
-            }, 1000);
+            }, toggleTime);
         
           }
 
@@ -835,13 +846,33 @@ document.addEventListener('DOMContentLoaded', ()=> {
     return selectedAnswerIds;
   }
 
-  function feedback_message(message){
-    if(message != 'None'){
-      alert(message);
-    }
+  function updateQuestionStatus(form, result){
+          // Define an object mapping keys to their respective class names
+          const statusMappings = {
+            grade: '.status-grade',
+            numAttempts: '.status-num-attempts',
+            potential: '.status-potential',
+            unitsNumAttempts:'.status-units-num-attempts'
+          };
+
+          // Loop through each key in the statusMappings object
+          for (const key in statusMappings) {
+            if (statusMappings.hasOwnProperty(key)) {
+                // Construct the selector using the mapping
+                const selector = statusMappings[key] + ' .status-value';
+                const qb =  form.closest('.question-block');
+                // Update the innerHTML of the element matching the selector
+                const element = qb.querySelector(selector);
+                if(element != null){
+                  element.innerHTML = result[key];
+                }
+                if(result.success){
+                  qb.querySelector('.status-potential').style.display = 'none';
+                }
+            }
+          }
+    
   }
-
-
 
 
 

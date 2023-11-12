@@ -374,15 +374,26 @@ li{
 
 .course-li {
   /*font-family: 'Courier New', Courier, monospace;*/
+  display: flex;
   font-family:'Nebula', 'Times New Roman', Times, serif;
   flex: 1 0 calc(33.33% - 20px); /* Distribute the items equally in three columns */
   height: 60vh;
   padding: 20px;
   border-radius: 5px;
-  position:relative;
   background-color: white;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  position:relative;
+  overflow: hidden;
+  color:black;
 
+}
+.course-li a {
+  color: inherit;
+  width: 100%;
+}
+.course-li a:hover {
+  text-decoration: none;
+  color: inherit;
 }
 /* Assignment displays need less height */
 .assignment-li {
@@ -391,53 +402,31 @@ li{
 
 
 div.course-section {
-  position: relative;
-  height: 70%;
+  max-height: 100%;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 /* Set the height of .image-container to 50% of the height of .course-li */
 div.image-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 85%;
+  height: 70%;
   width: 100%; /* Make the image container full-width within .course-li */
-  overflow: hidden; /* Ensure the image doesn't overflow the container */
+ /*  overflow: hidden; Ensure the image doesn't overflow the container */
+}
+.c-text {
+  height: 30%;
+  overflow: hidden;
 }
 
 /* Style the image to fill the .image-container */
 div.image-container img.course-image {
   height: 100%;
   width: 100%;
-  /*max-height: 100%;  Ensure the image height fits within the container */
-  /*max-width: 100%;  Ensure the image width fits within the container */
-  object-fit: cover; /* Maintain aspect ratio and cover the container */
-  border-radius: 10px 10px 10px 10px; /* Optional: Add border radius to the top corners */
-}
-div.c-text {
-  position: absolute;
-  top: 87%;
-  height: 30%;
+  border-radius: 10px;
+  object-fit: cover;
 }
 
-.a-text.c-text {
-  top: 25%;
-}
-
-.edit-section {
-  bottom: 5%;
-  position: absolute;
-}
-.edit-btn {
-  background-color: rgba(23, 137, 252, 1) !important;
-  transition: background-color 0.2s !important;
-  color: rgba(0,0,0,0.95) !important;
-  font-weight:400 !important;
-  font-family: 'Aileron', sans-serif;
-
-}
-.edit-btn:hover {
-  background-color: rgba(23, 137, 252, 0.7) !important;
-}
 
 
 
@@ -595,7 +584,24 @@ div.c-text {
   justify-content:space-between;
   align-items: center;
 }
+.question-block {
+  width:90%;
+}
+.status-container {
+  border-radius: 8px;
+  box-shadow: 13px 13px 20px #cbced1;
+  display: flex;        /* Enable Flexbox */
+  flex-direction: row;  /* Align children in a row */
+  justify-content: space-evenly; /* Distribute space around items */
+  align-items: center;  /* Align items vertically at the center */
+  font-size:x-small;
+  width:fit-content;
+}
 
+.status-container > div {
+  margin: 0 10px; /* Optional: Add some space between the divs */
+  color: gray;
+}
 .image-in-formatted {
   max-width: 90%; /* Limit image width to 100% of parent div's width */
   max-height: 300px; /* Limit image height to 100% of parent div's height */
@@ -854,9 +860,6 @@ ion-icon:hover{
     .question-li {
       height: 30vh;
     }
-    .a-text.c-text {
-      top: 15%;
-    }
     .sf-container {
       display: flex;
       flex-direction: row;
@@ -872,6 +875,9 @@ ion-icon:hover{
   
   }
   @media screen and (max-width: 450px){
+    .status-container {
+      display: none;
+    }
     div.message {
       top: 14%;
       left:30%;

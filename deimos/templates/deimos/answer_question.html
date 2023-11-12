@@ -24,7 +24,59 @@
     
     <div class="page-container" id="answer-question">
       {% for index, question_dict in questions_dict.items %}
+              <div class="question-block">
               <h3 class="original-size">Question {{question_dict.question.number}}</h3>
+              <div class="status-container">
+                <!--QUESTION STATUS INFORMATION -->
+                {% if question_dict.questtype == 'struct' %}
+                    <div class="status-grade">
+                      Grade: <span class="status-value">{{question_dict.num_points}}</span>/{{question_dict.question.struct_settings.num_points}}
+                    </div>
+
+                    <div class="status-num-attempts">
+                      attempts: <span class="status-value">{{question_dict.question_student.get_num_attempts}}</span>/{{question_dict.question.struct_settings.max_num_attempts}}
+                    </div>
+                    
+                    <div class="status-potential">
+                      {% if not question_dict.question_student.success %}
+                          Potential: <span class="status-value">{{question_dict.potential}}</span>%
+                      {% endif %}
+                    </div>
+
+                    <div class="status-deduct">
+                      deduct per attempt: <span class="status-value">{{question_dict.question.struct_settings.deduct_per_attempt|multiply:"100" }}</span>%
+                    </div>
+                    <!--<div class="status-margin-error">
+                      </div>
+                      <div class="status-units-potential">
+                      </div>
+                    -->
+                    <div class="status-units-num-attempts">
+                      {% if question_dict.answer.answer_unit %}
+                         units attempt: <span class="status-value">{{question_dict.question_student.num_units_attempts}}</span>/{{question_dict.question.struct_settings.units_num_attempts}}
+                      {% endif %}
+                    </div>
+
+                {% else %}
+                    <div class="status-grade">
+                      Grade: <span class="status-value">{{question_dict.num_points}}</span>/{{question_dict.question.mcq_settings.num_points}}
+                    </div>
+
+                    <div class="status-num-attempts">
+                      attempts: <span class="status-value">{{question_dict.question_student.get_num_attempts}}</span>/{{question_dict.question.mcq_settings.mcq_max_num_attempts}}
+                    </div>
+
+                    <div class="status-potential">
+                      {% if not question_dict.question_student.success %}
+                          Potential: <span class="status-value">{{question_dict.potential}}</span>%
+                      {% endif %}
+                    </div>
+
+                    <div class="status-deduct">
+                      deduct per attempt: <span class="status-value">{{question_dict.question.mcq_settings.mcq_deduct_per_attempt|multiply:"100" }}</span>%
+                    </div>
+                {% endif %}
+              </div>
               <hr>
               <form method="post" enctype="multipart/form-data" class="question-form">
                 {% csrf_token %}
@@ -177,7 +229,11 @@
                     
                   {% elif question_dict.questtype == 'mp' %}
                       <input type="hidden" value="mp" class="question-type"/>
-                      <div class="suggestion"> Match the following pairs </div>
+                      {% if not question_dict.question_student.success %}
+                        <div class="suggestion"> Match the following pairs </div>
+                      {% else %}
+                        <div class="suggestion"> You correctly matched the pairs. </div>
+                      {% endif %}
                       <div class="mp-section">
                           <!--Yet to be passed attempts -->
                           
@@ -298,6 +354,7 @@
                 {% endif %}
               <br/>
               </form>
+         </div>
       {% endfor %}
       <br/><br/>
       <div class="navigation">
