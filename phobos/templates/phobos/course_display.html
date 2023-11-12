@@ -1,8 +1,21 @@
 <!-- phobos: course_display.html -->
 <li class="course-li" data-course-id="{{ course.id }}">
-
-
-    <div class="dropdown"  style="position: relative; left:95%;">
+    <a href="{% url 'phobos:course_management' course_id=course.id %}">
+        <div class="course-section">
+            <div class="image-container">
+                {% if course.image %}
+                    <img src="{{ course.image.url }}" alt="Course Image" class="course-image">
+                {% endif %}
+            </div>
+            <div class="c-text">
+                <span class="c-name course-name"><strong>{{course.name}}</strong></span>
+                <p class="c-description">
+                    {{ course.description }}</p>
+                <p class="timestamp" style="display: none;">Created on {{ course.timestamp|date:"m/d/Y" }}</p>
+            </div>
+        </div>
+      </a>
+      <div class="dropdown"  style="position: absolute; top: 0%; right: 1%; z-index:2;">
         <ion-icon name="options-outline" class="btn btn-secondary dropdown-toggle" id="dropdownMenuButton" data-toggle="dropdown"></ion-icon>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
             <a class="dropdown-item" href="{%url 'phobos:edit_course_cover_page' course_id=course.id %}">Edit</a><br>
@@ -10,28 +23,4 @@
             <a class="dropdown-item" href="#">Something else here</a><br>-->
         </div>
       </div>
-
-    <div class="course-section">
-
-        <div class="image-container">
-            {% if course.image %}
-                <img src="{{ course.image.url }}" alt="Course Image" class="course-image">
-            {% endif %}
-        </div>
-        <div class="c-text">
-            <span class="c-name course-name"><strong>{{course.name}}</strong></span>
-            <p class="c-description">{% if course.description|length > 90 %}
-                {{ course.description|slice:":90" }}...
-            {% else %}
-                {{ course.description }}
-            {% endif %}</p>
-        
-            <p class="timestamp" style="display: none;">Created on {{ course.timestamp|date:"m/d/Y" }}</p>
-        </div>
-    </div>
-    <div class="edit-section il">{% csrf_token %}
-        <div><a href="{% url 'phobos:course_management' course_id=course.id %}"><button class="btn edit-btn co" data-course-id="{{ course.id}}">Manage</button></div></a>
-       
-    </div>
-
 </li>
