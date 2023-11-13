@@ -30,7 +30,7 @@
         {% for similar_question in similar_questions %}
             {% include 'deimos/question_display.html' with question=similar_question.question assignment_id=similar_question.question.assignment.id course_id=similar_question.question.assignment.course.id%}
         {% empty %}
-            <h4 class="suggestion original-size"> Enter your question in the search bar and hit enter.</h4>
+            <h4 class="suggestion original-size" style="width:100%"> Enter your question in the search bar and hit enter.</h4>
         {% endfor %}
     </ul>
 

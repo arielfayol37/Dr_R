@@ -19,7 +19,7 @@
         {% for course in courses%}
             {% include 'deimos/course_display.html' with course=course%}
         {% empty %}
-            <h5 class="suggestion original-size">You are not yet registered for any course.
+            <h5 class="suggestion original-size" style="width:100%">You are not yet registered for any course.
                 Go to <a href="{% url 'astros:all_courses' %}">All courses</a> to see available courses.
             </h5>
         {% endfor %}

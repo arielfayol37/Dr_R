@@ -324,13 +324,13 @@ def create_mcq_text_answer(new_question, answer_content):
 
 # Function to determine which MCQ float answer to create
 def create_appropriate_mcq_float_answer(new_question, answer_content, vars_dict):
-    if not vars_dict:
-        return create_mcq_float_answer(new_question, answer_content)
-    elif answer_content.startswith('@{') and answer_content.endswith('}@'):
-        return create_mcq_variable_float_answer(new_question, answer_content)
+    if answer_content.startswith('@{') and answer_content.endswith('}@'):
+        if vars_dict:
+            return create_mcq_variable_float_answer(new_question, answer_content)
+        else:
+            raise ValueError('Expected variable expression but got no variable.')
     else:
         return create_mcq_float_answer(new_question, answer_content)
-
 
 def create_expression_answer(new_question, question_answer, answer_unit, answer_preface):
     return ExpressionAnswer(question=new_question, content=question_answer,
@@ -351,10 +351,11 @@ def create_text_answer(new_question):
     return TextAnswer(question=new_question, content='')
 
 def create_appropriate_float_answer(new_question, question_answer, answer_unit, answer_preface,vars_dict):
-    if not vars_dict:
-        return create_float_answer(new_question, question_answer, answer_unit, answer_preface)
-    elif question_answer.startswith('@{') and question_answer.endswith('}@'):
-        return create_variable_float_answer(new_question, question_answer, answer_unit, answer_preface)
+    if question_answer.startswith('@{') and question_answer.endswith('}@'):
+        if vars_dict:
+            return create_variable_float_answer(new_question, question_answer, answer_unit, answer_preface)
+        else:
+            raise ValueError('Expected variable expression but got no variable.')
     else:
         return create_float_answer(new_question, question_answer, answer_unit, answer_preface)
 
@@ -495,10 +496,11 @@ def create_question(request, assignment_id=None, question_nums_types=None):
                             # Special handling for float answers to determine the correct QuestionChoices
                             if answer_type_encoding == "1":
                                 answer = creation_func(new_question, answer_content, vars_dict)
-                                if not vars_dict:
-                                    new_question.answer_type = QuestionChoices.MCQ_FLOAT
-                                elif answer_content.startswith('@{') and answer_content.endswith('}@'):
-                                    new_question.answer_type = QuestionChoices.MCQ_VARIABLE_FLOAT
+                                if answer_content.startswith('@{') and answer_content.endswith('}@'):
+                                    if vars_dict:
+                                        new_question.answer_type = QuestionChoices.MCQ_VARIABLE_FLOAT
+                                    else:
+                                        raise ValueError('Expected variable expression but got no variable.')
                                 else:
                                     new_question.answer_type = QuestionChoices.MCQ_FLOAT
                             else:
@@ -552,10 +554,11 @@ def create_question(request, assignment_id=None, question_nums_types=None):
                         if type_int == 1:
                             answer = creation_func(new_question, question_answer,\
                                                 answer_unit, answer_preface, vars_dict)
-                            if not vars_dict:
-                                new_question.answer_type = QuestionChoices.STRUCTURAL_FLOAT
-                            elif question_answer.startswith('@{') and question_answer.endswith('}@'):
-                                new_question.answer_type = QuestionChoices.STRUCTURAL_VARIABLE_FLOAT
+                            if question_answer.startswith('@{') and question_answer.endswith('}@'):
+                                if vars_dict:
+                                    new_question.answer_type = QuestionChoices.STRUCTURAL_VARIABLE_FLOAT
+                                else:
+                                    raise ValueError('Expected variable expression but got no variable.')
                             else:
                                 new_question.answer_type = QuestionChoices.STRUCTURAL_FLOAT
                         else:

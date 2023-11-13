@@ -29,7 +29,7 @@
         {% for course in courses%}
             {% include 'phobos/course_display.html' with course=course%}
         {% empty %}
-            <h4 class="suggestion original-size"> You did not create a course yet. Go to 
+            <h4 class="suggestion original-size" style="width:100%"> You did not create a course yet. Go to 
                 <a href="{% url 'phobos:create_course' %}">create</a> to create a new course. 
             </h4>
         {% endfor %}
