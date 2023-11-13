@@ -148,9 +148,9 @@ def register(request):
         username = request.POST["username"].strip()
         email = request.POST["email"].strip()
         password = request.POST["password"].strip()
-        first_name = request.POST["first_name"].strip()
-        last_name = request.POST["last_name"].strip()
-        department = request.POST["department"].strip()
+        first_name = request.POST["first_name"].strip().title()
+        last_name = request.POST["last_name"].strip().title()
+        department = request.POST["department"].strip().title()
 
         try: 
             prof = Professor.objects.get(username=username)
