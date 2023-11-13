@@ -737,6 +737,8 @@ more than assignment display */
 
 .original-size {
   font-size: initial;
+  width: auto;
+  height: auto;
 }
 @keyframes blink {
   0%, 100% {

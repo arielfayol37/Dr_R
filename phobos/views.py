@@ -605,6 +605,21 @@ def create_question(request, assignment_id=None, question_nums_types=None):
         'question_difficulties': question_difficulties
     })  
 
+@transaction.atomic
+@login_required(login_url='astros:login')
+def delete_question(request, question_id):
+    # Making sure the request is done by a professor.
+    professor = get_object_or_404(Professor, pk=request.user.id)
+    question = get_object_or_404(Question, pk=question_id)
+    if not question.assignment.course.professors.filter(pk=request.user.pk).exists():
+        return HttpResponseForbidden('You are not authorized delete this question.')
+    # delete question
+    question.delete()
+    # redirect to assignment management
+    return HttpResponseRedirect(reverse("phobos:assignment_management",\
+                                            kwargs={'course_id':question.assignment.course.id,\
+                                                    'assignment_id':question.assignment.id}))
+
 # NOTE: The function below was to be useD for a better front end design of the export question functionality.
 # The function was to enable the prof select a course then select an assignment in that course.
 #this function raises an ATTRIBUTE ERROR. WHY ???  
