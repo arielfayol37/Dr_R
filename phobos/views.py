@@ -329,7 +329,7 @@ def create_appropriate_mcq_float_answer(new_question, answer_content, vars_dict)
     elif answer_content.startswith('@{') and answer_content.endswith('}@'):
         return create_mcq_variable_float_answer(new_question, answer_content)
     else:
-        raise ValueError('Expected a variable but variable expression not found')
+        return create_mcq_float_answer(new_question, answer_content)
 
 
 def create_expression_answer(new_question, question_answer, answer_unit, answer_preface):
@@ -356,7 +356,7 @@ def create_appropriate_float_answer(new_question, question_answer, answer_unit, 
     elif question_answer.startswith('@{') and question_answer.endswith('}@'):
         return create_variable_float_answer(new_question, question_answer, answer_unit, answer_preface)
     else:
-        raise ValueError('Expected a variable but variable expression not found')
+        return create_float_answer(new_question, question_answer, answer_unit, answer_preface)
 
 def create_matching_pairs(request, new_question, q_num):
     num_of_mps_approx = int(request.POST[q_num + '_num_of_mps'])
@@ -500,7 +500,7 @@ def create_question(request, assignment_id=None, question_nums_types=None):
                                 elif answer_content.startswith('@{') and answer_content.endswith('}@'):
                                     new_question.answer_type = QuestionChoices.MCQ_VARIABLE_FLOAT
                                 else:
-                                    raise ValueError('Expected a variable but variable expression not found')
+                                    new_question.answer_type = QuestionChoices.MCQ_FLOAT
                             else:
                                 new_question.answer_type = question_choice
                                 answer = creation_func(new_question, answer_content)
@@ -557,17 +557,13 @@ def create_question(request, assignment_id=None, question_nums_types=None):
                             elif question_answer.startswith('@{') and question_answer.endswith('}@'):
                                 new_question.answer_type = QuestionChoices.STRUCTURAL_VARIABLE_FLOAT
                             else:
-                                raise ValueError('Expected a variable but variable expression not found')
+                                new_question.answer_type = QuestionChoices.STRUCTURAL_FLOAT
                         else:
                             answer = creation_func(new_question, question_answer,\
                                                 answer_unit, answer_preface)
 
                 else:
                     return HttpResponseForbidden('Something went wrong: unexpected question type_int')
-                
-                # Handle special case for variable float answer
-                if type_int == 1 and vars_dict and not (question_answer.startswith('@{') and question_answer.endswith('}@')):
-                    raise ValueError('Expected a variable but variable expression not found')
                 
             new_question.save(save_settings=True)
             

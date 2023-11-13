@@ -26,8 +26,8 @@
     <hr/>
     <!-- Display assignment's questions -->
     <ul class="courses course-list">
-        {% for question in questions %}
-            {% include 'deimos/question_display.html' with question=question assignment_id=assignment.id course_id=assignment.course.id%}
+        {% for question, question_student in questions %}
+            {% include 'deimos/question_display.html' with question=question assignment_id=assignment.id course_id=assignment.course.id question_student=question_student %}
         {% endfor %}
     </ul>
 
