@@ -379,8 +379,8 @@ document.addEventListener('DOMContentLoaded', ()=> {
           return;
         }
        
-      } else if (questionType.value ==='mcq' && inputedMcqAnswersDiv.trueCounter===0){
-        alert('Must select at least on MCQ answer as true');
+      } else if (questionType.value =='mcq' && inputedMcqAnswersDiv.dataset.trueCounter== 0){
+        alert('Must select at least one MCQ answer as true');
         return;
       } else if (questionType.value == 'mp'){
         // check whether all the parts have been selected.
@@ -854,23 +854,24 @@ document.addEventListener('DOMContentLoaded', ()=> {
             potential: '.status-potential',
             unitsNumAttempts:'.status-units-num-attempts'
           };
-
+          const qb =  form.closest('.question-block');
+          if (result.complete){
+            qb.querySelector('.status-potential').style.display = 'none';
+          }
           // Loop through each key in the statusMappings object
           for (const key in statusMappings) {
             if (statusMappings.hasOwnProperty(key)) {
                 // Construct the selector using the mapping
                 const selector = statusMappings[key] + ' .status-value';
-                const qb =  form.closest('.question-block');
+                
                 // Update the innerHTML of the element matching the selector
                 const element = qb.querySelector(selector);
                 if(element != null){
                   element.innerHTML = result[key];
                 }
-                if(result.success){
-                  qb.querySelector('.status-potential').style.display = 'none';
-                }
             }
           }
+
     
   }
 

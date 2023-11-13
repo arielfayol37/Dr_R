@@ -290,7 +290,7 @@ class QuestionStudent(models.Model):
         return potential * overall_percentage
 
     def __str__(self):
-        return f"Question-Student:{self.question} {self.student.username}"
+        return f"{self.question} {self.student.username}"
     
 class Note(models.Model):
     """
@@ -342,7 +342,7 @@ class QuestionAttempt(models.Model):
     # while the actual submission will be stored in submitted_answer.
     submitted_answer =models.CharField(max_length=3000, blank=True, null=True)
     def __str__(self):
-        return f"{self.question_student.student.username} attempt for {self.question_student.question}"
+        return f"{self.question_student.student.username} for {self.question_student.question}"
 
 class QASuccessPairs(models.Model):
     """

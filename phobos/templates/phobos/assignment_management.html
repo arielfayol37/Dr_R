@@ -17,7 +17,7 @@
 </div>
 
 <nav class="navbar-custom" >
-    <a class="nav-link home-btn" href="{% url 'phobos:course_management' course_id=course.id %}">Course</a>
+    <a class="nav-link home-btn" href="{% url 'phobos:course_management' course_id=course.id %}">Assignments</a>
     <a class="nav-link view-notes-btn" href="{% url 'phobos:create_question' assignment_id=assignment.id %}">Create Question</a>
     <a class="nav-link gradebook-btn" href="{% url 'phobos:gradebook' course_id=course.id %}">GradeBook</a>
   </nav>
