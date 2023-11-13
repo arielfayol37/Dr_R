@@ -265,7 +265,7 @@ class QuestionStudent(models.Model):
         Otherwise False
         """
         parent_question = self.question.parent_question if self.question.parent_question else self.question
-        children_complete = not QuestionStudent.objects.filter(question__parent_question=parent_question, is_complete=False).exists()
+        children_complete = not QuestionStudent.objects.filter(question__parent_question=parent_question, student=self.student, is_complete=False).exists()
         parent_qs = QuestionStudent.objects.get(question=parent_question, student=self.student)
         return parent_qs.is_complete and children_complete
 
