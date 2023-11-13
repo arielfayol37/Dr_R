@@ -10,7 +10,7 @@
                     {{ question.text|safe }}</p><br/>
                 <p class="timestamp" style="display: none;">Created on {{ question.timestamp|date:"m/d/Y" }}</p>
             </div>
-            {% if question_student.get_status %}
+            {% if status %}
                 <button type="button" class="btn status edit-btn" style="position: absolute; bottom: 2%;">
                         Completed
                 </button>

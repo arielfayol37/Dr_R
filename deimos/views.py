@@ -50,12 +50,46 @@ def course_management(request, course_id):
 
     assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student, \
                                             is_assigned=True)
+    as_statuses = []
+    if course.name != 'Question Bank':
+        for assignment in assignments:
+            ass, created = AssignmentStudent.objects.get_or_create(assignment= assignment, student=student)
+            as_statuses.append(ass.get_status())
+
     context = {
         "student":student,
-        "assignments": assignments,
+        "assignments": zip(assignments, as_statuses),
         "course": course,
     }
     return render(request, "deimos/course_management.html", context)
+
+@login_required(login_url='astros:login') 
+def assignment_management(request, assignment_id, course_id=None):
+    # Making sure the request is done by a Student.
+    student = get_object_or_404(Student, pk = request.user.pk)
+    assignment = get_object_or_404(Assignment, pk = assignment_id)
+    assignment_student = AssignmentStudent.objects.get(student=student, assignment=assignment)
+    questions = Question.objects.filter(assignment = assignment, parent_question=None)
+    qs_statuses = []
+    if assignment.course.name != 'Question Bank':
+        for question in questions:
+            qs, created = QuestionStudent.objects.get_or_create(question=question, student=student)
+            qs_statuses.append(qs.get_status())
+            question.text = qs.evaluate_var_expressions_in_text(question.text, add_html_style=True)
+    else:
+        qs_statuses = [False for i in range(questions.count())] # here for templating purposes.
+
+    if sum(qs_statuses) == len(qs_statuses): # if all the questions have been completed.
+        assignment_student.is_complete = True
+    else:
+        assignment_student.is_complete = False
+    assignment_student.save()
+    
+    context = {
+        "questions": zip(questions, qs_statuses),
+        "assignment": assignment,
+    }
+    return render(request, "deimos/assignment_management.html", context)
 
 @login_required(login_url='astros:login')
 def gradebook(request, course_id):
@@ -87,25 +121,6 @@ def gradebook(request, course_id):
         "course_score": round(course_score, 2),
     })
 
-@login_required(login_url='astros:login') 
-def assignment_management(request, assignment_id, course_id=None):
-    # Making sure the request is done by a Student.
-    student = get_object_or_404(Student, pk = request.user.pk)
-    assignment = get_object_or_404(Assignment, pk = assignment_id)
-    questions = Question.objects.filter(assignment = assignment, parent_question=None)
-    question_students = []
-    if assignment.course != 'Question Bank':
-        for question in questions:
-            qs, created = QuestionStudent.objects.get_or_create(question=question, student=student)
-            question_students.append(qs)
-            question.text = qs.evaluate_var_expressions_in_text(question.text, add_html_style=True)
-    else:
-        question_students = [i for i in range(questions.count())] # here for templating purposes.
-    context = {
-        "questions": zip(questions, question_students),
-        "assignment": assignment,
-    }
-    return render(request, "deimos/assignment_management.html", context)
 
 # List of all answer types
 all_mcq_answer_types = {
@@ -480,13 +495,13 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                         question_student.save()    
 
         # Some info that will be used to update the front end.
-        if (not correct and (data["questionType"].startswith('structural'))):
+        if ((not correct) and (data["questionType"].startswith('structural'))):
             too_many_attempts =  num_attempts + 1 == question.struct_settings.max_num_attempts
             if not units_correct:
                 units_too_many_attempts = question_student.num_units_attempts >= question.struct_settings.units_num_attempts
 
         # Updating completion status
-        if not question_student.is_complete and (units_too_many_attempts or units_correct) and (too_many_attempts or prev_success):
+        if (not question_student.is_complete) and (units_too_many_attempts or units_correct) and (too_many_attempts or prev_success):
             question_student.is_complete = True
             question_student.save()
         # Return a JsonResponse
