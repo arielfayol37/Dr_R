@@ -4,21 +4,7 @@ from django.contrib.auth.models import User
 #from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
 import random
-from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
-import torch
-
-def attention_pooling(hidden_states, attention_mask):
-    # Apply attention mask to hidden states
-    attention_mask_expanded = attention_mask.unsqueeze(-1).expand(hidden_states.size())
-    masked_hidden_states = hidden_states * attention_mask_expanded
-    
-    # Calculate attention scores and apply softmax
-    attention_scores = torch.nn.functional.softmax(masked_hidden_states, dim=1)
-    
-    # Weighted sum using attention scores
-    pooled_output = (masked_hidden_states * attention_scores).sum(dim=1)
-    return pooled_output
-
+from .utils import *
 class DifficultyChoices(models.TextChoices):
     EASY = 'EASY', 'Easy'
     MEDIUM = 'MEDIUM', 'Medium'
@@ -112,7 +98,7 @@ class CourseInfo(models.Model):
     notice = models.CharField(max_length=2000, default="")
     
     def __str__(self):
-        return f'Course info for {self.course}'
+        return f'Course Info for {self.course}'
 class Professor(User):
     """
     Class to store professors on the platform.
@@ -145,6 +131,17 @@ class SubTopic(models.Model):
     For example, Faraday's law is a subtopic of electromagnetism.
     """
     topic = models.ForeignKey(Topic, on_delete = models.CASCADE, related_name='sub_topics')
+    name = models.CharField(max_length=50)
+    
+    def __str__(self):
+        return self.name
+    
+class Unit(models.Model):
+    """
+    A subtopic may have many units under it. For example, the subtopic Collision, under the topic 
+    Mechanics, has units 1D collision, 2D collision, conservation of linear momentum, etc. 
+    """
+    subtopic = models.ForeignKey(SubTopic, on_delete=models.CASCADE, related_name='units')
     name = models.CharField(max_length=50)
     
     def __str__(self):
@@ -196,25 +193,11 @@ class Question(models.Model):
     The weight attribute is used to compute a student's grade for an Assignment.
     So all the questions in an assignment may have the same weight (uniform distribution),
     or different weights based on the instructor's input or automated (based on difficulty)
-    
-    # TODO: !Important 
-        Though the category input from the instructor at the time of creation of the question
-        will be optional, we may use embeddings to determine the similarity with other questions 
-        and assign the same category as the closest question.
-
-        The vector or matrix representation of the question should be computed at the time of
-        creation or later(automatically - it may also be updated as more questions come in).
-        That will be used for category assignment described above, and most importantly for
-        the search engine.
-
-    # Define choices for the topic 
-
     """
     number = models.CharField(blank=False, null=False, max_length=5)
     text = models.TextField(max_length= 2000, null=False, blank=False)
     assignment = models.ForeignKey(Assignment, null=True, on_delete=models.CASCADE, \
                                    related_name="questions")
-    category = models.CharField(max_length=50, null=True, blank=True)
     topic = models.ForeignKey(Topic, on_delete=models.SET_NULL, null=True, blank=True)
     sub_topic = models.ForeignKey(SubTopic, on_delete=models.SET_NULL, null=True, blank=True)
     parent_question = models.ForeignKey('self', on_delete=models.CASCADE, null=True, \
@@ -241,18 +224,21 @@ class Question(models.Model):
                 settings, created = StructuralQuestionSettings.objects.get_or_create(question=self)
             settings.due_date = self.default_due_date()
             settings.save()
-        if not self.embedding:
-            question_tokens = BERT_TOKENIZER.encode(self.text, add_special_tokens=True)
-            with torch.no_grad():
-                question_tensor = torch.tensor([question_tokens])
-                question_attention_mask = (question_tensor != 0).float()  # Create attention mask
-                question_encoded_output = BERT_MODEL(question_tensor, attention_mask=question_attention_mask)[0]
+            if not self.embedding:
+                # Encode the question text, ensuring the sequence is within the max length limit
+                max_length = 512  # BERT's maximum sequence length
+                question_tokens = BERT_TOKENIZER.encode(self.text, add_special_tokens=True, max_length=max_length, truncation=True, padding='max_length')
 
-            # Apply attention-based pooling to question encoded output
-            question_encoded_output_pooled = attention_pooling(question_encoded_output, question_attention_mask)
+                with torch.no_grad():
+                    question_tensor = torch.tensor([question_tokens])
+                    question_attention_mask = (question_tensor != 0).float()  # Create attention mask
+                    question_encoded_output = BERT_MODEL(question_tensor, attention_mask=question_attention_mask)[0]
 
-            # Save the encoded output to the question object
-            self.embedding = question_encoded_output_pooled.tolist()
+                # Apply attention-based pooling to question encoded output
+                question_encoded_output_pooled = attention_pooling(question_encoded_output, question_attention_mask)
+
+                # Save the encoded output to the question object
+                self.embedding = question_encoded_output_pooled.tolist()
 
             super(Question, self).save(*args, **kwargs)
 
@@ -265,6 +251,15 @@ class Question(models.Model):
 
     def __str__(self):
         return f"Question {self.number} for {self.assignment}"
+    
+class QuestionCategory(models.Model):
+    """
+    Information about the topic, subtopic, and unit of a question
+    """
+    question = models.OneToOneField(Question, on_delete=models.CASCADE, related_name='category')
+    topic = models.ForeignKey(Topic, on_delete=models.SET_NULL, null=True, blank=True)
+    subtopic = models.ForeignKey(SubTopic, on_delete=models.SET_NULL, null=True, blank=True)
+    unit = models.ForeignKey(Unit, on_delete=models.SET_NULL, null=True, blank=True)
     
 class BaseQuestionSettings(models.Model):
     """
