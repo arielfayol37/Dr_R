@@ -38,7 +38,7 @@
                     </div>
                     
                     <div class="status-potential">
-                      {% if not question_dict.question_student.success %}
+                      {% if not question_dict.question_student.is_complete %}
                           Potential: <span class="status-value">{{question_dict.potential}}</span>%
                       {% endif %}
                     </div>
@@ -67,7 +67,7 @@
                     </div>
 
                     <div class="status-potential">
-                      {% if not question_dict.question_student.success %}
+                      {% if not question_dict.question_student.is_complete %}
                           Potential: <span class="status-value">{{question_dict.potential}}</span>%
                       {% endif %}
                     </div>
@@ -213,7 +213,7 @@
                           <br/> 
                         {% endfor %}
                       </div> 
-                      {% if question_dict.question_student.success %}
+                      {% if question_dict.question_student.is_complete %}
                         <input type="submit" class="btn btn-success exempt submit-btn" value="Submit Answer" style="display: none;">
                       {% else %}
                         <input type="submit" class="btn btn-success exempt submit-btn" value="Submit Answer">
@@ -263,7 +263,7 @@
                           </div>
                       </div>
                       <br/>
-                    {% if question_dict.question_student.success or question_dict.too_many_attempts %}
+                    {% if question_dict.question_student.is_complete %}
                       <input type="submit" class="btn btn-success exempt submit-btn" value="Submit Answer" style="display: none;">
                     {% else %}
                       <input type="submit" class="btn btn-success exempt submit-btn" value="Submit Answer">
@@ -289,7 +289,7 @@
                           </div>
                         </div>
                       </div>
-                      {% if not question_dict.question_student.success %}
+                      {% if not question_dict.question_student.is_complete %}
                           <input type="hidden" value="structural_{{question_dict.answer.get_answer_code}}" class="question-type"/>
                           <!--TODO: !Important. I don't think we will ever use the pk of the answer for structural questions.-->
                           <input type="hidden" value="{{question_dict.answer.pk}}" name="structural_answer_id_0"/>

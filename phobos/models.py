@@ -98,7 +98,7 @@ class CourseInfo(models.Model):
     notice = models.CharField(max_length=2000, default="")
     
     def __str__(self):
-        return f'Course info for {self.course}'
+        return f'Course Info for {self.course}'
 class Professor(User):
     """
     Class to store professors on the platform.

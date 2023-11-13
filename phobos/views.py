@@ -554,7 +554,7 @@ def create_question(request, assignment_id=None, question_nums_types=None):
                                                 answer_unit, answer_preface, vars_dict)
                             if not vars_dict:
                                 new_question.answer_type = QuestionChoices.STRUCTURAL_FLOAT
-                            elif answer_content.startswith('@{') and answer_content.endswith('}@'):
+                            elif question_answer.startswith('@{') and question_answer.endswith('}@'):
                                 new_question.answer_type = QuestionChoices.STRUCTURAL_VARIABLE_FLOAT
                             else:
                                 raise ValueError('Expected a variable but variable expression not found')
