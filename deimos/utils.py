@@ -4,6 +4,14 @@ from urllib.parse import urlparse
 from urllib.parse import unquote  # Import unquote for URL decoding
 from sympy import symbols, simplify
 
+def encrypt_integer(n:int)->int:
+    assert n >= 0
+    return (n + 137)**2
+def decrypt_integer(k: int)->int:
+    assert k >= 0
+    n = k**0.5 - 137
+    assert int(n) == n
+    return int(n)
 def transform_expression(expr):
     """Insert multiplication signs between combined characters, except within trig functions."""
     expression = remove_extra_spaces_around_operators(expr)

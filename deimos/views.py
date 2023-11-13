@@ -93,24 +93,19 @@ def assignment_management(request, assignment_id, course_id=None):
     student = get_object_or_404(Student, pk = request.user.pk)
     assignment = get_object_or_404(Assignment, pk = assignment_id)
     questions = Question.objects.filter(assignment = assignment, parent_question=None)
-    for question in questions:
-        if assignment.course != 'Question Bank':
+    question_students = []
+    if assignment.course != 'Question Bank':
+        for question in questions:
             qs, created = QuestionStudent.objects.get_or_create(question=question, student=student)
+            question_students.append(qs)
             question.text = qs.evaluate_var_expressions_in_text(question.text, add_html_style=True)
+    else:
+        question_students = [i for i in range(questions.count())] # here for templating purposes.
     context = {
-        "questions": questions,
-        "assignment": assignment
+        "questions": zip(questions, question_students),
+        "assignment": assignment,
     }
     return render(request, "deimos/assignment_management.html", context)
-
-def encrypt_integer(n:int)->int:
-    assert n >= 0
-    return (n + 137)**2
-def decrypt_integer(k: int)->int:
-    assert k >= 0
-    n = k**0.5 - 137
-    assert int(n) == n
-    return int(n)
 
 # List of all answer types
 all_mcq_answer_types = {
@@ -368,6 +363,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                                     attempt_potential -= question.struct_settings.percentage_pts_units     
                         else:
                             question_student.success, question_student.is_complete = (True, True)
+                        attempt_potential = max(0, attempt_potential)
                         attempt.num_points = round(attempt_potential * question.struct_settings.num_points, 2)
                         question_student.save()
                     else:
@@ -385,8 +381,8 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                             question_student.num_units_attempts += 1
                             # Update the number of points for this attempt
                             if units_correct:
-                                attempt.num_points = round(question.struct_settings.percentage_pts_units * \
-                                                           question.struct_settings.num_points, 2)
+                                attempt.num_points = max(0, round(question.struct_settings.percentage_pts_units * \
+                                                           question.struct_settings.num_points, 2))
                         
 
                 elif data["questionType"] == 'mcq':
@@ -418,7 +414,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                         s1, s2 = set(simplified_answer), set(answers)
                         if s1 == s2:
                             correct = True
-                            attempt.num_points = round(current_potential * question.mcq_settings.num_points, 2)
+                            attempt.num_points = max(0, round(current_potential * question.mcq_settings.num_points, 2))
                             question_student.success, question_student.is_complete = (True, True)
                             attempt.success = True
 
@@ -451,7 +447,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
                     attempt.content = attempt_pairs
                     attempt.submitted_answer = attempt_pairs # useless. Using twice the size of memory.
-                    attempt.num_points = round(frac * current_potential * question.mcq_settings.num_points, 2)                      
+                    attempt.num_points = max(0, round(frac * current_potential * question.mcq_settings.num_points, 2))                      
                     return_sp = success_pairs_strings # will return the successful pairs so the front end can be updated.
                     success_pairs_strings = "&".join(success_pairs_strings)   
                     # attempt.save() # probably not needed here?
@@ -475,8 +471,8 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                         last_attempt.units_success = units_correct
                         last_attempt.submitted_units = submitted_units
                         question_student.num_units_attempts += 1
-                        last_attempt.num_points += round(question.struct_settings.percentage_pts_units * \
-                                                         question.struct_settings.num_points * int(units_correct), 2)
+                        last_attempt.num_points += max(0, round(question.struct_settings.percentage_pts_units * \
+                                                         question.struct_settings.num_points * int(units_correct), 2))
                         last_attempt.save()
                         # Updating question status
                         if units_correct and prev_success:

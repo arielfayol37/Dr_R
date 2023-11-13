@@ -428,7 +428,17 @@ div.image-container img.course-image {
 }
 
 
+.edit-btn {
+  background-color: rgba(23, 137, 252, 1) !important;
+  transition: background-color 0.2s !important;
+  color: rgba(0,0,0,0.95) !important;
+  font-weight:400 !important;
+  font-family: 'Aileron', sans-serif;
 
+}
+.edit-btn:hover {
+  background-color: rgba(23, 137, 252, 0.7) !important;
+}
 
 /* ------------------------------Style for answer_question.html-------------*/
 .formatted-mp {
