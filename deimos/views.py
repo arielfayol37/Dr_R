@@ -50,12 +50,46 @@ def course_management(request, course_id):
 
     assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student, \
                                             is_assigned=True)
+    as_statuses = []
+    if course.name != 'Question Bank':
+        for assignment in assignments:
+            ass, created = AssignmentStudent.objects.get_or_create(assignment= assignment, student=student)
+            as_statuses.append(ass.get_status())
+
     context = {
         "student":student,
-        "assignments": assignments,
+        "assignments": zip(assignments, as_statuses),
         "course": course,
     }
     return render(request, "deimos/course_management.html", context)
+
+@login_required(login_url='astros:login') 
+def assignment_management(request, assignment_id, course_id=None):
+    # Making sure the request is done by a Student.
+    student = get_object_or_404(Student, pk = request.user.pk)
+    assignment = get_object_or_404(Assignment, pk = assignment_id)
+    assignment_student = AssignmentStudent.objects.get(student=student, assignment=assignment)
+    questions = Question.objects.filter(assignment = assignment, parent_question=None)
+    qs_statuses = []
+    if assignment.course.name != 'Question Bank':
+        for question in questions:
+            qs, created = QuestionStudent.objects.get_or_create(question=question, student=student)
+            qs_statuses.append(qs.get_status())
+            question.text = qs.evaluate_var_expressions_in_text(question.text, add_html_style=True)
+    else:
+        qs_statuses = [False for i in range(questions.count())] # here for templating purposes.
+
+    if sum(qs_statuses) == len(qs_statuses): # if all the questions have been completed.
+        assignment_student.is_complete = True
+    else:
+        assignment_student.is_complete = False
+    assignment_student.save()
+    
+    context = {
+        "questions": zip(questions, qs_statuses),
+        "assignment": assignment,
+    }
+    return render(request, "deimos/assignment_management.html", context)
 
 @login_required(login_url='astros:login')
 def gradebook(request, course_id):
@@ -378,6 +412,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                                     attempt_potential -= question.struct_settings.percentage_pts_units     
                         else:
                             question_student.success, question_student.is_complete = (True, True)
+                        attempt_potential = max(0, attempt_potential)
                         attempt.num_points = round(attempt_potential * question.struct_settings.num_points, 2)
                         question_student.save()
                     else:
@@ -395,8 +430,8 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                             question_student.num_units_attempts += 1
                             # Update the number of points for this attempt
                             if units_correct:
-                                attempt.num_points = round(question.struct_settings.percentage_pts_units * \
-                                                           question.struct_settings.num_points, 2)
+                                attempt.num_points = max(0, round(question.struct_settings.percentage_pts_units * \
+                                                           question.struct_settings.num_points, 2))
                         
 
                 elif data["questionType"] == 'mcq':
@@ -428,7 +463,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                         s1, s2 = set(simplified_answer), set(answers)
                         if s1 == s2:
                             correct = True
-                            attempt.num_points = round(current_potential * question.mcq_settings.num_points, 2)
+                            attempt.num_points = max(0, round(current_potential * question.mcq_settings.num_points, 2))
                             question_student.success, question_student.is_complete = (True, True)
                             attempt.success = True
 
@@ -461,7 +496,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
                     attempt.content = attempt_pairs
                     attempt.submitted_answer = attempt_pairs # useless. Using twice the size of memory.
-                    attempt.num_points = round(frac * current_potential * question.mcq_settings.num_points, 2)                      
+                    attempt.num_points = max(0, round(frac * current_potential * question.mcq_settings.num_points, 2))                      
                     return_sp = success_pairs_strings # will return the successful pairs so the front end can be updated.
                     success_pairs_strings = "&".join(success_pairs_strings)   
                     # attempt.save() # probably not needed here?
@@ -485,8 +520,8 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                         last_attempt.units_success = units_correct
                         last_attempt.submitted_units = submitted_units
                         question_student.num_units_attempts += 1
-                        last_attempt.num_points += round(question.struct_settings.percentage_pts_units * \
-                                                         question.struct_settings.num_points * int(units_correct), 2)
+                        last_attempt.num_points += max(0, round(question.struct_settings.percentage_pts_units * \
+                                                         question.struct_settings.num_points * int(units_correct), 2))
                         last_attempt.save()
                         # Updating question status
                         if units_correct and prev_success:
@@ -494,13 +529,13 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                         question_student.save()    
 
         # Some info that will be used to update the front end.
-        if (not correct and (data["questionType"].startswith('structural'))):
+        if ((not correct) and (data["questionType"].startswith('structural'))):
             too_many_attempts =  num_attempts + 1 == question.struct_settings.max_num_attempts
             if not units_correct:
                 units_too_many_attempts = question_student.num_units_attempts >= question.struct_settings.units_num_attempts
 
         # Updating completion status
-        if not question_student.is_complete and (units_too_many_attempts or units_correct) and (too_many_attempts or prev_success):
+        if (not question_student.is_complete) and (units_too_many_attempts or units_correct) and (too_many_attempts or prev_success):
             question_student.is_complete = True
             question_student.save()
         # Return a JsonResponse
@@ -581,13 +616,18 @@ def register(request):
         username = request.POST["username"].strip()
         email = request.POST["email"].strip()
         password = request.POST["password"].strip()
-        first_name = request.POST["first_name"].strip()
-        last_name = request.POST["last_name"].strip()
+        first_name = request.POST["first_name"].strip().title()
+        last_name = request.POST["last_name"].strip().title()
         
         try: 
             stud = Student.objects.get(username=username)
             username = str(username) + str(random.randint(1, 1000000))
         except:
+            pass
+        try:
+            s = Student.objects.get(username=username)
+            username = str(username) + str(random.randint(1, 10000000))
+        except Student.DoesNotExist:
             pass
         try:
             checking_student = Student.objects.get(email=email)
@@ -951,17 +991,13 @@ def generate_practice_test(request,practice_course_id):
 
     # Extract the number of attempts for statistics
     question_student_topic_attempts = [question_sum_attempts[i]/questioncount[i] for i in range(len(question_student_topic))]
-    #print('question_student_topic_attempts',question_student_topic,question_student_topic_attempts)
 
     # removing Student's and similar questions to avoid duplicates
     questions=[]
     #print(len(question_class_topic))
     for qc in question_class_topic:
         questions.append(qc)
-        # for qs in question_student_topic: ## removing student's questions
-        #      if qc == qs.question:
-        #          questions.pop()
-        #          break
+
         for q in questions:
             if q!=qc and areQuestionSimilar(qc,q,0.85):
                 questions.pop() #removing similar questions
@@ -1019,25 +1055,7 @@ def generate_practice_test(request,practice_course_id):
         elif isinstance(question, Question):
             result = export_question_to(request, question.id, practice_test.id)
 
-   ## adding selected and similar questions to the new practice test assignment and saving assignmentstudent ##
-    # practice_questions=[]
-    # for question in Selected_questions:
-    #     similar = similar_question(question.question)
-    #     if not similar:  # If the list is empty, continue to the next iteration
-    #         continue
-    #     select = random.choice(similar)
-    #     # Let's ensure a question doesnot repeat twice
-    #     while select in practice_questions and similar != []:
-    #         similar.remove(select) 
-    #         if similar != []:
-    #             select = random.choice(similar)
-    #     # copying te selected question into te practce test course   
-    #     if similar !=[]:
-    #         #result = export_question_to(request,select['question'].id,practice_test.id)
-    #         practice_test.questions.add(select['question'])
-    #         practice_questions.append(select)
 
-#delete:
     practice_test_student = AssignmentStudent.objects.create(assignment= practice_test, student= student)
     practice_test_student.save()
     practice_test_enroll = Enrollment.objects.create(student=student, course=practice_course)

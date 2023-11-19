@@ -20,14 +20,11 @@
             {% if course.name == "Practice_Test_Course" %}
             {% else %}
             {% include 'deimos/course_display.html' with course=course%}
-<<<<<<< HEAD
             {% endif %}
-=======
         {% empty %}
-            <h5 class="suggestion original-size">You are not yet registered for any course.
+            <h5 class="suggestion original-size" style="width:100%">You are not yet registered for any course.
                 Go to <a href="{% url 'astros:all_courses' %}">All courses</a> to see available courses.
             </h5>
->>>>>>> 5369dd6a128dd246c7fbd65fdb4d32983c983b6b
         {% endfor %}
     </ul>
 

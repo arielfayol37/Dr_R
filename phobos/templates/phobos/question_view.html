@@ -13,11 +13,17 @@
         <li><a href="{% url 'phobos:course_management' course_id=question.assignment.course.id %}">Assignments</a></li>
         {% endif %}
         <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
-        <li><a href="{% url 'phobos:edit_question' question_id=question.id %}">Edit Question</a></li>
-        <li id="btn-export_question"> <a>Export this question</a> </li>
+        <!--<li><a href="{% url 'phobos:edit_question' question_id=question.id %}">Edit Question</a></li>-->
     </ul>
   </div>
 
+<nav class="navbar-custom">
+    <a class="nav-link home-btn" href="{% url 'phobos:index' %}">Home </a>
+    <a class="nav-link" href="{% url 'phobos:assignment_management' assignment_id=question.assignment.id course_id=question.assignment.course.id %}">Questions</a>
+    <a class="nav-link" href="{% url 'phobos:course_management' course_id=question.assignment.course.id %}">Assignments</a>
+    <a class="nav-link" id="btn-export_question" style="color:white">Export</a>
+    <a class="nav-link" href="{% url 'phobos:delete_question' question_id=question.id %}">Delete</a>
+</nav>
 
 <div class="export_question">
     <div class="form-container" style="display: none;"> 

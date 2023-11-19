@@ -74,6 +74,7 @@ class AssignmentStudent(models.Model):
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
     grade = models.FloatField(validators=[MaxValueValidator(100)], default=0, null=True)
     due_date = models.DateTimeField(null=True, blank=True)
+    is_complete = models.BooleanField(default=False)
 
     def get_grade(self):
         """
@@ -101,6 +102,10 @@ class AssignmentStudent(models.Model):
             self.grade = 0
         self.assignment.num_points = total
         return self.grade
+    
+    def get_status(self):
+        return self.is_complete
+
     def save(self, *args, **kwargs):
         if not self.due_date:
             self.due_date = self.assignment.due_date
@@ -118,6 +123,12 @@ class QuestionStudent(models.Model):
     instances_created = models.BooleanField(default=False)
     num_units_attempts = models.IntegerField(default=0, null=True, blank=True, validators=[MinValueValidator(0)])
     is_complete = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        if self.success == True:
+            self.is_complete = True
+        super(QuestionStudent, self).save(*args, **kwargs)
+
     def create_instances(self):
         """
         Get variable instances from the variables associated to the question.
@@ -254,11 +265,9 @@ class QuestionStudent(models.Model):
         Otherwise False
         """
         parent_question = self.question.parent_question if self.question.parent_question else self.question
-        question_students = QuestionStudent.objects.filter(question__parent_question=parent_question)
-        for qs in question_students:
-            if not qs.is_complete:
-                return False
-        return True
+        children_complete = not QuestionStudent.objects.filter(question__parent_question=parent_question, student=self.student, is_complete=False).exists()
+        parent_qs = QuestionStudent.objects.get(question=parent_question, student=self.student)
+        return parent_qs.is_complete and children_complete
 
     def get_potential(self, no_unit = False):
         """

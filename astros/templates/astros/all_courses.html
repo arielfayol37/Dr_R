@@ -23,17 +23,26 @@
     <ul class="courses course-list">
         {% if is_professor%}
             {% for course, is_course_prof in courses__is_professor %}
-                {% include 'astros/prof_course_display.html' with course=course is_course_prof=is_course_prof%}
+            {% if course.name == "Practice_Test_Course" %}
+            {% else %}
+            {% include 'astros/prof_course_display.html' with course=course is_course_prof=is_course_prof%}
+            {% endif %}
             {% endfor %}
 
         {% elif is_student %}
             {% for course, is_course_stud in courses__is_student %}
+            {% if course.name == "Practice_Test_Course" %}
+            {% else %}
                 {% include 'astros/stud_course_display.html' with course=course is_course_stud=is_course_stud %}
+            {% endif %}
             {% endfor %}
         
         {% else %}
             {% for course in courses %}
+            {% if course.name == "Practice_Test_Course" %}
+            {% else %}
                 {% include 'astros/lambda_course_display.html' with course=course%}
+            {% endif %}
             {% endfor %}
         {% endif %}
     </ul>

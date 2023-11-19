@@ -37,48 +37,10 @@
             {% include 'phobos/assignment_display.html' with assignment=assignment course=course %}
         {% endfor %}
     </ul>
-<<<<<<< HEAD
     
 
-    <script>
-        const navigation = document.querySelector('.navigation');
-        const homeDiv = document.querySelector('.home');
-        const gradebookDiv = document.querySelector('.gradebook')
-    
-        function initial_view() {
-            homeDiv.style.display = 'none';
-            gradebookDiv.style.display= 'none';
-        }
-    
-        navigation.addEventListener('click', () => {
-            target = event.target;
-            if (target.classList.contains('home-btn')) {
-                initial_view();
-                homeDiv.style.display = 'block';
-            }
-            else if(target.classList.contains('gradebook-btn')){
-                initial_view();
-                gradebookDiv.style.display= 'block';
-            }
-        })
-    
-        const gradebookBtn = document.querySelector('.gradebook-btn')
-        const show_gradebookEvent = new Event('click',{
-            bubbles: true,
-            cancelable: true,
-        });
-        if(gradebookBtn.dataset.show_gradebook === "1"){
-            gradebookBtn.dispatchEvent(show_gradebookEvent)
-        }
-    
-    </script>
-    <script>
-        
-    </script>
 {% endblock %}
-=======
-{% endblock %}
+
 {% block scripts %}
     <script src="{% static 'phobos/js/search_generic.js' %}"></script>
 {% endblock %}
->>>>>>> 5369dd6a128dd246c7fbd65fdb4d32983c983b6b
