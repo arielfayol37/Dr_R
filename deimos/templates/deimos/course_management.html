@@ -15,7 +15,7 @@
         <li><a href="{% url 'deimos:index' %}">Home</a></li>
         <li><a href="{% url 'astros:course_info' course_id=course.id %}">Course Info</a></li>
         <li><a href="{% url 'deimos:search_question' %}">Search Question</a></li>
-        <li><a href="{% url 'deimos:practice_test_settings' course_id=course.id %}">Practice Test</a></li>
+        <li><a href="{% url 'deimos:practice_test_page' course_id=course.id %}">Practice Test</a></li>
     </ul>
 </div>
 
@@ -30,6 +30,9 @@
         </li>
         <li class="nav-item" style="display:inline;">
             <a class="nav-link gradebook-btn" data-show_gradebook="{{show_gradebook}}">GradeBook</a>
+        </li>
+        <li class="nav-item" style="display:inline;">
+            <a class="nav-link view-notes-btn" href="{% url 'deimos:practice_test_page' course_id=course.id %}">Practice Test</a>
         </li>
         </div>
   </nav>

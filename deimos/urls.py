@@ -18,6 +18,9 @@ urlpatterns = [
     path('courses/<int:course_id>', views.course_management, name='course_management'),
     path('courses/<int:course_id>/assignments/<int:assignment_id>', \
          views.assignment_management, name='assignment_management'),
+         path('courses/<int:course_id>/assignments/<int:assignment_id>/<int:previous_course_id>', \
+         views.assignment_management, name='assignment_management'),
+
     path('courses/<int:course_id>/assignments/<int:assignment_id>/questions/<int:question_id>',\
          views.answer_question, name='answer_question'),
     path('courses/<int:course_id>/assignments/<int:assignment_id>/questions/<int:question_id>/<int:student_id>/<int:upload_note_img>',\
@@ -38,6 +41,8 @@ urlpatterns = [
          views.save_note, name='save_note'), 
    path('courses/<int:course_id>/assignments/<int:assignment_id>/questions/<int:question_id>/<int:student_id>/<int:upload_note_img>/save_note',\
          views.save_note, name='save_note'), 
-    path('courses/generate_practice_test', views.generate_practice_test, name='generate_practice_test'),
-    path('courses/practice_test_settings/<int:course_id>', views.practice_test_settings, name='practice_test_settings'),    
+    path('courses/generate_practice_test/<int:practice_course_id>', views.generate_practice_test, name='generate_practice_test'),
+    path('courses/practice_test_settings/<int:course_id>/<int:practice_course_id>', views.practice_test_settings, name='practice_test_settings'),
+    path('courses/practice_test_settings/<int:course_id>/<int:practice_course_id>/<str:error_message>', views.practice_test_settings, name='practice_test_settings'),    
+    path('courses/practice_test_page/<int:course_id>', views.practice_test_page, name='practice_test_page'),    
 ]

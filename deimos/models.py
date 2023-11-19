@@ -308,6 +308,15 @@ class QuestionModifiedScore(models.Model):
         if self.score == None:
             self.is_modified = False
         return f"{self.question_student.student.username} score: {self.score} is modified? {self.is_modified}"
+    
+class PracticeTestAssignment(models.Model):
+    "Used to generate a practice test for a particular course"
+    course = models.ForeignKey(Course,on_delete=models.CASCADE, related_name='course_practice_test')
+    assignment = models.ManyToManyField(Assignment,blank=True, related_name='practice_test_assignments')
+    student = models.ForeignKey(Student,on_delete=models.CASCADE, related_name='student_practice_test')
+
+    def __str__(self):
+        return f"Practice Test for {self.student} in course {self.course}" 
 
 
 def transform_expression(expr):
@@ -361,3 +370,4 @@ def decode(text, trig_functions):
     for key, value in trig_functions.items():
         result = result.replace(value, key)
     return result
+

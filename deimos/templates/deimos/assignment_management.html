@@ -5,12 +5,35 @@
 {% block body%}
 <div class="sidebar" style="display:none">
     <header class="sidebar-header">X</header>
-    <ul>
+    <ul> {% if assignment.category == "PRACTICE_TEST" %}
+        <li><a href="{% url 'deimos:index' %}">Home</a></li>
+        <li><a href="{% url 'deimos:practice_test_page' course_id=course_id %}">Practice Test</a></li>
+        <li><a href="{% url 'deimos:search_question' %}">Search Question</a></li>
+        {% else %}
         <li><a href="{% url 'deimos:index' %}">Home</a></li>
         <li><a href="{% url 'deimos:course_management' course_id=assignment.course.id %}">Assignments</a></li>
         <li><a href="{% url 'deimos:search_question' %}">Search Question</a></li>
+        {% endif %}
     </ul>
 </div>
+
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light navigation" >
+    <div class="container-fluid">
+      <ul class="navbar-nav mr-auto" style="list-style: none; display:flex;">
+        <li class="nav-item " style="display:inline;">
+            {% if assignment.category == "PRACTICE_TEST" %}
+            <a class="nav-link view-notes-btn" href="{% url 'deimos:practice_test_page' course_id=course_id %}">Practice Test</a>
+            {% else %}
+          <a class="nav-link home-btn" href="{% url 'deimos:course_management' course_id=assignment.course.id%}">Home</a>
+          {% endif %}
+        </li>
+        <li class="nav-item" style="display:inline;">
+          <a class="nav-link view-notes-btn" href="{% url 'deimos:note_management' course_id=assignment.course.id%}">View notes</a>
+        </li>
+        </div>
+  </nav>
+
 <form action="{% url 'deimos:search_question' %}" method="post" id="search-form">
     {% csrf_token %} 
     <div id="sf-container">
@@ -24,8 +47,14 @@
     <!-- Display assignment's questions -->
     <ul class="courses course-list">
         {% for question in questions %}
+        {% if assignment.category == "PRACTICE_TEST" %}
+
+        {% include 'deimos/question_display.html' with question=question assignment_id=assignment.id course_id=course_id %}
+        
+        {% else %}
             {% include 'deimos/question_display.html' with question=question assignment_id=assignment.id course_id=assignment.course.id%}
-        {% endfor %}
+        {% endif %}
+            {% endfor %}
     </ul>
 
 {% endblock %}

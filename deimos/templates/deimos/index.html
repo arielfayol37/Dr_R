@@ -14,7 +14,10 @@
    <!-- Display Student's courses -->
     <ul class="courses course-list">
         {% for course in courses%}
+            {% if course.name == "Practice_Test_Course" %}
+            {% else %}
             {% include 'deimos/course_display.html' with course=course%}
+            {% endif %}
         {% endfor %}
     </ul>
 
