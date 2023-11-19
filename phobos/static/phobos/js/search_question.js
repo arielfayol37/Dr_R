@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded',()=>{
     // Get the form and search field elements
-    const form = document.getElementById('search-form');
-    const searchField = document.getElementById('search-field');
+    const form = document.querySelector('.search-form');
+    const searchField = document.querySelector('.search-field');
 
     // Add an event listener to the search field for the 'keydown' event
     searchField.addEventListener('keydown', function(event) {

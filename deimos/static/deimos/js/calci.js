@@ -188,17 +188,25 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
 
 
-      /* Special BUTTONS */
-      specialBtns.forEach((item)=>{
-        item.addEventListener('click',()=>{
-            screen.value += `${specialBtnsTextDict[item.textContent.trim()]}()`
-            screen.focus();
-            cursorPosition = screen.value.length - 1;
-            screen.setSelectionRange(cursorPosition, cursorPosition); 
-        })
-      }
-      )
+/* Special BUTTONS */
+specialBtns.forEach((item) => {
+  item.addEventListener('click', () => {
+      const specialText = `${specialBtnsTextDict[item.textContent.trim()]}()`;
+      cursorPosition = screen.selectionStart;  // Get current cursor position
 
+      const textBeforeCursor = screen.value.substring(0, cursorPosition);
+      const textAfterCursor = screen.value.substring(cursorPosition);
+
+      // Insert special text at cursor position
+      screen.value = textBeforeCursor + specialText + textAfterCursor;
+
+      // Move the cursor inside the parentheses
+      cursorPosition = textBeforeCursor.length + specialText.length - 1;
+      screen.setSelectionRange(cursorPosition, cursorPosition);
+
+      screen.focus();
+  });
+});
 
 
       invBtn.addEventListener('click', ()=>{

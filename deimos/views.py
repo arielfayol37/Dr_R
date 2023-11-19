@@ -1,6 +1,4 @@
 import json
-from urllib.parse import urlparse
-from urllib.parse import unquote  # Import unquote for URL decoding
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth import authenticate, login, logout
@@ -16,8 +14,7 @@ from django.shortcuts import get_object_or_404
 from django.middleware import csrf
 from django.utils.timesince import timesince
 from phobos.models import QuestionChoices
-import random, string
-from sympy import symbols, simplify
+import random
 import numpy as np
 import torch
 from sklearn.metrics.pairwise import cosine_similarity
@@ -27,10 +24,9 @@ from django.db import transaction
 from markdown2 import markdown
 from phobos.models import Topic, SubTopic
 import qrcode
-import math
 from phobos.views import export_question_to
 from scipy.stats import norm
-
+from .utils import *
 from datetime import date
 
 # Create your views here.
@@ -44,7 +40,25 @@ def index(request):
     return render(request, "deimos/index.html", context)
 
 @login_required(login_url='astros:login') 
-def course_management(request, course_id, show_gradebook=None):
+def course_management(request, course_id):
+    course = get_object_or_404(Course, pk=course_id)
+    # Check if there is any Enrollment entry that matches the given student and course
+    student = get_object_or_404(Student, pk = request.user.pk)
+    is_enrolled = Enrollment.objects.filter(student=student, course=course).exists()
+    if not is_enrolled:
+        return HttpResponseForbidden('You are not enrolled in this course.')
+
+    assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student, \
+                                            is_assigned=True)
+    context = {
+        "student":student,
+        "assignments": assignments,
+        "course": course,
+    }
+    return render(request, "deimos/course_management.html", context)
+
+@login_required(login_url='astros:login')
+def gradebook(request, course_id):
     course = get_object_or_404(Course, pk=course_id)
 
     # Check if there is any Enrollment entry that matches the given student and course
@@ -70,17 +84,11 @@ def course_management(request, course_id, show_gradebook=None):
     else:
         course_score /= a_sums
 
-    assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student, \
-                                            is_assigned=True)
-    context = {
-        "student":student,
-        "assignments": assignments,
-        "course": course,
-        "assignment_student_grade": assignment_student_grade,
+    return render(request, 'deimos/gradebook.html', {
+        'student': student, 'course':course,
+                "assignment_student_grade": assignment_student_grade,
         "course_score": round(course_score, 2),
-        "show_gradebook": show_gradebook
-    }
-    return render(request, "deimos/course_management.html", context)
+    })
 
 @login_required(login_url='astros:login') 
 def assignment_management(request, assignment_id, course_id=None):
@@ -117,7 +125,7 @@ def decrypt_integer(k: int)->int:
 # List of all answer types
 all_mcq_answer_types = {
     'ea': ('mcq_expression_answers', 0),
-    'ta': ('mcq_text_answers',0),
+    'ta': ('mcq_text_answers',3),
     'fa':('mcq_float_answers',1),
     'fva': ('mcq_variable_float_answers',8),
     'ia': ('mcq_image_answers',7),
@@ -156,12 +164,6 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
         if index==0:
             note, note_created = Note.objects.get_or_create(question_student=question_student)
             note_md = markdown(note.content)
-        if question.answer_type.startswith('MCQ'):
-            too_many_attempts = question_student.get_num_attempts() >= question.mcq_settings.mcq_max_num_attempts
-            units_too_many_attempts = True
-        else:
-            too_many_attempts = question_student.get_num_attempts() >= question.struct_settings.max_num_attempts  
-            units_too_many_attempts = question_student.get_num_attempts() >= question.struct_settings.units_num_attempts  
         if created:
             question_student.create_instances()
         else:
@@ -177,19 +179,16 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
         question.text = question_student.evaluate_var_expressions_in_text(question.text, add_html_style=True)
         questtype = ''
         answers = []
-        is_latex = []
         answers_c = None
-        question_type = []
+
         if question.answer_type.startswith('MCQ'):
             questtype='mcq'
             # List of answer types that require content evaluation
             answer_types_to_evaluate = ['mcq_expression_answers', 'mcq_variable_float_answers']
-            question_type_count = {}
             # Loop through each answer type
             for key, answer_type in all_mcq_answer_types.items():
                 # Get the related manager for the answer type
                 answer_queryset = getattr(question, answer_type[0]).all()
-                question_type_count[key] = getattr(question, answer_type[0]).count()
                 # If the answer type requires content evaluation, process each answer
                 if answer_type[0] in answer_types_to_evaluate:
                     for answer in answer_queryset:
@@ -197,44 +196,32 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
                 
                 # Extend the answers list with the processed or unprocessed answers
                 answers.extend(answer_queryset)
-            for q_type, answer_type in all_mcq_answer_types.items():
-                for _ in range(question_type_count[q_type]):
-                    question_type.append(answer_type[1])
-                    if q_type == 'la': # for latex
-                        is_latex.append(1)
-                    else:
-                        is_latex.append(0)
-            assert len(is_latex) == len(answers) == len(question_type)
-            alq = list(zip(answers, is_latex, question_type))
             if not question_student.success: # Do not need to randomize the order if student has already passed.
-                random.shuffle(alq)  
+                random.shuffle(answers)  
         elif question.answer_type.startswith('STRUCT'):
             questtype = 'struct'
             # TODO: Subclass all structural answers to a more general class 
             # so that you may use only one if.
             # Define a mapping from answer_type to the corresponding attribute and question type value
             answer_type_mapping = {
-                QuestionChoices.STRUCTURAL_LATEX: ('latex_answer', 1, 2),
-                QuestionChoices.STRUCTURAL_EXPRESSION: ('expression_answer', 0, 0),
-                QuestionChoices.STRUCTURAL_VARIABLE_FLOAT: ('variable_float_answer', 0, 5),
-                QuestionChoices.STRUCTURAL_FLOAT: ('float_answer', 0, 1),
-                QuestionChoices.STRUCTURAL_TEXT: ('text_answer', 0, 4),
+                QuestionChoices.STRUCTURAL_LATEX: 'latex_answer',
+                QuestionChoices.STRUCTURAL_EXPRESSION: 'expression_answer',
+                QuestionChoices.STRUCTURAL_VARIABLE_FLOAT: 'variable_float_answer',
+                QuestionChoices.STRUCTURAL_FLOAT: 'float_answer',
+                QuestionChoices.STRUCTURAL_TEXT: 'text_answer',
             }
 
-            # Get the attribute name and question type based on the answer_type
-            attribute_name, is_latex_value, question_type_value = answer_type_mapping.get(question.answer_type, (None, 0, None))
+            # Get the attribute name based on the answer_type
+            attribute_name = answer_type_mapping.get(question.answer_type, None)
 
             # If the attribute name is valid, get the attribute value and extend the lists
             if attribute_name:
                 answers.extend([getattr(question, attribute_name)])
-                is_latex.extend([is_latex_value])
-                question_type = [question_type_value]
             else:
                 raise ValueError('Unexpected answer type. Expected a type of Structural')
             answers[0].preface = '' if answers[0].preface is None else answers[0].preface
         elif question.answer_type.startswith('MATCHING'):
             questtype = 'mp'
-            question_type = [9]
             answers = question.matching_pairs.all()
             attempts = question_student.attempts.all()
             pk_of_success = []
@@ -258,16 +245,15 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
             'question':question,
             'questtype':questtype,
             'answers': answers,
-            "answers_is_latex_question_type": alq if questtype=='mcq' else zip(answers, is_latex, question_type),
-            'question_type': question_type, # For structural
             'answer': answers[0] if answers else None,
             'question_student':question_student,
-            'too_many_attempts':too_many_attempts,
-            'sq_type':question_type[0], # structural question type used in js.
+            'too_many_attempts':question_student.get_too_many_attempts(),
             'last_attempt_content':last_attempt.submitted_answer if last_attempt else '',
             'last_attempt':last_attempt,
-            'units_too_many_attempts':units_too_many_attempts,
-            'passed_pairs':answers_c
+            'units_too_many_attempts':question_student.get_units_too_many_atempts(),
+            'passed_pairs':answers_c,
+            'potential':round(question_student.get_potential() * 100, 1),
+            'num_points':round(question_student.get_num_points(), 2)
         }
         questions_dictionary[index] = context
     return render(request, 'deimos/answer_question.html',
@@ -299,34 +285,30 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
         question = Question.objects.get(pk=question_id)
         feedback_data = ''
         return_sp = None
-        try:
-            days_overdue = max(0, (date.today() - question.assignment.due_date.date()).days)
-            overall_percentage = max(question.assignment.grading_scheme.floor_percentage, \
-                                        1 - days_overdue * question.assignment.grading_scheme.late_sub_deduct)
-        except:
-            overall_percentage = 1
-        # Use get_or_create() to avoid duplicating QuestionStudent instances
-        # Normally, we should just use get() because QuestionStudent object is already created
-        # whenever the user opens a question for the first time, but just to be safe.
+
         question_student, created = QuestionStudent.objects.get_or_create(student=student, question=question)
+        current_potential = question_student.get_potential()
         num_attempts = question_student.get_num_attempts()
-        if data["questionType"].startswith('structural') or data["questionType"] == 'mp':
-            too_many_attempts =  num_attempts >= question.struct_settings.max_num_attempts
-            if question_student.num_units_attempts:
-                units_too_many_attempts = question_student.num_units_attempts >= question.struct_settings.units_num_attempts
-            else: 
-                units_too_many_attempts = False
-        elif data["questionType"].startswith('mcq'):
+
+        if data["questionType"].startswith('structural'):
+            too_many_attempts =  num_attempts == question.struct_settings.max_num_attempts
+
+            units_too_many_attempts = question_student.num_units_attempts == question.struct_settings.units_num_attempts
+
+        elif data["questionType"].startswith('mcq')  or data["questionType"] == 'mp':
             too_many_attempts = num_attempts >= question.mcq_settings.mcq_max_num_attempts
-            units_too_many_attempts = True
+            units_too_many_attempts = True # Yes, the True here is intentional. If a question type 
+                                           # does not permit units any attempt, we technically interpret it
+                                           # as there have already been too many units attempt for that question.
         correct = question_student.success
-        if ( not (question_student.success)):
+        if not question_student.success: 
             last_attempt = QuestionAttempt.objects.filter(question_student=question_student).last()
             prev_success = last_attempt.success if last_attempt else False
-            correct = prev_success
-            prev_units_success = last_attempt.units_success if last_attempt else False
+            correct = prev_success # checking if succeeded sheer answer (and failed units)
+            prev_units_success = last_attempt.units_success if last_attempt else False # checking if succeeded units (and failed sheer answer)
             units_correct = prev_units_success
             units_too_many_attempts = False if prev_units_success else units_too_many_attempts
+
             if not (too_many_attempts or prev_success):
                 if data["questionType"].startswith('structural'):
                     if question.answer_type == QuestionChoices.STRUCTURAL_EXPRESSION:
@@ -335,59 +317,101 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                             if compare_expressions(previous_attempt.content, simplified_answer):
                                 previously_submitted = True
                                 return JsonResponse({'previously_submitted': previously_submitted})
-                        attempt = QuestionAttempt.objects.create(question_student=question_student)
-                        attempt.content = simplified_answer
-                        attempt.submitted_answer = submitted_answer
+                        # Recording attempt
+                        attempt = QuestionAttempt.objects.create(question_student=question_student,\
+                                                                 content=simplified_answer,\
+                                                                    submitted_answer=submitted_answer)
+                        # Getting correct answer
                         answer_content, units = question.expression_answer.content, question.expression_answer.answer_unit
+                        # Comparing correct answer with simplified submitted answer
                         correct = compare_expressions(answer_content, simplified_answer)
                     elif question.answer_type in [QuestionChoices.STRUCTURAL_FLOAT, QuestionChoices.STRUCTURAL_VARIABLE_FLOAT]:
                         if question.answer_type == QuestionChoices.STRUCTURAL_FLOAT:
+                            # Structural float with no variable.
                             answer_content, units = question.float_answer.content, question.float_answer.answer_unit
                         else:
+                            # Variable structural float
                             answer_content, units = question_student.compute_structural_answer(), question.variable_float_answer.answer_unit
                         try:
+                            # Will sometimes return a value error if answers do not match
                             correct, feedback_data = compare_floats(answer_content, simplified_answer, question.struct_settings.margin_error)
                         except ValueError:
                             correct = False
+
+                        # Checking previous submissions before recording attempt
                         if not correct:
                             for prev_attempt in question_student.attempts.all():
                                 answers_are_the_same, _ = compare_floats(prev_attempt.content, simplified_answer, margin_error=0.02, get_feedback=False)
                                 if answers_are_the_same:
                                     return JsonResponse({'previously_submitted': True})
                         
-                        attempt = QuestionAttempt.objects.create(question_student=question_student)
-                        attempt.content = simplified_answer
-                        attempt.submitted_answer = submitted_answer
+                        attempt = QuestionAttempt.objects.create(question_student=question_student,\
+                                                                 content=simplified_answer,
+                                                                 submitted_answer=submitted_answer)
                     else:
                         raise ValueError(f'Expected either STRUCT FLOAT OR VAR STRUCT FLOAT, but got {question.answer_type}')
-                    if correct:
+                    
+                    # Recording status (whether attempt was succesful or not)
+                    # then calculating the number of points
+                    if correct: # Handling correct case for structural questions.
                         attempt.success = True
-                        if question.answer_type in [QuestionChoices.STRUCTURAL_FLOAT, \
-                                                    QuestionChoices.STRUCTURAL_VARIABLE_FLOAT, QuestionChoices.STRUCTURAL_EXPRESSION] and units:
-                            attempt.num_points = overall_percentage * max(0, question.struct_settings.num_points * (1 - question.struct_settings.percentage_pts_units)\
-                                                    * (1 - question.struct_settings.deduct_per_attempt *
-                                                    max(0, question_student.get_num_attempts() - 1)))
+                        attempt_potential = current_potential
+                        if units: # if the answer has units.                      
                             if prev_units_success:
-                                question_student.success = True
-                                
+                                # Carrying over the units submission from previous attempt.
+                                attempt.units_success = True
+                                attempt.submitted_units = last_attempt.submitted_units
+                                attempt_potential -= question.struct_settings.percentage_pts_units
+                                question_student.success, question_student.is_complete = (True, True)  
+                            # We do not need to check whether there have been too many units
+                            # attempt because the function returning current_potential already considers that. 
+                            else:                       
+                                submitted_units = data["submitted_units"]
+                                units_correct = compare_units(units, submitted_units)
+                                attempt.units_success = units_correct
+                                attempt.submitted_units = submitted_units
+                                question_student.num_units_attempts += 1
+                                # Updating question status
+                                if units_correct:
+                                    question_student.success, question_student.is_complete = (True, True)    
+                                else: # if the person gets the question wrong
+                                    attempt_potential -= question.struct_settings.percentage_pts_units     
                         else:
-                            question_student.success = True
-                            attempt.num_points = overall_percentage * max(0, question.struct_settings.num_points * (1 - question.struct_settings.deduct_per_attempt *
-                                                    max(0, question_student.get_num_attempts() - 1)))                        
-                            
+                            question_student.success, question_student.is_complete = (True, True)
+                        attempt.num_points = round(attempt_potential * question.struct_settings.num_points, 2)
+                        question_student.save()
+                    else:
+                        if prev_units_success:
+                            # Checking whether units have been previously succeeded and
+                            # carrying the submission over
+                            attempt.units_success = True
+                            attempt.submitted_units = last_attempt.submitted_units
+                        elif not units_too_many_attempts:
+                            # Checking whether submitted units are correct. 
+                            submitted_units = data["submitted_units"]
+                            units_correct = compare_units(units, submitted_units)
+                            attempt.units_success = units_correct
+                            attempt.submitted_units = submitted_units
+                            question_student.num_units_attempts += 1
+                            # Update the number of points for this attempt
+                            if units_correct:
+                                attempt.num_points = round(question.struct_settings.percentage_pts_units * \
+                                                           question.struct_settings.num_points, 2)
+                        
 
                 elif data["questionType"] == 'mcq':
                     # retrieve list of 'true' mcq options
                     # !important: mcq answers of different type may have the same primary key.
+                    # That is the reason why the type is taken into consideration when doing comparisons.
                     # checking previous attempts
                     for previous_attempt in question_student.attempts.all():
-                        # print(f"submitted answer set: {(set(simplified_answer))},prevsious answer content set: {set(eval(previous_attempt.content))}")
+                        # previous_attempt.content is a string, so we use eval() to convert 
+                        # to list, before converting to set and doing the comparison.
                         if set(simplified_answer) == set(eval(previous_attempt.content)):
                             previously_submitted = True
                             return JsonResponse({'previously_submitted': previously_submitted})
-                    attempt = QuestionAttempt.objects.create(question_student=question_student)
-                    attempt.content = str(simplified_answer)
-
+                    attempt = QuestionAttempt.objects.create(question_student=question_student, \
+                                                             content=str(simplified_answer))
                     answers = []
 
                     # Loop through each answer type and process accordingly
@@ -398,21 +422,22 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                         answer_pks = list(answer_queryset.filter(is_answer=True).values_list('pk', flat=True))
                         # Convert primary keys to the desired string format and extend the answers list
                         answers.extend([str(pk) + str(answer_field[1]) for pk in answer_pks])
-                    # print(f'Submitted answer set: {(set(simplified_answer))}, answers set: {set(answers)}')
+
+                    # Validating mcq submission
                     if len(simplified_answer) == len(answers):
                         s1, s2 = set(simplified_answer), set(answers)
                         if s1 == s2:
                             correct = True
-                            percentage_gain = (1 - question.mcq_settings.mcq_deduct_per_attempt *
-                                                    max(0, question_student.get_num_attempts() - 1))
-                            attempt.num_points = overall_percentage * max(0, question.mcq_settings.num_points * percentage_gain)
-                            question_student.success = True
-                            
+                            attempt.num_points = round(current_potential * question.mcq_settings.num_points, 2)
+                            question_student.success, question_student.is_complete = (True, True)
                             attempt.success = True
+
                 elif data["questionType"] == 'mp':
                     success_pairs_strings = []
                     attempt_pairs = []
-                    
+                    # Expecting to receive a dictionary(JS object) from the front end
+                    # with keys being the primary keys, and values being the encrypted primary keys
+                    # So we decrypt the values and see if they are the same with the key.
                     for part_A_pk, encrypted_B_pk in submitted_answer.items():
                         decrypted_b = decrypt_integer(int(encrypted_B_pk))
                         attempt_pairs.append(f'{part_A_pk}-{decrypted_b}')
@@ -429,72 +454,55 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                         sp = previous_a.success_pairs.pairs.split('&')
                         success_pairs_strings = list(set(success_pairs_strings) - set(sp))
                     frac = (num_of_correct/total_num_of_pairs)
-                    if frac == 1 or num_of_correct == len(attempt_pairs):
-                        question_student.success = True                        
+                    if frac == 1 or num_of_correct == len(attempt_pairs): # we technically do not need frac in this condition.
+                        question_student.success, question_student.is_complete = (True, True)                        
                         correct = True
                     attempt_pairs = "&".join(attempt_pairs)
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
                     attempt.content = attempt_pairs
-                    attempt.submitted_answer = attempt_pairs
-                    attempt.num_points = frac * \
-                        overall_percentage * max(0, question.struct_settings.num_points * (1 - question.struct_settings.deduct_per_attempt *
-                                                    max(0, question_student.get_num_attempts() - 1)))                        
-                    return_sp = success_pairs_strings
+                    attempt.submitted_answer = attempt_pairs # useless. Using twice the size of memory.
+                    attempt.num_points = round(frac * current_potential * question.mcq_settings.num_points, 2)                      
+                    return_sp = success_pairs_strings # will return the successful pairs so the front end can be updated.
                     success_pairs_strings = "&".join(success_pairs_strings)   
-                    attempt.save()
-                    success_pairs = QASuccessPairs.objects.create(pairs=success_pairs_strings, question_attempt=attempt)
+                    # attempt.save() # probably not needed here?
+                    success_pairs = QASuccessPairs.objects.create(question_attempt=attempt,pairs=success_pairs_strings)
                     success_pairs.save()
                 question_student.save()
                 attempt.save()
-            # print(f'Too many units attempts: {units_too_many_attempts} previous units success: {prev_units_success}')
-            # print(f'previously passed units: {prev_units_success} structural too many attempts: {too_many_attempts}')
-            if not (units_too_many_attempts or prev_units_success):
-                answer_types_with_units = {QuestionChoices.STRUCTURAL_FLOAT: 'float_answer',\
-                                           QuestionChoices.STRUCTURAL_EXPRESSION:'expression_answer',\
-                                            QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:'variable_float_answer'}
-                if question.answer_type in answer_types_with_units:
-                    units = getattr(question, answer_types_with_units[question.answer_type]).answer_unit
-                    # the following line will retrieve the most recent attempt, which is either the attempt that has just
-                    # been submitted or the last attempt before it exceeded the number of permitted attempts.
-                    last_attempt = QuestionAttempt.objects.filter(question_student=question_student).last() 
 
-                    # the instructor may mistakenly set a maximum number of attempts to a question that doesn't even have
-                    # units, so we check if units exist in the first place.
-                    if units:                        
-                        submitted_units = data["submitted_units"]
-                        # print(f"Correct units: {units}, Submitted: {submitted_units}")
+            else:                                                                       
+                if prev_units_success: # and no attempt has been created
+                    assert prev_success == False # because question_student.success must be True in this case.
+
+                elif not units_too_many_attempts:# here is why units_too_many_attempts must be true for non-struct questions.
+                    submitted_units = data["submitted_units"]
+                    answer_types_with_units = {QuestionChoices.STRUCTURAL_FLOAT: 'float_answer',\
+                                            QuestionChoices.STRUCTURAL_EXPRESSION:'expression_answer',\
+                                                QuestionChoices.STRUCTURAL_VARIABLE_FLOAT:'variable_float_answer'}
+                    if question.answer_type in answer_types_with_units:
+                        units = getattr(question, answer_types_with_units[question.answer_type]).answer_unit
                         units_correct = compare_units(units, submitted_units)
                         last_attempt.units_success = units_correct
                         last_attempt.submitted_units = submitted_units
-                        # Update the number of points for this attempt
-                        if units_correct:
-                            last_attempt.num_points += question.struct_settings.num_points * question.struct_settings.percentage_pts_units
+                        question_student.num_units_attempts += 1
+                        last_attempt.num_points += round(question.struct_settings.percentage_pts_units * \
+                                                         question.struct_settings.num_points * int(units_correct), 2)
                         last_attempt.save()
-                        if question_student.num_units_attempts:
-                            question_student.num_units_attempts += 1
-                        else: 
-                            question_student.num_units_attempts = 1 
-                        if units_correct and last_attempt.success:
-                            question_student.success = True
-                            
-                        question_student.save()
-            elif(prev_units_success and not too_many_attempts): # that is if a new attempt has been created.
-                unit_points = question.struct_settings.num_points * question.struct_settings.percentage_pts_units
-                attempt.num_points += unit_points
-                attempt.submitted_units = last_attempt.submitted_units # last attempt here must before the one 
-                # before this current attempt. Reason why we don't do a query like QuestionAttempt.objects.filter().last()
-                # because that would just return this currect attempt.
+                        # Updating question status
+                        if units_correct and prev_success:
+                            question_student.success, question_student.is_complete = (True, True)
+                        question_student.save()    
 
-                # Ensure we never subtract more points than are present in the last attempt
-                # last_attempt.num_points = max(0, last_attempt.num_points - unit_points)
-                last_attempt.num_points = 0
-                attempt.save()
-                last_attempt.save()
-        # print(f"Correct:{correct}. Units too may attempts: {units_too_many_attempts}")
-        if(not correct and (data["questionType"].startswith('structural')) or data["questionType"]=='mp'):
-            too_many_attempts =  num_attempts + 1 >= question.struct_settings.max_num_attempts
-            if question_student.num_units_attempts and not units_correct:
+        # Some info that will be used to update the front end.
+        if (not correct and (data["questionType"].startswith('structural'))):
+            too_many_attempts =  num_attempts + 1 == question.struct_settings.max_num_attempts
+            if not units_correct:
                 units_too_many_attempts = question_student.num_units_attempts >= question.struct_settings.units_num_attempts
+
+        # Updating completion status
+        if not question_student.is_complete and (units_too_many_attempts or units_correct) and (too_many_attempts or prev_success):
+            question_student.is_complete = True
+            question_student.save()
         # Return a JsonResponse
         return JsonResponse({
             'correct': correct,
@@ -503,8 +511,14 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
             'feedback_data': feedback_data,
             'units_correct': units_correct,
             'units_too_many_attempts':units_too_many_attempts,
-            'success_pairs': return_sp if return_sp else None
+            'success_pairs': return_sp if return_sp else None,
+            'potential':round(question_student.get_potential() * 100),
+            'grade':round(question_student.get_num_points(), 2),
+            'numAttempts':question_student.get_num_attempts(),
+            'unitsNumAttempts': question_student.num_units_attempts,
+            'complete':question_student.is_complete
         })
+
     
            
 def login_view(request):
@@ -569,6 +583,12 @@ def register(request):
         password = request.POST["password"].strip()
         first_name = request.POST["first_name"].strip()
         last_name = request.POST["last_name"].strip()
+        
+        try: 
+            stud = Student.objects.get(username=username)
+            username = str(username) + str(random.randint(1, 1000000))
+        except:
+            pass
         try:
             checking_student = Student.objects.get(email=email)
             if checking_student:
@@ -614,190 +634,6 @@ def is_student_enrolled(student_id, course_id):
     is_enrolled = Enrollment.objects.filter(student=student, course=course).exists()
 
     return is_enrolled
-
-
-def  extract_numbers(text):
-    """
-    Returns a list of numbers and subscrippted characters in a string.
-    # E.g of a subscriptted char: 'e_1'
-    """
-    # Regular expression pattern to match numbers and subscriptted chars.
-    
-    pattern = r'[-+]?\d*\.\d+|\d+|\w+_\w+'
-    
-    # Find all matches using the pattern
-    matches = re.findall(pattern, text)
-    
-    return matches
-
-def compare_expressions(expression1, expression2, for_units=False):
-    """
-    Given two strings e1 and e2,
-    returns True if they are algebraically equivalent,
-    returns False otherwise.
-    """
-    if not for_units:
-        e1 = transform_expression(expression1)
-        e2 = transform_expression(expression2)
-        if not (isinstance(e1, str) and isinstance(e2, str)):
-            raise ValueError("Both inputs should be strings")
-    else:
-        e1, e2 = expression1, expression2
-    symbols_union = set(e1) | set(e2)  # Combined set of symbols from both expressions
-    symbols_union.update(extract_numbers(e1 + e2))  # Update with extracted numbers
-    symbls = symbols(' '.join(symbols_union), real=True, positive=True)
-    sym_e1 = simplify(e1, symbols=symbls)
-    sym_e2 = simplify(e2, symbols=symbls)
-    difference = (simplify(sym_e1 - sym_e2, symbols=symbls))
-    return True if difference == 0 else False
-
-def compare_floats(correct_answer, simplified_answer, margin_error=0.0, get_feedback=True):
-    """
-    Takes two floats f1 and f2,
-    returns True if they are equal or close,
-    returns False otherwise
-    """
-    f1 = eval(str(correct_answer))
-    f2 = eval(str(simplified_answer))
-    feedback_message = ""
-    correct = (abs(f1-f2) <= margin_error * abs(f1)) and f1*f2 >= 0
-    if not correct and get_feedback:
-        feedback_message = feedback_floats(f1, f2, margin_error) 
-    return (correct, feedback_message)
-
-def feedback_floats(base_float, inputed_float, margin_error):
-    """
-    Helper function that returns a feedback message when two floats
-    differ but may be integer multiples (within n=2) of each other.
-    Margin error is a percentage.
-    """
-    assert 0 <= margin_error <= 1
-    abs_quotient = abs(inputed_float)/abs(base_float) if base_float != 0 and inputed_float!= 0 else 0
-    if abs_quotient == 0:
-        return ""
-    def check_int_interval(a, b):
-        # Checking whether there is an integer between a and b
-        if not a < b:
-            a, b = b, a
-        f_a = math.floor(a)
-        f_b = math.floor(b)
-        diff = abs(f_b - f_a)
-        if a == b and (f_a - a) == 0:
-            return int(a)
-        if type(diff) == int and diff != 0:
-            return f_a + diff
-        else:
-            return None
-    sign = "-" if base_float * inputed_float < 0 else ""    
-    a_0 = abs_quotient * (1 - margin_error)
-    b_0 = abs_quotient * (1 + margin_error)
-    n_0 = check_int_interval(a_0, b_0)
-    if n_0 and n_0 < 3:
-        # return f"Your answer is {sign}{n_0}x the correct answer"
-        return f"Your answer is {sign}n times the correct answer"
-    a_1 = (abs_quotient)**-1 * (1 - margin_error)
-    b_1 = (abs_quotient)**-1 * (1 + margin_error)
-    n_1 = check_int_interval(a_1, b_1)
-    if n_1 and n_1 < 3:
-        # return f"Your answer is {sign}{n_1 ** -1}x the correct answer"
-        return f"Your answer is {sign}n times the correct answer"
-    # Checking for 10^n submission mistake
-    a = math.log10(abs_quotient * (1 - margin_error))
-    b = math.log10(abs_quotient * (1 + margin_error))
-    n = check_int_interval(a, b)
-    if n:
-        # return f"Your answer is {sign}10^{n} x the correct answer"
-        return f"Your answer is {sign}10<sup>n</sup> x the correct answer"
-    return ""
-    
-def compare_units(units_1, units_2):
-    """
-    Takes two units units_1 and units_2
-    returns True if they are equivalent
-    returns False otherwise
-    """
-    
-    # custom_base_units = ['m', 's', 'cd', 'K', 'mol', 'g', 'A']
-    scales = {'k':'10^3', 'u':'10^-6', 'm_':'10^-3', 'p':'10^-12', 'M':'10^6', 'n':'10^-9','µ':'10^-6'}
-    # Important! Hz must come before H, as well as Sv before S, Wb before W etc
-    correspondances = {
-        'C': 'A*s', 'V': 'k*g*m^2*s^-3*A^-1','Ω': 'k*g m^2*s^-3*A^-2',
-        'T': 'k*g*s^-2*A^-1','Hz': 's^-1','Pa': 'k*g*m^-1*s^-2','N': 'k*g*m*s^-2','J': 'k*g*m^2*s^-2',
-        'Wb':'k*g*m^2*A*s^-2','W': 'k*g*m^2*s^-3', 'F':'k*g*A^2*s^4*m^-2', 'H':'k*g*m^2*A^2*s^-2',
-        'Sv':'m^2*s^-2','S':'k*g*s^3*A^2*m^-2', 'lx':'cd*m^-2', 'Bq':'s^-1', 'Gy':'m^2*s^-2', 'kat':'mol*s^-1',
-        'atm':'101325*k*g*m^-1*s^-2'
-    }
-    # transform_units_expression() must be done before to replacing the correspondances
-    # and scales to reduce runtime.
-    units_1 = transform_units_expression(units_1)
-    units_2 = transform_units_expression(units_2)
-
-    for key, value in correspondances.items():
-        units_1 = units_1.replace(key, value)
-        units_2 = units_2.replace(key, value)
-    for key, value in scales.items():
-        units_1 = units_1.replace(key, value)
-        units_2 = units_2.replace(key, value)
-    return compare_expressions(units_1, units_2, for_units=True)
-
-def transform_units_expression(expr):
-    """Insert multiplication signs between combined characters, except within trig functions."""
-    expression = remove_extra_spaces_around_operators(expr)
-    expression = expression.replace(', ', '')
-    expression = expression.replace(' ', '*')
-    expression = re.sub(r'1e\+?(-?\d+)', r'10^\1', expression)
-    # replacements are units that are more than 1 character. e.g Hz, Pa, cd, mol
-    replacements = {
-        'cd': 'ò', 'mol': 'ë', 'Hz': 'à', 'Pa': 'ê','Wb': 'ä',
-        'lx': 'Bq', 'Gy': 'ù', 'Sv': 'ô', 'kat': 'ü', 'atm':'у́'
-    }
-
-    expression = encode(expression, replacements)
-    transformed_expression = ''.join(
-        char if index == 0 or not needs_multiplication(expression, index, replacements)
-        else '*' + char for index, char in enumerate(expression)
-    )
-    transformed_expression = transformed_expression.replace('^', '**')
-    return decode(transformed_expression, replacements)
-    
-def replace_links_with_html(text):
-    """
-    Find linkes in text and return text with those links
-    within html a-tags.
-    """
-    words = text.split()
-    new_words = []
-    for word in words:
-        if word.startswith('http://') or word.startswith('https://'):
-            parsed_url = urlparse(word)
-            link_tag = f'<a href="{word}">{parsed_url.netloc}{parsed_url.path}</a>'
-            new_words.append(link_tag)
-        else:
-            new_words.append(word)
-
-    return ' '.join(new_words)
-
-def replace_vars_with_values(text, variable_dict):
-    # Deprecated
-    """
-    Find variables in text, and replace with highlited/colored values of instances.
-    """
-    for var_symbol in variable_dict:
-        # TODO: !Important Make the replacements only when the text has something 
-        # to indicate that a certain sequence of string will contain
-        # variables. Perhaps  {}
-        text = text.replace(var_symbol,f"<em class=\"variable\">{variable_dict[var_symbol]}</em>")
-    return text
-
-def replace_image_labels_with_links(text, labels_url_pairs):
-    """
-    Returns the text with labels within html link tags.
-    labels_url_pairs = ("john_image", "astros/images/jjs.png")
-    """
-    for label, url in labels_url_pairs:
-        replacement = f"<a href=\"#{url}\">{label}</a>"
-        text = text.replace(label, replacement)
-    return text
 #--------------------Depecrated functions used in development--------------------
 def question_nav(request):
     return render(request, 'deimos/question_nav.html', {})
@@ -871,6 +707,8 @@ def save_note(request, question_id, course_id=None, assignment_id=None, student_
         with transaction.atomic():
             note, created = Note.objects.get_or_create(question_student=question_student)
             content = request.POST.get('content')
+            title = request.POST.get('title', '')
+            note.title = title
             note.content = content
             note.save()
             
@@ -900,7 +738,7 @@ def save_note(request, question_id, course_id=None, assignment_id=None, student_
             md = markdown(content)
                 
         return JsonResponse({'message': 'Notes successfully saved', 'success': True, 'md':md,\
-                             'last_edited':note.last_edited})
+                             'last_edited':note.last_edited, 'title':title})
     else:
         return JsonResponse({'message': f'Error: Expected POST method, not {request.method}', 'success':False})
 @csrf_exempt    
@@ -910,6 +748,7 @@ def generate_note_qr(request, question_id, course_id, assignment_id, student_id=
     student = get_object_or_404(Student,pk=request.user.id)
     question_student = QuestionStudent.objects.get(question=question, student=student)
     data_temp_note = data['temp_note']
+    data_temp_title = data['temp_title']
     base_link = data['base_link']
     if data['same_url']:
         custom_link = base_link
@@ -918,6 +757,7 @@ def generate_note_qr(request, question_id, course_id, assignment_id, student_id=
     note = Note.objects.get(question_student=question_student)
     temp_note, created = NoteTemporary.objects.get_or_create(note=note)
     temp_note.content = data_temp_note
+    temp_note.title = data_temp_title
     temp_note.save()
     img = qrcode.make(custom_link)  # replace with your custom link
     response = HttpResponse(content_type="image/png")
@@ -925,14 +765,14 @@ def generate_note_qr(request, question_id, course_id, assignment_id, student_id=
     return response
 
 @login_required(login_url='astros:login')
-def assignemt_gradebook_student(request,student_id, assignment_id):
+def assignment_gradebook_student(request,student_id, assignment_id):
 
     assignment_student, created = AssignmentStudent.objects.get_or_create(pk=assignment_id)
     course= assignment_student.assignment.course.id
 
     questions= Question.objects.filter(assignment= assignment_student.assignment ) 
     student= Student.objects.get(pk=student_id)
-    assignments= AssignmentStudent.objects.filter(student=student)
+    assignments= AssignmentStudent.objects.filter(student=student, assignment__course=course)
 
     assignment_details={'name':assignment_student.assignment.name,'assignment_id':assignment_id,\
                         'Due_date':str(assignment_student.due_date).split(' ')[0],'grade':assignment_student.get_grade() }
@@ -940,7 +780,7 @@ def assignemt_gradebook_student(request,student_id, assignment_id):
     question_heading = ['Question_number','score','num_attempts']
     question_details = []
     for question in questions:
-        if question.answer_type.startswith('MCQ'):
+        if question.answer_type.startswith(('MCQ', 'MATCHING')):
             nm_pts = question.mcq_settings.num_points
         else:
             nm_pts = question.struct_settings.num_points
@@ -975,27 +815,28 @@ def assignemt_gradebook_student(request,student_id, assignment_id):
 @login_required(login_url='astros:login') 
 def note_management(request, course_id):
     course = get_object_or_404(Course, pk=course_id)
-
     # Check if there is any Enrollment entry that matches the given student and course
     student = get_object_or_404(Student, pk = request.user.pk)
     is_enrolled = Enrollment.objects.filter(student=student, course=course).exists()
     
     if not is_enrolled:
         return HttpResponseForbidden('You are not enrolled in this course.')
-    assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student, \
-                                            is_assigned=True)
+    assignments_dict = {}
     # this is needed to display notes
-    Notes = Note.objects.all()
-    notes=[]
+    Notes = Note.objects.filter(question_student__student=student)
     for note in Notes:
-        if note.question_student.student == student:
-             notes.append({'Note':note,"note_md":markdown(note.content)})
-    
+        assignment = note.question_student.question.assignment
+        if note.content:
+            a_list = assignments_dict.get(assignment, None)
+            n_dict = {'Note':note, "note_md":markdown(note.content)}
+            if a_list:
+                a_list.append(n_dict)
+            else:
+                assignments_dict[assignment] = [n_dict]
     context = {
         "student":student,
-        "assignments": assignments,
         "course": course,
-        "notes": notes,
+        "assignments_dict":assignments_dict
     }
     return render(request, "deimos/note_management.html", context)
 

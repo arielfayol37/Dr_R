@@ -24,7 +24,59 @@
     
     <div class="page-container" id="answer-question">
       {% for index, question_dict in questions_dict.items %}
+              <div class="question-block">
               <h3 class="original-size">Question {{question_dict.question.number}}</h3>
+              <div class="status-container">
+                <!--QUESTION STATUS INFORMATION -->
+                {% if question_dict.questtype == 'struct' %}
+                    <div class="status-grade">
+                      Grade: <span class="status-value">{{question_dict.num_points}}</span>/{{question_dict.question.struct_settings.num_points}}
+                    </div>
+
+                    <div class="status-num-attempts">
+                      attempts: <span class="status-value">{{question_dict.question_student.get_num_attempts}}</span>/{{question_dict.question.struct_settings.max_num_attempts}}
+                    </div>
+                    
+                    <div class="status-potential">
+                      {% if not question_dict.question_student.is_complete %}
+                          Potential: <span class="status-value">{{question_dict.potential}}</span>%
+                      {% endif %}
+                    </div>
+
+                    <div class="status-deduct">
+                      deduct per attempt: <span class="status-value">{{question_dict.question.struct_settings.deduct_per_attempt|multiply:"100" }}</span>%
+                    </div>
+                    <!--<div class="status-margin-error">
+                      </div>
+                      <div class="status-units-potential">
+                      </div>
+                    -->
+                    <div class="status-units-num-attempts">
+                      {% if question_dict.answer.answer_unit %}
+                         units attempt: <span class="status-value">{{question_dict.question_student.num_units_attempts}}</span>/{{question_dict.question.struct_settings.units_num_attempts}}
+                      {% endif %}
+                    </div>
+
+                {% else %}
+                    <div class="status-grade">
+                      Grade: <span class="status-value">{{question_dict.num_points}}</span>/{{question_dict.question.mcq_settings.num_points}}
+                    </div>
+
+                    <div class="status-num-attempts">
+                      attempts: <span class="status-value">{{question_dict.question_student.get_num_attempts}}</span>/{{question_dict.question.mcq_settings.mcq_max_num_attempts}}
+                    </div>
+
+                    <div class="status-potential">
+                      {% if not question_dict.question_student.is_complete %}
+                          Potential: <span class="status-value">{{question_dict.potential}}</span>%
+                      {% endif %}
+                    </div>
+
+                    <div class="status-deduct">
+                      deduct per attempt: <span class="status-value">{{question_dict.question.mcq_settings.mcq_deduct_per_attempt|multiply:"100" }}</span>%
+                    </div>
+                {% endif %}
+              </div>
               <hr>
               <form method="post" enctype="multipart/form-data" class="question-form">
                 {% csrf_token %}
@@ -95,7 +147,7 @@
                 <div class="hints-feedback">
                   <div class="hints-container">
                     {% if question_dict.question.hints.all %}
-                      <ion-icon name="caret-forward-outline" class="show-hint-btn closed-hints" title="Hints"></ion-icon>
+                      <button type="button" style="margin: 2px; transform: scale(0.8);" class="show-hint-btn closed-hints btn btn-outline-info" title="Hints">Hints</button>
                       <div class="question-hints" data-counter="{{question_dict.question.hints.all.count}}" data-seen="1" style="display:none">
                         {% for hint in question_dict.question.hints.all %}
                             {% if forloop.counter0 == 0%}
@@ -110,7 +162,7 @@
 
                         {% endfor %}
                         <br/>
-                        <button type="button" class="see-more-hint-btn btn btn-outline-info" style="display: none;"> see more </button>
+                        <button type="button" class="see-more-hint-btn btn btn-outline-info" style="display: none; transform: scale(0.8);"> see more </button>
                       </div>
                     {% endif %}
                   </div>
@@ -133,18 +185,18 @@
                 {% if question_dict.questtype == 'mcq' %}
                       <input type="hidden" value="mcq" class="question-type"/>
                       <div class="inputed-mcq-answers" data-true-counter="0">
-                        {% for answer, is_latex, question_type in question_dict.answers_is_latex_question_type %}
+                        {% for answer in question_dict.answers %}
                           <div class="mcq-option-answer">
                             {% if question_dict.question_student.success %}
                                 {% if answer.is_answer%}
-                                  <div class="formatted-answer-option unexpand mcq-true">
+                                  <div class="formatted-answer-option unexpand green">
                                 {% else %}
-                                  <div class="formatted-answer-option unexpand mcq-false">
+                                  <div class="formatted-answer-option unexpand">
                                 {% endif %}
                             {% else %}
                                 <div class="formatted-answer-option unexpand mcq-false hoverable"> 
                             {% endif %}
-                              {% if is_latex %}
+                              {% if answer.get_answer_code == 2 %} <!--If latex-->
                                   <input type="hidden" class="latex-answer-question-view" value="{{answer.content}}">
                               {% else %}
                                 {% if answer.image %}
@@ -154,14 +206,14 @@
                                   {{answer.content|safe}}
                                 {% endif %}
                               {% endif %}
-                              <input type="hidden" value="{{answer.pk}}{{question_type}}" class="answer_id" name="mcq_answer_id_{{ forloop.counter0 }}"/>
-                              <input type="hidden" value="0{{question_type}}" class="answer_info" name="mcq_answer_info_{{ forloop.counter0 }}"/>
+                              <input type="hidden" value="{{answer.pk}}{{answer.get_answer_code}}" class="answer_id" name="mcq_answer_id_{{ forloop.counter0 }}"/>
+                              <input type="hidden" value="0{{answer.get_answer_code}}" class="answer_info" name="mcq_answer_info_{{ forloop.counter0 }}"/>
                             </div> 
                           </div>
                           <br/> 
                         {% endfor %}
                       </div> 
-                      {% if question_dict.question_student.success %}
+                      {% if question_dict.question_student.is_complete %}
                         <input type="submit" class="btn btn-success exempt submit-btn" value="Submit Answer" style="display: none;">
                       {% else %}
                         <input type="submit" class="btn btn-success exempt submit-btn" value="Submit Answer">
@@ -177,7 +229,11 @@
                     
                   {% elif question_dict.questtype == 'mp' %}
                       <input type="hidden" value="mp" class="question-type"/>
-                      <div class="suggestion"> Match the following pairs </div>
+                      {% if not question_dict.question_student.success %}
+                        <div class="suggestion"> Match the following pairs </div>
+                      {% else %}
+                        <div class="suggestion"> You correctly matched the pairs. </div>
+                      {% endif %}
                       <div class="mp-section">
                           <!--Yet to be passed attempts -->
                           
@@ -207,7 +263,7 @@
                           </div>
                       </div>
                       <br/>
-                    {% if question_dict.question_student.success or question_dict.too_many_attempts %}
+                    {% if question_dict.question_student.is_complete %}
                       <input type="submit" class="btn btn-success exempt submit-btn" value="Submit Answer" style="display: none;">
                     {% else %}
                       <input type="submit" class="btn btn-success exempt submit-btn" value="Submit Answer">
@@ -233,13 +289,11 @@
                           </div>
                         </div>
                       </div>
-                      {% if not question_dict.question_student.success %}
-                          <input type="hidden" value="structural_{{question_dict.sq_type}}" class="question-type"/>
+                      {% if not question_dict.question_student.is_complete %}
+                          <input type="hidden" value="structural_{{question_dict.answer.get_answer_code}}" class="question-type"/>
                           <!--TODO: !Important. I don't think we will ever use the pk of the answer for structural questions.-->
                           <input type="hidden" value="{{question_dict.answer.pk}}" name="structural_answer_id_0"/>
-                          {% for q_type in question_dict.question_type %} <!--expecting to iterate only over one item-->
-                            <input type="hidden" value="{{q_type}}" name="structural_answer_info_0"/>
-                          {% endfor %}
+                          <input type="hidden" value="{{question_dict.answer.get_answer_code}}" name="structural_answer_info_0"/>
                           <input type="submit" class="btn btn-outline-success exempt attempt-mode submit-btn" value="Attempt">
                           <div class="formatted-answer calc"></div>
                           {% if question_dict.answer.preface %}
@@ -300,6 +354,7 @@
                 {% endif %}
               <br/>
               </form>
+         </div>
       {% endfor %}
       <br/><br/>
       <div class="navigation">
@@ -325,7 +380,7 @@
 
 
     <div class="note-pencil side-info-icon" title="Notes">
-      <ion-icon name="book"></ion-icon>
+      <ion-icon name="book" size="large"></ion-icon>
     </div>
   
     {% if upload_note_img != 1%}
@@ -335,15 +390,36 @@
     {% endif %}
       <span id="close-x-note" class="side-info-x">X</span><br/>
       <button type="button" class="btn btn-outline-success note-edit-btn" style="position:absolute; right:2%;"> {{note_comment}} </button><br/><br/>
-      <div class="suggestion note-last-edited">Last edited on {{note.last_edited}}</div>
+        <div class="suggestion note-last-edited">
+          {% if note.content %}
+            Last edited on {{note.last_edited}}
+          {% endif %}
+        </div>
       <div class="previous-notes">
+        <br/>
+        <h5 class="n-title">
+          {% if note.title %}
+            {{ note.title }}
+          {% endif %}
+        </h5>
+        <br/>
         <div class="note-content formatted-answer-option">
           {{note_md|safe}}
         </div>
         {% if not temp_note %}
+            {% if note.title %}
+              <input class="field-style note-title" value="{{note.title}}" placeholder="Note Title" style="width:30%; display: none;"/>
+            {% else %}
+              <input class="field-style note-title" placeholder="Note Title" style="width:30%; display: none;"/>
+            {% endif %}
           <textarea placeholder="Enter notes (markdown supported)" class="field-style note-textarea" style="display: none;">{{note.content}}</textarea>
         {% else %}
-          <textarea placeholder="Enter notes (markdown supported)" class="field-style note-textarea" style="display: none;">{{temp_note.content}}</textarea>
+          {% if temp_note.title %}
+            <input class="field-style note-title" value="{{temp_note.title}}" placeholder="Note Title" style="width:30%; display: none;"/>
+          {% else %}
+            <input class="field-style note-title" placeholder="Note Title" style="width:30%; display: none;"/>
+          {% endif %}
+          <textarea placeholder="type notes" class="field-style note-textarea" style="display: none;">{{temp_note.content}}</textarea>
         {% endif %}
         <div class="main-question-image-preview">
           {% for image_object in note.images.all %}
@@ -362,14 +438,12 @@
         </div>
       </div>
       <div class="edit-handling-section" style="display: none;">
-        <div class="uploaded-question-preview"></div><br/>
         <ion-icon name="camera" class="main-question-add-image-btn btn btn-light open"></ion-icon>
         <ion-icon name="qr-code-outline" class="qr-code-btn"></ion-icon>
         
         <img id="qrCodeImage" style="display:none;" />
         <div class="question-image-upload-section" style="display: none;">
-          <input type="file" accept="image/*" class="main-question-image-input">
-          <button type="button" class="btn btn-success question-image-add">add</button>
+          <input type="file" accept="image/*" class="main-question-image-input" hidden="hidden">
         </div>
       <br/><br/>
       <button type="button" class="btn btn-outline-success save-note-btn"> Save </button>
@@ -397,7 +471,7 @@
             {% else %}
               <div class="settings-modification grading-number-{{forloop.counter0}}" style="display: none;"> 
             {% endif %}
-              {% if not question_dict.questtype == 'mcq' %}
+              {% if question_dict.questtype == 'struct' %}
                   <div class="settings-item"> 
                     <div class="settings-label">Number of points:</div>
                     <div class="settings-input-div suggestion">
@@ -416,24 +490,28 @@
                   {{question_dict.question.struct_settings.deduct_per_attempt|multiply:"100" }}%
                     </div>
                   </div >
+                  
                   <div class="settings-item">
                     <div class="settings-label">% Margin error:</div>
                     <div class="settings-input-div suggestion"> 
                     {{question_dict.question.struct_settings.margin_error|multiply:"100" }}%
                     </div>
                   </div>
-                  <div class="settings-item">
-                    <div class="settings-label">% points for units:</div>
-                    <div class="settings-input-div suggestion">
-                  {{question_dict.question.struct_settings.percentage_pts_units|multiply:"100" }}%
-                    </div>
-                  </div>
-                  <div class="settings-item">
-                    <div class="settings-label">Max attempts(units):</div>
-                    <div class="settings-input-div suggestion">
-                  {{question_dict.question.struct_settings.units_num_attempts}}
-                    </div>
-                  </div>
+                  {% if question_dict.answer.answer_unit %}
+                      <div class="settings-item">
+                        <div class="settings-label">Max attempts(units):</div>
+                        <div class="settings-input-div suggestion">
+                      {{question_dict.question.struct_settings.units_num_attempts}}
+                        </div>
+                      </div>
+                      <div class="settings-item">
+                        <div class="settings-label">% points for units:</div>
+                        <div class="settings-input-div suggestion">
+                      {{question_dict.question.struct_settings.percentage_pts_units|multiply:"100" }}%
+                        </div>
+                      </div>
+                  {% endif %}
+                  
               {% else %}
                 <div class="settings-item"> 
                   <div class="settings-label">Number of points:</div>
@@ -442,13 +520,13 @@
                   </div>
                 </div>
                 <div class="settings-item">
-                  <div class="settings-label">Max attempts(mcq):</div>
+                  <div class="settings-label">Max attempts:</div>
                   <div class="settings-input-div suggestion">
                   {{question_dict.question.mcq_settings.mcq_max_num_attempts}}
                   </div>
                 </div>
                 <div class="settings-item">
-                  <div class="settings-label">% deduct per attempt(mcq):</div>
+                  <div class="settings-label">% deduct per attempt:</div>
                   <div class="settings-input-div suggestion">
                     {{ question_dict.question.mcq_settings.mcq_deduct_per_attempt|multiply:"100" }}%
                   </div>
@@ -465,7 +543,7 @@
 
 
 {% endblock %}
-{% block scripts%}
+{% block scripts %}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.9.1/math.js"></script>
 <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>

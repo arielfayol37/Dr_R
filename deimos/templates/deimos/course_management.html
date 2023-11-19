@@ -1,14 +1,9 @@
 <!-- deimos: course_management.html-->
 {% extends 'deimos/layout.html' %}
 {% load my_custom_tags %}
+{% load static %}
 {% block title %} Course {% endblock %}
-{% block style %} <link rel="stylesheet" href=""/> {% endblock %}
 {% block body%}
-<style>
-    .nav-link:hover {
-    cursor: pointer;
-  }
-</style>
 <div class="sidebar" style="display:none">
     <header class="sidebar-header">X</header>
     <ul>
@@ -19,6 +14,7 @@
     </ul>
 </div>
 
+<<<<<<< HEAD
 <nav class="navbar navbar-expand-lg navbar-light bg-light navigation" >
     <div class="container-fluid">
       <ul class="navbar-nav mr-auto" style="list-style: none; display:flex;">
@@ -36,10 +32,17 @@
         </li>
         </div>
   </nav>
+=======
+<nav class="navbar-custom">
+    <a class="nav-link home-btn" href="{% url 'deimos:index' %}">Home </a>
+    <a class="nav-link view-notes-btn" href="{% url 'deimos:note_management' course_id=course.id%}">View notes</a>
+    <a class="nav-link gradebook-btn" href="{% url 'deimos:gradebook' course_id=course.id%}">GradeBook</a>
+</nav>
+>>>>>>> 5369dd6a128dd246c7fbd65fdb4d32983c983b6b
 
   <div class="home">
-    <div id="sf-container">
-        <input id="search-field" type="text" name="search" placeholder="search assignment" />
+    <div class="sf-container">
+        <input type="text" name="search" class="page-search search-field w-limit-50" data-name="assignment-name" placeholder="search assignment" />
     </div>
     <br />
     <h4>{{course.name}}</h4>
@@ -48,46 +51,12 @@
     <!-- Display course's assignments -->
     <ul class="courses course-list">
         {% for assignment in assignments %}
-        {% include 'deimos/assignment_display.html' with assignment=assignment course=course %}
+            {% include 'deimos/assignment_display.html' with assignment=assignment course=course %}
         {% endfor %}
     </ul>
 </div>
 
-<div class="gradebook" style="display: none;">
-    {% include 'deimos/gradebook.html' with student=student assignment_student_grade=assignment_student_grade course_score=course_score %}
-</div>
-
-<script>
-    const navigation = document.querySelector('.navigation');
-    const homeDiv = document.querySelector('.home');
-    const gradebookDiv = document.querySelector('.gradebook')
-
-    function initial_view() {
-        homeDiv.style.display = 'none';
-        gradebookDiv.style.display= 'none';
-    }
-
-    navigation.addEventListener('click', () => {
-        target = event.target;
-        if (target.classList.contains('home-btn')) {
-            initial_view();
-            homeDiv.style.display = 'block';
-        }
-        else if(target.classList.contains('gradebook-btn')){
-            initial_view();
-            gradebookDiv.style.display= 'block';
-        }
-    })
-
-    const gradebookBtn = document.querySelector('.gradebook-btn')
-    const show_gradebookEvent = new Event('click',{
-        bubbles: true,
-        cancelable: true,
-    });
-    if(gradebookBtn.dataset.show_gradebook === "1"){
-        gradebookBtn.dispatchEvent(show_gradebookEvent)
-    }
-
-</script>
 {% endblock %}
-
+{% block scripts %}
+    <script src="{% static 'deimos/js/search_generic.js' %}"></script>
+{% endblock %}

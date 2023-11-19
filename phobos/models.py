@@ -4,21 +4,7 @@ from django.contrib.auth.models import User
 #from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
 import random
-from Dr_R.settings import BERT_TOKENIZER, BERT_MODEL
-import torch
-
-def attention_pooling(hidden_states, attention_mask):
-    # Apply attention mask to hidden states
-    attention_mask_expanded = attention_mask.unsqueeze(-1).expand(hidden_states.size())
-    masked_hidden_states = hidden_states * attention_mask_expanded
-    
-    # Calculate attention scores and apply softmax
-    attention_scores = torch.nn.functional.softmax(masked_hidden_states, dim=1)
-    
-    # Weighted sum using attention scores
-    pooled_output = (masked_hidden_states * attention_scores).sum(dim=1)
-    return pooled_output
-
+from .utils import *
 class DifficultyChoices(models.TextChoices):
     EASY = 'EASY', 'Easy'
     MEDIUM = 'MEDIUM', 'Medium'
@@ -103,7 +89,7 @@ class CourseInfo(models.Model):
     Class to store extra information about a course. 
     these info is provided by professor and viewed by students.
     """
-    course= models.ForeignKey(Course, on_delete=models.CASCADE, related_name='course_info')
+    course= models.OneToOneField(Course, on_delete=models.CASCADE, related_name='course_info')
     course_skills= models.CharField(max_length=2000, default="")
     about_course= models.CharField(max_length=2000, default="")
     course_plan=models.CharField(max_length=2000, default="")
@@ -112,7 +98,7 @@ class CourseInfo(models.Model):
     notice = models.CharField(max_length=2000, default="")
     
     def __str__(self):
-        return f'Course info for {self.course}'
+        return f'Course Info for {self.course}'
 class Professor(User):
     """
     Class to store professors on the platform.
@@ -145,6 +131,17 @@ class SubTopic(models.Model):
     For example, Faraday's law is a subtopic of electromagnetism.
     """
     topic = models.ForeignKey(Topic, on_delete = models.CASCADE, related_name='sub_topics')
+    name = models.CharField(max_length=50)
+    
+    def __str__(self):
+        return self.name
+    
+class Unit(models.Model):
+    """
+    A subtopic may have many units under it. For example, the subtopic Collision, under the topic 
+    Mechanics, has units 1D collision, 2D collision, conservation of linear momentum, etc. 
+    """
+    subtopic = models.ForeignKey(SubTopic, on_delete=models.CASCADE, related_name='units')
     name = models.CharField(max_length=50)
     
     def __str__(self):
@@ -196,25 +193,11 @@ class Question(models.Model):
     The weight attribute is used to compute a student's grade for an Assignment.
     So all the questions in an assignment may have the same weight (uniform distribution),
     or different weights based on the instructor's input or automated (based on difficulty)
-    
-    # TODO: !Important 
-        Though the category input from the instructor at the time of creation of the question
-        will be optional, we may use embeddings to determine the similarity with other questions 
-        and assign the same category as the closest question.
-
-        The vector or matrix representation of the question should be computed at the time of
-        creation or later(automatically - it may also be updated as more questions come in).
-        That will be used for category assignment described above, and most importantly for
-        the search engine.
-
-    # Define choices for the topic 
-
     """
     number = models.CharField(blank=False, null=False, max_length=5)
     text = models.TextField(max_length= 2000, null=False, blank=False)
     assignment = models.ForeignKey(Assignment, null=True, on_delete=models.CASCADE, \
                                    related_name="questions")
-    category = models.CharField(max_length=50, null=True, blank=True)
     topic = models.ForeignKey(Topic, on_delete=models.SET_NULL, null=True, blank=True)
     sub_topic = models.ForeignKey(SubTopic, on_delete=models.SET_NULL, null=True, blank=True)
     parent_question = models.ForeignKey('self', on_delete=models.CASCADE, null=True, \
@@ -225,7 +208,6 @@ class Question(models.Model):
         default = QuestionChoices.STRUCTURAL_TEXT
     )
     embedding = models.JSONField(null=True, blank=True)  # Field to store encoded representation for search
-    num_points = models.IntegerField(null=True, blank=True)
 
     def default_due_date(self):
         if self.assignment:
@@ -236,34 +218,49 @@ class Question(models.Model):
         save_settings = kwargs.pop('save_settings', False)
         super(Question, self).save(*args, **kwargs)
         if save_settings:
-            if self.answer_type.startswith('MCQ'):
+            if self.answer_type.startswith('MCQ') or self.answer_type.startswith('MATCHING'):
                 settings, created = MCQQuestionSettings.objects.get_or_create(question=self)
             else:
                 settings, created = StructuralQuestionSettings.objects.get_or_create(question=self)
             settings.due_date = self.default_due_date()
             settings.save()
-        if not self.embedding:
-            question_tokens = BERT_TOKENIZER.encode(self.text, add_special_tokens=True)
-            with torch.no_grad():
-                question_tensor = torch.tensor([question_tokens])
-                question_attention_mask = (question_tensor != 0).float()  # Create attention mask
-                question_encoded_output = BERT_MODEL(question_tensor, attention_mask=question_attention_mask)[0]
+            if not self.embedding:
+                # Encode the question text, ensuring the sequence is within the max length limit
+                max_length = 512  # BERT's maximum sequence length
+                question_tokens = BERT_TOKENIZER.encode(self.text, add_special_tokens=True, max_length=max_length, truncation=True, padding='max_length')
 
-            # Apply attention-based pooling to question encoded output
-            question_encoded_output_pooled = attention_pooling(question_encoded_output, question_attention_mask)
+                with torch.no_grad():
+                    question_tensor = torch.tensor([question_tokens])
+                    question_attention_mask = (question_tensor != 0).float()  # Create attention mask
+                    question_encoded_output = BERT_MODEL(question_tensor, attention_mask=question_attention_mask)[0]
 
-            # Save the encoded output to the question object
-            self.embedding = question_encoded_output_pooled.tolist()
+                # Apply attention-based pooling to question encoded output
+                question_encoded_output_pooled = attention_pooling(question_encoded_output, question_attention_mask)
+
+                # Save the encoded output to the question object
+                self.embedding = question_encoded_output_pooled.tolist()
 
             super(Question, self).save(*args, **kwargs)
+
+    def get_num_points(self):
+        if self.answer_type.startswith('MCQ') or self.answer_type.startswith('MATCHING'):
+            return self.mcq_settings.num_points
+        else:
+            return self.struct_settings.num_points
 
 
     def __str__(self):
         return f"Question {self.number} for {self.assignment}"
     
-from django.db import models
-from django.core.validators import MinValueValidator, MaxValueValidator
-
+class QuestionCategory(models.Model):
+    """
+    Information about the topic, subtopic, and unit of a question
+    """
+    question = models.OneToOneField(Question, on_delete=models.CASCADE, related_name='category')
+    topic = models.ForeignKey(Topic, on_delete=models.SET_NULL, null=True, blank=True)
+    subtopic = models.ForeignKey(SubTopic, on_delete=models.SET_NULL, null=True, blank=True)
+    unit = models.ForeignKey(Unit, on_delete=models.SET_NULL, null=True, blank=True)
+    
 class BaseQuestionSettings(models.Model):
     """
     Base settings for a `Question`.
@@ -384,6 +381,8 @@ class FloatAnswer(AnswerBase):
     def __str__(self):
             
         return f"Float Answer for {self.question}: {self.content}"
+    def get_answer_code(self):
+        return 1
     
 class VariableFloatAnswer(AnswerBase):
     """
@@ -397,7 +396,9 @@ class VariableFloatAnswer(AnswerBase):
     def __str__(self):
         return f"Variable Float answer for {self.question}: {self.content}"
         
-            
+    def get_answer_code(self):
+        return 5   
+         
 class ExpressionAnswer(AnswerBase):
     """
     An expression for a `structural Question` may just be interpreted as text. The math.js library
@@ -410,7 +411,10 @@ class ExpressionAnswer(AnswerBase):
     def __str__(self):
         
         return f"Expression Answer for {self.question}: {self.content}"
-
+    
+    def get_answer_code(self):
+        return 0
+    
 class LatexAnswer(AnswerBase):
     """
     An answer may a latex string that will later be rendered in the JavaScript.
@@ -423,6 +427,9 @@ class LatexAnswer(AnswerBase):
 
         return f"Latex Answer for {self.question}: {self.content}"
     
+    def get_answer_code(self):
+        return 2
+    
 class TextAnswer(AnswerBase):
     """
     Probably less common, but a `Question` may have a text answer.
@@ -434,6 +441,9 @@ class TextAnswer(AnswerBase):
     def __str__(self):
         return f"Text Answer for {self.question}: {self.content}"
     
+    def get_answer_code(self):
+        return 4
+
 class MCQAnswerBase(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     content = models.TextField(blank=False, null=False)
@@ -455,7 +465,10 @@ class MCQFloatAnswer(MCQAnswerBase):
             return f"Correct MCQ Float Answer for {self.question}: {self.content}"
         else:
             return f"Incorrect MCQ Float Answer for {self.question}: {self.content}" 
-        
+    
+    def get_answer_code(self):
+        return 1    
+    
 class MCQVariableFloatAnswer(MCQAnswerBase):
     """
     Answer to a `structural Question` or `MCQ Question` may be a variable float. 
@@ -469,7 +482,9 @@ class MCQVariableFloatAnswer(MCQAnswerBase):
             return f"Correct MCQ Variable Float Answer for {self.question}: {self.content}"
         else:
             return f"Incorrect MCQ Variable Float Answer for {self.question}: {self.content}" 
-        
+
+    def get_answer_code(self):
+        return 8    
             
 class MCQExpressionAnswer(MCQAnswerBase):
     """
@@ -483,6 +498,9 @@ class MCQExpressionAnswer(MCQAnswerBase):
         else:
             return f"Incorrect MCQ Expression Answer for {self.question}: {self.content}" 
 
+    def get_answer_code(self):
+        return 0
+    
 class MCQLatexAnswer(MCQAnswerBase):
     """
     Latex answer for `MCQ Question`.
@@ -495,6 +513,9 @@ class MCQLatexAnswer(MCQAnswerBase):
             return f"Correct MCQ Latex Answer for {self.question}: {self.content}"
         else:
             return f"Incorrect MCQ Latex Answer for {self.question}: {self.content}" 
+    
+    def get_answer_code(self):
+        return 2
     
 class MCQTextAnswer(MCQAnswerBase):
     """
@@ -509,6 +530,9 @@ class MCQTextAnswer(MCQAnswerBase):
         else:
             return f"Incorrect MCQ Text Answer for {self.question}: {self.content}"    
     
+    def get_answer_code(self):
+        return 3
+    
 class MCQImageAnswer(MCQAnswerBase):
     """
     An answer to an `MCQ Question` may simply be an image.
@@ -521,12 +545,15 @@ class MCQImageAnswer(MCQAnswerBase):
 
     def __str__(self):
         return f"Image answer for {self.question} with url {self.image.url}" 
+    
     def delete(self, *args, **kwargs):
         # Delete the image file from storage
         if self.image:
             self.image.delete(save=False)
         super(MCQImageAnswer, self).delete(*args, **kwargs)
-
+    
+    def get_answer_code(self):
+        return 7
 class MatchingAnswer(models.Model):
     """
     A question may be a matching pairs question
@@ -537,6 +564,9 @@ class MatchingAnswer(models.Model):
     
     def __str__(self):
         return f"Matching pair answer for {self.question}"
+    
+    def get_answer_code(self):
+        return 9
 
 class Variable(models.Model):
     """

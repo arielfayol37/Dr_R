@@ -16,6 +16,7 @@
         {% endif %}
     </ul>
 </div>
+<<<<<<< HEAD
 
 
 <nav class="navbar navbar-expand-lg navbar-light bg-light navigation" >
@@ -38,12 +39,21 @@
     {% csrf_token %} 
     <div id="sf-container">
         <input  id="search-field" type="text" name="search_question" placeholder="search question"/>
+=======
+<nav class="navbar-custom">
+    <a class="nav-link home-btn" href="{% url 'deimos:index' %}">Home </a>
+    <a class="nav-link" href="{% url 'deimos:course_management' course_id=assignment.course.id %}">Assignments</a>
+    <a class="nav-link view-notes-btn" href="{% url 'deimos:note_management' course_id=assignment.course.id%}">View notes</a>
+    <a class="nav-link gradebook-btn" href="{% url 'deimos:gradebook' course_id=assignment.course.id%}">GradeBook</a>
+</nav>
+    <div class="sf-container">
+        <input type="text" name="search_question" class="page-search search-field w-limit-50" data-name="question-name" placeholder="search question"/>
+>>>>>>> 5369dd6a128dd246c7fbd65fdb4d32983c983b6b
     </div>
-</form>
     <br/>
     <br/>
-    <h4 class="suggestion" style="font-size: large;">{{assignment.course.name}} - {{assignment.name}}</h4><hr/>
-    
+    <h4 class="suggestion original-size page-title">{{assignment.course.name}}: {{assignment.name}}</h4>
+    <hr/>
     <!-- Display assignment's questions -->
     <ul class="courses course-list">
         {% for question in questions %}
@@ -59,5 +69,8 @@
 
 {% endblock %}
 {% block scripts%}
-<script src="{% static 'deimos/js/search_question.js' %}"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script src="{% static 'deimos/js/search_generic.js' %}"></script>
+<script src="{% static 'deimos/js/assignment_management.js' %}"></script>
 {% endblock %}

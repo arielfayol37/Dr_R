@@ -9,13 +9,13 @@
             <li><a href="{% url 'phobos:index'%}">Home</a></li>
         </ul>
     </div>
-    <form action="{% url 'phobos:search_question' %}" method="post" id="search-form">
+    <form action="{% url 'phobos:search_question' %}" method="post" class="search-form">
         {% csrf_token %} 
-        <div id="sf-container">
+        <div class="sf-container">
             {% if search_text %}
-                <input  id="search-field" type="text" name="search_question" placeholder="search question" value="{{search_text}}"/>
+                <input  class="search-field" type="text" name="search_question" placeholder="search question" value="{{search_text}}"/>
             {% else %}
-                <input  id="search-field" type="text" name="search_question" placeholder="search question" />
+                <input  class="search-field" type="text" name="search_question" placeholder="search question" />
             {% endif %}
         </div>
     </form>
@@ -27,6 +27,8 @@
     <ul class="courses course-list">
         {% for similar_question in similar_questions %}
             {% include 'phobos/question_display.html' with question=similar_question.question assignment_id=similar_question.question.assignment.id course_id=similar_question.question.assignment.course.id%}
+        {% empty %}
+            <h4 class="suggestion original-size"> Enter your question in the search bar and hit enter.</h4>
         {% endfor %}
     </ul>
 

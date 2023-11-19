@@ -8,13 +8,9 @@ urlpatterns = [
     path('login', views.login_view, name='login'),
     path('logout', views.logout_view, name='logout'),
     path('register', views.register, name='register'),
-    #
      path('forgot_password', views.forgot_password, name='forgot_password'),
-     #
      path('courses/notes/<int:course_id>', views.note_management, name='note_management'),
-     path('courses/<int:student_id>/gradebook/<int:assignment_id>/assignment_grades', views.assignemt_gradebook_student, name='assignemt_gradebook_student'),
-     #
-     path('courses/<int:course_id>/<int:show_gradebook>', views.course_management, name='course_management'),
+     path('courses/<int:student_id>/gradebook/<int:assignment_id>/assignment_grades', views.assignment_gradebook_student, name='assignment_gradebook_student'),
     path('courses/<int:course_id>', views.course_management, name='course_management'),
     path('courses/<int:course_id>/assignments/<int:assignment_id>', \
          views.assignment_management, name='assignment_management'),

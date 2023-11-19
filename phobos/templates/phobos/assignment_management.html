@@ -11,47 +11,33 @@
         {% if not is_question_bank %}
             <li><a href="{% url 'phobos:course_management' course_id=assignment.course.id %}">Assigments</a></li>
         {% endif %}
-        <li><a href="{% url 'phobos:search_question' %}">View Question Bank</a></li>
+        <li><a href="{% url 'phobos:question_bank' %}">Question Bank</a></li>
         <li><a href="{% url 'astros:all_courses' %}">All Courses</a></li>
     </ul>
 </div>
 
-<nav class="navbar navbar-expand-lg navbar-light bg-light navigation" >
-    <div class="container-fluid">
-      <ul class="navbar-nav mr-auto" style="list-style: none; display:flex;">
-        <li class="nav-item " style="display:inline;">
-          <a class="nav-link home-btn" href="{% url 'phobos:course_management' course_id=course.id %}">Course</a>
-        </li>
-        <li class="nav-item" style="display:inline;">
-          <a class="nav-link view-notes-btn" href="{% url 'phobos:create_question' assignment_id=assignment.id %}">Create Question</a>
-        </li>
-        <li class="nav-item" style="display:inline;">
-            <a class="nav-link gradebook-btn" href="{% url 'phobos:gradebook' course_id=course.id %}">GradeBook</a>
-        </li>
-        
-        </div>
+<nav class="navbar-custom" >
+    <a class="nav-link home-btn" href="{% url 'phobos:course_management' course_id=course.id %}">Assignments</a>
+    <a class="nav-link view-notes-btn" href="{% url 'phobos:create_question' assignment_id=assignment.id %}">Create Question</a>
+    <a class="nav-link gradebook-btn" href="{% url 'phobos:gradebook' course_id=course.id %}">GradeBook</a>
   </nav>
 
   <div class="side-info-icon" title="Info">
-    <a href="{% url 'phobos:edit_grading_scheme' course_id=course.id assignment_id=assignment.id %}"><ion-icon name="options-outline"></a></ion-icon>
+    <a href="{% url 'phobos:edit_grading_scheme' course_id=course.id assignment_id=assignment.id %}"><ion-icon name="settings"></ion-icon></a>
   </div>
-
-<form action="{% url 'phobos:search_question' %}" method="post" id="search-form">
-    {% csrf_token %} 
-    <div id="sf-container">
-        <input  id="search-field" type="text" name="search_question" placeholder="search question"/>
+    <div class="sf-container">
+        <input type="text" name="search_question" class="page-search search-field w-limit-50" data-name="question-name" placeholder="search question"/>
     </div>
-</form>
     <br/>
     <br/>
-    <h4 class="suggestion" style="font-size: large;">{{assignment.course.name}} - {{assignment.name}}</h4><hr/>
-    <div>
+    <h4 class="suggestion original-size page-title">{{assignment.course.name}}: {{assignment.name}}</h4>
+    <hr/>
+    <div class="assignment-options page-title">
     {% if not assignment.is_assigned %}
-        
-            <button class="btn edit-btn co assign-btn" data-assignment-id="{{assignment.id}}">Assign</button>
+        <button class="btn btn-outline-success assign-btn" data-assignment-id="{{assignment.id}}">Assign</button>
     {% endif %}
 <!-- Due Date functionalities-->
-    <button class="btn edit-btn co due_date-btn"  data-assignment-id="{{assignment.id}}">Change Due Date</button>
+    <button class="btn btn-outline-info due_date-btn"  data-assignment-id="{{assignment.id}}">Change Due Date</button>
         <div  class="due-date-div" style="display: none" >
             <input type="date"  class="input-new-due-date-field">
             <input type="button" class="save-new-due-date-field btn btn-outline-info" value="OK">
@@ -66,7 +52,10 @@
 
 {% endblock %}
 {% block scripts%}
-<script src="{% static 'phobos/js/search_question.js' %}"></script>
+<script src="{% static 'phobos/js/search_generic.js' %}"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script src="{% static 'deimos/js/assignment_management.js' %}"></script>
 {% if not assignment.is_assigned %}
 <script src="{% static 'phobos/js/assign_question.js' %}"></script>
 {% endif %}

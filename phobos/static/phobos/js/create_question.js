@@ -311,7 +311,7 @@ function checkTopicAndSubtopic() {
               alert('You must enter a symbol');
               return;
           } else if(varSymbolsArray.includes(symbol)){
-            alert('Symbol already in used');
+            alert('Symbol already in use');
             return;
           }else if(symbol.length === 1)
           {
@@ -494,131 +494,13 @@ settingsSelect.addEventListener('change', (event)=>{
 // ---------------------------------MAKING THE QUESTION MULTIPART------------------------------------------//
 
 function addQuestionBlock(){
+    const questionBlock = createQuestionBlock();
+    addEventListenersToQuestionBlock(questionBlock);
+    return questionBlock;
+}
 
-    // creating new option in settings
-    const newSettingsOption = document.createElement('option');
-    newSettingsOption.classList.add(`settings-option-${num_questions}`);
-    newSettingsOption.value = `${num_questions}`
-    newSettingsOption.innerHTML = `Part ${String.fromCharCode(64 + part_num_questions)}`;
-    const pts = initial_num_points/(part_num_questions) | 0;// to convert to integer
-    settingsSelect.appendChild(newSettingsOption);
-    // each time a new part is added, the number of points is redistributed.
-    // this is not very nice because if the instructor changed them earlier
-    // it will be changed again but I don't think that's too much of a big deal.
-    document.querySelector('.init-num-pts').value = pts;
-    const hiddenNumberPts = document.querySelectorAll('.h-num-pts');// this does not include the h-num-pts in the new block
-    // We take care of that in the questionBluePrint below
-    hiddenNumberPts.forEach((hnp)=>{
-        hnp.value = pts
-    })
+function addEventListenersToQuestionBlock(questionBlock){
 
-    const questionBluePrint = `
-    <input type="hidden" value=${num_questions} class="question-number-value">
-    <div class="question-content form-group">
-         <label class="q-label-title">Question ${String.fromCharCode(64 + part_num_questions)}:</label><br/>
-         <textarea placeholder="Enter the content of the question" class="question-textarea w-100 question-input-field" name="${num_questions}_question_text"></textarea>
-     </div>
-     <div class="main-question-image-preview" data-counter="0"></div>
-     <div class="uploaded-question-preview"></div>
-     <button type="button" class="main-question-add-image-btn btn btn-light open">Upload Image</button>
-     <div class="question-image-upload-section" style="display: none;">
-       <input type="text" placeholder="Enter image label" class="image-label-input-field field-style"/>
-       <input type="file" accept="image/*" class="main-question-image-input">
-       <button type="button" class="btn btn-success question-image-add">add</button>
-     </div>
-     <br/>
-    
-     <div class="answer-options">
-       
-       <label>Select answer type</label><br/>
-       <input type="hidden" value="none" class="hidden-q-type"/>
-       <input type="hidden" placeholder="0" name="${num_questions}_answer" class="q-answer-hidden"/>
-       <input type="hidden" placeholder="units" name="${num_questions}_answer_unit" class="q-answer-units-hidden"/>
-       <input type="hidden" placeholder="latex preface" name="${num_questions}_answer_preface" class="q-answer-preface-hidden"/>
-       <button type="button" id="expression-btn" class="expression-btn btn btn-primary exempt">Expression</button>
-       <button type="button" id="float-btn" class="float-btn btn btn-info exempt">Float</button>
-       <button type="button" id="mcq-btn" class="mcq-btn btn btn-light exempt">MCQ</button>
-       <button type="button" id="mp-btn" class="mp-btn btn btn-dark exempt">Matching Pairs</button>
-       <button type="button" id="fr-btn" class="fr-btn btn btn-secondary exempt" style="display:none;">Free Response</button>
-       <button type="button" id="survey-btn" class="survey-btn btn btn-dark exempt" style="display: none;">Survey</button>
-       <button type="button" id="latex-btn" class="latex-btn btn btn-secondary exempt"  style="display: none;">Latex</button>
-       
-     </div>
-    
-     <div class="mcq-answers">
-       <div class="mcq-options-button" style="display: none;">
-         <label>Select MCQ type</label><br/>
-         <button type="button" data-qid="mcq-expression-btn" class="mcq-expression-btn btn-primary exempt">Expression mode</button>
-         <button type="button" data-qid="mcq-float-btn" class="mcq-float-btn btn-info exempt">Float mode</button>
-         <button type="button" data-qid="mcq-text-btn" class="mcq-text-btn btn-light exempt">Text mode</button>
-         <button type="button" data-qid="mcq-latex-btn" class="mcq-latex-btn btn-secondary exempt">Latex mode</button>
-         <button type="button" data-qid="mcq-image-btn" class="mcq-image-btn btn-dark exempt">Image mode</button>
-       </div>
-       <div class="inputed-mcq-answers" data-counter="0" data-true-counter="0">
-    
-       </div>
-       <br/>
-       <div class="mcq-image-preview"></div>
-       <br/>
-       <div class="mcq-input-div" style="display: none;">
-         <input style="width: 100%; box-sizing: border-box;" type="text" class="mcq-input-field field-style"/>
-         <input type="file" accept="image/*" class="image-upload-input-field" style="display:none;"/>
-         <button type="button" class="btn btn-success mcq-add">add</button>
-       </div>
-    
-     </div>
-
-     <div class="mp-answers">
-        <div class="inputed-mp-answers" data-counter="0" data-qnumber="${num_questions}" data-mere-counter="0">
-        </div>
-        <br/>
-        <div class="mp-input-div" style="display:none;">
-            <div class="mp-inputs">
-                <input type="text" class="field-style mp-input-field-a" placeholder="Enter part A"/>
-                <input type="text" class="field-style mp-input-field-b" placeholder="Enter matching part B"/>
-            </div>
-            <div>
-                <button type="button" class="btn btn-success mp-add">add</button>
-            </div>
-        </div>
-     </div>
-     
-     <div class="answer-fields">
-         
-     </div>
-     <div class="formatted-answer structural-formatted-answer"></div>
-     <br/>
-     <div class="calculator-area-div"></div><br/>
-     <div class="hints-section"  data-counter="0">
-        <div class="inputed-hints">
-        </div>
-        <div class="add-hint-section" style="display:none;"/>
-            <input type="text" placeholder="Enter hint and click add" class="field-style add-hint-input-field"/>
-            <br/>
-            <button type="button" class="add-inputed-hint-btn btn btn-success"> add </button>
-        </div>
-        <button type="button" class="add-hint-btn btn btn-outline-info open"> Add Hint </button>
-     </div>
-     <hr/>
-     <button class="btn btn-outline-success check-question-btn">Add Part ${String.fromCharCode(64 + part_num_questions + 1)}</button>
-     <br/><br/>
-     <div class="hidden-settings">
-            <input class="field-style hidden-settings h-num-pts" type="hidden" name="${num_questions}_num_points" value="${pts}"/>
-            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_max_num_attempts"/>
-            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_deduct_per_attempt"/>
-            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_margin_error"/>
-            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_percentage_pts_units"/>
-            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_max_mcq_num_attempts">
-            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_mcq_deduct_per_attempt"/>
-            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_units_num_attempts"/>
-     </div>
-    `
-
-
-
-    const questionBlock = document.createElement('div');
-    questionBlock.classList.add('question-block');
-    questionBlock.innerHTML = questionBluePrint;
     const answerOptionsDiv = questionBlock.querySelector('.answer-options');
     const expressionBtn = questionBlock.querySelector('.expression-btn');
     const answerFieldsDiv = questionBlock.querySelector('.answer-fields');
@@ -660,8 +542,10 @@ function addQuestionBlock(){
     const calculatorAreaDiv = questionBlock.querySelector('.calculator-area-div');
 
 
-    // setting the initial hidden settings
 
+    
+    // setting the initial hidden settings to the same as the default 
+    // for the assignment under which this question appears. 
 var inputsWithSettingsClass = document.querySelectorAll('input.settings');
 inputsWithSettingsClass.forEach((input)=>{
      const question_num = parseInt(questionBlock.querySelector('.question-number-value').value)
@@ -669,7 +553,11 @@ inputsWithSettingsClass.forEach((input)=>{
      settingsHiddenInput.value = input.value;
 
 })
-
+    // Listening to clicks on the type of answer for the question
+    // then responding accordingly. For example, if Float answer is 
+    // selected, then the calculator will be appended to this 
+    // div and the units and preface screens will be opened if
+    // the user has already previously entered something.
     answerOptionsDiv.addEventListener('click', () => {
         const displayDiv = screen.closest('.calc-display-div');
         const previousQuestionBlock = screen.closest('.question-block');
@@ -689,18 +577,25 @@ inputsWithSettingsClass.forEach((input)=>{
                     const newfield = questionBlock.querySelector(mapping.source) 
                     calcField.value = newfield.value
                     calcField.placeholder = newfield.placeholder;
-                    if(calcField.value.length > 1){
+
+                    // Checking whether the units/preface field were previously filled.
+                    if(calcField.value.length > 1){ // if previously filled, display
+                                                    // units/preface screen and
+                                                    // update how the side button should look like
                         calcField.style.display = 'block';
                         prefaceUnitsBtns.forEach((btn)=>{
                                 if(!btn.classList.contains('open')){ // closed state
                                     btn.parentNode.querySelector('input').style.display = 'block';
                                     btn.textContent = '-'
                                     btn.classList.add('open');
-                                }else { // open state
+                                }
+                                /*
+                                else { // open state
                                     btn.parentNode.querySelector('input').style.display = 'none';
                                     btn.textContent = '+'
                                     btn.classList.remove('open');
                                 }
+                                */
                         
                            
                         })
@@ -708,11 +603,14 @@ inputsWithSettingsClass.forEach((input)=>{
                     }else if(mapping.target != "#screen"){
                         calcField.style.display = 'none';
                         prefaceUnitsBtns.forEach((btn)=>{
+                            /*
                             if(!btn.classList.contains('open')){ // closed state
                                 btn.parentNode.querySelector('input').style.display = 'block';
                                 btn.textContent = '-'
                                 btn.classList.add('open');
-                            }else { // open state
+                            }
+                            */
+                           if(btn.classList.contains('open')) { // open state
                                 btn.parentNode.querySelector('input').style.display = 'none';
                                 btn.textContent = '+'
                                 btn.classList.remove('open');
@@ -751,6 +649,9 @@ inputsWithSettingsClass.forEach((input)=>{
 ///
 
 /// ATTENTION! WARNING! IMPORTANT! Recursion here.
+
+
+// This is the button to add a new part to a question or delete the current part.
 checkButton.addEventListener('click', (event)=>{
     event.preventDefault();
 
@@ -769,8 +670,10 @@ checkButton.addEventListener('click', (event)=>{
 
 
     if(checkButton.classList.contains('btn-outline-success')){
+        // IF button is to ADD new part
         if(checkQuestionBlock(questionBlock)){
-            const newQuestionBlock = addQuestionBlock()
+            // if all the checks have passed
+            const newQuestionBlock = addQuestionBlock() // Here is the RECURSION
             allQuestionBlocks.appendChild(newQuestionBlock);
             checkButton.classList.remove('btn-outline-success');
             checkButton.classList.add('btn-outline-danger');
@@ -778,40 +681,12 @@ checkButton.addEventListener('click', (event)=>{
             newQuestionBlock.scrollIntoView({behavior: "smooth"});
         }
     }else{// Delete block;
-        const val = questionBlock.querySelector('.question-number-value').value;
-        delete questionTypeDicts[val];
-        questionBlock.parentNode.removeChild(questionBlock);
-        //num_questions -= 1;
-        const correspondingSettingsOption = settingsSelect.querySelector(`.settings-option-${val}`);
-        if (correspondingSettingsOption) {
-            settingsSelect.removeChild(correspondingSettingsOption);
-        }
-        part_num_questions -= 1;
-        // Renaming the question titles.
-        const allqBlocks = document.querySelectorAll('.question-block');
-        let count = 1;
-        let optionCounter = 1;
-        const allSettingsOptions = settingsSelect.querySelectorAll('option');
-        allSettingsOptions.forEach((sO)=>{
-            sO.innerHTML = `Part ${String.fromCharCode(64 + optionCounter)}`;
-            optionCounter += 1;
-        })
 
-        allqBlocks.forEach((qBlock) => {
-            const labelTitle = qBlock.querySelector('.q-label-title');
-            const checkBtn = qBlock.querySelector('.check-question-btn');
-            // 'Question B:' -> 'Question A:'
-            labelTitle.textContent = labelTitle.textContent.slice(0, -2) + String.fromCharCode(64 + count) + labelTitle.textContent.slice(-1);
-            if(checkBtn.classList.contains('btn-outline-success')){
-             checkBtn.textContent = checkBtn.textContent.slice(0, -1) + String.fromCharCode(64 + count + 1);
-            }else{
-            checkBtn.textContent = checkBtn.textContent.slice(0, -1) + String.fromCharCode(64 + count);
-            }
-            count = count + 1;
-        });
+        // To improve user experience, TODO: add a delete button on new created 
+        // Parts.
+        deleteQuestionBlock(questionBlock, settingsSelect);
     }
 
-    // TODO: Implement what happens when all the checks have passed.
 })
 
 
@@ -864,6 +739,9 @@ for (const file of mainQuestionImageInput.files) {
 mcqBtn.addEventListener('click', (event)=>{
 // If the instructor chooses mcq as the answer option.
 event.preventDefault();
+
+    // Hide the blocks for the other type of questions
+    // Hide the calculator 
     inputedMcqAnswersDiv.style.display = 'block';
     inputedMpAnswersDiv.style.display = 'none';
     mcqImagePreview.style.display = 'block';
@@ -875,8 +753,10 @@ event.preventDefault();
 
 });
 mpBtn.addEventListener('click', (event)=>{
-    // If the instructor chooses mcq as the answer option.
+    // If the instructor chooses matching pair as the answer option.
     event.preventDefault();
+    // Hide the blocks for the other type of questions
+    // Hide calculator
         inputedMcqAnswersDiv.style.display = 'none';
         inputedMpAnswersDiv.style.display = 'block';
         mcqImagePreview.style.display = 'none';
@@ -891,7 +771,9 @@ mpBtn.addEventListener('click', (event)=>{
 
 mcqOptionBtnsDiv.addEventListener('click', (event) => {
     event.preventDefault();
-
+    // This is to select the type of mcq the user wants to input
+    // when clicked, the input field used to add mcq questions
+    // changes the placeholder and the answer type is changed accordingly
     mcqInputDiv.style.display = 'block';
     imageUploadInput.style.display = 'none';
     mcqImagePreview.style.display = 'none';
@@ -1021,21 +903,22 @@ inputedMcqAnswersDiv.addEventListener('click', (event)=>{
     // Here adding the ability to change the status of an mcq option as true or false
     // Also, there's a delete button.
     target = event.target
-    if(target.classList.contains('mcq-false')){
+    const fdiv = target.closest('.formatted-answer-option');
+    if(fdiv !=null && fdiv.classList.contains('mcq-false')){
         // changing an mcq option from false to true.
-        target.classList.remove('mcq-false');
-        target.classList.add('mcq-true');
+        fdiv.classList.remove('mcq-false');
+        fdiv.classList.add('mcq-true');
         const holder =  parseInt(inputedMcqAnswersDiv.dataset.trueCounter)
         inputedMcqAnswersDiv.dataset.trueCounter = `${holder + 1}`;
-        const answer_info_input = target.closest('.inputed-mcq-answer').querySelector('.answer_info');
+        const answer_info_input = fdiv.closest('.inputed-mcq-answer').querySelector('.answer_info');
         answer_info_input.value = rep(answer_info_input.value, 0, '1');
-    } else if(target.classList.contains('mcq-true')){
+    } else if(fdiv !=null && fdiv.classList.contains('mcq-true')){
         // changing an mcq option from true to false.
-        target.classList.add('mcq-false');
-        target.classList.remove('mcq-true');
+        fdiv.classList.add('mcq-false');
+        fdiv.classList.remove('mcq-true');
         const holder = parseInt(inputedMcqAnswersDiv.dataset.trueCounter);
         inputedMcqAnswersDiv.dataset.trueCounter = `${holder - 1}`;    
-        const answer_info_input = target.closest('.inputed-mcq-answer').querySelector('.answer_info');
+        const answer_info_input = fdiv.closest('.inputed-mcq-answer').querySelector('.answer_info');
         answer_info_input.value = rep(answer_info_input.value, 0, '0');
     } else if (target.classList.contains('mcq-delete')){
         // deleting an mcq option.
@@ -1598,6 +1481,222 @@ settingsXBtn.addEventListener('click', (event)=>{
 
 
 
+
+
+
+
+  // -------------------------------------REUSABLE FUNCTIONS ---------------------------//
+
+
+  function deleteQuestionBlock(questionBlock, settingsSelect) {
+
+    // Usage example:
+// Assuming questionBlock is the block to delete and settingsSelect is the select element
+// deleteQuestionBlock(questionBlock, settingsSelect);
+
+    // Delete the question block and update related data structures and UI elements
+    const val = questionBlock.querySelector('.question-number-value').value;
+    delete questionTypeDicts[val]; // Assuming questionTypeDicts is accessible in this scope
+    questionBlock.parentNode.removeChild(questionBlock);
+
+    // Update the count of questions
+    part_num_questions -= 1; // Assuming part_num_questions is accessible in this scope
+
+    // Remove the corresponding settings option
+    const correspondingSettingsOption = settingsSelect.querySelector(`.settings-option-${val}`);
+    if (correspondingSettingsOption) {
+        settingsSelect.removeChild(correspondingSettingsOption);
+    }
+
+    // Renaming the question titles and updating settings options
+    updateQuestionTitlesAndSettings(settingsSelect);
+}
+
+function updateQuestionTitlesAndSettings(settingsSelect) {
+    // Update settings options
+    const allSettingsOptions = settingsSelect.querySelectorAll('option');
+    allSettingsOptions.forEach((option, index) => {
+        option.innerHTML = `Part ${String.fromCharCode(65 + index)}`; // ASCII code 65 is 'A'
+    });
+
+    // Update question block titles and check buttons
+    const allQuestionBlocks = document.querySelectorAll('.question-block');
+    allQuestionBlocks.forEach((qBlock, index) => {
+        const labelTitle = qBlock.querySelector('.q-label-title');
+        const checkBtn = qBlock.querySelector('.check-question-btn');
+
+        // Update label title
+        labelTitle.textContent = labelTitle.textContent.slice(0, -2) + String.fromCharCode(65 + index) + labelTitle.textContent.slice(-1);
+
+        // Update check button text
+        if(checkBtn.classList.contains('btn-outline-success')){
+            checkBtn.textContent = checkBtn.textContent.slice(0, -1) + String.fromCharCode(65 + index + 1);
+           }else{
+           checkBtn.textContent = checkBtn.textContent.slice(0, -1) + String.fromCharCode(65 + index);
+           }
+    });
+}
+
+
+function createQuestionBlock(){
+
+    // creating new option in settings
+    const newSettingsOption = document.createElement('option');
+    newSettingsOption.classList.add(`settings-option-${num_questions}`);
+    newSettingsOption.value = `${num_questions}`
+    newSettingsOption.innerHTML = `Part ${String.fromCharCode(64 + part_num_questions)}`;
+    const pts = initial_num_points/(part_num_questions) | 0;// to convert to integer
+    settingsSelect.appendChild(newSettingsOption);
+    // each time a new part is added, the number of points is redistributed.
+    // this is not very nice because if the instructor changed them earlier
+    // it will be changed again but I don't think that's too much of a big deal.
+    document.querySelector('.init-num-pts').value = pts;
+    const hiddenNumberPts = document.querySelectorAll('.h-num-pts');// this does not include the h-num-pts in the new block
+    // We take care of that in the questionBluePrint below
+    hiddenNumberPts.forEach((hnp)=>{
+        hnp.value = pts
+    })
+
+    const questionBluePrint = `
+    <input type="hidden" value=${num_questions} class="question-number-value">
+    <div class="question-content form-group">
+         <label class="q-label-title">Question ${String.fromCharCode(64 + part_num_questions)}:</label><br/>
+         <textarea placeholder="Enter the content of the question" class="question-textarea w-100 question-input-field" name="${num_questions}_question_text"></textarea>
+     </div>
+     <div class="main-question-image-preview" data-counter="0"></div>
+     <div class="uploaded-question-preview"></div>
+     <button type="button" class="main-question-add-image-btn btn btn-light open">Upload Image</button>
+     <div class="question-image-upload-section" style="display: none;">
+       <input type="text" placeholder="Enter image label" class="image-label-input-field field-style"/>
+       <input type="file" accept="image/*" class="main-question-image-input">
+       <button type="button" class="btn btn-outline-success question-image-add">confirm</button>
+     </div>
+     <br/>
+    
+     <div class="answer-options">
+       
+       <label>Select answer type</label><br/>
+       <input type="hidden" value="none" class="hidden-q-type"/>
+       <input type="hidden" placeholder="0" name="${num_questions}_answer" class="q-answer-hidden"/>
+       <input type="hidden" placeholder="units" name="${num_questions}_answer_unit" class="q-answer-units-hidden"/>
+       <input type="hidden" placeholder="latex preface" name="${num_questions}_answer_preface" class="q-answer-preface-hidden"/>
+       <button type="button" id="expression-btn" class="expression-btn btn btn-primary exempt">Expression</button>
+       <button type="button" id="float-btn" class="float-btn btn btn-info exempt">Float</button>
+       <button type="button" id="mcq-btn" class="mcq-btn btn btn-light exempt">MCQ</button>
+       <button type="button" id="mp-btn" class="mp-btn btn btn-dark exempt">Matching Pairs</button>
+       <button type="button" id="fr-btn" class="fr-btn btn btn-secondary exempt" style="display:none;">Free Response</button>
+       <button type="button" id="survey-btn" class="survey-btn btn btn-dark exempt" style="display: none;">Survey</button>
+       <button type="button" id="latex-btn" class="latex-btn btn btn-secondary exempt"  style="display: none;">Latex</button>
+       
+     </div>
+    
+     <div class="mcq-answers">
+       <div class="mcq-options-button" style="display: none;">
+         <label>Select MCQ type</label><br/>
+         <button type="button" data-qid="mcq-expression-btn" class="mcq-expression-btn btn-primary exempt">Expression mode</button>
+         <button type="button" data-qid="mcq-float-btn" class="mcq-float-btn btn-info exempt">Float mode</button>
+         <button type="button" data-qid="mcq-text-btn" class="mcq-text-btn btn-light exempt">Text mode</button>
+         <button type="button" data-qid="mcq-latex-btn" class="mcq-latex-btn btn-secondary exempt">Latex mode</button>
+         <button type="button" data-qid="mcq-image-btn" class="mcq-image-btn btn-dark exempt">Image mode</button>
+       </div>
+       <div class="inputed-mcq-answers" data-counter="0" data-true-counter="0">
+    
+       </div>
+       <br/>
+       <div class="mcq-image-preview"></div>
+       <br/>
+       <div class="mcq-input-div" style="display: none;">
+         <input style="width: 100%; box-sizing: border-box;" type="text" class="mcq-input-field field-style"/>
+         <input type="file" accept="image/*" class="image-upload-input-field" style="display:none;"/>
+         <button type="button" class="btn btn-success mcq-add">add</button>
+       </div>
+    
+     </div>
+
+     <div class="mp-answers">
+        <div class="inputed-mp-answers" data-counter="0" data-qnumber="${num_questions}" data-mere-counter="0">
+        </div>
+        <br/>
+        <div class="mp-input-div" style="display:none;">
+            <div class="mp-inputs">
+                <input type="text" class="field-style mp-input-field-a" placeholder="Enter part A"/>
+                <input type="text" class="field-style mp-input-field-b" placeholder="Enter matching part B"/>
+            </div>
+            <div class="mp-add-div">
+                <button type="button" class="btn btn-success mp-add">add</button>
+            </div>
+        </div>
+     </div>
+     
+     <div class="answer-fields">
+         
+     </div>
+     <div class="formatted-answer structural-formatted-answer"></div>
+     <br/>
+     <div class="calculator-area-div"></div><br/>
+     <div class="hints-section"  data-counter="0">
+        <div class="inputed-hints">
+        </div>
+        <div class="add-hint-section" style="display:none;">
+            <input type="text" placeholder="Enter hint and click add" class="field-style add-hint-input-field"/>
+            <br/>
+            <button type="button" class="add-inputed-hint-btn btn btn-success"> add </button>
+        </div>
+        <button type="button" class="add-hint-btn btn btn-outline-info open"> Add Hint </button>
+     </div>
+     <hr/>
+     <button class="btn btn-outline-success check-question-btn">Add Part ${String.fromCharCode(64 + part_num_questions + 1)}</button>
+     <br/><br/>
+     <div class="hidden-settings">
+            <input class="field-style hidden-settings h-num-pts" type="hidden" name="${num_questions}_num_points" value="${pts}"/>
+            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_max_num_attempts"/>
+            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_deduct_per_attempt"/>
+            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_margin_error"/>
+            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_percentage_pts_units"/>
+            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_max_mcq_num_attempts">
+            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_mcq_deduct_per_attempt"/>
+            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_units_num_attempts"/>
+     </div>
+    `
+
+
+
+    const questionBlock = document.createElement('div');
+    questionBlock.classList.add('question-block');
+    questionBlock.innerHTML = questionBluePrint;
+    return questionBlock;
+}
+
+
+
+
+
+///------------------------------EDIT QUESTION --------------------------------------/////
+
+
+// For Latex and Expression mcq options, process the options and display
+// properly using MathJax
+const hidden_mcq_answers = document.querySelectorAll('.hidden_answer');
+if(hidden_mcq_answers != null){
+    hidden_mcq_answers.forEach((ha)=>{
+        MathJax.typesetPromise().then(() => {
+            if(ha.classList.contains('latex')){
+                ha.closest('.formatted-answer-option').appendChild(MathJax.tex2chtml(ha.value)); 
+            }else if(ha.classList.contains('expression')){
+                if(ha.value.startsWith('@{')){
+                    var toBeParsed = ha.value.slice(2,-2)
+                }else {
+                    var toBeParsed = ha.value
+                }
+                const parsedE = math.parse(toBeParsed).toTex()
+                ha.closest('.formatted-answer-option').appendChild(MathJax.tex2chtml(parsedE));
+            }
+            MathJax.typesetPromise();
+        })
+
+
+    })
+}
 
 
 

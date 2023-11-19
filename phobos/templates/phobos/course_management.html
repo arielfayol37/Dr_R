@@ -1,6 +1,7 @@
 <!-- phobos: course_management.html-->
 {% extends 'phobos/layout.html' %}
 {% block title %} Course {% endblock %}
+{% load static %}
 {% block body%}
     <div class="sidebar" style="display:none">
         <header class="sidebar-header">X</header>
@@ -18,24 +19,15 @@
     </div>
 
     
-<nav class="navbar navbar-expand-lg navbar-light bg-light navigation">
-    <div class="container-fluid">
-      <ul class="navbar-nav mr-auto" style="list-style: none; display:flex;">
-        <li class="nav-item " style="display:inline;">
-          <a class="nav-link home-btn" href="{% url 'deimos:course_management' course_id=course.id%}">Home </a>
-        </li>
-        <li class="nav-item" style="display:inline;">
-          <a class="nav-link view-notes-btn" href="{% url 'phobos:create_assignment' course_id=course.id %}">Create Assignment</a>
-        </li>
-        <li class="nav-item" style="display:inline;">
-            <a class="nav-link gradebook-btn" href="{% url 'phobos:gradebook' course_id=course.id %}">GradeBook</a>
-        </li>
-        </div>
-  </nav>
+<nav class="navbar-custom">
+    <a class="nav-link home-btn" href="{% url 'phobos:index' %}">Home </a>
+    <a class="nav-link view-notes-btn" href="{% url 'phobos:create_assignment' course_id=course.id %}">Create Assignment</a>
+    <a class="nav-link gradebook-btn" href="{% url 'phobos:gradebook' course_id=course.id %}">GradeBook</a>
+</nav>
 
-    <div id="sf-container">
-        <input  id="search-field" type="text" name="search" placeholder="search assignment"/>
-    </div>
+<div class="sf-container">
+    <input type="text" name="search" class="page-search search-field w-limit-50" data-name="assignment-name" placeholder="search assignment" />
+</div>
     <br/>
     
     <h4>{{course.name}}</h4><hr/>
@@ -45,6 +37,7 @@
             {% include 'phobos/assignment_display.html' with assignment=assignment course=course %}
         {% endfor %}
     </ul>
+<<<<<<< HEAD
     
 
     <script>
@@ -83,3 +76,9 @@
         
     </script>
 {% endblock %}
+=======
+{% endblock %}
+{% block scripts %}
+    <script src="{% static 'phobos/js/search_generic.js' %}"></script>
+{% endblock %}
+>>>>>>> 5369dd6a128dd246c7fbd65fdb4d32983c983b6b

@@ -1,7 +1,8 @@
 from django.db import models
 from phobos.models import Course, Question, User, Assignment, VariableInstance, QuestionChoices
 from django.core.validators import MaxValueValidator, MinValueValidator
-import re
+from .utils import *
+from datetime import date
 class Student(User):
     """
     Student class to handle students in the platform.
@@ -81,10 +82,7 @@ class AssignmentStudent(models.Model):
         num_points = 0
         total = 0
         for question in self.assignment.questions.all():
-            if question.answer_type.startswith('MCQ'):
-                total += question.mcq_settings.num_points
-            else:
-                total += question.struct_settings.num_points
+            total += question.get_num_points()
             try:
                 question_student = QuestionStudent.objects.get(question=question, student=self.student)
                 # Taking modified score in to account to compute grade
@@ -118,7 +116,8 @@ class QuestionStudent(models.Model):
     success = models.BooleanField(default=False)
     var_instances = models.ManyToManyField(VariableInstance, related_name='question_students')
     instances_created = models.BooleanField(default=False)
-    num_units_attempts = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
+    num_units_attempts = models.IntegerField(default=0, null=True, blank=True, validators=[MinValueValidator(0)])
+    is_complete = models.BooleanField(default=False)
     def create_instances(self):
         """
         Get variable instances from the variables associated to the question.
@@ -234,8 +233,64 @@ class QuestionStudent(models.Model):
         Calculates and returns the number of attempts on a question by a user.
         """
         return self.attempts.count()
+    def get_too_many_attempts(self):
+        """
+        Returns True if no attempts left for this question
+        """ 
+        if self.question.answer_type.startswith('STRUCT'):
+            return self.get_num_attempts() >= self.question.struct_settings.max_num_attempts
+        else:
+            return self.get_num_attempts() >= self.question.mcq_settings.mcq_max_num_attempts
+    def get_units_too_many_atempts(self):
+        """
+        Returns True if no attempts left for units in this question.
+        """
+        if not self.question.answer_type.startswith('STRUCT'):
+            return True
+        return self.num_units_attempts >= self.question.struct_settings.units_num_attempts
+    def get_status(self):
+        """
+        Returns True if the question (including sub questions) have been completed,
+        Otherwise False
+        """
+        parent_question = self.question.parent_question if self.question.parent_question else self.question
+        question_students = QuestionStudent.objects.filter(question__parent_question=parent_question)
+        for qs in question_students:
+            if not qs.is_complete:
+                return False
+        return True
+
+    def get_potential(self, no_unit = False):
+        """
+        Returns the fraction of number of points the student can get for that question.
+        If no_unit, then we don't add the units points in the potential
+        """
+        try:
+            days_overdue = max(0, (date.today() - self.question.assignment.due_date.date()).days)
+            overall_percentage = max(self.question.assignment.grading_scheme.floor_percentage, \
+                                        1 - days_overdue * self.question.assignment.grading_scheme.late_sub_deduct)
+        except:
+            overall_percentage = 1 
+        # overall_percentage is the possible percentage of points a student can get.
+        # it is used to reduce the points in case of late submissions.
+        t = int(not self.get_too_many_attempts())
+        t_u = int(not self.get_units_too_many_atempts())
+        n_a = self.get_num_attempts() # number of attempts
+        if self.question.answer_type.startswith('STRUCT'):
+            p_u = self.question.struct_settings.percentage_pts_units
+            d = self.question.struct_settings.deduct_per_attempt # percentage deduct per attempt
+            if no_unit:
+                potential = t * (1 - p_u + ((d * n_a) * (p_u - 1)))
+            else:
+                potential = t * (1 - p_u + ((d * n_a) * (p_u - 1))) + p_u * t_u # This is the most use and general 
+                                                                                #  case for structural questions.
+        else:
+            d = self.question.mcq_settings.mcq_deduct_per_attempt
+            potential = t * (1 - (d * n_a))
+        return potential * overall_percentage
+
     def __str__(self):
-        return f"Question-Student:{self.question} {self.student.username}"
+        return f"{self.question} {self.student.username}"
     
 class Note(models.Model):
     """
@@ -245,6 +300,7 @@ class Note(models.Model):
     This may be helpful when they are preparing for exams.
     """
     question_student = models.OneToOneField(QuestionStudent, on_delete=models.CASCADE, related_name="note")
+    title = models.CharField(max_length=200, blank=True, null=True)
     content = models.TextField()
     last_edited = models.DateField(auto_now=True)
 
@@ -265,6 +321,7 @@ class NoteTemporary(models.Model):
     """
     Used to store notes temporarily when user uses QR Code to change device.
     """
+    title = models.CharField(max_length=200, blank=True, null=True)
     note = models.OneToOneField(Note, on_delete=models.CASCADE, related_name='temp_note')
     content = models.TextField()
     
@@ -285,7 +342,7 @@ class QuestionAttempt(models.Model):
     # while the actual submission will be stored in submitted_answer.
     submitted_answer =models.CharField(max_length=3000, blank=True, null=True)
     def __str__(self):
-        return f"{self.question_student.student.username} attempt for {self.question_student.question}"
+        return f"{self.question_student.student.username} for {self.question_student.question}"
 
 class QASuccessPairs(models.Model):
     """

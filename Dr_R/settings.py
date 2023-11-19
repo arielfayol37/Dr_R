@@ -149,6 +149,6 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'no.reply.dr.r.valpo@gmail.com' # Your Gmail address
-EMAIL_HOST_PASSWORD = 'jxey ewuu mrsq fvnb' # Your Gmail password
+EMAIL_HOST_PASSWORD = 'azuv oucz hahf sfqp' # Your Gmail password
 
 
