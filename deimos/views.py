@@ -591,6 +591,11 @@ def register(request):
         except:
             pass
         try:
+            s = Student.objects.get(username=username)
+            username = str(username) + str(random.randint(1, 10000000))
+        except Student.DoesNotExist:
+            pass
+        try:
             checking_student = Student.objects.get(email=email)
             if checking_student:
                 return render(request, "astros/register.html", {

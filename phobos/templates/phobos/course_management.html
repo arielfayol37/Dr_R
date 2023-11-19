@@ -19,11 +19,28 @@
     </div>
 
     
+<<<<<<< HEAD
 <nav class="navbar-custom">
     <a class="nav-link home-btn" href="{% url 'phobos:index' %}">Home </a>
     <a class="nav-link view-notes-btn" href="{% url 'phobos:create_assignment' course_id=course.id %}">Create Assignment</a>
     <a class="nav-link gradebook-btn" href="{% url 'phobos:gradebook' course_id=course.id %}">GradeBook</a>
 </nav>
+=======
+<nav class="navbar navbar-expand-lg navbar-light bg-light navigation">
+    <div class="container-fluid">
+      <ul class="navbar-nav mr-auto" style="list-style: none; display:flex;">
+        <li class="nav-item " style="display:inline;">
+          <a class="nav-link home-btn" href="{% url 'phobos:course_management' course_id=course.id%}">Home </a>
+        </li>
+        <li class="nav-item" style="display:inline;">
+          <a class="nav-link view-notes-btn" href="{% url 'phobos:create_assignment' course_id=course.id %}">Create Assignment</a>
+        </li>
+        <li class="nav-item" style="display:inline;">
+            <a class="nav-link gradebook-btn" href="{% url 'phobos:gradebook' course_id=course.id %}">GradeBook</a>
+        </li>
+        </div>
+  </nav>
+>>>>>>> c263053aae09fbd8cd86aed8ed5eb34a67854b35
 
 <div class="sf-container">
     <input type="text" name="search" class="page-search search-field w-limit-50" data-name="assignment-name" placeholder="search assignment" />
