@@ -74,6 +74,7 @@ class AssignmentStudent(models.Model):
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
     grade = models.FloatField(validators=[MaxValueValidator(100)], default=0, null=True)
     due_date = models.DateTimeField(null=True, blank=True)
+    is_complete = models.BooleanField(default=False)
 
     def get_grade(self):
         """
@@ -101,6 +102,10 @@ class AssignmentStudent(models.Model):
             self.grade = 0
         self.assignment.num_points = total
         return self.grade
+    
+    def get_status(self):
+        return self.is_complete
+
     def save(self, *args, **kwargs):
         if not self.due_date:
             self.due_date = self.assignment.due_date
@@ -118,6 +123,12 @@ class QuestionStudent(models.Model):
     instances_created = models.BooleanField(default=False)
     num_units_attempts = models.IntegerField(default=0, null=True, blank=True, validators=[MinValueValidator(0)])
     is_complete = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        if self.success == True:
+            self.is_complete = True
+        super(QuestionStudent, self).save(*args, **kwargs)
+
     def create_instances(self):
         """
         Get variable instances from the variables associated to the question.
@@ -254,11 +265,9 @@ class QuestionStudent(models.Model):
         Otherwise False
         """
         parent_question = self.question.parent_question if self.question.parent_question else self.question
-        question_students = QuestionStudent.objects.filter(question__parent_question=parent_question)
-        for qs in question_students:
-            if not qs.is_complete:
-                return False
-        return True
+        children_complete = not QuestionStudent.objects.filter(question__parent_question=parent_question, student=self.student, is_complete=False).exists()
+        parent_qs = QuestionStudent.objects.get(question=parent_question, student=self.student)
+        return parent_qs.is_complete and children_complete
 
     def get_potential(self, no_unit = False):
         """
@@ -365,4 +374,66 @@ class QuestionModifiedScore(models.Model):
         if self.score == None:
             self.is_modified = False
         return f"{self.question_student.student.username} score: {self.score} is modified? {self.is_modified}"
+    
+class PracticeTestAssignment(models.Model):
+    "Used to generate a practice test for a particular course"
+    course = models.ForeignKey(Course,on_delete=models.CASCADE, related_name='course_practice_test')
+    assignment = models.ManyToManyField(Assignment,blank=True, related_name='practice_test_assignments')
+    student = models.ForeignKey(Student,on_delete=models.CASCADE, related_name='student_practice_test')
+
+    def __str__(self):
+        return f"Practice Test for {self.student} in course {self.course}" 
+
+
+def transform_expression(expr):
+    """Insert multiplication signs between combined characters, except within trig functions."""
+    expression = remove_extra_spaces_around_operators(expr)
+    expression = expression.replace(', ', '')
+    expression = expression.replace(' ', '*')
+    expression = re.sub(r'1e\+?(-?\d+)', r'10^\1', expression)
+    trig_functions = {
+        'asin': 'ò', 'acos': 'ë', 'atan': 'à', 'arcsin': 'ê', 'arccos': 'ä',
+        'arctan': 'ï', 'sinh': 'ù', 'cosh': 'ô', 'tanh': 'ü', 'sin': 'î', 'cos': 'â', 'tan': 'ö', 'log': 'ÿ', 'ln': 'è',
+        'cosec': 'é', 'sec': 'ç', 'cot': 'û', 'sqrt':'у́', 'pi': 'я',
+    }
+
+    expression = encode(expression, trig_functions)
+    transformed_expression = ''.join(
+        char if index == 0 or not needs_multiplication(expression, index, trig_functions)
+        else '*' + char for index, char in enumerate(expression)
+    )
+    transformed_expression = transformed_expression.replace('^', '**')
+    return decode(transformed_expression, trig_functions)
+
+def remove_extra_spaces_around_operators(text):
+    pattern = r'(\s*([-+*/^])\s*)'
+    return re.sub(pattern, lambda match: match.group(2), text)
+
+def needs_multiplication(expr, index, trig_functions):
+    char = expr[index]
+    prev_char = expr[index - 1]
+    return (
+        (char.isalpha() or char in trig_functions.values()) and prev_char.isalnum() or
+        char.isdigit() and prev_char.isalpha() or
+        char == "(" and (prev_char.isalpha() and not prev_char in trig_functions.values())
+    )
+
+def encode(text, trig_functions):
+    """Takes a string and replaces trig functions with their corresponding special character."""
+    result = text
+    for key, value in trig_functions.items():
+        result = result.replace(key, value)
+    return result
+
+def decode(text, trig_functions):
+    """Takes a string and replaces special character with their corresponding trig function."""
+    special_chars = {'e':'E', 'i':'((-1)^0.5)'}
+    result = text
+    # !Important.  special_chars for loop must come before 
+    # the trig_functions for loop!
+    for sc, value in special_chars.items():
+        result = result.replace(sc, value)
+    for key, value in trig_functions.items():
+        result = result.replace(value, key)
+    return result
 

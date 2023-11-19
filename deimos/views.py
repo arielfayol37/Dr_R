@@ -50,12 +50,46 @@ def course_management(request, course_id):
 
     assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student, \
                                             is_assigned=True)
+    as_statuses = []
+    if course.name != 'Question Bank':
+        for assignment in assignments:
+            ass, created = AssignmentStudent.objects.get_or_create(assignment= assignment, student=student)
+            as_statuses.append(ass.get_status())
+
     context = {
         "student":student,
-        "assignments": assignments,
+        "assignments": zip(assignments, as_statuses),
         "course": course,
     }
     return render(request, "deimos/course_management.html", context)
+
+@login_required(login_url='astros:login') 
+def assignment_management(request, assignment_id, course_id=None):
+    # Making sure the request is done by a Student.
+    student = get_object_or_404(Student, pk = request.user.pk)
+    assignment = get_object_or_404(Assignment, pk = assignment_id)
+    assignment_student = AssignmentStudent.objects.get(student=student, assignment=assignment)
+    questions = Question.objects.filter(assignment = assignment, parent_question=None)
+    qs_statuses = []
+    if assignment.course.name != 'Question Bank':
+        for question in questions:
+            qs, created = QuestionStudent.objects.get_or_create(question=question, student=student)
+            qs_statuses.append(qs.get_status())
+            question.text = qs.evaluate_var_expressions_in_text(question.text, add_html_style=True)
+    else:
+        qs_statuses = [False for i in range(questions.count())] # here for templating purposes.
+
+    if sum(qs_statuses) == len(qs_statuses): # if all the questions have been completed.
+        assignment_student.is_complete = True
+    else:
+        assignment_student.is_complete = False
+    assignment_student.save()
+    
+    context = {
+        "questions": zip(questions, qs_statuses),
+        "assignment": assignment,
+    }
+    return render(request, "deimos/assignment_management.html", context)
 
 @login_required(login_url='astros:login')
 def gradebook(request, course_id):
@@ -69,7 +103,10 @@ def gradebook(request, course_id):
     # needed student's gradebook
     course_score=0
     assignment_student_grade=[]
-    assignment_student = AssignmentStudent.objects.filter(student=student, assignment__course=course)
+    assignment_student = list()
+    for assignment in AssignmentStudent.objects.filter(student=student):
+        if assignment.assignment.course == course:
+            assignment_student.append(assignment)
     a_sums = 0
     for assignment_s in assignment_student:
         grade = assignment_s.get_grade()
@@ -101,6 +138,13 @@ def assignment_management(request, assignment_id, course_id=None):
         "questions": questions,
         "assignment": assignment
     }
+    if assignment.category =="PRACTICE_TEST":
+        context = {
+        "questions": questions,
+        "assignment": assignment,
+        "course_id":course_id
+    }
+
     return render(request, "deimos/assignment_management.html", context)
 
 def encrypt_integer(n:int)->int:
@@ -368,6 +412,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                                     attempt_potential -= question.struct_settings.percentage_pts_units     
                         else:
                             question_student.success, question_student.is_complete = (True, True)
+                        attempt_potential = max(0, attempt_potential)
                         attempt.num_points = round(attempt_potential * question.struct_settings.num_points, 2)
                         question_student.save()
                     else:
@@ -385,8 +430,8 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                             question_student.num_units_attempts += 1
                             # Update the number of points for this attempt
                             if units_correct:
-                                attempt.num_points = round(question.struct_settings.percentage_pts_units * \
-                                                           question.struct_settings.num_points, 2)
+                                attempt.num_points = max(0, round(question.struct_settings.percentage_pts_units * \
+                                                           question.struct_settings.num_points, 2))
                         
 
                 elif data["questionType"] == 'mcq':
@@ -418,7 +463,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                         s1, s2 = set(simplified_answer), set(answers)
                         if s1 == s2:
                             correct = True
-                            attempt.num_points = round(current_potential * question.mcq_settings.num_points, 2)
+                            attempt.num_points = max(0, round(current_potential * question.mcq_settings.num_points, 2))
                             question_student.success, question_student.is_complete = (True, True)
                             attempt.success = True
 
@@ -451,7 +496,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
                     attempt.content = attempt_pairs
                     attempt.submitted_answer = attempt_pairs # useless. Using twice the size of memory.
-                    attempt.num_points = round(frac * current_potential * question.mcq_settings.num_points, 2)                      
+                    attempt.num_points = max(0, round(frac * current_potential * question.mcq_settings.num_points, 2))                      
                     return_sp = success_pairs_strings # will return the successful pairs so the front end can be updated.
                     success_pairs_strings = "&".join(success_pairs_strings)   
                     # attempt.save() # probably not needed here?
@@ -475,8 +520,8 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                         last_attempt.units_success = units_correct
                         last_attempt.submitted_units = submitted_units
                         question_student.num_units_attempts += 1
-                        last_attempt.num_points += round(question.struct_settings.percentage_pts_units * \
-                                                         question.struct_settings.num_points * int(units_correct), 2)
+                        last_attempt.num_points += max(0, round(question.struct_settings.percentage_pts_units * \
+                                                         question.struct_settings.num_points * int(units_correct), 2))
                         last_attempt.save()
                         # Updating question status
                         if units_correct and prev_success:
@@ -484,13 +529,13 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                         question_student.save()    
 
         # Some info that will be used to update the front end.
-        if (not correct and (data["questionType"].startswith('structural'))):
+        if ((not correct) and (data["questionType"].startswith('structural'))):
             too_many_attempts =  num_attempts + 1 == question.struct_settings.max_num_attempts
             if not units_correct:
                 units_too_many_attempts = question_student.num_units_attempts >= question.struct_settings.units_num_attempts
 
         # Updating completion status
-        if not question_student.is_complete and (units_too_many_attempts or units_correct) and (too_many_attempts or prev_success):
+        if (not question_student.is_complete) and (units_too_many_attempts or units_correct) and (too_many_attempts or prev_success):
             question_student.is_complete = True
             question_student.save()
         # Return a JsonResponse
@@ -571,13 +616,18 @@ def register(request):
         username = request.POST["username"].strip()
         email = request.POST["email"].strip()
         password = request.POST["password"].strip()
-        first_name = request.POST["first_name"].strip()
-        last_name = request.POST["last_name"].strip()
+        first_name = request.POST["first_name"].strip().title()
+        last_name = request.POST["last_name"].strip().title()
         
         try: 
             stud = Student.objects.get(username=username)
             username = str(username) + str(random.randint(1, 1000000))
         except:
+            pass
+        try:
+            s = Student.objects.get(username=username)
+            username = str(username) + str(random.randint(1, 10000000))
+        except Student.DoesNotExist:
             pass
         try:
             checking_student = Student.objects.get(email=email)
@@ -831,14 +881,44 @@ def note_management(request, course_id):
     return render(request, "deimos/note_management.html", context)
 
 
-def generate_practice_test(request):
+@login_required(login_url='astros:login') 
+def note_management(request, course_id):
+    course = get_object_or_404(Course, pk=course_id)
+
+    # Check if there is any Enrollment entry that matches the given student and course
+    student = get_object_or_404(Student, pk = request.user.pk)
+    is_enrolled = Enrollment.objects.filter(student=student, course=course).exists()
+    
+    if not is_enrolled:
+        return HttpResponseForbidden('You are not enrolled in this course.')
+    assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student, \
+                                            is_assigned=True)
+    # this is needed to display notes
+    Notes = Note.objects.all()
+    notes=[]
+    for note in Notes:
+        if note.question_student.student == student:
+             notes.append({'Note':note,"note_md":markdown(note.content)})
+    
+    context = {
+        "student":student,
+        "assignments": assignments,
+        "course": course,
+        "notes": notes,
+    }
+    return render(request, "deimos/note_management.html", context)
+
+def generate_practice_test(request,practice_course_id):
     course_id = request.POST['course_id']
     topic_name = request.POST['topic_name']
+    subtopic_name = request.POST['subtopic_'+topic_name]
     num_Questions = request.POST['num_Question']
     practice_test_name = request.POST['practice_test_name']
+    #description = request.POST['practice_test_name']
+
     student = get_object_or_404(Student, pk = request.user.pk)
     course = Course.objects.get(pk=course_id)
-    practice_course,is_created= Course.objects.get_or_create(name='Practice Course')
+    practice_course = Course.objects.get(pk= practice_course_id)
 
     # try:
     #     is_enrolled= Enrollment.objects.get(course=course, student=student)
@@ -848,66 +928,165 @@ def generate_practice_test(request):
     topic = Topic.objects.get(name=topic_name)
     question_student_topic=[]
     question_student_topic_attempts=[]
+    question_class_topic_attempts=[]
 
     # Check if there are any questions under this topic
     if not Question.objects.filter(topic=topic).exists():
         error = "There are currently no questions under this topic. Please select another."
-        return HttpResponseRedirect(reverse("deimos:practice_test_settings", args=(course.id,), kwargs={'error_message': error}))
+        return HttpResponseRedirect(reverse("deimos:practice_test_settings",  kwargs={'course_id': course.id,'practice_course_id':practice_course_id,'error_message': error}))
+
 
     # Get all QuestionStudent objects for the student and topic with the number of attempts
-    question_student_topic = QuestionStudent.objects.filter(
-        student=student,
-        question__topic=topic
-    ).annotate(num_attempts=Count('attempts'))
+    if subtopic_name == 'All':
+        question_student_topic = QuestionStudent.objects.filter(
+            student=student,
+            question__topic=topic
+        ).annotate(num_attempts=Count('attempts'))
+        # Get all Question objects for the topic with the number of attempts for class statistics
+        question_class_topic = Question.objects.filter(
+            topic=topic
+        )
+    else:
+        subtopic = SubTopic.objects.get(name=subtopic_name)
+
+        # Check if there are any questions under this subtopic
+        if not Question.objects.filter(sub_topic=subtopic).exists():
+            error = "There are currently no questions under this subtopic. Please select another."
+            return HttpResponseRedirect(reverse("deimos:practice_test_settings",  kwargs={'course_id': course.id,'practice_course_id':practice_course_id,'error_message': error}))
+        
+        question_student_topic = QuestionStudent.objects.filter(
+            student=student,
+            question__sub_topic=subtopic
+        ).annotate(num_attempts=Count('attempts'))
+        # Get all Question objects for the topic with the number of attempts for class statistics
+        question_class_topic = Question.objects.filter(
+            sub_topic=subtopic
+        )
 
     # Extract the number of attempts for statistics
-    question_student_topic_attempts = [qs.num_attempts for qs in question_student_topic]
+    question_student_topic = list(question_student_topic)
+    print(len(question_student_topic))
+    questions = []
+    question_sum_attempts=[] 
+    questioncount=[]
+    for qs in question_student_topic:
+        if 0: #qs.question.assignment.category=="PRACTICE_TEST": # excluding practice test from the statistics
+            question_student_topic.remove(qs)
+            continue
+        else:
+            questions.append(qs)
+            question_sum_attempts.append(qs.num_attempts) 
+            questioncount.append(1)
+            for q in questions:
+                # computing the average number of question attempts for similar question
+                if q!=qs and areQuestionSimilar(qs.question,q.question, 0.85):
+                    question_sum_attempts[questions.index(q)]=+ qs.num_attempts
+                    questioncount[questions.index(q)]=+ 1
+                    questions.pop()
+                    question_sum_attempts.pop() 
+                    questioncount.pop()
+                    break
+    question_student_topic = questions
+    #print(len(question_student_topic))
+
+    # Extract the number of attempts for statistics
+    question_student_topic_attempts = [question_sum_attempts[i]/questioncount[i] for i in range(len(question_student_topic))]
+
+    # removing Student's and similar questions to avoid duplicates
+    questions=[]
+    #print(len(question_class_topic))
+    for qc in question_class_topic:
+        questions.append(qc)
+
+        for q in questions:
+            if q!=qc and areQuestionSimilar(qc,q,0.85):
+                questions.pop() #removing similar questions
+                break
+    question_class_topic = questions
+    #print(len(question_class_topic))
+
+    # Extract the number of attempts for statistics
+    if question_class_topic != []:
+        for question in question_class_topic:
+            if QuestionStudent.objects.filter(question=question).exists():
+                questionStudents=QuestionStudent.objects.filter(question=question).annotate(num_attempts=Count('attempts'))
+                s=1
+                for qs in questionStudents:
+                    s= s +qs.num_attempts
+                question_class_topic_attempts.append(s/len(questionStudents))
+                for qs in question_student_topic: ## removing student's questions
+                    if qc == qs.question or areQuestionSimilar(qc,qs.question,0.9): # adding class stastistics into student statictics of the pqrticular question using euclidean distance.
+                        c= question_student_topic_attempts[question_student_topic.index(qs)]
+                        question_student_topic_attempts[question_student_topic.index(qs)] = np.sqrt((c**2) + 0.5*(question_class_topic_attempts[-1] **2))
+                        question_class_topic.remove(question)
+                        question_class_topic_attempts.pop()
+                        break
+            else:
+                question_class_topic_attempts.append(1)
+
+    #print('question_class_topic_attempts',question_class_topic,question_class_topic_attempts)
 
     # computing the number of question to be selected
-    if int(num_Questions)>len(question_student_topic):
-        k=len(question_student_topic)
+    question_list = list(question_student_topic) + list(question_class_topic)
+    if int(num_Questions)>len(question_list):
+        k=len(question_list)
     else:
         k=int(num_Questions)
     # selecting the questions based on the probability distribution
-    distribution=answered_question_statistics(question_student_topic_attempts)
-    Selected_questions= random.choices(question_student_topic,weights=distribution, k=k)
+    distribution_student_question=answered_question_statistics(question_student_topic_attempts)
+    distribution_class_question = answered_question_statistics(question_class_topic_attempts)
+    student_question_coefficient= 1 #set
+    class_question_coefficient = 0.5 #set
+    question_list = list(question_student_topic) + list(question_class_topic)
+    question_distribution = [i*student_question_coefficient for i in distribution_student_question] + [i*class_question_coefficient for i in distribution_class_question] 
+    #to mitigate some unforeseen situations, we use:
+    corrected_question_distribution = [ question_distribution[i] for i in range(len(question_list))]
+    Selected_questions= random.choices(question_list,weights=corrected_question_distribution, k=k)
+    #print(k,question_list,question_distribution, Selected_questions)
 
     # creating a new practice test assignment
-    practice_test= Assignment.objects.create(course=practice_course, name=practice_test_name, is_assigned=True)
+    practice_test= Assignment.objects.create(course=practice_course, name=practice_test_name, category='PRACTICE_TEST', is_assigned=True)
     practice_test.save()
 
-    # adding selected and similar questions to the new practice test assignment and saving assignmentstudent
-    practice_questions=[]
     for question in Selected_questions:
-        similar = similar_question(question.question)
-        if not similar:  # If the list is empty, continue to the next iteration
-            continue
-        select = random.choice(similar)
-        # Let's ensure a question doesnot repeat twice
-        while select in practice_questions and similar != []:
-            similar.remove(select) 
-            if similar != []:
-                select = random.choice(similar)
-        # copying te selected question into te practce test course   
-        if similar !=[]:
-            result = export_question_to(request,select['question'].id,practice_test.id)
-            practice_questions.append(select)
+    #using the isinstance function to check the class of the question object
+        if isinstance(question, QuestionStudent):
+            result = export_question_to(request, question.question.id, practice_test.id)
+        elif isinstance(question, Question):
+            result = export_question_to(request, question.id, practice_test.id)
+
 
     practice_test_student = AssignmentStudent.objects.create(assignment= practice_test, student= student)
     practice_test_student.save()
     practice_test_enroll = Enrollment.objects.create(student=student, course=practice_course)
     practice_test_enroll.save()
 
-    return HttpResponseRedirect(reverse("deimos:course_management",None,None,{'course_id':practice_course.id}))
+    course_practice_test_assignments, is_created = PracticeTestAssignment.objects.get_or_create(student=student, course=course)
+    course_practice_test_assignments.assignment.add(practice_test)
+    return render(request,"deimos/practice_test_page.html",
+                  {'practice_test_assignments':course_practice_test_assignments.assignment.all(),'course':course,
+                   'practice_course_id':practice_course.id})
 
-def practice_test_settings(request,course_id=None,error_message=None):
+def practice_test_settings(request,practice_course_id,course_id=None,error_message='Fill out the form below'):
     topics= Topic.objects.all()
+    subtopics = [SubTopic.objects.filter(topic = topic) for topic in topics]
+    topicSubtopics = zip(topics,subtopics)
     course= Course.objects.get(pk=course_id)
-    return render(request,"deimos/practice_test_setting.html",{'topics':topics, 'course':course, 'error_message':error_message})
+    return render(request,"deimos/practice_test_setting.html",
+                  {'topics':topics, 'course':course, 'practice_course_id':practice_course_id, 
+                   'topicSubtopics':topicSubtopics,'error_message':error_message,})
 
-def normal_prob(x, mu, sigma):
+def practice_test_page(request,course_id,error_message=None):
+    course= Course.objects.get(pk=course_id)
+    student = get_object_or_404(Student, pk = request.user.pk)
+    course_practice_test_assignments, is_created= PracticeTestAssignment.objects.get_or_create(student=student, course=course)
+    course_practice,is_created = Course.objects.get_or_create(pk=1000, name='Practice_Test_Course')
+    return render(request,"deimos/practice_test_page.html",
+                  {'practice_test_assignments':course_practice_test_assignments.assignment.all(),'course':course,
+                   'practice_course_id':course_practice.id,})
+
+def normal_prob(x, mu, sigma):   # return the normal probability
     p = (1 / (sigma * np.sqrt(2 * np.pi))) * np.exp(-0.5 * ((x - mu) / sigma) ** 2)
-  # return the normal probability
     return p
 
 def answered_question_statistics(input_list):
@@ -915,22 +1094,17 @@ def answered_question_statistics(input_list):
     if not input_list:
         # Return a default distribution or handle the empty case appropriately
         return [1]  # or any other default you deem appropriate
-
     array = np.array(input_list)
     mean = np.mean(array)
     std = np.std(array)
-    
     # Handle the case where standard deviation is zero (all values are the same)
     if std == 0:
         std = 1
-
     # Calculate the probabilities
     probabilities = [normal_prob(x, mean, std) for x in array]
-
     # Handle the case where all probabilities are zero
     if all(prob == 0 for prob in probabilities):
         return [1] * len(probabilities)
-
     mode = np.max(probabilities)
     # Calculate the distribution as the maximum probability divided by each probability
     distribution = [mode / i if i != 0 else 1 for i in probabilities]
@@ -948,3 +1122,13 @@ def similar_question(input_question):
         # Sort by similarity score and get top 10
         top_n = 3
         return heapq.nlargest(top_n, similar_questions, key=lambda x: x['similarity'])
+
+def areQuestionSimilar(input_question1,input_question2,threshold):
+        encoded_output_pooled= torch.tensor(input_question1.embedding)
+        # Calculate cosine similarity with stored question encodings
+        question_encoded_output_pooled = torch.tensor(input_question2.embedding)  # Load pre-computed encoding
+        similarity_score = cosine_similarity(encoded_output_pooled, question_encoded_output_pooled).item()
+        if similarity_score >= threshold:
+            return True
+        else:
+            return False

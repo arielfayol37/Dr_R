@@ -1,17 +1,24 @@
 <!-- deimos: assignment_display.html -->
+{% load my_custom_tags %}
 <li class="assignment-li course-li" data-assignment-id="{{ assigment.id }}">
     <a href="{% url 'deimos:assignment_management' course_id=course.id assignment_id=assignment.id %}">
         <div class="course-section assigment-section">
             <div>
                 <span class="c-name assignment-name"><strong>{{assignment.name | safe}}</strong></span>
-                <p class="timestamp" style="display: none;">Created on {{ assignment.timestamp|date:"m/d/Y" }}</p>
+                <p class="timestamp" style="display: none;">Created on {{ assignment.timestamp|format_date }}</p>
                 {% if assignment.assigned_date %}
-                    <p class="timestamp">Assigned on {{ assignment.assigned_date|date:"m/d/Y" }}</p>
+                    <p class="timestamp">Assigned on {{ assignment.assigned_date|format_date }}</p>
                 {% endif %}
                 {% if assignment.due_date %}
-                    <p class="timestamp">Due on {{ assignment.due_date|date:"m/d/Y" }}</p>
+                    <p class="timestamp">Due on {{ assignment.due_date|format_date }}</p>
                 {% endif %}
             </div>
+            {% if status %}
+                <button type="button" class="btn status edit-btn" style="position: absolute; bottom: 2%;">
+                        Completed
+                </button>
+            {% endif %}
         </div>
+        
     </a>
 </li>

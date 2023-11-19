@@ -2,6 +2,7 @@
 {% extends 'phobos/layout.html' %}
 {% block title %} Assignment {% endblock %}
 {% load static %}
+{% load my_custom_tags %}
 {% block body%}
 <div class="sidebar" style="display:none">
     <header class="sidebar-header">X</header>
@@ -39,7 +40,7 @@
 <!-- Due Date functionalities-->
     <button class="btn btn-outline-info due_date-btn"  data-assignment-id="{{assignment.id}}">Change Due Date</button>
         <div  class="due-date-div" style="display: none" >
-            <input type="date"  class="input-new-due-date-field">
+            <input type="datetime-local"  class="input-new-due-date-field">
             <input type="button" class="save-new-due-date-field btn btn-outline-info" value="OK">
         </div>
     </div>

@@ -230,9 +230,9 @@
                   {% elif question_dict.questtype == 'mp' %}
                       <input type="hidden" value="mp" class="question-type"/>
                       {% if not question_dict.question_student.success %}
-                        <div class="suggestion"> Match the following pairs </div>
+                        <div class="suggestion" style="width: 100%;"> Match the following pairs </div>
                       {% else %}
-                        <div class="suggestion"> You correctly matched the pairs. </div>
+                        <div class="suggestion" style="width: 100%;"> You correctly matched the pairs. </div>
                       {% endif %}
                       <div class="mp-section">
                           <!--Yet to be passed attempts -->
