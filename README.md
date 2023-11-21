@@ -8,7 +8,7 @@ This is the README file for the Dr_R web application built using Django. The app
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/arielfayol37/Dr_r.git
+git clone https://github.com/arielfayol37/Dr_r
 ```
 
 2. Change into the project directory:
