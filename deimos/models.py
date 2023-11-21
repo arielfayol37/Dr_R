@@ -298,7 +298,8 @@ class QuestionStudent(models.Model):
         If no_unit, then we don't add the units points in the potential
         """
         try:
-            days_overdue = max(0, (date.today() - self.question.assignment.due_date.date()).days)
+            assignment_student = AssignmentStudent.objects.get(assignment=self.question.assignment, student=self.student)
+            days_overdue = max(0, (date.today() - assignment_student.due_date.date()).days)
             overall_percentage = max(self.question.assignment.grading_scheme.floor_percentage, \
                                         1 - days_overdue * self.question.assignment.grading_scheme.late_sub_deduct)
         except:
