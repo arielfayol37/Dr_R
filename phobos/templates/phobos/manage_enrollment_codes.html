@@ -5,7 +5,7 @@
     <header class="sidebar-header">X</header>
     <ul>
         <li><a href="{% url 'phobos:index' %}">Home</a></li>
-        <li><a href="{% url 'phobos:create_assignment' course_id=course.id %}">Create Assignment</a></li>
+        <li><a href="{% url 'phobos:course_management' course_id=course.id %}">Assignments</a></li>
         <li><a href="{% url 'phobos:gradebook' course_id=course.id %}">Gradebook</a></li>
         <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
     </ul>
@@ -13,68 +13,60 @@
 
    
 <h4>{{course.name}}</h4><hr/>
-<div class="course code">
-    <input class="expiring-date-input-field field-style" type= 'date' style="display: none;" name= 'expiring date of the code'/>
-    <button class="btn-enrollment-code btn btn-outline-primary"> Create an Enrollment Code</button>
-
+<div class="course code create-section" style="display: none; padding-left: 3%;">
+    <input class="expiring-date-input-field field-style" type= 'date'/>
+    <p class="suggestion e-date-p"> Enter an expiring date.</p>  
+    <button type="button" class="btn btn-success btn-create">Create</button>  
 </div>
-    <ul class=" course code-list" style="color: blue;"></ul>
+<div style="padding: 3%;">
+    <button class="btn-enrollment-code btn btn-outline-primary"> Create an Enrollment Code</button>
+    <ul class="course code-list"></ul>
+
+    <h5 class="suggestion original-size"> Students can the code(s) above to enroll your in course.</h5>
+</div>
 
 {% endblock %}
 
 {% block scripts %}
 <script>
+    const createSection = document.querySelector('.create-section');
+    const btnMakeNewCode = document.querySelector('.btn-enrollment-code');
+    const expiringDateInputField = document.querySelector('.expiring-date-input-field');
+    const btnCreate = document.querySelector('.btn-create');
 
-    btn_make_new_code = document.querySelector('.btn-enrollment-code')
-    expiring_date_input_feild= document.querySelector('.expiring-date-input-field');
-    expiring_date_input_feild.type= 'date';
-    btn_create = document.createElement('button');
-    btn_create.classList.add('btn','btn-success');
-    btn_create.innerHTML = 'Create'
-    code_list = document.createElement('li');
- 
-    
-    // displaying previous enrollment codes which are still Valid
+    // Function to display codes
+    function displayCode(code) {
+        const codeItems = document.createElement('li');
+        codeItems.innerHTML = `Code: <em class="suggestion original-size">${code.code}</em> expiring date: <em>${code.ex_date}</em>`;
+        document.querySelector('.code-list').append(codeItems);
+    }
+
+    // Fetching and displaying previous enrollment codes
     fetch('display_enrollment_codes')
         .then(response => response.json())
-        .then(Code =>{
-            code=Code.codes
-            //console.log(code,code.length)
-            for(i = 0; i < code.length; i++){
-            code_items = document.createElement('li');
-            code_items.innerHTML =  `Code: <em class="suggestion original-size">${code[i].code}</em> expiring date: <em>${code[i].ex_date}</em>`
-            document.querySelector('.code-list').append(code_items);}
+        .then(data => {
+            data.codes.forEach(code => displayCode(code));
         })
+        .catch(error => console.error('Error:', error));
 
-        // generating a new enrollment code
-    btn_make_new_code.addEventListener('click',()=>{
-        expiring_date_input_feild.style.display= 'block';
-        event.target.parentNode.appendChild(btn_create)
-        btn_make_new_code.style.display = 'none';
-    })
+    // Event listener for creating a new enrollment code
+    btnMakeNewCode.addEventListener('click', (event) => {
+        createSection.style.display = 'block';
+        btnMakeNewCode.style.display = 'none';
+    });
 
-    btn_create.addEventListener('click',()=>{
-        if (expiring_date_input_feild.value != ''){
-            btn_make_new_code.style.display= 'block';
-            event.target.parentNode.removeChild(btn_create);
-         expiring_date_input_feild.style.display= 'none';
-
-        fetch('enrollment_code/'+encodeURIComponent(expiring_date_input_feild.value))
-        .then(response => response.json())
-        .then(code =>{
-            code_items = document.createElement('li');
-            code_items.innerHTML =  `Code: <em style="color: red;">${code.code}</em> expiring date: <em style="color: red;">${code.ex_date}</em>`
-            document.querySelector('.code-list').append(code_items);
-        })
-
-        }
-        else {
-
+    btnCreate.addEventListener('click', (event) => {
+        if (expiringDateInputField.value != '') {
+            btnMakeNewCode.style.display = 'block';
+            expiringDateInputField.style.display = 'none';
+            fetch(`enrollment_code/${encodeURIComponent(expiringDateInputField.value)}`)
+                .then(response => response.json())
+                .then(code => displayCode(code))
+                .catch(error => console.error('Error:', error));
+        } else {
             alert('Enter an expiring date for the code');
-}
-
-    })
-
+        }
+    });
 
 
     

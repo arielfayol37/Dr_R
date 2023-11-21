@@ -3,6 +3,7 @@ from phobos.models import Course, Question, User, Assignment, VariableInstance, 
 from django.core.validators import MaxValueValidator, MinValueValidator
 from .utils import *
 from datetime import date
+
 class Student(User):
     """
     Student class to handle students in the platform.
@@ -13,6 +14,9 @@ class Student(User):
     courses = models.ManyToManyField(Course, through='Enrollment')
     assignments = models.ManyToManyField(Assignment, through='AssignmentStudent')
     questions = models.ManyToManyField(Question, through='QuestionStudent')
+
+def __str__(self):
+    return f"First Name: {self.first_name} Last Name: {self.last_name} Email: {self.email}"
 
  
 
@@ -66,6 +70,13 @@ class Enrollment(models.Model):
     grade = models.FloatField(validators=[MaxValueValidator(100)], default=0, null=True)
     registration_date = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        unique_together = ('student', 'course')
+
+    def __str__(self):
+        return f'{self.student} enrolled in {self.course}'
+
+
 class AssignmentStudent(models.Model):
     """
     Used to manage `Assigment` - `Student` relationship.
@@ -75,6 +86,9 @@ class AssignmentStudent(models.Model):
     grade = models.FloatField(validators=[MaxValueValidator(100)], default=0, null=True)
     due_date = models.DateTimeField(null=True, blank=True)
     is_complete = models.BooleanField(default=False)
+    
+    class Meta:
+        unique_together = ('student', 'assignment')
 
     def get_grade(self):
         """
@@ -100,11 +114,14 @@ class AssignmentStudent(models.Model):
             self.grade = round((num_points/total) * 100, 2)
         else:
             self.grade = 0
-        self.assignment.num_points = total
+        self.save()
         return self.grade
     
     def get_status(self):
         return self.is_complete
+
+    def __str__(self):
+        return f"{self.assignment.name} for {self.student}"
 
     def save(self, *args, **kwargs):
         if not self.due_date:
@@ -123,6 +140,9 @@ class QuestionStudent(models.Model):
     instances_created = models.BooleanField(default=False)
     num_units_attempts = models.IntegerField(default=0, null=True, blank=True, validators=[MinValueValidator(0)])
     is_complete = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('student', 'question')
 
     def save(self, *args, **kwargs):
         if self.success == True:
@@ -143,6 +163,8 @@ class QuestionStudent(models.Model):
             if not parent_question_student.instances_created:
                 parent_question_student.create_instances()
         self.instances_created = True
+        self.save()
+
     def compute_structural_answer(self):
         """
         Computes the answer to the question if it's a `Question` with `Variable` answers.
@@ -236,7 +258,7 @@ class QuestionStudent(models.Model):
             # are not successful. Maybe due to a new functionality
             # or the teacher manually giving points for that attempt
             total += attempt.num_points
-        self.num_points = total
+        self.num_points = total # useless for now. That's why it is not even saved()
         return total 
     
     def get_num_attempts(self):

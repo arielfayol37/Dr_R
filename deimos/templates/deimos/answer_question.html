@@ -281,6 +281,11 @@
                               <input type="hidden" value="{{attempt.submitted_units}}" class="attempt-units"/>
                             {% endif %}
                             </p>
+                          {% empty %}
+                            <p class="p-attempt no-submission">
+                              <input type="hidden" value="N" class="attempt-content"/>
+                              <input type="hidden" value="o\ Previous\ Submission" class="attempt-units"/>
+                            </p>
                           {% endfor %}
                           </div>
                           <div class="button-directions"> 

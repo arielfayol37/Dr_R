@@ -31,7 +31,6 @@ from django.core.mail import send_mail
 from django.core.files.storage import default_storage
 
 
-
 # Create your views here.
 @login_required(login_url='astros:login') 
 def index(request):
@@ -50,7 +49,7 @@ def course_management(request, course_id):
     is_question_bank = course.name =='Question Bank'
     if not course.professors.filter(pk=request.user.pk).exists() and not is_question_bank:
         return HttpResponseForbidden('You are not authorized to manage this course.')
-    assignments = Assignment.objects.filter(course=course)
+    assignments = Assignment.objects.filter(course=course).order_by('-timestamp')
     context = {
         "assignments": assignments,
         "course": course,
@@ -121,24 +120,20 @@ def logout_view(request):
 
 def forgot_password(request):
     if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            email = data["email"].strip()
-            password= data['new_password'].strip()
-            confirmPwd= data['confirm_new_password'].strip()
+        data = json.loads(request.body)
+        email = data["email"].strip()
+        password= data['new_password'].strip()
 
-            try:
-                user = Professor.objects.get(email=email)
-            except Professor.DoesNotExist:
-               return JsonResponse({'success':False,
-                         'message':"Hacker don't hack in here. Email does not exist"})
-            if password == confirmPwd:
-                user.set_password(password)
-                user.save()
-                return JsonResponse({'success':True,
-                    'message':'Password Succesfully changed'})
-        except:
-            pass
+        try:
+            user = Professor.objects.get(email=email)
+        except Professor.DoesNotExist:
+            return JsonResponse({'success':False,
+                        'message':"Profile with this email does not exist"})
+
+        user.set_password(password)
+        user.save()
+        return JsonResponse({'success':True,
+            'message':'Password Succesfully changed'})
     return JsonResponse({'success':False,
                          'message':'Something went wrong'})
 
@@ -838,19 +833,6 @@ def student_profile(request,course_id,student_id):
                 {'student_grade': zip(assignments, grades),\
                  'student':student, 'course':course})
 
-def student_search(request,course_id):
-    course = Course.objects.get(pk = course_id)
-    enrolled_students = Student.objects.filter(enrollments__course=course)
-  
-    if request.method =="GET":
-        student_name= request.GET['q'].lower()
-        search_result = []
-        for enrolled_student in enrolled_students:
-            if (student_name in enrolled_student.last_name.lower()) or (student_name in enrolled_student.first_name.lower()):
-                search_result.append(enrolled_student)
-
-        return render(request, "phobos/student_search.html", {'course':course,\
-            'search':student_name,"entries": search_result, 'length':len(search_result)})
 
 def get_questions(request, student_id, assignment_id, course_id=None):
     assignment= Assignment.objects.get(id=assignment_id)
@@ -959,11 +941,11 @@ def enrollmentCode(request, course_id, expiring_date):
     course= Course.objects.get(pk = course_id)
     if not course.professors.filter(pk=request.user.pk).exists():
         return JsonResponse({'message': 'You are not allowed to ceate enrollment codes for this course.'})
-    min=100000000000
-    max=999999999999
+    min=10000
+    max=99999
     enrollment_code = EnrollmentCode(course = course, 
-                                     code= random.randint(min,max),
-                                      expiring_date= expiring_date)
+                                     code = random.randint(min,max),
+                                      expiring_date = expiring_date)
     enrollment_code.save()
     return JsonResponse({'code': enrollment_code.code,
                          'ex_date':enrollment_code.expiring_date,
