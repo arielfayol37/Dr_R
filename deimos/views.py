@@ -57,7 +57,7 @@ def course_management(request, course_id):
     if course.name != 'Question Bank':
         for assignment in assignments:
             ass, created = AssignmentStudent.objects.get_or_create(assignment= assignment, student=student)
-            as_statuses.append(ass.get_status())
+            as_statuses.append(ass)
 
     context = {
         "student":student,

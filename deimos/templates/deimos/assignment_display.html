@@ -9,11 +9,11 @@
                 {% if assignment.assigned_date %}
                     <p class="timestamp">Assigned on {{ assignment.assigned_date|format_date }}</p>
                 {% endif %}
-                {% if assignment.due_date %}
-                    <p class="timestamp">Due on {{ assignment.due_date|format_date }}</p>
+                {% if ass.due_date %}
+                    <p class="timestamp">Due on {{ ass.due_date|format_date }}</p>
                 {% endif %}
             </div>
-            {% if status %}
+            {% if ass.get_status %}
                 <button type="button" class="btn status edit-btn" style="position: absolute; bottom: 2%;">
                         Completed
                 </button>
