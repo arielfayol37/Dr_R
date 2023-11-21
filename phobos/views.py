@@ -610,10 +610,31 @@ def delete_question(request, question_id):
         return HttpResponseForbidden('You are not authorized delete this question.')
     # delete question
     question.delete()
+    if question.assignment.course.name != 'Question Bank':
+        renumber_assignment_questions(question.assignment)
     # redirect to assignment management
     return HttpResponseRedirect(reverse("phobos:assignment_management",\
                                             kwargs={'course_id':question.assignment.course.id,\
                                                     'assignment_id':question.assignment.id}))
+
+def renumber_assignment_questions(assignment):
+        number = 0
+        # Renumber the questions in the assignment.
+        for parent_quest in assignment.questions.filter(parent_question=None):
+            # Increment number by 1
+            number += 1
+            sub_questions = list(parent_quest.sub_questions.all())
+            sub_questions.insert(0, parent_quest)
+            
+            for sub_question in sub_questions:
+                qnum = sub_question.number 
+                if qnum[-1].isalpha():
+                    new_num = str(number) + qnum[-1]
+                else: 
+                    new_num = str(number)
+                sub_question.number = new_num
+                sub_question.save(update_fields=['number'])
+
 
 # NOTE: The function below was to be useD for a better front end design of the export question functionality.
 # The function was to enable the prof select a course then select an assignment in that course.
@@ -1051,7 +1072,10 @@ def copy_answers(old_question, new_question):
         answer = answer_type_class.objects.get(question=old_question)
         a = answer_type_class.objects.create(
             question=new_question,
-            content=answer.content
+            content=answer.content,
+            preface=answer.preface,
+            sufface=answer.sufface,
+            answer_unit=answer.answer_unit
         )
         a.save()
     elif old_question.answer_type.startswith('MCQ'):

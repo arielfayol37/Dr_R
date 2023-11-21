@@ -86,7 +86,7 @@ def assignment_management(request, assignment_id, course_id=None):
         assignment_student.is_complete = True
     else:
         assignment_student.is_complete = False
-    assignment_student.save()
+    assignment_student.save(update_fields=['is_complete'])
     
     context = {
         "questions": zip(questions, qs_statuses),
@@ -152,14 +152,12 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
         is_questionbank = True
         question_ids, question_nums = [], []
     question_0 = Question.objects.get(pk=question_id)
-    if not question_0.parent_question: # if question has no parent question(the question itself 
-        #is the parent question)
-        questions = list(Question.objects.filter(parent_question=question_0))
-        questions.insert(0, question_0)
-    else:
+
+    if question_0.parent_question: # if the question has a parent question.
         question_0 = question_0.parent_question
-        questions = list(Question.objects.filter(parent_question=question_0))
-        questions.insert(0, question_0)
+
+    questions = list(question_0.sub_questions.all())
+    questions.insert(0, question_0)
 
     questions_dictionary = {}
     for index, question in enumerate(questions):
@@ -508,7 +506,6 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
             question_student.is_complete = True
             question_student.save()
         grade =  _update_assignment_grade(question_student)
-        print(grade)
         # Return a JsonResponse
         return JsonResponse({
             'correct': correct,

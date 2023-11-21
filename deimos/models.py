@@ -114,7 +114,7 @@ class AssignmentStudent(models.Model):
             self.grade = round((num_points/total) * 100, 2)
         else:
             self.grade = 0
-        self.save()
+        self.save(update_fields=['grade'])
         return self.grade
     
     def get_status(self):
@@ -287,7 +287,8 @@ class QuestionStudent(models.Model):
         Otherwise False
         """
         parent_question = self.question.parent_question if self.question.parent_question else self.question
-        children_complete = not QuestionStudent.objects.filter(question__parent_question=parent_question, student=self.student, is_complete=False).exists()
+        sub_questions = parent_question.sub_questions.all()
+        children_complete = not QuestionStudent.objects.filter(question__in=sub_questions, student=self.student, is_complete=False).exists()
         parent_qs = QuestionStudent.objects.get(question=parent_question, student=self.student)
         return parent_qs.is_complete and children_complete
 

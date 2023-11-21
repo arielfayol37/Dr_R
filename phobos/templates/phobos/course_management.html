@@ -24,6 +24,7 @@
     {% if not is_question_bank %}
         <a class="nav-link view-notes-btn" href="{% url 'phobos:create_assignment' course_id=course.id %}">Create Assignment</a>
         <a class="nav-link gradebook-btn" href="{% url 'phobos:gradebook' course_id=course.id %}">GradeBook</a>
+        <a class="nav-link" href="{% url 'phobos:manage_course_info' course_id=course.id %}">Course Info</a>
     {% endif %}
 </nav>
 
