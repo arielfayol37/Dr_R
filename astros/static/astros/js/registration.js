@@ -100,6 +100,7 @@ submitBtns.forEach((submitBtn)=>{
                 authenticationArea.classList.remove('closed');
               }
           });
+        submitBtn.scrollIntoView({behavior: 'smooth'});
     }else {
         fetch('/authentification/validate_code', {
             method: 'POST',
