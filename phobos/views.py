@@ -31,7 +31,6 @@ from django.core.mail import send_mail
 from django.core.files.storage import default_storage
 
 
-
 # Create your views here.
 @login_required(login_url='astros:login') 
 def index(request):
@@ -50,7 +49,7 @@ def course_management(request, course_id):
     is_question_bank = course.name =='Question Bank'
     if not course.professors.filter(pk=request.user.pk).exists() and not is_question_bank:
         return HttpResponseForbidden('You are not authorized to manage this course.')
-    assignments = Assignment.objects.filter(course=course)
+    assignments = Assignment.objects.filter(course=course).order_by('-timestamp')
     context = {
         "assignments": assignments,
         "course": course,
@@ -121,24 +120,20 @@ def logout_view(request):
 
 def forgot_password(request):
     if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            email = data["email"].strip()
-            password= data['new_password'].strip()
-            confirmPwd= data['confirm_new_password'].strip()
+        data = json.loads(request.body)
+        email = data["email"].strip()
+        password= data['new_password'].strip()
 
-            try:
-                user = Professor.objects.get(email=email)
-            except Professor.DoesNotExist:
-               return JsonResponse({'success':False,
-                         'message':"Hacker don't hack in here. Email does not exist"})
-            if password == confirmPwd:
-                user.set_password(password)
-                user.save()
-                return JsonResponse({'success':True,
-                    'message':'Password Succesfully changed'})
-        except:
-            pass
+        try:
+            user = Professor.objects.get(email=email)
+        except Professor.DoesNotExist:
+            return JsonResponse({'success':False,
+                        'message':"Profile with this email does not exist"})
+
+        user.set_password(password)
+        user.save()
+        return JsonResponse({'success':True,
+            'message':'Password Succesfully changed'})
     return JsonResponse({'success':False,
                          'message':'Something went wrong'})
 
@@ -148,9 +143,9 @@ def register(request):
         username = request.POST["username"].strip()
         email = request.POST["email"].strip()
         password = request.POST["password"].strip()
-        first_name = request.POST["first_name"].strip()
-        last_name = request.POST["last_name"].strip()
-        department = request.POST["department"].strip()
+        first_name = request.POST["first_name"].strip().title()
+        last_name = request.POST["last_name"].strip().title()
+        department = request.POST["department"].strip().title()
 
         try: 
             prof = Professor.objects.get(username=username)
@@ -324,13 +319,13 @@ def create_mcq_text_answer(new_question, answer_content):
 
 # Function to determine which MCQ float answer to create
 def create_appropriate_mcq_float_answer(new_question, answer_content, vars_dict):
-    if not vars_dict:
-        return create_mcq_float_answer(new_question, answer_content)
-    elif answer_content.startswith('@{') and answer_content.endswith('}@'):
-        return create_mcq_variable_float_answer(new_question, answer_content)
+    if answer_content.startswith('@{') and answer_content.endswith('}@'):
+        if vars_dict:
+            return create_mcq_variable_float_answer(new_question, answer_content)
+        else:
+            raise ValueError('Expected variable expression but got no variable.')
     else:
-        raise ValueError('Expected a variable but variable expression not found')
-
+        return create_mcq_float_answer(new_question, answer_content)
 
 def create_expression_answer(new_question, question_answer, answer_unit, answer_preface):
     return ExpressionAnswer(question=new_question, content=question_answer,
@@ -351,12 +346,13 @@ def create_text_answer(new_question):
     return TextAnswer(question=new_question, content='')
 
 def create_appropriate_float_answer(new_question, question_answer, answer_unit, answer_preface,vars_dict):
-    if not vars_dict:
-        return create_float_answer(new_question, question_answer, answer_unit, answer_preface)
-    elif question_answer.startswith('@{') and question_answer.endswith('}@'):
-        return create_variable_float_answer(new_question, question_answer, answer_unit, answer_preface)
+    if question_answer.startswith('@{') and question_answer.endswith('}@'):
+        if vars_dict:
+            return create_variable_float_answer(new_question, question_answer, answer_unit, answer_preface)
+        else:
+            raise ValueError('Expected variable expression but got no variable.')
     else:
-        raise ValueError('Expected a variable but variable expression not found')
+        return create_float_answer(new_question, question_answer, answer_unit, answer_preface)
 
 def create_matching_pairs(request, new_question, q_num):
     num_of_mps_approx = int(request.POST[q_num + '_num_of_mps'])
@@ -495,12 +491,13 @@ def create_question(request, assignment_id=None, question_nums_types=None):
                             # Special handling for float answers to determine the correct QuestionChoices
                             if answer_type_encoding == "1":
                                 answer = creation_func(new_question, answer_content, vars_dict)
-                                if not vars_dict:
-                                    new_question.answer_type = QuestionChoices.MCQ_FLOAT
-                                elif answer_content.startswith('@{') and answer_content.endswith('}@'):
-                                    new_question.answer_type = QuestionChoices.MCQ_VARIABLE_FLOAT
+                                if answer_content.startswith('@{') and answer_content.endswith('}@'):
+                                    if vars_dict:
+                                        new_question.answer_type = QuestionChoices.MCQ_VARIABLE_FLOAT
+                                    else:
+                                        raise ValueError('Expected variable expression but got no variable.')
                                 else:
-                                    raise ValueError('Expected a variable but variable expression not found')
+                                    new_question.answer_type = QuestionChoices.MCQ_FLOAT
                             else:
                                 new_question.answer_type = question_choice
                                 answer = creation_func(new_question, answer_content)
@@ -552,22 +549,19 @@ def create_question(request, assignment_id=None, question_nums_types=None):
                         if type_int == 1:
                             answer = creation_func(new_question, question_answer,\
                                                 answer_unit, answer_preface, vars_dict)
-                            if not vars_dict:
-                                new_question.answer_type = QuestionChoices.STRUCTURAL_FLOAT
-                            elif question_answer.startswith('@{') and question_answer.endswith('}@'):
-                                new_question.answer_type = QuestionChoices.STRUCTURAL_VARIABLE_FLOAT
+                            if question_answer.startswith('@{') and question_answer.endswith('}@'):
+                                if vars_dict:
+                                    new_question.answer_type = QuestionChoices.STRUCTURAL_VARIABLE_FLOAT
+                                else:
+                                    raise ValueError('Expected variable expression but got no variable.')
                             else:
-                                raise ValueError('Expected a variable but variable expression not found')
+                                new_question.answer_type = QuestionChoices.STRUCTURAL_FLOAT
                         else:
                             answer = creation_func(new_question, question_answer,\
                                                 answer_unit, answer_preface)
 
                 else:
                     return HttpResponseForbidden('Something went wrong: unexpected question type_int')
-                
-                # Handle special case for variable float answer
-                if type_int == 1 and vars_dict and not (question_answer.startswith('@{') and question_answer.endswith('}@')):
-                    raise ValueError('Expected a variable but variable expression not found')
                 
             new_question.save(save_settings=True)
             
@@ -605,6 +599,42 @@ def create_question(request, assignment_id=None, question_nums_types=None):
         'assignment': assignment,
         'question_difficulties': question_difficulties
     })  
+
+@transaction.atomic
+@login_required(login_url='astros:login')
+def delete_question(request, question_id):
+    # Making sure the request is done by a professor.
+    professor = get_object_or_404(Professor, pk=request.user.id)
+    question = get_object_or_404(Question, pk=question_id)
+    if not question.assignment.course.professors.filter(pk=request.user.pk).exists():
+        return HttpResponseForbidden('You are not authorized delete this question.')
+    # delete question
+    question.delete()
+    if question.assignment.course.name != 'Question Bank':
+        renumber_assignment_questions(question.assignment)
+    # redirect to assignment management
+    return HttpResponseRedirect(reverse("phobos:assignment_management",\
+                                            kwargs={'course_id':question.assignment.course.id,\
+                                                    'assignment_id':question.assignment.id}))
+
+def renumber_assignment_questions(assignment):
+        number = 0
+        # Renumber the questions in the assignment.
+        for parent_quest in assignment.questions.filter(parent_question=None):
+            # Increment number by 1
+            number += 1
+            sub_questions = list(parent_quest.sub_questions.all())
+            sub_questions.insert(0, parent_quest)
+            
+            for sub_question in sub_questions:
+                qnum = sub_question.number 
+                if qnum[-1].isalpha():
+                    new_num = str(number) + qnum[-1]
+                else: 
+                    new_num = str(number)
+                sub_question.number = new_num
+                sub_question.save(update_fields=['number'])
+
 
 # NOTE: The function below was to be useD for a better front end design of the export question functionality.
 # The function was to enable the prof select a course then select an assignment in that course.
@@ -824,19 +854,6 @@ def student_profile(request,course_id,student_id):
                 {'student_grade': zip(assignments, grades),\
                  'student':student, 'course':course})
 
-def student_search(request,course_id):
-    course = Course.objects.get(pk = course_id)
-    enrolled_students = Student.objects.filter(enrollments__course=course)
-  
-    if request.method =="GET":
-        student_name= request.GET['q'].lower()
-        search_result = []
-        for enrolled_student in enrolled_students:
-            if (student_name in enrolled_student.last_name.lower()) or (student_name in enrolled_student.first_name.lower()):
-                search_result.append(enrolled_student)
-
-        return render(request, "phobos/student_search.html", {'course':course,\
-            'search':student_name,"entries": search_result, 'length':len(search_result)})
 
 def get_questions(request, student_id, assignment_id, course_id=None):
     assignment= Assignment.objects.get(id=assignment_id)
@@ -945,11 +962,11 @@ def enrollmentCode(request, course_id, expiring_date):
     course= Course.objects.get(pk = course_id)
     if not course.professors.filter(pk=request.user.pk).exists():
         return JsonResponse({'message': 'You are not allowed to ceate enrollment codes for this course.'})
-    min=100000000000
-    max=999999999999
+    min=10000
+    max=99999
     enrollment_code = EnrollmentCode(course = course, 
-                                     code= random.randint(min,max),
-                                      expiring_date= expiring_date)
+                                     code = random.randint(min,max),
+                                      expiring_date = expiring_date)
     enrollment_code.save()
     return JsonResponse({'code': enrollment_code.code,
                          'ex_date':enrollment_code.expiring_date,
@@ -1055,7 +1072,10 @@ def copy_answers(old_question, new_question):
         answer = answer_type_class.objects.get(question=old_question)
         a = answer_type_class.objects.create(
             question=new_question,
-            content=answer.content
+            content=answer.content,
+            preface=answer.preface,
+            sufface=answer.sufface,
+            answer_unit=answer.answer_unit
         )
         a.save()
     elif old_question.answer_type.startswith('MCQ'):

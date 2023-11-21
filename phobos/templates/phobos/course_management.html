@@ -8,10 +8,10 @@
         <ul>
             <li><a href="{% url 'phobos:index' %}">Home</a></li>
             {% if not is_question_bank %}
-                <li><a href="{% url 'phobos:create_assignment' course_id=course.id %}">Create Assignment</a></li>
                 <li><a href="{% url 'phobos:manage_course_info' course_id=course.id %}">Course Info</a></li> 
                 <li><a href="{% url 'phobos:gradebook' course_id=course.id %}">Gradebook</a></li>
-                <li><a href="{% url 'phobos:manage_enrollment_codes' course_id=course.id %}">Enrollment Codes</a></li>
+                <li><a href="{% url 'phobos:manage_enrollment_codes' course_id=course.id %}">Enrollments</a></li>
+                <li><a href="{% url 'phobos:question_bank' %}">Question Bank</a></li>
             {% endif %}
             <li><a href="{% url 'phobos:search_question' %}">Search</a></li>
             
@@ -21,8 +21,11 @@
     
 <nav class="navbar-custom">
     <a class="nav-link home-btn" href="{% url 'phobos:index' %}">Home </a>
-    <a class="nav-link view-notes-btn" href="{% url 'phobos:create_assignment' course_id=course.id %}">Create Assignment</a>
-    <a class="nav-link gradebook-btn" href="{% url 'phobos:gradebook' course_id=course.id %}">GradeBook</a>
+    {% if not is_question_bank %}
+        <a class="nav-link view-notes-btn" href="{% url 'phobos:create_assignment' course_id=course.id %}">Create Assignment</a>
+        <a class="nav-link gradebook-btn" href="{% url 'phobos:gradebook' course_id=course.id %}">GradeBook</a>
+        <a class="nav-link" href="{% url 'phobos:manage_course_info' course_id=course.id %}">Course Info</a>
+    {% endif %}
 </nav>
 
 <div class="sf-container">

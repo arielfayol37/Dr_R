@@ -19,6 +19,7 @@ urlpatterns = [
     path('edit_question/<int:question_id>',views.edit_question,
          name='edit_question'
     ),
+    path('delete_question/<int:question_id>', views.delete_question, name='delete_question'),
     path('question_bank', views.question_bank, name='question_bank'),
     path('courses/<int:course_id>', views.course_management, name='course_management'),
     path('courses/<int:course_id>/create_assignment',\
@@ -39,11 +40,8 @@ urlpatterns = [
      path('calci', views.calci, name='calci'),
      path('courses/<int:course_id>/gradebook', views.gradebook, name='gradebook'),
      path('courses/<int:course_id>/<int:student_id>/student_profile', views.student_profile, name='student_profile'),
-     #####
      path('courses/<int:course_id>/<int:student_id>/student_profile/modify_question_student_score/<str:new_score>/<str:question_student_id>', \
           views.modify_question_student_score, name='modify_question_score'),
-     ######
-     path('courses/<int:course_id>/gradebook/student_search',views.student_search, name="student_search"),
      path('courses/<int:course_id>/<int:student_id>/get_questions/<int:assignment_id>',
           views.get_questions,name='get_questions'),
      path('search_question/', views.search_question, name='search_question'),

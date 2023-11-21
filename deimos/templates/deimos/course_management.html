@@ -10,7 +10,7 @@
         <li><a href="{% url 'deimos:index' %}">Home</a></li>
         <li><a href="{% url 'astros:course_info' course_id=course.id %}">Course Info</a></li>
         <li><a href="{% url 'deimos:search_question' %}">Search Question</a></li>
-        <li><a href="{% url 'deimos:practice_test_settings' course_id=course.id %}">Practice Test</a></li>
+        <!--<li><a href="{% url 'deimos:practice_test_settings' course_id=course.id %}">Practice Test</a></li>-->
     </ul>
 </div>
 
@@ -30,8 +30,8 @@
 
     <!-- Display course's assignments -->
     <ul class="courses course-list">
-        {% for assignment in assignments %}
-            {% include 'deimos/assignment_display.html' with assignment=assignment course=course %}
+        {% for assignment, ass in assignments %}
+            {% include 'deimos/assignment_display.html' with assignment=assignment course=course ass=ass %}
         {% endfor %}
     </ul>
 </div>

@@ -29,6 +29,9 @@ from scipy.stats import norm
 from .utils import *
 from datetime import date
 
+import asyncio
+from asgiref.sync import sync_to_async
+
 # Create your views here.
 @login_required(login_url='astros:login') 
 def index(request):
@@ -49,13 +52,47 @@ def course_management(request, course_id):
         return HttpResponseForbidden('You are not enrolled in this course.')
 
     assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student, \
-                                            is_assigned=True)
+                                            is_assigned=True).order_by('-timestamp')
+    as_statuses = []
+    if course.name != 'Question Bank':
+        for assignment in assignments:
+            ass, created = AssignmentStudent.objects.get_or_create(assignment= assignment, student=student)
+            as_statuses.append(ass)
+
     context = {
         "student":student,
-        "assignments": assignments,
+        "assignments": zip(assignments, as_statuses),
         "course": course,
     }
     return render(request, "deimos/course_management.html", context)
+
+@login_required(login_url='astros:login') 
+def assignment_management(request, assignment_id, course_id=None):
+    # Making sure the request is done by a Student.
+    student = get_object_or_404(Student, pk = request.user.pk)
+    assignment = get_object_or_404(Assignment, pk = assignment_id)
+    assignment_student = AssignmentStudent.objects.get(student=student, assignment=assignment)
+    questions = Question.objects.filter(assignment = assignment, parent_question=None)
+    qs_statuses = []
+    if assignment.course.name != 'Question Bank':
+        for question in questions:
+            qs, created = QuestionStudent.objects.get_or_create(question=question, student=student)
+            qs_statuses.append(qs.get_status())
+            question.text = qs.evaluate_var_expressions_in_text(question.text, add_html_style=True)
+    else:
+        qs_statuses = [False for i in range(questions.count())] # here for templating purposes.
+
+    if sum(qs_statuses) == len(qs_statuses): # if all the questions have been completed.
+        assignment_student.is_complete = True
+    else:
+        assignment_student.is_complete = False
+    assignment_student.save(update_fields=['is_complete'])
+    
+    context = {
+        "questions": zip(questions, qs_statuses),
+        "assignment": assignment,
+    }
+    return render(request, "deimos/assignment_management.html", context)
 
 @login_required(login_url='astros:login')
 def gradebook(request, course_id):
@@ -67,15 +104,15 @@ def gradebook(request, course_id):
     if not is_enrolled:
         return HttpResponseForbidden('You are not enrolled in this course.')
     # needed student's gradebook
-    course_score=0
-    assignment_student_grade=[]
-    assignment_student = AssignmentStudent.objects.filter(student=student, assignment__course=course)
+    course_score = 0
+    assignment_student_grade = []
+    assignment_students = AssignmentStudent.objects.filter(student=student, assignment__course=course)
     a_sums = 0
-    for assignment_s in assignment_student:
-        grade = assignment_s.get_grade()
+    for assignment_s in assignment_students:
+        grade = assignment_s.grade
         assignment_student_grade.append({'id':assignment_s.id,'assignment_student':assignment_s,'grade':grade})
-        course_score += assignment_s.assignment.num_points * grade
-        a_sums += assignment_s.assignment.num_points
+        course_score += assignment_s.assignment.grading_scheme.num_points * grade
+        a_sums += assignment_s.assignment.grading_scheme.num_points
     if a_sums == 0:
         course_score = 0
     else:
@@ -87,30 +124,6 @@ def gradebook(request, course_id):
         "course_score": round(course_score, 2),
     })
 
-@login_required(login_url='astros:login') 
-def assignment_management(request, assignment_id, course_id=None):
-    # Making sure the request is done by a Student.
-    student = get_object_or_404(Student, pk = request.user.pk)
-    assignment = get_object_or_404(Assignment, pk = assignment_id)
-    questions = Question.objects.filter(assignment = assignment, parent_question=None)
-    for question in questions:
-        if assignment.course != 'Question Bank':
-            qs, created = QuestionStudent.objects.get_or_create(question=question, student=student)
-            question.text = qs.evaluate_var_expressions_in_text(question.text, add_html_style=True)
-    context = {
-        "questions": questions,
-        "assignment": assignment
-    }
-    return render(request, "deimos/assignment_management.html", context)
-
-def encrypt_integer(n:int)->int:
-    assert n >= 0
-    return (n + 137)**2
-def decrypt_integer(k: int)->int:
-    assert k >= 0
-    n = k**0.5 - 137
-    assert int(n) == n
-    return int(n)
 
 # List of all answer types
 all_mcq_answer_types = {
@@ -139,14 +152,12 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
         is_questionbank = True
         question_ids, question_nums = [], []
     question_0 = Question.objects.get(pk=question_id)
-    if not question_0.parent_question: # if question has no parent question(the question itself 
-        #is the parent question)
-        questions = list(Question.objects.filter(parent_question=question_0))
-        questions.insert(0, question_0)
-    else:
+
+    if question_0.parent_question: # if the question has a parent question.
         question_0 = question_0.parent_question
-        questions = list(Question.objects.filter(parent_question=question_0))
-        questions.insert(0, question_0)
+
+    questions = list(question_0.sub_questions.all())
+    questions.insert(0, question_0)
 
     questions_dictionary = {}
     for index, question in enumerate(questions):
@@ -368,6 +379,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                                     attempt_potential -= question.struct_settings.percentage_pts_units     
                         else:
                             question_student.success, question_student.is_complete = (True, True)
+                        attempt_potential = max(0, attempt_potential)
                         attempt.num_points = round(attempt_potential * question.struct_settings.num_points, 2)
                         question_student.save()
                     else:
@@ -385,8 +397,8 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                             question_student.num_units_attempts += 1
                             # Update the number of points for this attempt
                             if units_correct:
-                                attempt.num_points = round(question.struct_settings.percentage_pts_units * \
-                                                           question.struct_settings.num_points, 2)
+                                attempt.num_points = max(0, round(question.struct_settings.percentage_pts_units * \
+                                                           question.struct_settings.num_points, 2))
                         
 
                 elif data["questionType"] == 'mcq':
@@ -418,7 +430,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                         s1, s2 = set(simplified_answer), set(answers)
                         if s1 == s2:
                             correct = True
-                            attempt.num_points = round(current_potential * question.mcq_settings.num_points, 2)
+                            attempt.num_points = max(0, round(current_potential * question.mcq_settings.num_points, 2))
                             question_student.success, question_student.is_complete = (True, True)
                             attempt.success = True
 
@@ -451,7 +463,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                     attempt = QuestionAttempt.objects.create(question_student=question_student)
                     attempt.content = attempt_pairs
                     attempt.submitted_answer = attempt_pairs # useless. Using twice the size of memory.
-                    attempt.num_points = round(frac * current_potential * question.mcq_settings.num_points, 2)                      
+                    attempt.num_points = max(0, round(frac * current_potential * question.mcq_settings.num_points, 2))                      
                     return_sp = success_pairs_strings # will return the successful pairs so the front end can be updated.
                     success_pairs_strings = "&".join(success_pairs_strings)   
                     # attempt.save() # probably not needed here?
@@ -475,8 +487,8 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                         last_attempt.units_success = units_correct
                         last_attempt.submitted_units = submitted_units
                         question_student.num_units_attempts += 1
-                        last_attempt.num_points += round(question.struct_settings.percentage_pts_units * \
-                                                         question.struct_settings.num_points * int(units_correct), 2)
+                        last_attempt.num_points += max(0, round(question.struct_settings.percentage_pts_units * \
+                                                         question.struct_settings.num_points * int(units_correct), 2))
                         last_attempt.save()
                         # Updating question status
                         if units_correct and prev_success:
@@ -484,15 +496,16 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                         question_student.save()    
 
         # Some info that will be used to update the front end.
-        if (not correct and (data["questionType"].startswith('structural'))):
+        if ((not correct) and (data["questionType"].startswith('structural'))):
             too_many_attempts =  num_attempts + 1 == question.struct_settings.max_num_attempts
             if not units_correct:
                 units_too_many_attempts = question_student.num_units_attempts >= question.struct_settings.units_num_attempts
 
         # Updating completion status
-        if not question_student.is_complete and (units_too_many_attempts or units_correct) and (too_many_attempts or prev_success):
+        if (not question_student.is_complete) and (units_too_many_attempts or units_correct) and (too_many_attempts or prev_success):
             question_student.is_complete = True
             question_student.save()
+        grade =  _update_assignment_grade(question_student)
         # Return a JsonResponse
         return JsonResponse({
             'correct': correct,
@@ -509,7 +522,22 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
             'complete':question_student.is_complete
         })
 
-    
+def _update_assignment_grade(question_student):
+    """
+    Updates the grade of an assignment.
+    Meant to be used after validate_answer()
+    """
+    # TODO: Improve this so that it adds only the number of points
+    # from the most recent attempt. get_grade() sums all the points from
+    # all attempts from every single question. (inefficient)
+    assignment = question_student.question.assignment
+    student = question_student.student
+    if assignment.course.name != 'Question Bank':
+        assignment_student = AssignmentStudent.objects.get(assignment=assignment, student=student)
+        grade = assignment_student.get_grade() # this line updates the `grade` attribute of the AssignmentStudent
+    else:
+        grade = 0
+    return grade
            
 def login_view(request):
     if request.method == "POST":
@@ -544,24 +572,20 @@ def logout_view(request):
 
 def forgot_password(request):
     if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            email = data["email"]
-            password= data['new_password']
-            confirmPwd= data['confirm_new_password']
+        data = json.loads(request.body)
+        email = data["email"].strip()
+        password= data['new_password'].strip()
 
-            try:
-                user = Student.objects.get(email=email)
-            except Student.DoesNotExist:
-               return JsonResponse({'success':False,
-                         'message':"Hacker don't hack in here. Email does not exist"})
-            if password == confirmPwd:
-                user.set_password(password)
-                user.save()
-                return JsonResponse({'success':True,
-                    'message':'Password Succesfully changed'})
-        except:
-            pass
+        try:
+            user = Student.objects.get(email=email)
+        except Student.DoesNotExist:
+            return JsonResponse({'success':False,
+                        'message':"Hacker don't hack in here. Email does not exist"})
+        user.set_password(password)
+        user.save()
+        return JsonResponse({'success':True,
+            'message':'Password Succesfully changed'})
+    
     return JsonResponse({'success':False,
                          'message':'Something went wrong'})
 
@@ -571,14 +595,14 @@ def register(request):
         username = request.POST["username"].strip()
         email = request.POST["email"].strip()
         password = request.POST["password"].strip()
-        first_name = request.POST["first_name"].strip()
-        last_name = request.POST["last_name"].strip()
+        first_name = request.POST["first_name"].strip().title()
+        last_name = request.POST["last_name"].strip().title()
         
-        try: 
+        try: # if profile with this username exists, append a random number.
             stud = Student.objects.get(username=username)
             username = str(username) + str(random.randint(1, 1000000))
         except:
-            pass
+            pass # if profile with this username does not exists.
         try:
             checking_student = Student.objects.get(email=email)
             if checking_student:
@@ -765,7 +789,7 @@ def assignment_gradebook_student(request,student_id, assignment_id):
     assignments= AssignmentStudent.objects.filter(student=student, assignment__course=course)
 
     assignment_details={'name':assignment_student.assignment.name,'assignment_id':assignment_id,\
-                        'Due_date':str(assignment_student.due_date).split(' ')[0],'grade':assignment_student.get_grade() }
+                        'Due_date':str(assignment_student.due_date).split(' ')[0],'grade':assignment_student.grade}
     
     question_heading = ['Question_number','score','num_attempts']
     question_details = []

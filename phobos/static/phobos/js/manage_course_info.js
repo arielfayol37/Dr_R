@@ -2,8 +2,8 @@
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.querySelector('.info-form');
         const categoryBtns = document.querySelectorAll('.c-btn');
-        const textInfo = form.querySelector('textarea[name="text_info"]');  
-        const category = form.querySelector('input[name="category"]');
+        const textInfo = form.querySelector('.textarea-info');  
+        const category = form.querySelector('.input-category');
         const infoEditBtn = document.querySelector('.info-edit-btn');
         const formattedInfo = document.querySelector('.formatted-answer-option');
         const cancelBtn = document.querySelector('.cancel-btn');

@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.contrib.auth.models import User
 from phobos.models import Course, Professor,EnrollmentCode,CourseInfo
 from deimos.models import Student, Enrollment
 from django.contrib.auth.decorators import login_required
@@ -27,12 +28,10 @@ def register(request):
     return render(request, 'astros/register.html')
 
 def all_courses(request):
-    
-    # TODO: you may *need* to user request.user._wrapped instead
     try:
-        courses = Course.objects.all().order_by('-timestamp')
         professor = Professor.objects.get(pk=request.user.pk)
-        is_professor_list = [1 if course.professors.filter(pk = request.user.pk).exists() or course.name=='Question Bank'\
+        courses = Course.objects.exclude(name='Question Bank').order_by('-timestamp')
+        is_professor_list = [1 if course.professors.filter(pk = request.user.pk).exists()\
                              else 0 for course in courses]
         context = {
             "courses__is_professor": zip(courses, is_professor_list),
@@ -43,8 +42,8 @@ def all_courses(request):
     except Professor.DoesNotExist:
         pass
     try:
-        courses = Course.objects.exclude(name='Question Bank').order_by('-timestamp')
         student = Student.objects.get(pk=request.user.pk)
+        courses = Course.objects.exclude(name='Question Bank').order_by('-timestamp')
         is_student_list = [1 if Enrollment.objects.filter(student=request.user, course=course).exists()\
                              else 0 for course in courses]
         context = {
@@ -66,10 +65,11 @@ def course_enroll(request, course_id, code):
     if not Enrollment.objects.filter(student=student, course=course).exists():
         # Checking whether code is valid.
         try:
-            code = EnrollmentCode.objects.get(course=course, code=code)
-        except:
-            return HttpResponse(json.dumps({'state':False,'response':'Invalid code'}))
-        if code.expiring_date >= date.today():
+            enrollment_code = EnrollmentCode.objects.filter(course=course, code=code)
+        except EnrollmentCode.DoesNotExist:
+            return HttpResponse(json.dumps({'state': False, 'response': 'Invalid code'}))
+
+        if enrollment_code.expiring_date >= date.today():
             # If not enrolled, create a new Enrollment instance
             enrollment, created = Enrollment.objects.get_or_create(student=student, course=course)
             enrollment.save()
@@ -156,7 +156,7 @@ def generate_auth_code(request):
 def validate_auth_code(request):
     if request.method == "POST":
         data = json.loads(request.body)
-        email = data["email"]
+        email = data["email"].strip()
         str_email = str(email)
         code= int(data["code"].strip())
         if str_email in code_base:
@@ -166,7 +166,7 @@ def validate_auth_code(request):
         if code in valid_codes:
             code_base[str_email] = [] # Clearing out the list for that email.
             return JsonResponse({'success':True,
-            'message':'You have been registered successfully.'})
+            'message':'You will be registered in a couple of seconds.'})
         else:
             return JsonResponse({'success':False,
                          'message':'Wrong code. Try again.'})
