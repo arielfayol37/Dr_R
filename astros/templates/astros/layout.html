@@ -14,6 +14,7 @@
         <link rel="icon" href="{% static 'astros/images/mars.ico' %}" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
+    <div id="preloader"></div>
     <body class="body">
         <ul class="navbar-nav mr-auto">
             {% if user.is_authenticated %}
@@ -66,4 +67,11 @@
         <script src="{% static 'phobos/js/sidebar.js' %}"></script>
         {% block scripts %}{% endblock %}
     </body>
+    
+    <script>
+        var loader = document.querySelector('#preloader');
+        window.addEventListener('load', ()=>{
+            loader.classList.add('hide');
+        })
+    </script>
 </html>

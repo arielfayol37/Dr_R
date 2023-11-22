@@ -65,7 +65,7 @@ def course_enroll(request, course_id, code):
     if not Enrollment.objects.filter(student=student, course=course).exists():
         # Checking whether code is valid.
         try:
-            enrollment_code = EnrollmentCode.objects.filter(course=course, code=code)
+            enrollment_code = EnrollmentCode.objects.get(course=course, code=code)
         except EnrollmentCode.DoesNotExist:
             return HttpResponse(json.dumps({'state': False, 'response': 'Invalid code'}))
 

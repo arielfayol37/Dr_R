@@ -147,13 +147,13 @@ def register(request):
         last_name = request.POST["last_name"].strip().title()
         department = request.POST["department"].strip().title()
 
-        try: 
+        try: # Checking if username is taken
             prof = Professor.objects.get(username=username)
             username = str(username) + str(random.randint(1, 1000000))
-        except:
+        except Professor.DoesNotExist:
             pass
 
-        try:
+        try: # checking if email is taken.
             checking_prof = Professor.objects.get(email=email)
             if checking_prof:
                 return render(request, "astros/register.html", {
@@ -867,25 +867,35 @@ def get_questions(request, student_id, assignment_id, course_id=None):
         else:
             num_pts = question.struct_settings.num_points
         try:
-            question_student = QuestionStudent.objects.get(student= student, question=question)
-            question_modified_score, is_created= QuestionModifiedScore.objects.get_or_create(question_student=question_student)
-            if question_modified_score.is_modified:
-                question_details.append({'Question_number':'Question ' + question.number,\
-                                    'score':f"{round(question_modified_score.score, 2)} / {num_pts}", \
-                                        'num_attempts': question_student.get_num_attempts(),\
-                                        'original_score':f"{question_student.get_num_points()} / {num_pts}", \
-                                            'id': question_student.pk})
-            else:
-                        question_details.append({'Question_number':'Question ' + question.number,\
-                                    'score':f"{round(question_student.get_num_points(), 2)} / {num_pts}", \
-                                        'num_attempts': question_student.get_num_attempts(),\
-                                    'original_score':f"{question_student.get_num_points()} / {num_pts}", \
-                                            'id': question_student.pk})
+            question_student = QuestionStudent.objects.get(student=student, question=question)
+            question_modified_score, is_created = QuestionModifiedScore.objects.get_or_create(question_student=question_student)
+
+            score = question_modified_score.score if question_modified_score.is_modified else question_student.get_num_points()
+            score_display = f"{round(score, 2)} / {num_pts}"
+            attempts = question_student.get_num_attempts()
+            original_score = f"{question_student.get_num_points()} / {num_pts}"
+
+            question_details.append({
+                'Question_number': f'Question {question.number}',
+                'score': score_display,
+                'num_attempts': attempts,
+                'original_score': original_score,
+                'id': question_student.pk,
+                'real_score':round(score, 2),
+                'total':num_pts
+            })
 
         except QuestionStudent.DoesNotExist:
-            question_details.append({'Question_number':'Question ' + question.number,\
-                                     'score':f"0 / {num_pts}",'num_attempts': "0",\
-                                     'original_score':f"0 / {num_pts}",'id': "-1"})    
+            question_details.append({
+                'Question_number': f'Question {question.number}',
+                'score': f"0 / {num_pts}",
+                'num_attempts': "0",
+                'original_score': f"0 / {num_pts}",
+                'id': "-1",
+                'real_score':0,
+                'total':num_pts
+            })
+    
         
     question_details= json.dumps(question_details)
     return HttpResponse(question_details)
@@ -907,7 +917,7 @@ def modify_question_student_score(request,question_student_id,new_score,course_i
         question_student= QuestionStudent.objects.get(pk= question_student_id)
     except QuestionStudent.DoesNotExist:
         return JsonResponse({
-            'success': False, 'result':"Can't modify grade when student has not even attempted question!"
+            'success': False, 'message':"Can't modify grade when student has not even attempted question!", 'new_score':0
         })
         # question_student = QuestionStudent.objects.create(question, student) # Needs the question and student
         # question_student.save()
@@ -917,9 +927,9 @@ def modify_question_student_score(request,question_student_id,new_score,course_i
         question_modified_score.score= new_score
         question_modified_score.is_modified= True
         question_modified_score.save()
-        return JsonResponse({'success':True,'result':'Grade successfully edited.'})
+        return JsonResponse({'success':True, 'message':'Grade successfully edited.', 'new_score':new_score})
     except:
-        return JsonResponse({'success':False,'result':'Something Went Wrong'})
+        return JsonResponse({'success':False, 'message':'Something Went Wrong', 'new_score':new_score})
 
 def search_question(request):
     if request.method == 'POST':
