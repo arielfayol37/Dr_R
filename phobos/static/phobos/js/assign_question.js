@@ -1,7 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     const assignBtn = document.querySelector('.assign-btn');
+    const preloader = document.querySelector('#preloader');
     assignBtn.addEventListener('click', () => {
         // Implement the fetch.
+        preloader.classList.remove('hide');
         fetch(window.location.href + '/assign', {
             method: 'POST', 
         })
@@ -13,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .then(data => {
             alert(data.message);
+            preloader.classList.add('hide');
             if (data.success) {
                 assignBtn.parentNode.removeChild(assignBtn);
             }

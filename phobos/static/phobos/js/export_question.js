@@ -7,7 +7,7 @@
     var select_assignment;
     var selected_course_id;
     var select_course=export_to_assignment.querySelector('select[id=select_course]');
-
+    const preloader = document.querySelector('#preloader');
 
     document.querySelector('#btn-export_question').addEventListener('click',()=>{  
         export_to_assignment.style.display='block';
@@ -19,10 +19,12 @@
 
              if(event.target.classList.contains('export-confirm') && selected_course_id != null ){   
               // excute back_end export function and return result
-                select_assignment= export_to_assignment.querySelector('#' + selected_course_id)
+                select_assignment= export_to_assignment.querySelector('#' + selected_course_id);
+                preloader.classList.remove('hide');
                 fetch(window.location.href+ '/export_question_to/'+ select_assignment.value) 
                 .then(response=>response.json())
                 .then(result=>{
+                  preloader.classList.add('hide');
                     alert(result.message);
                     export_result.style.display= 'block';
                     export_to_assignment.style.display='none';

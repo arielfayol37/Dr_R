@@ -11,9 +11,18 @@
         <link rel="icon" href="{% static 'astros/images/mars.ico' %}" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
+    
     <body class="body">
+        <div id="preloader"></div>
         <h2 style="color:white" id="dr-r" class="bs-overrides">Dr. R </h2>
         {% block body %} {% endblock %}
         {% block scripts %}{% endblock %}
     </body>
+    <script>
+        var loader = document.querySelector('#preloader');
+        window.addEventListener('load', ()=>{
+            console.log('loaded');
+           loader.classList.add('hide');
+        })
+    </script>
 </html>

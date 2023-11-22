@@ -8,6 +8,19 @@
   src: url('../fonts/aileron-regular.otf') format('truetype');
   /* Add additional src lines for other font formats if necessary */
 }
+
+#preloader {
+  background: #000 url('../images/loader.gif') no-repeat center center;
+  background-size: 15%;
+  height: 100vh;
+  width: 100vw;
+  position: fixed;
+  z-index:100;
+}
+#preloader.hide {
+  display: none;
+}
+
 body.body {
     background-color: white !important; 
     color:black;

@@ -2,6 +2,7 @@
 document.addEventListener('DOMContentLoaded',()=>{
 const submitBtns = document.querySelectorAll('.submit-btn-register');
 const forgotPLinks = document.querySelectorAll('.forgot-password-link');
+const preloader = document.querySelector('#preloader');
 if(forgotPLinks != null){
     forgotPLinks.forEach((fp)=>{
         const mformDiv = fp.closest('.main-form');
@@ -85,6 +86,7 @@ submitBtns.forEach((submitBtn)=>{
     }
 
     if(authenticationArea.classList.contains('closed')){
+        preloader.classList.remove('hide');
         fetch('/authentification/generate_code', {
             method: 'POST',
             headers: { 'X-CSRFToken': getCookie('csrftoken') },
@@ -94,13 +96,14 @@ submitBtns.forEach((submitBtn)=>{
           })
           .then(response => response.json())
           .then(result => {
+            preloader.classList.add('hide');
               alert(result.message);
               if(result.success){
                 authenticationArea.style.display='block';
                 authenticationArea.classList.remove('closed');
               }
           });
-        submitBtn.scrollIntoView({behavior: 'smooth'});
+          submitBtn.scrollIntoView({behavior: 'smooth'});
     }else {
         fetch('/authentification/validate_code', {
             method: 'POST',
