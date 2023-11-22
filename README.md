@@ -8,7 +8,7 @@ This is the README file for the Dr_R web application built using Django. The app
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/arielfayol37/Dr_r.git
+git clone https://github.com/arielfayol37/Dr_r
 ```
 
 2. Change into the project directory:
@@ -47,17 +47,6 @@ python manage.py migrate
 python manage.py runserver
 ```
 Then copy and paste the url from the terminal to your browser.
-
-8. Credentials:
-  If you want to test the app with some prefilled data,
-  use the following for instructor login
-```bash
-email: andy.richter@valpo.edu password: la
-```
-use the following for student login
-```bash
-email:arielfayol37@gmail.com password:la
-```
 
 
 
