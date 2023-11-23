@@ -1,5 +1,6 @@
 
 document.addEventListener('DOMContentLoaded', () => {
+    const preloader = document.querySelector('#preloader');
     const form = document.querySelector('#question-form');
     const allQuestionBlocks = form.querySelector("#all-question-blocks");
     let currentAction = form.getAttribute('action');
@@ -92,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;  // Exit the loop
             }
         }
+        preloader.classList.remove('hide');
 
         var newAction = '';
         // After all the tests have passed. 
