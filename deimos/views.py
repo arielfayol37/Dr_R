@@ -388,7 +388,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                             # carrying the submission over
                             attempt.units_success = True
                             attempt.submitted_units = last_attempt.submitted_units
-                        elif not units_too_many_attempts:
+                        elif not units_too_many_attempts and units:
                             # Checking whether submitted units are correct. 
                             submitted_units = data["submitted_units"]
                             units_correct = compare_units(units, submitted_units)
