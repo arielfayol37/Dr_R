@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-b-0u50fm%ncozuxza=*ksvu@lp#_$kdeqh%!6$m^y5ak=@8fzf
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
-
+CSRF_TRUSTED_ORIGINS =['https://*.mars-valpo.com']
 
 # Application definition
 
