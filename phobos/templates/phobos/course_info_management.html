@@ -45,7 +45,7 @@
         <br/>
         <form class="info-form" action="{% url 'phobos:save_course_info' course.id %}" method="post" value="operation" style="display: none;">
                 {% csrf_token %}
-            <textarea class="field-style" placeholder="Write content (markdown supported)" style="width: 90%; border-radius: 10px;" name="text_info" class="textarea-info"></textarea>
+            <textarea class="field-style textarea-info" placeholder="Write content (markdown supported)" style="width: 90%; border-radius: 10px;" name="text_info"></textarea>
             <br/>
 
             <input type="submit" class="btn btn-success" value="Save"/>
