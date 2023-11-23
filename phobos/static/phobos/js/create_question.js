@@ -1,5 +1,6 @@
 
 document.addEventListener('DOMContentLoaded', () => {
+    const preloader = document.querySelector('#preloader');
     const form = document.querySelector('#question-form');
     const allQuestionBlocks = form.querySelector("#all-question-blocks");
     let currentAction = form.getAttribute('action');
@@ -92,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;  // Exit the loop
             }
         }
+        preloader.classList.remove('hide');
 
         var newAction = '';
         // After all the tests have passed. 
@@ -1640,7 +1642,7 @@ function createQuestionBlock(){
         <div class="add-hint-section" style="display:none;">
             <input type="text" placeholder="Enter hint and click add" class="field-style add-hint-input-field"/>
             <br/>
-            <button type="button" class="add-inputed-hint-btn btn btn-success"> add </button>
+            <button type="button" class="add-inputed-hint-btn btn btn-info"> add </button>
         </div>
         <button type="button" class="add-hint-btn btn btn-outline-info open"> Add Hint </button>
      </div>

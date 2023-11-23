@@ -10,6 +10,18 @@
     border-color: #333;  /* ending color (same as starting color) */
   }
 }
+#preloader {
+  background: #000 url('../images/cool_mars_gif.gif') no-repeat center center;
+  background-size: 15%;
+  height: 100vh;
+  width: 100vw;
+  position: fixed;
+  z-index:100;
+}
+#preloader.hide {
+  display: none;
+}
+
 
 .input-code {
   /* Initial border setup */
@@ -21,7 +33,7 @@
 body.body {
     background-color: black !important; 
     color:white;
-    overflow: hidden; /*To hide Scroll Bar*/
+    overflow: visible; /*To hide Scroll Bar*/
 }
 
 .landing-container {

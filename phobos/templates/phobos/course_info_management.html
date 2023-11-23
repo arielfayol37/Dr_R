@@ -8,10 +8,9 @@
         <ul>
             <li><a href="{% url 'phobos:course_management' course_id=course.id %}">Back</a></li>
             <li><a href="{% url 'phobos:index' %}">Home</a></li>
-            <li><a href="{% url 'phobos:create_assignment' course_id=course.id %}">Create Assignment</a></li> 
             <li><a href="{% url 'phobos:gradebook' course_id=course.id %}">Gradebook</a></li>
+            <li><a href="{% url 'phobos:manage_enrollment_codes' course_id=course.id %}">Enrollment</a></li>
             <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
-            <li><a href="{% url 'phobos:manage_enrollment_codes' course_id=course.id %}">Enrollment Codes</a></li>
         </ul>
     </div>
 
@@ -46,12 +45,12 @@
         <br/>
         <form class="info-form" action="{% url 'phobos:save_course_info' course.id %}" method="post" value="operation" style="display: none;">
                 {% csrf_token %}
-            <textarea class="field-style text-info" placeholder="Write content (markdown supported)" style="width: 90%; border-radius: 10px;" name="text_info"></textarea>
+            <textarea class="field-style" placeholder="Write content (markdown supported)" style="width: 90%; border-radius: 10px;" name="text_info"></textarea>
             <br/>
 
             <input type="submit" class="btn btn-success" value="Save"/>
             <input type="button" class="btn btn-danger cancel-btn" value="Cancel"/>
-            <input type="hidden" name="category" value="about_course">
+            <input type="hidden" class="input-category" name="category" value="about_course">
         </form>
     </div>
 <script src="{% static 'phobos/js/manage_course_info.js' %}"></script>

@@ -25,7 +25,8 @@ SECRET_KEY = 'django-insecure-b-0u50fm%ncozuxza=*ksvu@lp#_$kdeqh%!6$m^y5ak=@8fzf
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
-CSRF_TRUSTED_ORIGINS =['https://*.mars-valpo.com']
+CSRF_TRUSTED_ORIGINS = ['https://*.mars-valpo.com']
+
 
 # Application definition
 
@@ -39,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_extensions'
+    'django_extensions',
 ]
 
 MIDDLEWARE = [
@@ -149,6 +150,6 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'no.reply.dr.r.valpo@gmail.com' # Your Gmail address
-EMAIL_HOST_PASSWORD = 'vvus oege jbap mbnk' # Your Gmail password
+EMAIL_HOST_PASSWORD = 'azuv oucz hahf sfqp' # Your Gmail password
 
 

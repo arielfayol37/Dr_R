@@ -11,9 +11,8 @@ class DifficultyChoices(models.TextChoices):
     DIFFICULT = 'DIFFICULT', 'Difficult'
 
 class SubjectChoices(models.TextChoices):    
-
-    COMPUTER_SCIENCE = 'COMPUTER_SCIENCE', 'Computer Science'
-    MATHS = 'MATHS', 'Maths'
+    # COMPUTER_SCIENCE = 'COMPUTER_SCIENCE', 'Computer Science'
+    # MATHS = 'MATHS', 'Maths'
     PHYSICS = 'PHYSICS', 'Physics'
     # TODO: Add more subject choices as needed.
 

@@ -31,7 +31,6 @@ from django.core.mail import send_mail
 from django.core.files.storage import default_storage
 
 
-
 # Create your views here.
 @login_required(login_url='astros:login') 
 def index(request):
@@ -50,7 +49,7 @@ def course_management(request, course_id):
     is_question_bank = course.name =='Question Bank'
     if not course.professors.filter(pk=request.user.pk).exists() and not is_question_bank:
         return HttpResponseForbidden('You are not authorized to manage this course.')
-    assignments = Assignment.objects.filter(course=course)
+    assignments = Assignment.objects.filter(course=course).order_by('-timestamp')
     context = {
         "assignments": assignments,
         "course": course,
@@ -121,24 +120,20 @@ def logout_view(request):
 
 def forgot_password(request):
     if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            email = data["email"].strip()
-            password= data['new_password'].strip()
-            confirmPwd= data['confirm_new_password'].strip()
+        data = json.loads(request.body)
+        email = data["email"].strip()
+        password= data['new_password'].strip()
 
-            try:
-                user = Professor.objects.get(email=email)
-            except Professor.DoesNotExist:
-               return JsonResponse({'success':False,
-                         'message':"Hacker don't hack in here. Email does not exist"})
-            if password == confirmPwd:
-                user.set_password(password)
-                user.save()
-                return JsonResponse({'success':True,
-                    'message':'Password Succesfully changed'})
-        except:
-            pass
+        try:
+            user = Professor.objects.get(email=email)
+        except Professor.DoesNotExist:
+            return JsonResponse({'success':False,
+                        'message':"Profile with this email does not exist"})
+
+        user.set_password(password)
+        user.save()
+        return JsonResponse({'success':True,
+            'message':'Password Succesfully changed'})
     return JsonResponse({'success':False,
                          'message':'Something went wrong'})
 
@@ -152,13 +147,13 @@ def register(request):
         last_name = request.POST["last_name"].strip().title()
         department = request.POST["department"].strip().title()
 
-        try: 
+        try: # Checking if username is taken
             prof = Professor.objects.get(username=username)
             username = str(username) + str(random.randint(1, 1000000))
-        except:
+        except Professor.DoesNotExist:
             pass
 
-        try:
+        try: # checking if email is taken.
             checking_prof = Professor.objects.get(email=email)
             if checking_prof:
                 return render(request, "astros/register.html", {
@@ -615,10 +610,31 @@ def delete_question(request, question_id):
         return HttpResponseForbidden('You are not authorized delete this question.')
     # delete question
     question.delete()
+    if question.assignment.course.name != 'Question Bank':
+        renumber_assignment_questions(question.assignment)
     # redirect to assignment management
     return HttpResponseRedirect(reverse("phobos:assignment_management",\
                                             kwargs={'course_id':question.assignment.course.id,\
                                                     'assignment_id':question.assignment.id}))
+
+def renumber_assignment_questions(assignment):
+        number = 0
+        # Renumber the questions in the assignment.
+        for parent_quest in assignment.questions.filter(parent_question=None):
+            # Increment number by 1
+            number += 1
+            sub_questions = list(parent_quest.sub_questions.all())
+            sub_questions.insert(0, parent_quest)
+            
+            for sub_question in sub_questions:
+                qnum = sub_question.number 
+                if qnum[-1].isalpha():
+                    new_num = str(number) + qnum[-1]
+                else: 
+                    new_num = str(number)
+                sub_question.number = new_num
+                sub_question.save(update_fields=['number'])
+
 
 # NOTE: The function below was to be useD for a better front end design of the export question functionality.
 # The function was to enable the prof select a course then select an assignment in that course.
@@ -838,19 +854,6 @@ def student_profile(request,course_id,student_id):
                 {'student_grade': zip(assignments, grades),\
                  'student':student, 'course':course})
 
-def student_search(request,course_id):
-    course = Course.objects.get(pk = course_id)
-    enrolled_students = Student.objects.filter(enrollments__course=course)
-  
-    if request.method =="GET":
-        student_name= request.GET['q'].lower()
-        search_result = []
-        for enrolled_student in enrolled_students:
-            if (student_name in enrolled_student.last_name.lower()) or (student_name in enrolled_student.first_name.lower()):
-                search_result.append(enrolled_student)
-
-        return render(request, "phobos/student_search.html", {'course':course,\
-            'search':student_name,"entries": search_result, 'length':len(search_result)})
 
 def get_questions(request, student_id, assignment_id, course_id=None):
     assignment= Assignment.objects.get(id=assignment_id)
@@ -864,25 +867,35 @@ def get_questions(request, student_id, assignment_id, course_id=None):
         else:
             num_pts = question.struct_settings.num_points
         try:
-            question_student = QuestionStudent.objects.get(student= student, question=question)
-            question_modified_score, is_created= QuestionModifiedScore.objects.get_or_create(question_student=question_student)
-            if question_modified_score.is_modified:
-                question_details.append({'Question_number':'Question ' + question.number,\
-                                    'score':f"{round(question_modified_score.score, 2)} / {num_pts}", \
-                                        'num_attempts': question_student.get_num_attempts(),\
-                                        'original_score':f"{question_student.get_num_points()} / {num_pts}", \
-                                            'id': question_student.pk})
-            else:
-                        question_details.append({'Question_number':'Question ' + question.number,\
-                                    'score':f"{round(question_student.get_num_points(), 2)} / {num_pts}", \
-                                        'num_attempts': question_student.get_num_attempts(),\
-                                    'original_score':f"{question_student.get_num_points()} / {num_pts}", \
-                                            'id': question_student.pk})
+            question_student = QuestionStudent.objects.get(student=student, question=question)
+            question_modified_score, is_created = QuestionModifiedScore.objects.get_or_create(question_student=question_student)
+
+            score = question_modified_score.score if question_modified_score.is_modified else question_student.get_num_points()
+            score_display = f"{round(score, 2)} / {num_pts}"
+            attempts = question_student.get_num_attempts()
+            original_score = f"{question_student.get_num_points()} / {num_pts}"
+
+            question_details.append({
+                'Question_number': f'Question {question.number}',
+                'score': score_display,
+                'num_attempts': attempts,
+                'original_score': original_score,
+                'id': question_student.pk,
+                'real_score':round(score, 2),
+                'total':num_pts
+            })
 
         except QuestionStudent.DoesNotExist:
-            question_details.append({'Question_number':'Question ' + question.number,\
-                                     'score':f"0 / {num_pts}",'num_attempts': "0",\
-                                     'original_score':f"0 / {num_pts}",'id': "-1"})    
+            question_details.append({
+                'Question_number': f'Question {question.number}',
+                'score': f"0 / {num_pts}",
+                'num_attempts': "0",
+                'original_score': f"0 / {num_pts}",
+                'id': "-1",
+                'real_score':0,
+                'total':num_pts
+            })
+    
         
     question_details= json.dumps(question_details)
     return HttpResponse(question_details)
@@ -904,7 +917,7 @@ def modify_question_student_score(request,question_student_id,new_score,course_i
         question_student= QuestionStudent.objects.get(pk= question_student_id)
     except QuestionStudent.DoesNotExist:
         return JsonResponse({
-            'success': False, 'result':"Can't modify grade when student has not even attempted question!"
+            'success': False, 'message':"Can't modify grade when student has not even attempted question!", 'new_score':0
         })
         # question_student = QuestionStudent.objects.create(question, student) # Needs the question and student
         # question_student.save()
@@ -914,9 +927,9 @@ def modify_question_student_score(request,question_student_id,new_score,course_i
         question_modified_score.score= new_score
         question_modified_score.is_modified= True
         question_modified_score.save()
-        return JsonResponse({'success':True,'result':'Grade successfully edited.'})
+        return JsonResponse({'success':True, 'message':'Grade successfully edited.', 'new_score':new_score})
     except:
-        return JsonResponse({'success':False,'result':'Something Went Wrong'})
+        return JsonResponse({'success':False, 'message':'Something Went Wrong', 'new_score':new_score})
 
 def search_question(request):
     if request.method == 'POST':
@@ -959,11 +972,11 @@ def enrollmentCode(request, course_id, expiring_date):
     course= Course.objects.get(pk = course_id)
     if not course.professors.filter(pk=request.user.pk).exists():
         return JsonResponse({'message': 'You are not allowed to ceate enrollment codes for this course.'})
-    min=100000000000
-    max=999999999999
+    min=10000
+    max=99999
     enrollment_code = EnrollmentCode(course = course, 
-                                     code= random.randint(min,max),
-                                      expiring_date= expiring_date)
+                                     code = random.randint(min,max),
+                                      expiring_date = expiring_date)
     enrollment_code.save()
     return JsonResponse({'code': enrollment_code.code,
                          'ex_date':enrollment_code.expiring_date,
@@ -1069,7 +1082,10 @@ def copy_answers(old_question, new_question):
         answer = answer_type_class.objects.get(question=old_question)
         a = answer_type_class.objects.create(
             question=new_question,
-            content=answer.content
+            content=answer.content,
+            preface=answer.preface,
+            sufface=answer.sufface,
+            answer_unit=answer.answer_unit
         )
         a.save()
     elif old_question.answer_type.startswith('MCQ'):

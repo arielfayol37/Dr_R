@@ -41,10 +41,10 @@
                 {% csrf_token %}
             <input type="hidden" value="{{course.id}}" name="course_id">
             <h5 class="suggestion original-size"> Course Name</h5>
-            <input type="text" class="field-style text-info" style="width: 30%" name="new_course_name" value="{{course.name}}"/>
+            <input type="text" class="field-style" style="width: 30%" name="new_course_name" value="{{course.name}}"/>
             <br/><br>
             <h5 class="suggestion original-size"> Course Description</h5>
-            <textarea class="field-style text-info" style="width: 90%; border-radius: 10px;" name="new_course_description">{{course.description}} </textarea>
+            <textarea class="field-style textarea-info" style="width: 90%; border-radius: 10px;" name="new_course_description">{{course.description}} </textarea>
             <br/><br>
             <h5 class="suggestion original-size"> Course image</h5>
             <div class="course-image-container"> 

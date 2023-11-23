@@ -29,6 +29,9 @@ from scipy.stats import norm
 from .utils import *
 from datetime import date
 
+import asyncio
+from asgiref.sync import sync_to_async
+
 # Create your views here.
 @login_required(login_url='astros:login') 
 def index(request):
@@ -49,12 +52,12 @@ def course_management(request, course_id):
         return HttpResponseForbidden('You are not enrolled in this course.')
 
     assignments = Assignment.objects.filter(course=course, assignmentstudent__student=student, \
-                                            is_assigned=True)
+                                            is_assigned=True).order_by('-timestamp')
     as_statuses = []
     if course.name != 'Question Bank':
         for assignment in assignments:
             ass, created = AssignmentStudent.objects.get_or_create(assignment= assignment, student=student)
-            as_statuses.append(ass.get_status())
+            as_statuses.append(ass)
 
     context = {
         "student":student,
@@ -83,7 +86,7 @@ def assignment_management(request, assignment_id, course_id=None):
         assignment_student.is_complete = True
     else:
         assignment_student.is_complete = False
-    assignment_student.save()
+    assignment_student.save(update_fields=['is_complete'])
     
     context = {
         "questions": zip(questions, qs_statuses),
@@ -101,15 +104,15 @@ def gradebook(request, course_id):
     if not is_enrolled:
         return HttpResponseForbidden('You are not enrolled in this course.')
     # needed student's gradebook
-    course_score=0
-    assignment_student_grade=[]
-    assignment_student = AssignmentStudent.objects.filter(student=student, assignment__course=course)
+    course_score = 0
+    assignment_student_grade = []
+    assignment_students = AssignmentStudent.objects.filter(student=student, assignment__course=course)
     a_sums = 0
-    for assignment_s in assignment_student:
-        grade = assignment_s.get_grade()
+    for assignment_s in assignment_students:
+        grade = assignment_s.grade
         assignment_student_grade.append({'id':assignment_s.id,'assignment_student':assignment_s,'grade':grade})
-        course_score += assignment_s.assignment.num_points * grade
-        a_sums += assignment_s.assignment.num_points
+        course_score += assignment_s.assignment.grading_scheme.num_points * grade
+        a_sums += assignment_s.assignment.grading_scheme.num_points
     if a_sums == 0:
         course_score = 0
     else:
@@ -149,14 +152,12 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
         is_questionbank = True
         question_ids, question_nums = [], []
     question_0 = Question.objects.get(pk=question_id)
-    if not question_0.parent_question: # if question has no parent question(the question itself 
-        #is the parent question)
-        questions = list(Question.objects.filter(parent_question=question_0))
-        questions.insert(0, question_0)
-    else:
+
+    if question_0.parent_question: # if the question has a parent question.
         question_0 = question_0.parent_question
-        questions = list(Question.objects.filter(parent_question=question_0))
-        questions.insert(0, question_0)
+
+    questions = list(question_0.sub_questions.all())
+    questions.insert(0, question_0)
 
     questions_dictionary = {}
     for index, question in enumerate(questions):
@@ -504,6 +505,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
         if (not question_student.is_complete) and (units_too_many_attempts or units_correct) and (too_many_attempts or prev_success):
             question_student.is_complete = True
             question_student.save()
+        grade =  _update_assignment_grade(question_student)
         # Return a JsonResponse
         return JsonResponse({
             'correct': correct,
@@ -520,7 +522,22 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
             'complete':question_student.is_complete
         })
 
-    
+def _update_assignment_grade(question_student):
+    """
+    Updates the grade of an assignment.
+    Meant to be used after validate_answer()
+    """
+    # TODO: Improve this so that it adds only the number of points
+    # from the most recent attempt. get_grade() sums all the points from
+    # all attempts from every single question. (inefficient)
+    assignment = question_student.question.assignment
+    student = question_student.student
+    if assignment.course.name != 'Question Bank':
+        assignment_student = AssignmentStudent.objects.get(assignment=assignment, student=student)
+        grade = assignment_student.get_grade() # this line updates the `grade` attribute of the AssignmentStudent
+    else:
+        grade = 0
+    return grade
            
 def login_view(request):
     if request.method == "POST":
@@ -555,24 +572,20 @@ def logout_view(request):
 
 def forgot_password(request):
     if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            email = data["email"]
-            password= data['new_password']
-            confirmPwd= data['confirm_new_password']
+        data = json.loads(request.body)
+        email = data["email"].strip()
+        password= data['new_password'].strip()
 
-            try:
-                user = Student.objects.get(email=email)
-            except Student.DoesNotExist:
-               return JsonResponse({'success':False,
-                         'message':"Hacker don't hack in here. Email does not exist"})
-            if password == confirmPwd:
-                user.set_password(password)
-                user.save()
-                return JsonResponse({'success':True,
-                    'message':'Password Succesfully changed'})
-        except:
-            pass
+        try:
+            user = Student.objects.get(email=email)
+        except Student.DoesNotExist:
+            return JsonResponse({'success':False,
+                        'message':"Hacker don't hack in here. Email does not exist"})
+        user.set_password(password)
+        user.save()
+        return JsonResponse({'success':True,
+            'message':'Password Succesfully changed'})
+    
     return JsonResponse({'success':False,
                          'message':'Something went wrong'})
 
@@ -585,11 +598,11 @@ def register(request):
         first_name = request.POST["first_name"].strip().title()
         last_name = request.POST["last_name"].strip().title()
         
-        try: 
+        try: # if profile with this username exists, append a random number.
             stud = Student.objects.get(username=username)
             username = str(username) + str(random.randint(1, 1000000))
         except:
-            pass
+            pass # if profile with this username does not exists.
         try:
             s = Student.objects.get(username=username)
             username = str(username) + str(random.randint(1, 10000000))
@@ -781,7 +794,7 @@ def assignment_gradebook_student(request,student_id, assignment_id):
     assignments= AssignmentStudent.objects.filter(student=student, assignment__course=course)
 
     assignment_details={'name':assignment_student.assignment.name,'assignment_id':assignment_id,\
-                        'Due_date':str(assignment_student.due_date).split(' ')[0],'grade':assignment_student.get_grade() }
+                        'Due_date':str(assignment_student.due_date).split(' ')[0],'grade':assignment_student.grade}
     
     question_heading = ['Question_number','score','num_attempts']
     question_details = []

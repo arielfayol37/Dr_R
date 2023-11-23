@@ -30,60 +30,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
 
         previousAttempts.forEach((pA)=>{
 
-          const elements = pA.querySelectorAll(".p-attempt");
-
-          if (elements.length != 0){
-
-            // /console.log(elements);
-          function showElement(currentIndex, newIndex) {
-            elements[currentIndex].style.top = '-100%'; // Move the current element up and out of view
-            elements[currentIndex].style.opacity = '0'; // Fade it out
-        
-            elements[newIndex].style.top = '0'; // Move the target element to the viewable area
-            elements[newIndex].style.opacity = '1'; // Fade it in
-        
-            pA.querySelector('.attempts-container').dataset.index = newIndex; // Update the dataset
-        }
-        
-        pA.querySelector('.btn-attempt-down').addEventListener('click', () => {
-            let currentIndex = parseInt(pA.querySelector('.attempts-container').dataset.index);
-            let nextIndex = (currentIndex + 1) % elements.length;
-            showElement(currentIndex, nextIndex);
-        });
-        
-        pA.querySelector('.btn-attempt-up').addEventListener('click', () => {
-            let currentIndex = parseInt(pA.querySelector('.attempts-container').dataset.index);
-            let prevIndex = (currentIndex - 1 + elements.length) % elements.length;
-            showElement(currentIndex, prevIndex);
-        });
-        
-
-        pA.querySelector('.open-attempts').addEventListener('click', (event)=>{
-          if(event.target.classList.contains('closed')){
-            pA.querySelector('.a-container').style.display = 'flex';
-            event.target.classList.remove('closed');
-          }else{
-            pA.querySelector('.a-container').style.display = 'none';
-            event.target.classList.add('closed');
-          }
-        })
-
-        try{
-          pA.querySelectorAll('.p-attempt').forEach((p)=>{
-            const content = math.parse(p.querySelector('.attempt-content').value).toTex();
-            const aUnits = p.querySelector('.attempt-units');
-            var finalDisplay = content
-            if(aUnits != null){
-              finalDisplay = content + ' ' + aUnits.value
-            }
-            p.innerHTML = MathJax.tex2chtml(finalDisplay).innerHTML // ; 
-          })
-
-        }catch (error){
-          console.log(error);
-        }
-          }
-
+          loadAttempts(pA);
         })
         MathJax.typesetPromise();
       })
@@ -401,8 +348,11 @@ document.addEventListener('DOMContentLoaded', ()=> {
       // Creating a p tag to contain the attempt and 
       // displaying in previous attempts
       const newAttempt = document.createElement('p');
-      newAttempt.classList.add('p-attempt')
-      newAttempt.innerHTML = MathJax.tex2chtml(math.parse(screen.value).toTex() + submitted_units).innerHTML
+      newAttempt.classList.add('p-attempt');
+      newAttempt.innerHTML = `
+      <input type="hidden" class="attempt-content" value="${screen.value}"/>
+      <input type="hidden" class="attempt-units" value="${submitted_units}"/>
+      `
 
         fetch(`${baseUrl}/validate_answer/${qid}`, {
             method: 'POST',
@@ -422,6 +372,11 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 displayFeedback(feedbackContainerDiv, 'You already attempted using that answer');
                 removeAllLights(redLight,yellowLight,greenLight, blueLight);
                 return;
+              }else {
+                // add attempt on previous attempts screen
+                const previousAttemptsDiv = form.querySelector('.previous-attempts');
+                previousAttemptsDiv.querySelector('.attempts-container').prepend(newAttempt);
+                loadAttempts(previousAttemptsDiv);
               }
               if(requiresUnits){
                 toggleLight(result.correct,result.too_many_attempts,redLight,yellowLight,
@@ -1153,6 +1108,69 @@ function shuffleArray(array) {
       // Swap elements at i and j
       [array[i], array[j]] = [array[j], array[i]];
   }
+}
+
+
+function loadAttempts(attemptDiv){
+  const elements = attemptDiv.querySelectorAll(".p-attempt");
+
+      if (elements.length != 0){
+
+        // /console.log(elements);
+      function showElement(currentIndex, newIndex) {
+        elements[currentIndex].style.top = '-100%'; // Move the current element up and out of view
+        elements[currentIndex].style.opacity = '0'; // Fade it out
+
+        elements[newIndex].style.top = '0'; // Move the target element to the viewable area
+        elements[newIndex].style.opacity = '1'; // Fade it in
+
+        attemptDiv.querySelector('.attempts-container').dataset.index = newIndex; // Update the dataset
+    }
+
+    attemptDiv.querySelector('.btn-attempt-down').addEventListener('click', () => {
+        let currentIndex = parseInt(attemptDiv.querySelector('.attempts-container').dataset.index);
+        let nextIndex = (currentIndex + 1) % elements.length;
+        showElement(currentIndex, nextIndex);
+    });
+
+    attemptDiv.querySelector('.btn-attempt-up').addEventListener('click', () => {
+        let currentIndex = parseInt(attemptDiv.querySelector('.attempts-container').dataset.index);
+        let prevIndex = (currentIndex - 1 + elements.length) % elements.length;
+        showElement(currentIndex, prevIndex);
+    });
+
+
+    attemptDiv.querySelector('.open-attempts').addEventListener('click', (event)=>{
+      if(event.target.classList.contains('closed')){
+        attemptDiv.querySelector('.a-container').style.display = 'flex';
+        event.target.classList.remove('closed');
+      }else{
+        attemptDiv.querySelector('.a-container').style.display = 'none';
+        event.target.classList.add('closed');
+      }
+    })
+
+    try{
+      attemptDiv.querySelectorAll('.p-attempt').forEach((p)=>{
+        const hiddenInput = p.querySelector('.attempt-content');
+        if(hiddenInput != null){
+
+          const content = math.parse(hiddenInput.value).toTex();
+          const aUnits = p.querySelector('.attempt-units');
+          var finalDisplay = content
+          if(aUnits != null){
+            finalDisplay = content + ' ' + aUnits.value
+          }
+          p.innerHTML = MathJax.tex2chtml(finalDisplay).innerHTML // ; 
+          
+        }
+
+      })
+
+    }catch (error){
+      console.log(error);
+    }
+      }
 }
 
 });

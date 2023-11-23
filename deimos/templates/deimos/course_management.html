@@ -30,8 +30,8 @@
 
     <!-- Display course's assignments -->
     <ul class="courses course-list">
-        {% for assignment, status in assignments %}
-            {% include 'deimos/assignment_display.html' with assignment=assignment course=course status=status %}
+        {% for assignment, ass in assignments %}
+            {% include 'deimos/assignment_display.html' with assignment=assignment course=course ass=ass %}
         {% endfor %}
     </ul>
 </div>
