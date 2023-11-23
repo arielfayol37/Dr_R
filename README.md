@@ -3,6 +3,18 @@ Web platform for Physics Assigments System.
 
 This is the README file for the Dr_R web application built using Django. The application is designed to provide different functionalities for students (Deimos), instructors (Phobos), and general users (Astros).
 
+### Distinctiveness and Complexity
+"It’s different from the other projects and it was complex to build." Haha
+
+Jokes aside, it is a *physics* learning management system which differs a lot from other projects because of functionalities like comparing algebraic expressions and units; dynamic question creation page which acts as a GUI compiler that has to test various user input and take care of different formats like floats, multiple choice questions, latex equation, variables etc;
+a semantic search engine; etc etc
+
+### Files
+One of the submission requirements was to explain what is in every file I created but this project is relatively huge compared to previous projects, so I created a separate md file for essential documentation. Filename: documentation.md
+
+## PreRequisites
+Having Python installed on your machine and your PATH environment variable having a path to your Python's Scripts folder.
+
 ## Installation
 
 1. Clone the repository:
@@ -21,7 +33,7 @@ cd Dr_r
 python3 -m venv venv
 ```
 
-4. Activate the virtual environment
+4. Activate the virtual environment (skip if you skipped step 3)
   a. On macOS and Linux:
   ```bash
   source venv/bin/activate
@@ -48,6 +60,19 @@ python manage.py runserver
 ```
 Then copy and paste the url from the terminal to your browser.
 
+### NOTE
+- MAC users: I have not tested those instructions on MAC, so I recommend that you skip setting up a
+virtual environment if the command does not work (skip step 3 and 4). 
+- Window users: if the command at step 3 does not work for you, just skip it. Or use "python" instead of
+  "python3."
+
+### Testing
+In case you want to test without having to create accounts, courses, etc, don't worry. A copy 
+of the site is running at https://mars-valpo.com. You can use the following credentials:
+- Instructor test account: email - arielfayol1@gmail.com, password - ernestodelaCruz23789
+- Student test account: email - fayol.ateufackzeudom@valpo.edu, password - ernestodelaCruz23789
+
+# CS50W, CS50AI, THANK YOU! Please Launch a real AI (computer vision preferably) and/or SOFTWARE DEV Course.
 
 
 ## Impressive Features
@@ -71,13 +96,10 @@ Then copy and paste the url from the terminal to your browser.
 
 ### Phobos (Instructor Interface)
 
-- Instructors can manage courses.
-- Create, edit, and delete courses.
-- Assign professors to courses.
-- Add topics and subtopics to courses.
+- Instructors can create and manage courses.
 - Create assignments with different categories (quiz, homework, practice test).
 - Add questions to assignments, with various answer types (float, variable float, expression, etc.).
-- Set due dates for assignments.
+- Set/extend due dates for assignments.
 - Assign weights to questions for grading purposes.
 - View student progress and grades.
 
@@ -107,7 +129,7 @@ If you encounter a bug in the application or have a feature request, please [ope
 
 ## Contact
 
-If you have any questions or need assistance, feel free to reach out to the project maintainers or open a discussion in the repository.
+If you have any questions or need assistance, feel free to reach out to the project maintainers (317-720-7186, arielfayol1@gmail.com) or open a discussion in the repository.
 
 ## License
 

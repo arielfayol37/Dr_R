@@ -1,6 +1,9 @@
 import re, os
 import PyPDF2
 from phobos.models import Question, MCQTextAnswer, QuestionChoices, Course, Assignment
+"""
+Script to parse pdfs and create question bank
+"""
 
 def run():
     def extract_text_from_pdf(pdf_path):
