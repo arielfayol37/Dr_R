@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     // Get the form and search field elements
     const form = document.querySelector('.search-form');
     const searchField = document.querySelector('.search-field');
+    const preloader = document.querySelector('#preloader');
 
     // Add an event listener to the search field for the 'keydown' event
     searchField.addEventListener('keydown', function(event) {
@@ -9,7 +10,7 @@ document.addEventListener('DOMContentLoaded',()=>{
         if (event.key === 'Enter') {
             // Prevent the default form submission
             event.preventDefault();
-
+            preloader.classList.remove('hide');
             // Submit the form programmatically
             form.submit();
         }
