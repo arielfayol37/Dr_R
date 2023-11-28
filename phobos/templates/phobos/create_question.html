@@ -20,27 +20,6 @@
     <!-- TODO: Include buttons and invent listeners to create subquestions.-->
     
     <div class="page-container" id="create-question">
-      
-      <div class="add-var-section" title="variables">
-        <button type="button" class="btn var-btn">+</button>
-        <div class="var-info-div">
-            <div><input class="var-symbol field-style" type="text" placeholder="enter symbol e.g. x"/></div>
-            <div><input class="var-domain field-style" type="text" placeholder="enter intervals e.g.[1,3] [-8, 20]"/></div>
-            <div><input class="var-step-size field-style" type="number" min="0" placeholder ="step size (optional)" pattern="^?[0-9]*[.,]?[0-9]+" title="Please enter a valid float number."></div>
-
-            <div class="type-selection">
-              <label>
-                  <input type="radio" name="varType" value="float" checked> Float
-              </label>
-              <label>
-                  <input type="radio" name="varType" value="int"> Int
-              </label>
-            </div>
-            <div><button type="button" class="btn btn-outline-success btn-create-var">Create var</button></div>
-            
-        </div>
-        
-      </div>
     <br/>
 
     <form method="post" enctype="multipart/form-data" id="question-form" action="{% url 'phobos:create_question' assignment_id=assignment.id %}">
@@ -161,6 +140,43 @@
           </div>
           
       </div>
+    </div>
+    <div class="question-variables side">
+      <div class="side-info-icon" title="Info">
+        <ion-icon name="add-circle-outline"></ion-icon>
+      </div>
+      <div class="hide side-info">
+        <span class="side-info-x">X</span><br/>
+        <hr/>
+        <h3 class="suggestion original-size">Variables</h3>
+        
+        <div class="add-var-section" title="variables">
+          
+          <div class="var-info-div">
+              <div><input class="var-symbol field-style" type="text" placeholder="enter symbol e.g. x"/></div>
+              <div><input class="var-domain field-style" type="text" placeholder="enter intervals e.g.[1,3] [-8, 20]"/></div>
+              <div><input class="var-step-size field-style" type="number" min="0" placeholder ="step size (optional)" pattern="^?[0-9]*[.,]?[0-9]+" title="Please enter a valid float number."></div>
+  
+              <div class="type-selection">
+                <label>
+                    <input type="radio" class="var-type-float" name="varType" value="float" checked> Float
+                </label>
+                <label>
+                    <input type="radio" class="var-type-int" name="varType" value="int"> Int
+                </label>
+              </div>
+              <div><button type="button" class="btn btn-success btn-create-var">Create var</button></div>
+              
+          </div>
+          
+        </div>
+        <br/>
+        <div class="added-vars">
+
+        </div>
+
+      </div>
+      
     </div>
     </form>
 
