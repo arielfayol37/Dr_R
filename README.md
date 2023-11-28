@@ -3,18 +3,6 @@ Web platform for Physics Assigments System.
 
 This is the README file for the Dr_R web application built using Django. The application is designed to provide different functionalities for students (Deimos), instructors (Phobos), and general users (Astros).
 
-### Distinctiveness and Complexity
-"It’s different from the other projects and it was complex to build." Haha
-
-Jokes aside, it is a *physics* learning management system which differs a lot from other projects because of functionalities like comparing algebraic expressions and units; dynamic question creation page which acts as a GUI compiler that has to test various user input and take care of different formats like floats, multiple choice questions, latex equation, variables etc;
-a semantic search engine; etc etc
-
-### Files
-One of the submission requirements was to explain what is in every file I created but this project is relatively huge compared to previous projects, so I created a separate md file for essential documentation. Filename: documentation.md
-
-## PreRequisites
-Having Python installed on your machine and your PATH environment variable having a path to your Python's Scripts folder.
-
 ## Installation
 
 1. Clone the repository:
