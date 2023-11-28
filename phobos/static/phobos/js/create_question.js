@@ -4,7 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.querySelector('#question-form');
     const allQuestionBlocks = form.querySelector("#all-question-blocks");
     let currentAction = form.getAttribute('action');
-    const varSymbolsArray = ['ò', 'ë', 'à', 'ê', 'ä', 'ï', 'ù', 'ô', 'ü', 'î', 'â', 'ö', 'ÿ', 'è', 'é', 'ç', 'û', 'β', 'я', 'α'];
+    var varSymbolsArray = ['ò', 'ë', 'à', 'ê', 'ä', 'ï', 'ù', 'ô', 'ü', 'î', 'â', 'ö', 'ÿ', 'è', 'é', 'ç', 'û', 'β', 'я', 'α'];
+    const addedVarsDiv = document.querySelector('.added-vars');
     const screen = document.querySelector('#screen'); 
     const calculatorDiv = document.querySelector('.calculator');
     calculatorDiv.style.display = 'none';
@@ -269,145 +270,138 @@ function checkTopicAndSubtopic() {
   //-----------------------------HANDLING VARIABLES---------------------------------------//
 
   
-  const addVarBtn = document.querySelector('.var-btn');
   const varInfoDiv = document.querySelector('.var-info-div');
   const createdVarsDiv = document.querySelector('.created-vars');
 
   var symbol = '';
   var enteredDomain = '';
-  varInfoDiv.style.opacity = '0';
-  varInfoDiv.style.height = '0';
-  varInfoDiv.style.width = '0';
-  var state = 'closed';
-  addVarBtn.addEventListener('click', (event) => {
-    event.preventDefault();
-    if (state === 'closed') {
-      state = 'open';
-      addVarBtn.innerHTML = '-';
-      varInfoDiv.style.width = 'auto';
-      varInfoDiv.style.height = 'auto'; // Set height to 'auto' to reveal content
-      varInfoDiv.style.opacity = '1';   // Set opacity to '1' to reveal content
-      varInfoDiv.style.overflow = 'visible'; // Set overflow to 'visible' to reveal content
-    } else if (state === 'open') {
-      state = 'closed';
-      addVarBtn.innerHTML = '+';
-      varInfoDiv.style.width = '0';
-      varInfoDiv.style.height = '0';    // Set height to '0' to hide content
-      varInfoDiv.style.opacity = '0';   // Set opacity to '0' to hide content
-      varInfoDiv.style.overflow = 'hidden'; // Set overflow to 'hidden' to hide content
+
+  function createVarFields(varInfoDiv, createTemplate = true){
+    const varSymbolField = varInfoDiv.querySelector('.var-symbol');
+    const varDomainField = varInfoDiv.querySelector('.var-domain');
+    const varStepSize = varInfoDiv.querySelector('.var-step-size');
+    const intRadio = varInfoDiv.querySelector('.var-type-int');
+    const floatRadio = varInfoDiv.querySelector('.var-type-float');
+    symbol = varSymbolField.value;
+    // Checking whether it's a valid symbol
+    if (symbol.length === 0 ){
+        alert('You must enter a symbol');
+        return;
+    } else if(varSymbolsArray.includes(symbol)){
+      alert('Symbol already in use');
+      return;
+    }else if(symbol.length === 1)
+    {
+      if(/[aijk]/.test(symbol)){
+          alert('Unauthorized symbol due to vectors, trigonometric, or complex numbers issues (5i -2j + k, a +bi, asin, arctan, arccos, etc)');
+          return;
+      }
     }
-  });
+    else if ((symbol.length === 2) || (/^[a-zA-Z]$/.test(symbol.charAt(0)) === false) || 
+    ((symbol.charAt(1) != '_') && (symbol.length>=3))){
+        alert('Invalid symbol');
+        return;
+    }else if(symbol.length > 10){
+      alert('Symbol cannot be more than 10 characters');
+      return;
+    }
+    // Checking whether domain entered is valid
+    enteredDomain = varDomainField.value;
+    var parsedDomain = parseDomainInput(enteredDomain);
+    if(parsedDomain.length === 0){
+        alert('Invalid domain');
+        return;
+    }
+
+    // Checking if the step size is valid
+    if(varStepSize.value.length >= 1 && isNaN(parseFloat(varStepSize.value))){
+          alert('Step size must be an int or float');
+          return
+    } else if(varStepSize.value.length == 0){
+      varStepSize.value = 0 // if no step size is given.
+    }
   
-  
+    // passed all the tests
+    varSymbolsArray.push(symbol); // adding the symbol to the list of symbols.
+    const newVarDiv = document.createElement('div');
+    const newVarBtn = document.createElement('button');
+    newVarBtn.type = 'button';
+    newVarBtn.classList.add('btn', 'btn-warning'); // Separate the classes
+    if(symbol.length >=3){
+      newVarBtn.innerHTML = `${symbol.charAt(0)}<sub>${symbol.slice(2)}</sub>`
+    }else{
+      newVarBtn.innerHTML = symbol; // if symbol is one character.
+    }
+    
+    newVarDiv.appendChild(newVarBtn);
+    newVarDiv.classList.add('variable', `${symbol}-var-div`);
+    newVarDiv.setAttribute('data-symbol', symbol);
+    
+    // Putting the variable type and step size in hidden input fields.
+      
+      // Var Type
+    const varTypeHiddenInput = document.createElement('input');
+    varTypeHiddenInput.type = 'hidden';
+    varTypeHiddenInput.name = `var#type#${symbol}`
+    if(intRadio.checked){
+      varTypeHiddenInput.value = '0'
+    } else {
+      varTypeHiddenInput.value = '1'
+    }
+    
+    // Step size
+    const stepSizeHiddenInput = document.createElement('input');
+    stepSizeHiddenInput.type = 'hidden';
+    stepSizeHiddenInput.name = `step#size#${symbol}`
+    stepSizeHiddenInput.value = varStepSize.value
+
+    varTypeHiddenInput.classList.add('var-hidden-i');
+    stepSizeHiddenInput.classList.add('var-hidden-i');
+    
+    if(createTemplate){
+        var varContainer = createVarTemplate(symbol, enteredDomain, varStepSize.value, intRadio.checked);
+    }else {
+        var varContainer = varInfoDiv;
+
+    }
+
+    // appending the hidden inputs to varBtn
+    varContainer.appendChild(varTypeHiddenInput);
+    varContainer.appendChild(stepSizeHiddenInput);
+
+    for (let i = 0; i < parsedDomain.length; i++) {
+        // Getting the variable intervals.
+        const domainLbHiddenInput = document.createElement('input');
+        domainLbHiddenInput.type = 'hidden';
+        domainLbHiddenInput.name = `domain#lb#${symbol}#${i}`//domain lower bound
+        domainLbHiddenInput.value = parsedDomain[i].lower
+        
+        const domainUbHiddenInput = document.createElement('input');
+        domainUbHiddenInput.type = 'hidden';
+        domainUbHiddenInput.name = `domain#ub#${symbol}#${i}`//domain upper bound
+        domainUbHiddenInput.value = parsedDomain[i].upper
+
+        domainLbHiddenInput.classList.add('var-hidden-i');
+        domainUbHiddenInput.classList.add('var-hidden-i');
+        varContainer.appendChild(domainLbHiddenInput);
+        varContainer.appendChild(domainUbHiddenInput);
+    }
+
+    if(createTemplate){
+        addedVarsDiv.appendChild(varContainer);
+        // clear input fields.
+        varInfoDiv.querySelectorAll('.field-style').forEach((inp)=>{
+            inp.value = '';
+        })
+    }
+    return newVarDiv;
+  }
+
+
   varInfoDiv.addEventListener('click', (event)=>{
       //event.preventDefault();
       if(event.target.classList.contains('btn-create-var')){
-          const varSymbolField = varInfoDiv.querySelector('.var-symbol');
-          const varDomainField = varInfoDiv.querySelector('.var-domain');
-          const varStepSize = varInfoDiv.querySelector('.var-step-size');
-          const intRadio = varInfoDiv.querySelector('input[name="varType"][value="int"]');
-          const floatRadio = varInfoDiv.querySelector('input[name="varType"][value="float"]');
-          symbol = varSymbolField.value;
-          // Checking whether it's a valid symbol
-          if (symbol.length === 0 ){
-              alert('You must enter a symbol');
-              return;
-          } else if(varSymbolsArray.includes(symbol)){
-            alert('Symbol already in use');
-            return;
-          }else if(symbol.length === 1)
-          {
-            if(/[aijk]/.test(symbol)){
-                alert('Unauthorized symbol due to vectors, trigonometric, or complex numbers issues (5i -2j + k, a +bi, asin, arctan, arccos, etc)');
-                return;
-            }
-          }
-          else if ((symbol.length === 2) || (/^[a-zA-Z]$/.test(symbol.charAt(0)) === false) || 
-          ((symbol.charAt(1) != '_') && (symbol.length>=3))){
-              alert('Invalid symbol');
-              return;
-          }else if(symbol.length > 10){
-            alert('Symbol cannot be more than 10 characters');
-            return;
-          }
-          // Checking whether domain entered is valid
-          enteredDomain = varDomainField.value;
-          var parsedDomain = parseDomainInput(enteredDomain);
-          if(parsedDomain.length === 0){
-              alert('Invalid domain');
-              return;
-          }
-
-          // Checking if the step size is valid
-          if(varStepSize.value.length >= 1 && isNaN(parseFloat(varStepSize.value))){
-                alert('Step size must be an int or float');
-                return
-          } else if(varStepSize.value.length == 0){
-            varStepSize.value = 0 // if no step size is given.
-          }
-        
-          // passed all the tests
-          varSymbolsArray.push(symbol); // adding the symbol to the list of symbols.
-          const newVarDiv = document.createElement('div');
-          const newVarBtn = document.createElement('button');
-          newVarBtn.type = 'button';
-          newVarBtn.classList.add('btn', 'btn-warning'); // Separate the classes
-          if(symbol.length >=3){
-            newVarBtn.innerHTML = `${symbol.charAt(0)}<sub>${symbol.slice(2)}</sub>`
-          }else{
-            newVarBtn.innerHTML = symbol; // if symbol is one character.
-          }
-          
-          newVarDiv.appendChild(newVarBtn);
-          newVarDiv.classList.add('variable');
-          newVarDiv.setAttribute('data-symbol', symbol);
-          
-          // Putting the variable type and step size in hidden input fields.
-            
-            // Var Type
-          const varTypeHiddenInput = document.createElement('input');
-          varTypeHiddenInput.type = 'hidden';
-          varTypeHiddenInput.name = `var#type#${symbol}`
-          if(intRadio.checked){
-            varTypeHiddenInput.value = '0'
-          } else {
-            varTypeHiddenInput.value = '1'
-          }
-          
-          // Step size
-          const stepSizeHiddenInput = document.createElement('input');
-          stepSizeHiddenInput.type = 'hidden';
-          stepSizeHiddenInput.name = `step#size#${symbol}`
-          stepSizeHiddenInput.value = varStepSize.value
-
-          // appending the hidden inputs to varBtn
-          newVarBtn.appendChild(varTypeHiddenInput);
-          newVarBtn.appendChild(stepSizeHiddenInput);
-
-          for (let i = 0; i < parsedDomain.length; i++) {
-              // Getting the variable intervals.
-              const domainLbHiddenInput = document.createElement('input');
-              domainLbHiddenInput.type = 'hidden';
-              domainLbHiddenInput.name = `domain#lb#${symbol}#${i}`//domain lower bound
-              domainLbHiddenInput.value = parsedDomain[i].lower
-              
-              const domainUbHiddenInput = document.createElement('input');
-              domainUbHiddenInput.type = 'hidden';
-              domainUbHiddenInput.name = `domain#ub#${symbol}#${i}`//domain upper bound
-              domainUbHiddenInput.value = parsedDomain[i].upper
-
-              newVarBtn.appendChild(domainLbHiddenInput);
-              newVarBtn.appendChild(domainUbHiddenInput);
-          }
-          
-          createdVarsDiv.appendChild(newVarDiv);
-          createdVarsDiv.scrollIntoView({behavior:"smooth"});
-          varInfoDiv.style.opacity = '0';
-          varInfoDiv.style.height = '0';
-          varInfoDiv.style.width = '0';
-          state ='closed';
-          addVarBtn.innerHTML = '+';
-
+          createdVarsDiv.appendChild(createVarFields(varInfoDiv));
       }
 
   })
@@ -444,7 +438,85 @@ function checkTopicAndSubtopic() {
 }
   
 
+function createVarTemplate(symbol, intervals, stepsize="", is_int=false){
+    const varDiv = document.createElement('div');
+    varDiv.classList.add('var-container')
+    const htmlContent = `
+    <div><input class="var-symbol field-style" value="${symbol}" type="text" placeholder="enter symbol e.g. x" disabled/></div>
+    <div><input class="var-domain field-style" value="${intervals}" type="text" placeholder="enter intervals e.g.[1,3] [-8, 20]" disabled/></div>
+    <div><input class="var-step-size field-style" value="${stepsize}" type="number" min="0" placeholder ="step size (optional)" pattern="^?[0-9]*[.,]?[0-9]+" title="Please enter a valid float number." disabled></div>
+    
+    <div class="type-selection">
+      <label>
+          <input type="radio" class="var-type-float" name="${symbol}-varType" value="float" ${!is_int ? 'checked' : ''} disabled> Float
+      </label>
+      <label>
+          <input type="radio" class="var-type-int" name="${symbol}-varType" value="int" ${is_int ? 'checked' : ''} disabled> Int
+      </label>
+    </div>
+    
+    <div style="display:flex; flex-direction:row;">
+        <button type="button" class="btn btn-outline-info btn-create-var edit">edit</button>
+         <button type="button" class="btn btn-outline-danger var-delete-btn">delete</button>
+    </div>
+    <br/>
+    `;
+    varDiv.innerHTML = htmlContent;
+    varDiv.querySelector('.btn-create-var').addEventListener('click', (event)=>{
+        const container = event.target.closest('.var-container');
+        const instanceSymbol = container.querySelector('.var-symbol').value;
+        if(event.target.classList.contains('edit')){
+            
+            // removing the var from the displayed symbol
+            createdVarsDiv.querySelector(`.${instanceSymbol}-var-div`).remove();
+            // removing the symbol from the symbols array.
+            varSymbolsArray = varSymbolsArray.filter(string => string !== instanceSymbol);
 
+            // enabling the input fields
+            container.querySelectorAll('input').forEach((inp)=>{
+                if(inp.type != "hidden"){
+                    inp.disabled = false;
+                }  
+            })
+
+            // deleting the hidden input fields that stored the data
+            container.querySelectorAll('.var-hidden-i').forEach((hinp)=>{
+                hinp.remove();
+            })
+
+            event.target.classList.remove('edit');
+            event.target.innerHTML = 'save';
+            
+        }else {
+
+            //Saving the data
+            createdVarsDiv.appendChild(createVarFields(container, false));
+
+            // disabling the input fields
+            container.querySelectorAll('input').forEach((inp)=>{
+                if(inp.type != "hidden"){
+                    inp.disabled = true;
+                }  
+            })
+
+            event.target.classList.add('edit');
+            event.target.innerHTML = 'edit';
+        }
+
+    })
+
+    varDiv.querySelector('.var-delete-btn').addEventListener('click', (event)=>{
+        varDiv.remove();
+        const container = event.target.closest('.var-container');
+        const instanceSymbol = container.querySelector('.var-symbol').value;
+        // removing the var from the displayed symbol
+        createdVarsDiv.querySelector(`.${instanceSymbol}-var-div`).remove();
+        // removing the symbol from the symbols array.
+        varSymbolsArray = varSymbolsArray.filter(string => string !== instanceSymbol);
+    })
+
+    return varDiv;
+}
 
 
 
@@ -767,6 +839,7 @@ mpBtn.addEventListener('click', (event)=>{
         calculatorDiv.style.display = 'none';
         mcqOptionBtnsDiv.style.display = 'none';
         mpInputDiv.style.display = 'block';
+        mcqInputDiv.style.display = 'none';
         questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '8'; 
     
     });
@@ -1669,6 +1742,32 @@ function createQuestionBlock(){
     return questionBlock;
 }
 
+
+
+const sideInfosIcons = document.querySelectorAll('.side-info-icon');
+const sideInfox = document.querySelectorAll('.side-info-x');
+
+sideInfox.forEach((Xbtn)=>{
+    Xbtn.addEventListener('click', (event)=>{
+      event.preventDefault();
+      const sideDiv = Xbtn.closest('.side');
+      sideDiv.querySelector('.side-info').classList.add('hide');
+    })
+  })
+  var sideCounters = 0
+  sideInfosIcons.forEach((sideInfoIcon)=>{
+      sideInfoIcon.style.top = `${70 + 8*sideCounters}%`
+      sideCounters += 1;
+      sideInfoIcon.addEventListener('click', (event)=>{
+        event.preventDefault();
+        const sideDiv = sideInfoIcon.closest('.side');
+        sideDiv.querySelector('.side-info').classList.remove('hide');
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
+      })
+  })
 
 
 

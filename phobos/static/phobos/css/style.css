@@ -429,6 +429,17 @@ div.image-container img.course-image {
 
 
 /* -----------------Style for phobos:create_question.html--------- */
+.added-vars {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  width: 100%;
+  gap: 20px;
+}
+
+.added-vars > * {
+  width: 30%;
+}
 .mp-input-div {
   display: flex;
   flex-direction: column;
@@ -458,10 +469,7 @@ div.image-container img.course-image {
 .mp-inputs input{
   width:49% !important;
 }
-.add-var-section {
-  position:absolute;
-  right: 2%;
-  transform: translateY(-100%);
+.add-var-section { 
   z-index:4;
 }
 .add-var-section button {
@@ -478,9 +486,6 @@ div.image-container img.course-image {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 0;
-  width: 0;
-  opacity: 0;
   transition: height 0.5s ease-in-out, opacity 0.5s ease-in-out, width 0.5s ease;
 }
 .type-selection input[type="radio"]:checked::after {
@@ -560,6 +565,15 @@ textarea {
   resize:initial;
   overflow: initial;
 }
+/*
+TODO:
+set .formatted-answer-option.image {
+height: 300px;
+}
+and  set max-height of .image-in-formatted {
+max-height: 70%;
+}
+*/
 .formatted-answer-option.question-view {
   display: flex;
   flex-direction: row;
@@ -575,8 +589,8 @@ textarea {
 }
 
 .image-in-formatted {
-  max-width: 70%; /* Limit image width to 100% of parent div's width */
-  max-height: 300px; /* Limit image height to 100% of parent div's height */
+  max-width: 70%;
+  max-height: 300px;
   display: block; /* Remove any extra space below the image */
   border-radius: 10px;
 }

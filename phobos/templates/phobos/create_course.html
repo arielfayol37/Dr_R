@@ -14,7 +14,7 @@
     
     <div class="course-form">
         <h1>Create a New Course</h1>
-        <form method="post" enctype="multipart/form-data">
+        <form method="post" enctype="multipart/form-data" id="create-course-form">
             {% csrf_token %}
             <div class="form-group">
                 <label for="{{ form.name.id_for_label }}">Course Name:</label>
