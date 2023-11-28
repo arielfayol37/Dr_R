@@ -692,8 +692,6 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
         labels_urls_list = [(question_image.label, question_image.image.url) for question_image in \
                             question.images.all()]
         question.text = replace_image_labels_with_links(question.text, labels_urls_list)
-        question.text = question.text.replace('@{', '')
-        question.text = question.text.replace('}@', '')
         answers = []
         qtype = ''
         # Check if the answer type starts with MCQ or STRUCT
