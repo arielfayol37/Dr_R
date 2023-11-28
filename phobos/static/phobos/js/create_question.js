@@ -1,13 +1,6 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     const preloader = document.querySelector('#preloader');
-
-    window.addEventListener('beforeunload', function (event) {
-        // Your logic here
-        preloader.classList.remove('hide');
-        event.returnValue = true; // Chrome requires returnValue to be set
-    });
-
     const form = document.querySelector('#question-form');
     const allQuestionBlocks = form.querySelector("#all-question-blocks");
     let currentAction = form.getAttribute('action');
