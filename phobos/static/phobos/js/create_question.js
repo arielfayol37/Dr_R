@@ -10,8 +10,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const calculatorDiv = document.querySelector('.calculator');
     calculatorDiv.style.display = 'none';
     const createQuestionBtn = document.querySelector('.create-question-btn');
-    var settingsPreviousValue = 1;
+    var settingsPreviousValue = 0;
     const settingsSelect = document.querySelector('.settings-select');
+
+            // Dispatching event on settings select so that the last changes are updated
+            const changeEvent = new Event('change', {
+                'bubbles': true,
+                'cancelable': true
+            });
+
     var initial_num_points = document.querySelector('.init-num-pts').value;
 
   
@@ -21,8 +28,35 @@ document.addEventListener('DOMContentLoaded', () => {
     var questionTypeDicts = {
     }
 
-    allQuestionBlocks.appendChild(addQuestionBlock());
+    if(form.classList.contains('create-mode')){
+        allQuestionBlocks.appendChild(addQuestionBlock());
+    }else{
+        var blockCounter = 0;
+        allQuestionBlocks.querySelectorAll('.question-block').forEach((block)=>{
+            addEventListenersToQuestionBlock(block, set_initial_settings=false);
+            blockCounter += 1;
+        });
+        num_questions = blockCounter;
+        part_num_questions = blockCounter;
+        // add the already created variables to the varSymbolsArray
+        addedVarsDiv.querySelectorAll('.var-container').forEach((varContainer)=>{
+            varSymbolsArray.push(varContainer.querySelector('.var-symbol').value);
+            varContainer.querySelector('.btn-create-var').addEventListener('click', (event)=>{
+                addCreateVarBtnListener(event);
+            })
+        
+            varContainer.querySelector('.var-delete-btn').addEventListener('click', (event)=>{
+                addDeleteVarBtnListener(event);
+            })
+            
+        })
+
+        // settingsSelect.dispatchEvent(changeEvent);
+    }
+    
   
+
+
 
     // Here, each time the value of answer input screen changes,
     // we use mathjax to display the updated content.
@@ -58,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     })
+
     form.addEventListener('submit', (event) => {
         event.preventDefault();
     });
@@ -77,11 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
 
-        // Dispatching event on settings select so that the last changes are updated
-        const changeEvent = new Event('change', {
-            'bubbles': true,
-            'cancelable': true
-        });
+
     
         settingsSelect.dispatchEvent(changeEvent);
         
@@ -439,8 +470,8 @@ function checkTopicAndSubtopic() {
   
 
 function createVarTemplate(symbol, intervals, stepsize="", is_int=false){
-    const varDiv = document.createElement('div');
-    varDiv.classList.add('var-container')
+    const varContainer = document.createElement('div');
+    varContainer.classList.add('var-container')
     const htmlContent = `
     <div><input class="var-symbol field-style" value="${symbol}" type="text" placeholder="enter symbol e.g. x" disabled/></div>
     <div><input class="var-domain field-style" value="${intervals}" type="text" placeholder="enter intervals e.g.[1,3] [-8, 20]" disabled/></div>
@@ -461,62 +492,73 @@ function createVarTemplate(symbol, intervals, stepsize="", is_int=false){
     </div>
     <br/>
     `;
-    varDiv.innerHTML = htmlContent;
-    varDiv.querySelector('.btn-create-var').addEventListener('click', (event)=>{
-        const container = event.target.closest('.var-container');
-        const instanceSymbol = container.querySelector('.var-symbol').value;
-        if(event.target.classList.contains('edit')){
-            
+    varContainer.innerHTML = htmlContent;
+    varContainer.querySelector('.btn-create-var').addEventListener('click', (event)=>{
+        addCreateVarBtnListener(event);
+    })
+
+    varContainer.querySelector('.var-delete-btn').addEventListener('click', (event)=>{
+        addDeleteVarBtnListener(event);
+    })
+
+    return varContainer;
+}
+
+        function addCreateVarBtnListener(event){
+            const container = event.target.closest('.var-container');
+            const instanceSymbol = container.querySelector('.var-symbol').value;
+            if(event.target.classList.contains('edit')){
+                
+                // removing the var from the displayed symbol
+                createdVarsDiv.querySelector(`.${instanceSymbol}-var-div`).remove();
+                // removing the symbol from the symbols array.
+                varSymbolsArray = varSymbolsArray.filter(string => string !== instanceSymbol);
+
+                // enabling the input fields
+                container.querySelectorAll('input').forEach((inp)=>{
+                    if(inp.type != "hidden"){
+                        inp.disabled = false;
+                    }  
+                })
+
+                // deleting the hidden input fields that stored the data
+                container.querySelectorAll('.var-hidden-i').forEach((hinp)=>{
+                    hinp.remove();
+                })
+
+                event.target.classList.remove('edit', 'btn-outline-info');
+                event.target.classList.add('btn-success')
+                event.target.innerHTML = 'save';
+                
+            }else {
+
+                //Saving the data
+                createdVarsDiv.appendChild(createVarFields(container, false));
+
+                // disabling the input fields
+                container.querySelectorAll('input').forEach((inp)=>{
+                    if(inp.type != "hidden"){
+                        inp.disabled = true;
+                    }  
+                })
+                event.target.classList.remove('btn-success');
+                event.target.classList.add('edit', 'btn-outline-info');
+                event.target.innerHTML = 'edit';
+            }
+
+        }
+
+
+        function addDeleteVarBtnListener(event){
+            const container = event.target.closest('.var-container');
+            const instanceSymbol = container.querySelector('.var-symbol').value;
             // removing the var from the displayed symbol
             createdVarsDiv.querySelector(`.${instanceSymbol}-var-div`).remove();
             // removing the symbol from the symbols array.
             varSymbolsArray = varSymbolsArray.filter(string => string !== instanceSymbol);
-
-            // enabling the input fields
-            container.querySelectorAll('input').forEach((inp)=>{
-                if(inp.type != "hidden"){
-                    inp.disabled = false;
-                }  
-            })
-
-            // deleting the hidden input fields that stored the data
-            container.querySelectorAll('.var-hidden-i').forEach((hinp)=>{
-                hinp.remove();
-            })
-
-            event.target.classList.remove('edit');
-            event.target.innerHTML = 'save';
-            
-        }else {
-
-            //Saving the data
-            createdVarsDiv.appendChild(createVarFields(container, false));
-
-            // disabling the input fields
-            container.querySelectorAll('input').forEach((inp)=>{
-                if(inp.type != "hidden"){
-                    inp.disabled = true;
-                }  
-            })
-
-            event.target.classList.add('edit');
-            event.target.innerHTML = 'edit';
+            container.remove();
         }
 
-    })
-
-    varDiv.querySelector('.var-delete-btn').addEventListener('click', (event)=>{
-        varDiv.remove();
-        const container = event.target.closest('.var-container');
-        const instanceSymbol = container.querySelector('.var-symbol').value;
-        // removing the var from the displayed symbol
-        createdVarsDiv.querySelector(`.${instanceSymbol}-var-div`).remove();
-        // removing the symbol from the symbols array.
-        varSymbolsArray = varSymbolsArray.filter(string => string !== instanceSymbol);
-    })
-
-    return varDiv;
-}
 
 
 
@@ -549,17 +591,21 @@ prefaceUnitsBtns.forEach((btn)=>{
 
 settingsSelect.addEventListener('change', (event)=>{
     var inputsWithSettingsClass = document.querySelectorAll('input.settings');
+    // console.log('Updating setting input...')
     inputsWithSettingsClass.forEach((sInput)=>{
         // Updating the previous hidden inputs
-        const settingsHiddenInput = document.querySelector(`input[name="${parseInt(settingsPreviousValue)}_${sInput.name}"]`);
+        // console.log(sInput.value);
+        
+        const prev_input = `${parseInt(settingsPreviousValue)}_${sInput.name}`
+        const settingsHiddenInput = document.querySelector(`input[name="${prev_input}"]`);
         if(settingsHiddenInput){// in case it has been deleted
             settingsHiddenInput.value = sInput.value; 
         }
 
-
+        const target_input = `${parseInt(event.target.value)}_${sInput.name}`;
         // updating the displayed settings to the current option
-
-        sInput.value = document.querySelector(`input[name="${parseInt(event.target.value)}_${sInput.name}"]`).value
+        sInput.value = document.querySelector(`input[name="${target_input}"]`).value;
+       // console.log(sInput.value);
    
    })
    settingsPreviousValue = event.target.value
@@ -573,7 +619,7 @@ function addQuestionBlock(){
     return questionBlock;
 }
 
-function addEventListenersToQuestionBlock(questionBlock){
+function addEventListenersToQuestionBlock(questionBlock, set_initial_settings=true){
 
     const answerOptionsDiv = questionBlock.querySelector('.answer-options');
     const expressionBtn = questionBlock.querySelector('.expression-btn');
@@ -620,13 +666,18 @@ function addEventListenersToQuestionBlock(questionBlock){
     
     // setting the initial hidden settings to the same as the default 
     // for the assignment under which this question appears. 
-var inputsWithSettingsClass = document.querySelectorAll('input.settings');
-inputsWithSettingsClass.forEach((input)=>{
-     const question_num = parseInt(questionBlock.querySelector('.question-number-value').value)
-     const settingsHiddenInput = questionBlock.querySelector(`input[name="${question_num}_${input.name}"]`);
-     settingsHiddenInput.value = input.value;
+    if(set_initial_settings){
+        var inputsWithSettingsClass = questionBlock.querySelectorAll('input.settings');
+        inputsWithSettingsClass.forEach((input)=>{
+            const question_num = parseInt(questionBlock.querySelector('.question-number-value').value)
+            const settingsHiddenInput = questionBlock.querySelector(`input[name="${question_num}_${input.name}"]`);
+            settingsHiddenInput.value = input.value;
+    
+        })
+    }
 
-})
+  
+
     // Listening to clicks on the type of answer for the question
     // then responding accordingly. For example, if Float answer is 
     // selected, then the calculator will be appended to this 
@@ -720,727 +771,727 @@ inputsWithSettingsClass.forEach((input)=>{
     
 
 
-///
+    ///
 
-/// ATTENTION! WARNING! IMPORTANT! Recursion here.
-
-
-// This is the button to add a new part to a question or delete the current part.
-checkButton.addEventListener('click', (event)=>{
-    event.preventDefault();
-
-    const displayDiv = screen.closest('.calc-display-div');
-    const previousQuestionBlock = screen.closest('.question-block');
-    const mappings = [
-        { source: '.q-answer-preface-hidden', target: '.preface-screen' },
-        { source: '.q-answer-hidden', target: '#screen' },
-        { source: '.q-answer-units-hidden', target: '.units-screen' }
-    ];
-    if(previousQuestionBlock == questionBlock){ // if the screen is in the current question block.
-        mappings.forEach(mapping=>{
-            questionBlock.querySelector(mapping.source).value = displayDiv.querySelector(mapping.target).value;
-        })
-    }
+    /// ATTENTION! WARNING! IMPORTANT! Recursion here.
 
 
-    if(checkButton.classList.contains('btn-outline-success')){
-        // IF button is to ADD new part
-        if(checkQuestionBlock(questionBlock)){
-            // if all the checks have passed
-            const newQuestionBlock = addQuestionBlock() // Here is the RECURSION
-            allQuestionBlocks.appendChild(newQuestionBlock);
-            checkButton.classList.remove('btn-outline-success');
-            checkButton.classList.add('btn-outline-danger');
-            checkButton.innerHTML = 'Delete Part ' + String.fromCharCode(checkButton.innerHTML.charCodeAt(checkButton.innerHTML.length - 1) - 1);
-            newQuestionBlock.scrollIntoView({behavior: "smooth"});
+    // This is the button to add a new part to a question or delete the current part.
+    checkButton.addEventListener('click', (event)=>{
+        event.preventDefault();
+
+        const displayDiv = screen.closest('.calc-display-div');
+        const previousQuestionBlock = screen.closest('.question-block');
+        const mappings = [
+            { source: '.q-answer-preface-hidden', target: '.preface-screen' },
+            { source: '.q-answer-hidden', target: '#screen' },
+            { source: '.q-answer-units-hidden', target: '.units-screen' }
+        ];
+        if(previousQuestionBlock == questionBlock){ // if the screen is in the current question block.
+            mappings.forEach(mapping=>{
+                questionBlock.querySelector(mapping.source).value = displayDiv.querySelector(mapping.target).value;
+            })
         }
-    }else{// Delete block;
 
-        // To improve user experience, TODO: add a delete button on new created 
-        // Parts.
-        deleteQuestionBlock(questionBlock, settingsSelect);
+
+        if(checkButton.classList.contains('btn-outline-success')){
+            // IF button is to ADD new part
+            if(checkQuestionBlock(questionBlock)){
+                // if all the checks have passed
+                const newQuestionBlock = addQuestionBlock() // Here is the RECURSION
+                allQuestionBlocks.appendChild(newQuestionBlock);
+                checkButton.classList.remove('btn-outline-success');
+                checkButton.classList.add('btn-outline-danger');
+                checkButton.innerHTML = 'Delete Part ' + String.fromCharCode(checkButton.innerHTML.charCodeAt(checkButton.innerHTML.length - 1) - 1);
+                newQuestionBlock.scrollIntoView({behavior: "smooth"});
+            }
+        }else{// Delete block;
+
+            // To improve user experience, TODO: add a delete button on new created 
+            // Parts.
+            deleteQuestionBlock(questionBlock, settingsSelect);
+        }
+
+    })
+
+
+    /*-----------------------------------------SURVEY QUESTION-----------------------------------*/
+    surveyBtn.addEventListener('click', (event)=> {
+        event.preventDefault();
+        hiddenQuestionType.value = 's-answer';
+        // NOT A HIGH PRIORITY FOR NOW. TO BE IMPLEMENTED LATER
+    })
+
+    /*------------------------------------------MCQ QUESTION --------------------------------- */
+
+
+    imageUploadInput.addEventListener('change', ()=>{
+    // Reads the uploaded image and renders on the page.
+    // THERE is another way to do this at the bottom of this file which might be better
+    // Ctrl + F and seatch 'image and renders' on page.
+    const reader = new FileReader();
+    const imageFile = imageUploadInput.files[0];
+    reader.onload = function(event) {
+        const imageElement = document.createElement('img');
+        imageElement.src = event.target.result;
+        imageElement.style.maxWidth = '100%';
+        imageElement.style.maxHeight = '200px';
+        imageElement.style.borderRadius = '15px';
+        //console.log(imagePreview.src);
+        
+        mcqImagePreview.style.display = 'block';
+        mcqImagePreview.innerHTML = '';
+        mcqImagePreview.appendChild(imageElement);
+    };
+    if(imageFile){
+        reader.readAsDataURL(imageFile);
     }
-
-})
-
-
-/*-----------------------------------------SURVEY QUESTION-----------------------------------*/
-surveyBtn.addEventListener('click', (event)=> {
-    event.preventDefault();
-    hiddenQuestionType.value = 's-answer';
-    // NOT A HIGH PRIORITY FOR NOW. TO BE IMPLEMENTED LATER
-})
-
-/*------------------------------------------MCQ QUESTION --------------------------------- */
-
-
-imageUploadInput.addEventListener('change', ()=>{
-// Reads the uploaded image and renders on the page.
-// THERE is another way to do this at the bottom of this file which might be better
-// Ctrl + F and seatch 'image and renders' on page.
-const reader = new FileReader();
-const imageFile = imageUploadInput.files[0];
-reader.onload = function(event) {
-    const imageElement = document.createElement('img');
-    imageElement.src = event.target.result;
-    imageElement.style.maxWidth = '100%';
-    imageElement.style.maxHeight = '200px';
-    imageElement.style.borderRadius = '15px';
-    //console.log(imagePreview.src);
-    
-    mcqImagePreview.style.display = 'block';
-    mcqImagePreview.innerHTML = '';
-    mcqImagePreview.appendChild(imageElement);
-};
-if(imageFile){
-    reader.readAsDataURL(imageFile);
-}
-})
-mainQuestionImageInput.addEventListener('change', function () {
-// Reads the uploaded image and renders on the page.
-uploadedQuestionPreview.innerHTML = '';
-for (const file of mainQuestionImageInput.files) {
-    const img = document.createElement('img');
-    img.src = URL.createObjectURL(file);
-    img.style.maxWidth = '100%';
-    img.style.maxHeight = '200px';
-    img.style.borderRadius = '15px';
-    img.classList.add('preview-image');
-    uploadedQuestionPreview.appendChild(img);
-}
-});
-
-mcqBtn.addEventListener('click', (event)=>{
-// If the instructor chooses mcq as the answer option.
-event.preventDefault();
-
-    // Hide the blocks for the other type of questions
-    // Hide the calculator 
-    inputedMcqAnswersDiv.style.display = 'block';
-    inputedMpAnswersDiv.style.display = 'none';
-    mcqImagePreview.style.display = 'block';
-    hiddenQuestionType.value = 'm-answer'
-    formattedAnswerDiv.style.display = 'none';
-    calculatorDiv.style.display = 'none';
-    mcqOptionBtnsDiv.style.display = 'block';
-    questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '3'; 
-
-});
-mpBtn.addEventListener('click', (event)=>{
-    // If the instructor chooses matching pair as the answer option.
-    event.preventDefault();
-    // Hide the blocks for the other type of questions
-    // Hide calculator
-        inputedMcqAnswersDiv.style.display = 'none';
-        inputedMpAnswersDiv.style.display = 'block';
-        mcqImagePreview.style.display = 'none';
-        hiddenQuestionType.value = 'mp-answer'
-        formattedAnswerDiv.style.display = 'none';
-        calculatorDiv.style.display = 'none';
-        mcqOptionBtnsDiv.style.display = 'none';
-        mpInputDiv.style.display = 'block';
-        mcqInputDiv.style.display = 'none';
-        questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '8'; 
-    
+    })
+    mainQuestionImageInput.addEventListener('change', function () {
+    // Reads the uploaded image and renders on the page.
+    uploadedQuestionPreview.innerHTML = '';
+    for (const file of mainQuestionImageInput.files) {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '200px';
+        img.style.borderRadius = '15px';
+        img.classList.add('preview-image');
+        uploadedQuestionPreview.appendChild(img);
+    }
     });
 
-mcqOptionBtnsDiv.addEventListener('click', (event) => {
+    mcqBtn.addEventListener('click', (event)=>{
+    // If the instructor chooses mcq as the answer option.
     event.preventDefault();
-    // This is to select the type of mcq the user wants to input
-    // when clicked, the input field used to add mcq questions
-    // changes the placeholder and the answer type is changed accordingly
-    mcqInputDiv.style.display = 'block';
-    imageUploadInput.style.display = 'none';
-    mcqImagePreview.style.display = 'none';
-    mcqInputField.value = '';
 
-    const config = {
-        'mcq-expression-btn': {
-            placeholder: 'Enter expression and click add',
-            answerType: 'e-answer'
-        },
-        'mcq-float-btn': {
-            placeholder: 'Enter float and click add',
-            answerType: 'f-answer'
-        },
-        'mcq-text-btn': {
-            placeholder: 'Enter text and click add',
-            answerType: 't-answer'
-        },
-        'mcq-latex-btn': {
-            placeholder: 'Enter latex and click add',
-            answerType: 'l-answer'
-        },
-        'mcq-image-btn': {
-            placeholder: 'Enter image label and click add',
-            answerType: 'i-answer',
-            displayImageUpload: true
-        }
-    };
+        // Hide the blocks for the other type of questions
+        // Hide the calculator 
+        inputedMcqAnswersDiv.style.display = 'block';
+        inputedMpAnswersDiv.style.display = 'none';
+        mcqImagePreview.style.display = 'block';
+        hiddenQuestionType.value = 'm-answer'
+        formattedAnswerDiv.style.display = 'none';
+        calculatorDiv.style.display = 'none';
+        mcqOptionBtnsDiv.style.display = 'block';
+        questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '3'; 
 
-    const btnConfig = config[event.target.dataset.qid];
-    
-    if (btnConfig) {
-        mcqInputField.placeholder = btnConfig.placeholder;
-        mcqInputField.setAttribute('data-answer-type', btnConfig.answerType);
-
-        if (btnConfig.displayImageUpload) {
-            imageUploadInput.style.display = 'block';
-            mcqImagePreview.style.display = 'block';
-        }
-    }
-});
-
-
-addMcqOptionBtn.addEventListener('click', (event)=>{
-    event.preventDefault();
-    // Adding an mcq option after filling the input field.
-    // This may look small but it's the most dense function in this file
-    // Checkout create_inputed_mcq_div() to see what I mean.
-    if (mcqInputField.value === null || mcqInputField.value ==='') {
-        alert('Cannot create an empty mcq option.')
+    });
+    mpBtn.addEventListener('click', (event)=>{
+        // If the instructor chooses matching pair as the answer option.
+        event.preventDefault();
+        // Hide the blocks for the other type of questions
+        // Hide calculator
+            inputedMcqAnswersDiv.style.display = 'none';
+            inputedMpAnswersDiv.style.display = 'block';
+            mcqImagePreview.style.display = 'none';
+            hiddenQuestionType.value = 'mp-answer'
+            formattedAnswerDiv.style.display = 'none';
+            calculatorDiv.style.display = 'none';
+            mcqOptionBtnsDiv.style.display = 'none';
+            mpInputDiv.style.display = 'block';
+            mcqInputDiv.style.display = 'none';
+            questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '8'; 
         
-    }
-    else{
-        try{
-            const validText = validateText(mcqInputField.value, varSymbolsArray);
-            if(!validText){
-                alert('Undefined symbol(s) in variable expression(s)');
-                return;
+        });
+
+    mcqOptionBtnsDiv.addEventListener('click', (event) => {
+        event.preventDefault();
+        // This is to select the type of mcq the user wants to input
+        // when clicked, the input field used to add mcq questions
+        // changes the placeholder and the answer type is changed accordingly
+        mcqInputDiv.style.display = 'block';
+        imageUploadInput.style.display = 'none';
+        mcqImagePreview.style.display = 'none';
+        mcqInputField.value = '';
+
+        const config = {
+            'mcq-expression-btn': {
+                placeholder: 'Enter expression and click add',
+                answerType: 'e-answer'
+            },
+            'mcq-float-btn': {
+                placeholder: 'Enter float and click add',
+                answerType: 'f-answer'
+            },
+            'mcq-text-btn': {
+                placeholder: 'Enter text and click add',
+                answerType: 't-answer'
+            },
+            'mcq-latex-btn': {
+                placeholder: 'Enter latex and click add',
+                answerType: 'l-answer'
+            },
+            'mcq-image-btn': {
+                placeholder: 'Enter image label and click add',
+                answerType: 'i-answer',
+                displayImageUpload: true
             }
-            const formatted_new_answer = create_inputed_mcq_div(mcqInputField, mcqInputField.dataset.answerType);
-            inputedMcqAnswersDiv.appendChild(formatted_new_answer);
-            mcqInputField.value = '';
-            const holder = parseInt(inputedMcqAnswersDiv.dataset.counter)
-            inputedMcqAnswersDiv.dataset.counter = `${holder + 1}`;
-        }
-        catch(error){
-            console.log(error)
-            alert('Make sure you enter the correct format of the answer type you selected.')
-        }
+        };
+
+        const btnConfig = config[event.target.dataset.qid];
         
-    }
+        if (btnConfig) {
+            mcqInputField.placeholder = btnConfig.placeholder;
+            mcqInputField.setAttribute('data-answer-type', btnConfig.answerType);
+
+            if (btnConfig.displayImageUpload) {
+                imageUploadInput.style.display = 'block';
+                mcqImagePreview.style.display = 'block';
+            }
+        }
+    });
 
 
-})
-
-addMpOptionBtn.addEventListener('click', (event)=>{
-    event.preventDefault();
-    // Adding an mcq option after filling the input field.
-    // This may look small but it's the most dense function in this file
-    // Checkout create_inputed_mcq_div() to see what I mean.
-    if ((mpInputFieldA.value === null || mpInputFieldA.value ==='') || (mpInputFieldB.value === null || mpInputFieldB.value ==='')){
-        alert('Cannot create an empty matching pair option.')
-        
-    }
-    else{
-        try{
-            const qnumber = inputedMpAnswersDiv.dataset.qnumber
-            const holder = parseInt(inputedMpAnswersDiv.dataset.counter)
-            const holder2 = parseInt(inputedMpAnswersDiv.dataset.mereCounter)
-            // Creating the box of inputed matching pairs for the user.
-            const formatted_mp = document.createElement('div');
-            formatted_mp.innerHTML = `
-                <div class="formatted-answer">
-                <input type="hidden" value="${mpInputFieldA.value}" name="${qnumber + '_' + holder + '_mp_a'}"/>
-                ${mpInputFieldA.value}
-                </div>
-                <div class="formatted-answer">
-                <input type="hidden" value="${mpInputFieldB.value}" name="${qnumber + '_' + holder + '_mp_b'}"/>
-                ${mpInputFieldB.value}
-                </div>
-            `
-            const delDiv = document.createElement('div');
-            delDiv.innerHTML = '<button  type="button" class="btn btn-danger mp-delete exempt">delete</button><br/>'
-            delDiv.classList.add('add-delete-btns')
-            formatted_mp.classList.add('formatted-mp', 'inputed-mp-answer');
+    addMcqOptionBtn.addEventListener('click', (event)=>{
+        event.preventDefault();
+        // Adding an mcq option after filling the input field.
+        // This may look small but it's the most dense function in this file
+        // Checkout create_inputed_mcq_div() to see what I mean.
+        if (mcqInputField.value === null || mcqInputField.value ==='') {
+            alert('Cannot create an empty mcq option.')
             
-            // Creating and populating hidden input fields. 
-            formatted_mp.appendChild(delDiv);
-            inputedMpAnswersDiv.appendChild(formatted_mp);
-            mpInputFieldA.value = '';
-            mpInputFieldB.value = '';
-            inputedMpAnswersDiv.dataset.counter = `${holder + 1}`;
-            inputedMpAnswersDiv.dataset.mereCounter = `${holder2 + 1}`;
         }
-        catch(error){
-            console.log(error)
-            alert('Make sure you enter the correct format of the answer type you selected.')
-        }
-        
-    }
-
-
-})
-
-inputedMcqAnswersDiv.addEventListener('click', (event)=>{
-    event.preventDefault();
-    // Here adding the ability to change the status of an mcq option as true or false
-    // Also, there's a delete button.
-    target = event.target
-    const fdiv = target.closest('.formatted-answer-option');
-    if(fdiv !=null && fdiv.classList.contains('mcq-false')){
-        // changing an mcq option from false to true.
-        fdiv.classList.remove('mcq-false');
-        fdiv.classList.add('mcq-true');
-        const holder =  parseInt(inputedMcqAnswersDiv.dataset.trueCounter)
-        inputedMcqAnswersDiv.dataset.trueCounter = `${holder + 1}`;
-        const answer_info_input = fdiv.closest('.inputed-mcq-answer').querySelector('.answer_info');
-        answer_info_input.value = rep(answer_info_input.value, 0, '1');
-    } else if(fdiv !=null && fdiv.classList.contains('mcq-true')){
-        // changing an mcq option from true to false.
-        fdiv.classList.add('mcq-false');
-        fdiv.classList.remove('mcq-true');
-        const holder = parseInt(inputedMcqAnswersDiv.dataset.trueCounter);
-        inputedMcqAnswersDiv.dataset.trueCounter = `${holder - 1}`;    
-        const answer_info_input = fdiv.closest('.inputed-mcq-answer').querySelector('.answer_info');
-        answer_info_input.value = rep(answer_info_input.value, 0, '0');
-    } else if (target.classList.contains('mcq-delete')){
-        // deleting an mcq option.
-        const holder = parseInt(inputedMcqAnswersDiv.dataset.counter)
-        inputedMcqAnswersDiv.dataset.counter  = `${holder-1}`;
-        if (target.classList.contains('mcq-true')){
-            const holder = parseInt(inputedMcqAnswersDiv.dataset.trueCounter)
-            inputedMcqAnswersDiv.dataset.trueCounter = `${holder-1}`;
-        }
-        inputedMcqAnswersDiv.removeChild(target.closest('.inputed-mcq-answer'));//TODO: Can probably make this something better.
-    }
-})
-
-inputedMpAnswersDiv.addEventListener('click', (event)=>{
-    event.preventDefault();
-    if(event.target.classList.contains('mp-delete')){
-        const holder = parseInt(inputedMpAnswersDiv.dataset.mereCounter);
-        inputedMpAnswersDiv.dataset.mereCounter = `${holder -1}`;
-        inputedMpAnswersDiv.removeChild(event.target.closest('.inputed-mp-answer'));
-    }
-})
-
-///EVENT LISTENERS ////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-/*------------------------------------------STRUCTURAL QUESTION --------------------------------- */
-// latexAnswerDiv is never used but just keeping it here.
-const latexAnswerDiv = `
-<div class="l-answer"><br/>
-<label>Latex Answer:</label>
-    <input style="width: 100%; box-sizing: border-box;" class="question-input-field" placeholder="Enter LaTex" type="text" class="latex-answer-input" name="${num_questions}_answer"/>
-    </div>
-`
-// Free response button selected.
-frBtn.addEventListener('click', (event)=>{
-    event.preventDefault();
-    hiddenQuestionType.value = 'fr-answer';  
-    inputedMcqAnswersDiv.style.display = 'none';
-    inputedMpAnswersDiv.style.display = 'none';
-    formattedAnswerDiv.innerHTML = 'Free response mode selected.'
-    formattedAnswerDiv.style.display = 'block';
-    mcqOptionBtnsDiv.style.display = 'none';
-    mcqInputDiv.style.display = 'none';
-    mpInputDiv.style.display = 'none';
-    mcqImagePreview.style.display = 'none';
-    calculatorDiv.style.display = 'none';
-    answerFieldsDiv.innerHTML = '';
-    
-    formattedAnswerDiv.scrollIntoView({behavior: 'smooth'});
-    questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '4';
-     
-})
-
-// Expression answer button selected.
-expressionBtn.addEventListener('click', (event)=> {
-    event.preventDefault();
-    hiddenQuestionType.value = 'e-answer';
-    inputedMcqAnswersDiv.style.display = 'none';
-    inputedMpAnswersDiv.style.display = 'none';
-    formattedAnswerDiv.style.display = 'block';
-    mcqOptionBtnsDiv.style.display = 'none';
-    mcqInputDiv.style.display = 'none';
-    mpInputDiv.style.display = 'none';
-    mcqImagePreview.style.display = 'none';
-    calculatorDiv.style.display = 'flex';
-    answerFieldsDiv.innerHTML = '';
-    screen.placeholder = 'Expression';
-
-    answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
-    questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '0';
-
-});
-
-// Float button selected.
-floatBtn.addEventListener('click', function(event) { 
-    event.preventDefault();
-    hiddenQuestionType.value = 'f-answer';
-    inputedMcqAnswersDiv.style.display = 'none';
-    inputedMpAnswersDiv.style.display = 'none';
-    formattedAnswerDiv.style.display = 'block';
-    mcqOptionBtnsDiv.style.display = 'none';
-    mcqInputDiv.style.display = 'none';
-    mpInputDiv.style.display ='none';
-    mcqImagePreview.style.display = 'none';
-    calculatorDiv.style.display = 'flex';
-    answerFieldsDiv.innerHTML = '';
-    screen.placeholder = 'Real number';
-
-    answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
-    questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '1';
-});
-
-// Latex button selected. Probably never used.
-latexBtn.addEventListener('click', (event)=> {
-    event.preventDefault();
-    hiddenQuestionType.value = 'l-answer'
-    inputedMpAnswersDiv.style.display = 'none';
-    formattedAnswerDiv.style.display = 'block';
-    mcqOptionBtnsDiv.style.display = 'none';
-    mcqInputDiv.style.display = 'none';
-    mpInputDiv.style.display = 'none';
-    mcqImagePreview.style.display = 'none';
-    calculatorDiv.style.display = 'none';
-    answerFieldsDiv.innerHTML = latexAnswerDiv;
-    answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
-
-    questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '2'
-
-
-
-    // Adding event listener to the input field.
-    const latexInput = answerFieldsDiv.querySelector('input');
-    latexInput.addEventListener('input', ()=>{
-        var answerFieldDiv = answerFieldsDiv.querySelector('div');
-        var latexInputField = answerFieldDiv.querySelector('input');
-        const userInputLatex = latexInputField.value;
-       
-        MathJax.typesetPromise().then(() => {
+        else{
             try{
-                const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
-                formattedAnswerDiv.innerHTML = '';
-                formattedAnswerDiv.appendChild(formattedAnswer);
-                MathJax.typesetPromise();
-            } catch(error){
-                //console.log(error);
+                const validText = validateText(mcqInputField.value, varSymbolsArray);
+                if(!validText){
+                    alert('Undefined symbol(s) in variable expression(s)');
+                    return;
+                }
+                const formatted_new_answer = create_inputed_mcq_div(mcqInputField, mcqInputField.dataset.answerType);
+                inputedMcqAnswersDiv.appendChild(formatted_new_answer);
+                mcqInputField.value = '';
+                const holder = parseInt(inputedMcqAnswersDiv.dataset.counter)
+                inputedMcqAnswersDiv.dataset.counter = `${holder + 1}`;
             }
-
-          });
+            catch(error){
+                console.log(error)
+                alert('Make sure you enter the correct format of the answer type you selected.')
+            }
+            
+        }
 
 
     })
-});
 
-
-//-------------------------HINTS--------------------------------------------
-
-hintSectionDiv.addEventListener('click', (event)=>{
-    event.preventDefault();
-    const inputedHints = hintSectionDiv.querySelector('.inputed-hints')
-    if(event.target.classList.contains('add-hint-btn')){
-        const addHintSection = hintSectionDiv.querySelector('.add-hint-section');
-        addHintSection.style.display = 'block';
-        event.target.style.display = 'none';
-
-    }else if(event.target.classList.contains('delete-hint-btn')){
-        inputedHints.removeChild(event.target.closest('.hint-div'));
-        //const holder = hintSectionDiv.dataset.counter
-        //hintSectionDiv.dataset.counter = `${parseInt(holder) - 1}`;
-    }else if(event.target.classList.contains('add-inputed-hint-btn')){
-        const hintInputField = event.target.closest('.add-hint-section').querySelector('.add-hint-input-field');
-        if(hintInputField.value.length < 1){
-            alert('Cannot add empty hint');
-            return
-        }else{
-            const newHintDiv = create_hint_div(hintInputField);
-            inputedHints.appendChild(newHintDiv);
-            const holder = hintSectionDiv.dataset.counter
-            hintSectionDiv.dataset.counter = `${parseInt(holder) + 1}`;
-
+    addMpOptionBtn.addEventListener('click', (event)=>{
+        event.preventDefault();
+        // Adding an mcq option after filling the input field.
+        // This may look small but it's the most dense function in this file
+        // Checkout create_inputed_mcq_div() to see what I mean.
+        if ((mpInputFieldA.value === null || mpInputFieldA.value ==='') || (mpInputFieldB.value === null || mpInputFieldB.value ==='')){
+            alert('Cannot create an empty matching pair option.')
+            
         }
-    }
-})
+        else{
+            try{
+                const qnumber = inputedMpAnswersDiv.dataset.qnumber
+                const holder = parseInt(inputedMpAnswersDiv.dataset.counter)
+                const holder2 = parseInt(inputedMpAnswersDiv.dataset.mereCounter)
+                // Creating the box of inputed matching pairs for the user.
+                const formatted_mp = document.createElement('div');
+                formatted_mp.innerHTML = `
+                    <div class="formatted-answer">
+                    <input type="hidden" value="${mpInputFieldA.value}" name="${qnumber + '_' + holder + '_mp_a'}"/>
+                    ${mpInputFieldA.value}
+                    </div>
+                    <div class="formatted-answer">
+                    <input type="hidden" value="${mpInputFieldB.value}" name="${qnumber + '_' + holder + '_mp_b'}"/>
+                    ${mpInputFieldB.value}
+                    </div>
+                `
+                const delDiv = document.createElement('div');
+                delDiv.innerHTML = '<button  type="button" class="btn btn-danger mp-delete exempt">delete</button><br/>'
+                delDiv.classList.add('add-delete-btns')
+                formatted_mp.classList.add('formatted-mp', 'inputed-mp-answer');
+                
+                // Creating and populating hidden input fields. 
+                formatted_mp.appendChild(delDiv);
+                inputedMpAnswersDiv.appendChild(formatted_mp);
+                mpInputFieldA.value = '';
+                mpInputFieldB.value = '';
+                inputedMpAnswersDiv.dataset.counter = `${holder + 1}`;
+                inputedMpAnswersDiv.dataset.mereCounter = `${holder2 + 1}`;
+            }
+            catch(error){
+                console.log(error)
+                alert('Make sure you enter the correct format of the answer type you selected.')
+            }
+            
+        }
+
+
+    })
+
+    inputedMcqAnswersDiv.addEventListener('click', (event)=>{
+        event.preventDefault();
+        // Here adding the ability to change the status of an mcq option as true or false
+        // Also, there's a delete button.
+        target = event.target
+        const fdiv = target.closest('.formatted-answer-option');
+        if(fdiv !=null && fdiv.classList.contains('mcq-false')){
+            // changing an mcq option from false to true.
+            fdiv.classList.remove('mcq-false');
+            fdiv.classList.add('mcq-true');
+            const holder =  parseInt(inputedMcqAnswersDiv.dataset.trueCounter)
+            inputedMcqAnswersDiv.dataset.trueCounter = `${holder + 1}`;
+            const answer_info_input = fdiv.closest('.inputed-mcq-answer').querySelector('.answer_info');
+            answer_info_input.value = rep(answer_info_input.value, 0, '1');
+        } else if(fdiv !=null && fdiv.classList.contains('mcq-true')){
+            // changing an mcq option from true to false.
+            fdiv.classList.add('mcq-false');
+            fdiv.classList.remove('mcq-true');
+            const holder = parseInt(inputedMcqAnswersDiv.dataset.trueCounter);
+            inputedMcqAnswersDiv.dataset.trueCounter = `${holder - 1}`;    
+            const answer_info_input = fdiv.closest('.inputed-mcq-answer').querySelector('.answer_info');
+            answer_info_input.value = rep(answer_info_input.value, 0, '0');
+        } else if (target.classList.contains('mcq-delete')){
+            // deleting an mcq option.
+            const holder = parseInt(inputedMcqAnswersDiv.dataset.counter)
+            inputedMcqAnswersDiv.dataset.counter  = `${holder-1}`;
+            if (target.classList.contains('mcq-true')){
+                const holder = parseInt(inputedMcqAnswersDiv.dataset.trueCounter)
+                inputedMcqAnswersDiv.dataset.trueCounter = `${holder-1}`;
+            }
+            inputedMcqAnswersDiv.removeChild(target.closest('.inputed-mcq-answer'));//TODO: Can probably make this something better.
+        }
+    })
+
+    inputedMpAnswersDiv.addEventListener('click', (event)=>{
+        event.preventDefault();
+        if(event.target.classList.contains('mp-delete')){
+            const holder = parseInt(inputedMpAnswersDiv.dataset.mereCounter);
+            inputedMpAnswersDiv.dataset.mereCounter = `${holder -1}`;
+            inputedMpAnswersDiv.removeChild(event.target.closest('.inputed-mp-answer'));
+        }
+    })
+
+    ///EVENT LISTENERS ////////////////////////////////////////////////////////////////////////////////
 
 
 
-//------------------------------------IMAGE UPLOAD HANDLING FOR MAIN QUESTION-------------------
-// Expanding image upload section
-questionAddImgBtn.addEventListener('click', (event)=>{
-    event.preventDefault();
-    if(questionAddImgBtn.classList.contains('open')){
-        questionAddImgBtn.classList.remove('open');
-        questionAddImgBtn.classList.add('closed');
-        questionAddImgBtn.innerHTML = '-collapse-';
-        questionImgUploadSection.style.display = 'block';
-        questionImgUploadSection.scrollIntoView({behavior:'smooth'});
-    }
-    else{
-        questionAddImgBtn.classList.remove('closed');
-        questionAddImgBtn.classList.add('open');
-        uploadedQuestionPreview.innerHTML = '';
-        questionAddImgBtn.innerHTML = 'Upload Image';
-        questionImgUploadSection.style.display = 'none'; 
-    }
-})
 
-
-
-addQuestionImgBtn.addEventListener('click', (event)=>{
-    event.preventDefault();
-    if (imgLabelInputField.value === null || imgLabelInputField.value ==='') {
-        alert('You must enter a label for the image.');
-        return;
-    }
-    if(mainQuestionImageInput.files.length === 0){
-        alert('You must choose an image file.');
-        return
-    }
-
-    try{
-        const formatted_new_img = create_img_div(mainQuestionImageInput, imgLabelInputField.value);
-        mainQuestionImagePreview.appendChild(formatted_new_img);
-        imgLabelInputField.value = '';
-        const holder = parseInt(mainQuestionImagePreview.dataset.counter)
-        mainQuestionImagePreview.dataset.counter =  `${holder + 1}`;
-        questionAddImgBtn.classList.remove('closed');
-        questionAddImgBtn.classList.add('open');
-        uploadedQuestionPreview.innerHTML = '';
-        questionAddImgBtn.innerHTML = 'Upload Image';
-        questionImgUploadSection.style.display = 'none'; 
-    }
-    catch(error){
-        alert('Make sure you entered a label for the image and selected an image file.')
-    }
-    
-
-
-})
-// Deleting an uploaded image
-mainQuestionImagePreview.addEventListener('click', (event)=>{
-    event.preventDefault();
-    target = event.target
-    if(target.classList.contains('img-delete')){
-        mainQuestionImagePreview.removeChild(target.closest('.question-image'));
-    }
-})
-
-
-
-function create_img_div(img_input_field, img_label){
-    const qnum = questionBlock.querySelector('.question-number-value').value;
-    var imgDiv = document.createElement('div');
-    var imgLabel = document.createElement('p');
-    imgLabel.innerHTML = img_label;
-    imgDiv.className = 'question-image';
-    imgDiv.innerHTML = `
-    <br/>
-    <div class="formatted-answer-option"></div>
-    <input value="${img_label}" type="hidden" name="${qnum}_question_image_label_${mainQuestionImagePreview.dataset.counter}"/>
-    <div class="add-delete-btns">
-        <button  type="button" class="btn btn-danger img-delete exempt">delete</button>
-    </div>
-`;
-    var formattedImgDiv = imgDiv.querySelector('.formatted-answer-option');
-    formattedImgDiv.appendChild(imgLabel);
-    formattedImgDiv.appendChild(uploadedQuestionPreview.cloneNode(true));
-    const image_input_field_clone = img_input_field.cloneNode(true);
-    image_input_field_clone.name = `${qnum}_question_image_file_${mainQuestionImagePreview.dataset.counter}`;
-    image_input_field_clone.style.display = 'none';
-    formattedImgDiv.appendChild(image_input_field_clone);
-    uploadedQuestionPreview.innerHTML = '';
-    img_input_field.value = '';
-
-    return imgDiv;
-}
-
-
-function create_hint_div(hint_input_field){
-    const qnum = questionBlock.querySelector('.question-number-value').value;
-    var hintDiv = document.createElement('div');
-    const hintSection = hint_input_field.closest('.hints-section');
-    hintDiv.className = 'hint-div';
-    hintDiv.innerHTML = `
-    <br/>
-    <div class="formatted-answer-option">${hint_input_field.value}</div>
-    <input type="hidden" value="${hint_input_field.value}" name="${qnum}_hint_${hintSection.dataset.counter}"/>
-    <div class="add-delete-btns">
-        <button type="button" class="delete-hint-btn btn btn-danger">delete</button>
-    </div>
-    <br/>
+    /*------------------------------------------STRUCTURAL QUESTION --------------------------------- */
+    // latexAnswerDiv is never used but just keeping it here.
+    const latexAnswerDiv = `
+    <div class="l-answer"><br/>
+    <label>Latex Answer:</label>
+        <input style="width: 100%; box-sizing: border-box;" class="question-input-field" placeholder="Enter LaTex" type="text" class="latex-answer-input" name="${num_questions}_answer"/>
+        </div>
     `
-    hint_input_field.value = '';
-    return hintDiv;
-}
+    // Free response button selected.
+    frBtn.addEventListener('click', (event)=>{
+        event.preventDefault();
+        hiddenQuestionType.value = 'fr-answer';  
+        inputedMcqAnswersDiv.style.display = 'none';
+        inputedMpAnswersDiv.style.display = 'none';
+        formattedAnswerDiv.innerHTML = 'Free response mode selected.'
+        formattedAnswerDiv.style.display = 'block';
+        mcqOptionBtnsDiv.style.display = 'none';
+        mcqInputDiv.style.display = 'none';
+        mpInputDiv.style.display = 'none';
+        mcqImagePreview.style.display = 'none';
+        calculatorDiv.style.display = 'none';
+        answerFieldsDiv.innerHTML = '';
+        
+        formattedAnswerDiv.scrollIntoView({behavior: 'smooth'});
+        questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '4';
+        
+    })
 
+    // Expression answer button selected.
+    expressionBtn.addEventListener('click', (event)=> {
+        event.preventDefault();
+        hiddenQuestionType.value = 'e-answer';
+        inputedMcqAnswersDiv.style.display = 'none';
+        inputedMpAnswersDiv.style.display = 'none';
+        formattedAnswerDiv.style.display = 'block';
+        mcqOptionBtnsDiv.style.display = 'none';
+        mcqInputDiv.style.display = 'none';
+        mpInputDiv.style.display = 'none';
+        mcqImagePreview.style.display = 'none';
+        calculatorDiv.style.display = 'flex';
+        answerFieldsDiv.innerHTML = '';
+        screen.placeholder = 'Expression';
 
+        answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
+        questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '0';
 
-
-function create_inputed_mcq_div(input_field, answer_type) {
-    const qnum = questionBlock.querySelector('.question-number-value').value;
-    var answer_value = input_field.value
-    var inputedMcqDiv = document.createElement('div'); // to be appended to .inputed-mcq-answers.
-    inputedMcqDiv.className = 'inputed-mcq-answer';
-    var processedString, simplifiedString;
-    var answer_info_encoding = '000' // First character for True or False, second for question type, and third for question_number 
-    // The following is a blue print of the information stored about an mcq-option.
-    // One of the hidden inputs should store the string value of the answer, as well as the type of answer it is..
-    // The other hidden input will store the reference question.i.e 0 = 'main', 1 = 'a', 2 = 'b', 4 = 'c' etc. 
-    //     so 0 may mean it is an mcq option for the main question. while 'b' means it is sub question.
-   // May add an edit button later, but I don't think it is useful.
-    var formatted_answer = '';
-    switch (answer_type) {
-        case 'f-answer':
-            // TODO: the float may have variables, so improve the condition below by testing
-            // whether the string contains variables or not.
-            try{
-                display_value = answer_value;
-                processedString = processString(answer_value)
-                simplifiedString = math.simplify(processedString)
-                answer_value = simplifiedString.evaluate();
-                if(typeof(answer_value) != 'number'){
-                    alert('You selected float mode but the answer you provided is not a float');
-                    return;
-                }
-                
-            }catch {
-                if(validateText(answer_value, varSymbolsArray, isFloat=true)){
-                    display_value = answer_value;
-                }else{
-
-                    alert('You selected float mode but the answer you provided is not a float');
-                    return;
-                }
-                
-            }
-            answer_info_encoding = rep(answer_info_encoding, 1, '1');
-            break;
-        case 't-answer':
-            display_value = answer_value;
-            answer_info_encoding = rep(answer_info_encoding, 1, '3');
-            break;
-        case 'l-answer':
-            display_value = answer_value; // Actually doesn't do anything because we don't use Latex as a direct answer yet.
-            answer_info_encoding = rep(answer_info_encoding, 1, '2');
-            break;
-        case 'e-answer':
-            try{
-                processedString = processString(answer_value)
-                simplifiedString = math.simplify(processedString)
-                answer_value = simplifiedString.toString();
-                display_value = answer_value;
-            }
-            catch{
-                const holder = parseInt(inputedMcqAnswersDiv.dataset.counter)
-                inputedMcqAnswersDiv.dataset.counter  = `${holder - 1}`;
-                alert('Expression(s) not valid algebraic expression');   
-                return;
-            }
-            answer_info_encoding = rep(answer_info_encoding, 1, '0');
-            break;
-        case 'i-answer':
-            display_value = answer_value;
-            answer_value = 'image_' + answer_value; 
-            answer_info_encoding = rep(answer_info_encoding, 1, '7');
-        default:
-            //
-    }
-    MathJax.typesetPromise().then(() => {
-        var userInputLatex = '';
-        try {
-            if (answer_type==='l-answer'){// if latex-answer or text-answer
-                userInputLatex = answer_value;
-                formatted_answer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
-            } else if(answer_type==='t-answer'){
-                userInputLatex = answer_value;
-                formatted_answer = document.createElement('p');
-                formatted_answer.innerHTML = userInputLatex;
-            }
-            else if(answer_type==='i-answer'){
-                formatted_answer = document.createElement('p');
-                formatted_answer.innerHTML = display_value;  
-            }
-            else {
-                try{
-                    //const userInputNode = math.simplify(processedString);
-                    userInputLatex = math.parse(processedString).toTex();
-                    formatted_answer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
-                }catch{
-                    formatted_answer = document.createElement('p');
-                    formatted_answer.innerHTML = display_value;
-                }
-                
-            }
-            
-
-            // Now that the formatted_answer is ready, create the necessary HTML structure
-            var mcqAnswerDiv = document.createElement('div');
-            if (answer_type != 'i-answer'){
-                mcqAnswerDiv.innerHTML = `
-                <br/>
-                <div class="formatted-answer-option unexpand mcq-false hoverable"></div>
-                <input value="${answer_value}" type="hidden" name="${qnum}_answer_value_${inputedMcqAnswersDiv.dataset.counter}"/>
-                <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="${qnum}_answer_info_${inputedMcqAnswersDiv.dataset.counter}"/>
-                <div class="add-delete-btns">
-                    <button  type="button" class="btn btn-danger mcq-delete exempt">delete</button>
-                </div>
-            `;
-             }else {
-                mcqAnswerDiv.innerHTML = `
-                <br/>
-                <div class="formatted-answer-option mcq-false hoverable"></div>
-                <input value="${display_value}" type="hidden" name="${qnum}_image_label_${inputedMcqAnswersDiv.dataset.counter}"/>
-                <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="${qnum}_answer_info_${inputedMcqAnswersDiv.dataset.counter}"/>
-                <div class="add-delete-btns">
-                    <button  type="button" class="btn btn-danger mcq-delete exempt">delete</button>
-                </div>
-            `;
-            
-             }
-           
-            // Append the formatted_answer element as a child
-            var formattedAnswerDiv = mcqAnswerDiv.querySelector('.formatted-answer-option');
-            formattedAnswerDiv.appendChild(formatted_answer);
-            if (answer_type === 'i-answer'){
-                formattedAnswerDiv.appendChild(mcqImagePreview.cloneNode(true));
-                if(imageUploadInput.files.length === 0 ){
-                    alert('You must select an image file');
-                    throw 'Image expected to be selected but wasn\'t'
-                }
-                const image_input_field_clone = imageUploadInput.cloneNode(true);
-                image_input_field_clone.name = `${qnum}_answer_value_${inputedMcqAnswersDiv.dataset.counter}`;
-                image_input_field_clone.style.display = 'none';
-                formattedAnswerDiv.appendChild(image_input_field_clone);
-                imageUploadInput.value = '';
-                mcqImagePreview.innerHTML = '';
-            }
-            formattedAnswerDiv.scrollIntoView({behavior:'smooth'});
-
-            // Append mcqAnswerDiv to inputedMcqDiv
-            inputedMcqDiv.appendChild(mcqAnswerDiv);
-            MathJax.typesetPromise();
-        } catch (error) {
-            console.log(error);
-        }
     });
-    //const holder =  parseInt(inputedMcqAnswersDiv.dataset.counter)
-//     inputedMcqAnswersDiv.dataset.counter  = `${holder+1}`;
 
-    return inputedMcqDiv;
-}
+    // Float button selected.
+    floatBtn.addEventListener('click', function(event) { 
+        event.preventDefault();
+        hiddenQuestionType.value = 'f-answer';
+        inputedMcqAnswersDiv.style.display = 'none';
+        inputedMpAnswersDiv.style.display = 'none';
+        formattedAnswerDiv.style.display = 'block';
+        mcqOptionBtnsDiv.style.display = 'none';
+        mcqInputDiv.style.display = 'none';
+        mpInputDiv.style.display ='none';
+        mcqImagePreview.style.display = 'none';
+        calculatorDiv.style.display = 'flex';
+        answerFieldsDiv.innerHTML = '';
+        screen.placeholder = 'Real number';
+
+        answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
+        questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '1';
+    });
+
+    // Latex button selected. Probably never used.
+    latexBtn.addEventListener('click', (event)=> {
+        event.preventDefault();
+        hiddenQuestionType.value = 'l-answer'
+        inputedMpAnswersDiv.style.display = 'none';
+        formattedAnswerDiv.style.display = 'block';
+        mcqOptionBtnsDiv.style.display = 'none';
+        mcqInputDiv.style.display = 'none';
+        mpInputDiv.style.display = 'none';
+        mcqImagePreview.style.display = 'none';
+        calculatorDiv.style.display = 'none';
+        answerFieldsDiv.innerHTML = latexAnswerDiv;
+        answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
+
+        questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '2'
+
+
+
+        // Adding event listener to the input field.
+        const latexInput = answerFieldsDiv.querySelector('input');
+        latexInput.addEventListener('input', ()=>{
+            var answerFieldDiv = answerFieldsDiv.querySelector('div');
+            var latexInputField = answerFieldDiv.querySelector('input');
+            const userInputLatex = latexInputField.value;
+        
+            MathJax.typesetPromise().then(() => {
+                try{
+                    const formattedAnswer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
+                    formattedAnswerDiv.innerHTML = '';
+                    formattedAnswerDiv.appendChild(formattedAnswer);
+                    MathJax.typesetPromise();
+                } catch(error){
+                    //console.log(error);
+                }
+
+            });
+
+
+        })
+    });
+
+
+    //-------------------------HINTS--------------------------------------------
+
+    hintSectionDiv.addEventListener('click', (event)=>{
+        event.preventDefault();
+        const inputedHints = hintSectionDiv.querySelector('.inputed-hints')
+        if(event.target.classList.contains('add-hint-btn')){
+            const addHintSection = hintSectionDiv.querySelector('.add-hint-section');
+            addHintSection.style.display = 'block';
+            event.target.style.display = 'none';
+
+        }else if(event.target.classList.contains('delete-hint-btn')){
+            inputedHints.removeChild(event.target.closest('.hint-div'));
+            //const holder = hintSectionDiv.dataset.counter
+            //hintSectionDiv.dataset.counter = `${parseInt(holder) - 1}`;
+        }else if(event.target.classList.contains('add-inputed-hint-btn')){
+            const hintInputField = event.target.closest('.add-hint-section').querySelector('.add-hint-input-field');
+            if(hintInputField.value.length < 1){
+                alert('Cannot add empty hint');
+                return
+            }else{
+                const newHintDiv = create_hint_div(hintInputField);
+                inputedHints.appendChild(newHintDiv);
+                const holder = hintSectionDiv.dataset.counter
+                hintSectionDiv.dataset.counter = `${parseInt(holder) + 1}`;
+
+            }
+        }
+    })
+
+
+
+    //------------------------------------IMAGE UPLOAD HANDLING FOR MAIN QUESTION-------------------
+    // Expanding image upload section
+    questionAddImgBtn.addEventListener('click', (event)=>{
+        event.preventDefault();
+        if(questionAddImgBtn.classList.contains('open')){
+            questionAddImgBtn.classList.remove('open');
+            questionAddImgBtn.classList.add('closed');
+            questionAddImgBtn.innerHTML = '-collapse-';
+            questionImgUploadSection.style.display = 'block';
+            questionImgUploadSection.scrollIntoView({behavior:'smooth'});
+        }
+        else{
+            questionAddImgBtn.classList.remove('closed');
+            questionAddImgBtn.classList.add('open');
+            uploadedQuestionPreview.innerHTML = '';
+            questionAddImgBtn.innerHTML = 'Upload Image';
+            questionImgUploadSection.style.display = 'none'; 
+        }
+    })
+
+
+
+    addQuestionImgBtn.addEventListener('click', (event)=>{
+        event.preventDefault();
+        if (imgLabelInputField.value === null || imgLabelInputField.value ==='') {
+            alert('You must enter a label for the image.');
+            return;
+        }
+        if(mainQuestionImageInput.files.length === 0){
+            alert('You must choose an image file.');
+            return
+        }
+
+        try{
+            const formatted_new_img = create_img_div(mainQuestionImageInput, imgLabelInputField.value);
+            mainQuestionImagePreview.appendChild(formatted_new_img);
+            imgLabelInputField.value = '';
+            const holder = parseInt(mainQuestionImagePreview.dataset.counter)
+            mainQuestionImagePreview.dataset.counter =  `${holder + 1}`;
+            questionAddImgBtn.classList.remove('closed');
+            questionAddImgBtn.classList.add('open');
+            uploadedQuestionPreview.innerHTML = '';
+            questionAddImgBtn.innerHTML = 'Upload Image';
+            questionImgUploadSection.style.display = 'none'; 
+        }
+        catch(error){
+            alert('Make sure you entered a label for the image and selected an image file.')
+        }
+        
+
+
+    })
+    // Deleting an uploaded image
+    mainQuestionImagePreview.addEventListener('click', (event)=>{
+        event.preventDefault();
+        target = event.target
+        if(target.classList.contains('img-delete')){
+            mainQuestionImagePreview.removeChild(target.closest('.question-image'));
+        }
+    })
+
+
+
+    function create_img_div(img_input_field, img_label){
+        const qnum = questionBlock.querySelector('.question-number-value').value;
+        var imgDiv = document.createElement('div');
+        var imgLabel = document.createElement('p');
+        imgLabel.innerHTML = img_label;
+        imgDiv.className = 'question-image';
+        imgDiv.innerHTML = `
+        <br/>
+        <div class="formatted-answer-option"></div>
+        <input value="${img_label}" type="hidden" name="${qnum}_question_image_label_${mainQuestionImagePreview.dataset.counter}"/>
+        <div class="add-delete-btns">
+            <button  type="button" class="btn btn-danger img-delete exempt">delete</button>
+        </div>
+    `;
+        var formattedImgDiv = imgDiv.querySelector('.formatted-answer-option');
+        formattedImgDiv.appendChild(imgLabel);
+        formattedImgDiv.appendChild(uploadedQuestionPreview.cloneNode(true));
+        const image_input_field_clone = img_input_field.cloneNode(true);
+        image_input_field_clone.name = `${qnum}_question_image_file_${mainQuestionImagePreview.dataset.counter}`;
+        image_input_field_clone.style.display = 'none';
+        formattedImgDiv.appendChild(image_input_field_clone);
+        uploadedQuestionPreview.innerHTML = '';
+        img_input_field.value = '';
+
+        return imgDiv;
+    }
+
+
+    function create_hint_div(hint_input_field){
+        const qnum = questionBlock.querySelector('.question-number-value').value;
+        var hintDiv = document.createElement('div');
+        const hintSection = hint_input_field.closest('.hints-section');
+        hintDiv.className = 'hint-div';
+        hintDiv.innerHTML = `
+        <br/>
+        <div class="formatted-answer-option">${hint_input_field.value}</div>
+        <input type="hidden" value="${hint_input_field.value}" name="${qnum}_hint_${hintSection.dataset.counter}"/>
+        <div class="add-delete-btns">
+            <button type="button" class="delete-hint-btn btn btn-danger">delete</button>
+        </div>
+        <br/>
+        `
+        hint_input_field.value = '';
+        return hintDiv;
+    }
 
 
 
 
-num_questions += 1;
-part_num_questions += 1;
-return questionBlock;
+    function create_inputed_mcq_div(input_field, answer_type) {
+        const qnum = questionBlock.querySelector('.question-number-value').value;
+        var answer_value = input_field.value
+        var inputedMcqDiv = document.createElement('div'); // to be appended to .inputed-mcq-answers.
+        inputedMcqDiv.className = 'inputed-mcq-answer';
+        var processedString, simplifiedString;
+        var answer_info_encoding = '000' // First character for True or False, second for question type, and third for question_number 
+        // The following is a blue print of the information stored about an mcq-option.
+        // One of the hidden inputs should store the string value of the answer, as well as the type of answer it is..
+        // The other hidden input will store the reference question.i.e 0 = 'main', 1 = 'a', 2 = 'b', 4 = 'c' etc. 
+        //     so 0 may mean it is an mcq option for the main question. while 'b' means it is sub question.
+    // May add an edit button later, but I don't think it is useful.
+        var formatted_answer = '';
+        switch (answer_type) {
+            case 'f-answer':
+                // TODO: the float may have variables, so improve the condition below by testing
+                // whether the string contains variables or not.
+                try{
+                    display_value = answer_value;
+                    processedString = processString(answer_value)
+                    simplifiedString = math.simplify(processedString)
+                    answer_value = simplifiedString.evaluate();
+                    if(typeof(answer_value) != 'number'){
+                        alert('You selected float mode but the answer you provided is not a float');
+                        return;
+                    }
+                    
+                }catch {
+                    if(validateText(answer_value, varSymbolsArray, isFloat=true)){
+                        display_value = answer_value;
+                    }else{
 
-}
+                        alert('You selected float mode but the answer you provided is not a float');
+                        return;
+                    }
+                    
+                }
+                answer_info_encoding = rep(answer_info_encoding, 1, '1');
+                break;
+            case 't-answer':
+                display_value = answer_value;
+                answer_info_encoding = rep(answer_info_encoding, 1, '3');
+                break;
+            case 'l-answer':
+                display_value = answer_value; // Actually doesn't do anything because we don't use Latex as a direct answer yet.
+                answer_info_encoding = rep(answer_info_encoding, 1, '2');
+                break;
+            case 'e-answer':
+                try{
+                    processedString = processString(answer_value)
+                    simplifiedString = math.simplify(processedString)
+                    answer_value = simplifiedString.toString();
+                    display_value = answer_value;
+                }
+                catch{
+                    const holder = parseInt(inputedMcqAnswersDiv.dataset.counter)
+                    inputedMcqAnswersDiv.dataset.counter  = `${holder - 1}`;
+                    alert('Expression(s) not valid algebraic expression');   
+                    return;
+                }
+                answer_info_encoding = rep(answer_info_encoding, 1, '0');
+                break;
+            case 'i-answer':
+                display_value = answer_value;
+                answer_value = 'image_' + answer_value; 
+                answer_info_encoding = rep(answer_info_encoding, 1, '7');
+            default:
+                //
+        }
+        MathJax.typesetPromise().then(() => {
+            var userInputLatex = '';
+            try {
+                if (answer_type==='l-answer'){// if latex-answer or text-answer
+                    userInputLatex = answer_value;
+                    formatted_answer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
+                } else if(answer_type==='t-answer'){
+                    userInputLatex = answer_value;
+                    formatted_answer = document.createElement('p');
+                    formatted_answer.innerHTML = userInputLatex;
+                }
+                else if(answer_type==='i-answer'){
+                    formatted_answer = document.createElement('p');
+                    formatted_answer.innerHTML = display_value;  
+                }
+                else {
+                    try{
+                        //const userInputNode = math.simplify(processedString);
+                        userInputLatex = math.parse(processedString).toTex();
+                        formatted_answer = MathJax.tex2chtml(userInputLatex + '\\phantom{}');
+                    }catch{
+                        formatted_answer = document.createElement('p');
+                        formatted_answer.innerHTML = display_value;
+                    }
+                    
+                }
+                
+
+                // Now that the formatted_answer is ready, create the necessary HTML structure
+                var mcqAnswerDiv = document.createElement('div');
+                if (answer_type != 'i-answer'){
+                    mcqAnswerDiv.innerHTML = `
+                    <br/>
+                    <div class="formatted-answer-option unexpand mcq-false hoverable"></div>
+                    <input value="${answer_value}" type="hidden" name="${qnum}_answer_value_${inputedMcqAnswersDiv.dataset.counter}"/>
+                    <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="${qnum}_answer_info_${inputedMcqAnswersDiv.dataset.counter}"/>
+                    <div class="add-delete-btns">
+                        <button  type="button" class="btn btn-danger mcq-delete exempt">delete</button>
+                    </div>
+                `;
+                }else {
+                    mcqAnswerDiv.innerHTML = `
+                    <br/>
+                    <div class="formatted-answer-option mcq-false hoverable"></div>
+                    <input value="${display_value}" type="hidden" name="${qnum}_image_label_${inputedMcqAnswersDiv.dataset.counter}"/>
+                    <input value="${answer_info_encoding}" type="hidden" class="answer_info" name="${qnum}_answer_info_${inputedMcqAnswersDiv.dataset.counter}"/>
+                    <div class="add-delete-btns">
+                        <button  type="button" class="btn btn-danger mcq-delete exempt">delete</button>
+                    </div>
+                `;
+                
+                }
+            
+                // Append the formatted_answer element as a child
+                var formattedAnswerDiv = mcqAnswerDiv.querySelector('.formatted-answer-option');
+                formattedAnswerDiv.appendChild(formatted_answer);
+                if (answer_type === 'i-answer'){
+                    formattedAnswerDiv.appendChild(mcqImagePreview.cloneNode(true));
+                    if(imageUploadInput.files.length === 0 ){
+                        alert('You must select an image file');
+                        throw 'Image expected to be selected but wasn\'t'
+                    }
+                    const image_input_field_clone = imageUploadInput.cloneNode(true);
+                    image_input_field_clone.name = `${qnum}_answer_value_${inputedMcqAnswersDiv.dataset.counter}`;
+                    image_input_field_clone.style.display = 'none';
+                    formattedAnswerDiv.appendChild(image_input_field_clone);
+                    imageUploadInput.value = '';
+                    mcqImagePreview.innerHTML = '';
+                }
+                formattedAnswerDiv.scrollIntoView({behavior:'smooth'});
+
+                // Append mcqAnswerDiv to inputedMcqDiv
+                inputedMcqDiv.appendChild(mcqAnswerDiv);
+                MathJax.typesetPromise();
+            } catch (error) {
+                console.log(error);
+            }
+        });
+        //const holder =  parseInt(inputedMcqAnswersDiv.dataset.counter)
+    //     inputedMcqAnswersDiv.dataset.counter  = `${holder+1}`;
+
+        return inputedMcqDiv;
+    }
 
 
-/// addQuestionBlock END //////////////////////////////////////////////////////
+
+
+    num_questions += 1;
+    part_num_questions += 1;
+    return questionBlock;
+
+    }
+
+
+    /// addQuestionBlock END //////////////////////////////////////////////////////
 
 
 
-function checkQuestionBlock(questionBlock){
+    function checkQuestionBlock(questionBlock){
         // Make sure question text is valid
         const questionTextArea = questionBlock.querySelector('.question-textarea');
         const hiddenQuestionType = questionBlock.querySelector('.hidden-q-type');
@@ -1529,31 +1580,7 @@ function checkQuestionBlock(questionBlock){
         }
     
     return true
-}
-
-
-
-
-// --------------------------SETTINGS -------------------------------------------//
-
-const settingsIcon = document.querySelector('.settings-icon');
-const settingsSection = document.querySelector('.question-settings');
-const settingsXBtn = settingsSection.querySelector('#close-x-settings');
-
-settingsXBtn.addEventListener('click', (event)=>{
-    event.preventDefault();
-    settingsSection.classList.add('hide');
-  })
-  
-  settingsIcon.addEventListener('click', (event)=>{
-    event.preventDefault();
-    settingsSection.classList.remove('hide');
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-  })
-
+    }
 
 
 
@@ -1563,211 +1590,210 @@ settingsXBtn.addEventListener('click', (event)=>{
   // -------------------------------------REUSABLE FUNCTIONS ---------------------------//
 
 
-  function deleteQuestionBlock(questionBlock, settingsSelect) {
+    function deleteQuestionBlock(questionBlock, settingsSelect) {
 
-    // Usage example:
-// Assuming questionBlock is the block to delete and settingsSelect is the select element
-// deleteQuestionBlock(questionBlock, settingsSelect);
+        // Usage example:
+        // Assuming questionBlock is the block to delete and settingsSelect is the select element
+        // deleteQuestionBlock(questionBlock, settingsSelect);
 
-    // Delete the question block and update related data structures and UI elements
-    const val = questionBlock.querySelector('.question-number-value').value;
-    delete questionTypeDicts[val]; // Assuming questionTypeDicts is accessible in this scope
-    questionBlock.parentNode.removeChild(questionBlock);
+        // Delete the question block and update related data structures and UI elements
+        const val = questionBlock.querySelector('.question-number-value').value;
+        delete questionTypeDicts[val]; // Assuming questionTypeDicts is accessible in this scope
+        questionBlock.parentNode.removeChild(questionBlock);
 
-    // Update the count of questions
-    part_num_questions -= 1; // Assuming part_num_questions is accessible in this scope
+        // Update the count of questions
+        part_num_questions -= 1; // Assuming part_num_questions is accessible in this scope
 
-    // Remove the corresponding settings option
-    const correspondingSettingsOption = settingsSelect.querySelector(`.settings-option-${val}`);
-    if (correspondingSettingsOption) {
-        settingsSelect.removeChild(correspondingSettingsOption);
-    }
+        // Remove the corresponding settings option
+        const correspondingSettingsOption = settingsSelect.querySelector(`.settings-option-${val}`);
+        if (correspondingSettingsOption) {
+            settingsSelect.removeChild(correspondingSettingsOption);
+        }
 
-    // Renaming the question titles and updating settings options
-    updateQuestionTitlesAndSettings(settingsSelect);
-}
+        // Renaming the question titles and updating settings options
+        updateQuestionTitlesAndSettings(settingsSelect);
+        }
 
-function updateQuestionTitlesAndSettings(settingsSelect) {
-    // Update settings options
-    const allSettingsOptions = settingsSelect.querySelectorAll('option');
-    allSettingsOptions.forEach((option, index) => {
-        option.innerHTML = `Part ${String.fromCharCode(65 + index)}`; // ASCII code 65 is 'A'
-    });
+        function updateQuestionTitlesAndSettings(settingsSelect) {
+            // Update settings options
+            const allSettingsOptions = settingsSelect.querySelectorAll('option');
+            allSettingsOptions.forEach((option, index) => {
+                option.innerHTML = `Part ${String.fromCharCode(65 + index)}`; // ASCII code 65 is 'A'
+            });
 
-    // Update question block titles and check buttons
-    const allQuestionBlocks = document.querySelectorAll('.question-block');
-    allQuestionBlocks.forEach((qBlock, index) => {
-        const labelTitle = qBlock.querySelector('.q-label-title');
-        const checkBtn = qBlock.querySelector('.check-question-btn');
+            // Update question block titles and check buttons
+            const allQuestionBlocks = document.querySelectorAll('.question-block');
+            allQuestionBlocks.forEach((qBlock, index) => {
+                const labelTitle = qBlock.querySelector('.q-label-title');
+                const checkBtn = qBlock.querySelector('.check-question-btn');
 
-        // Update label title
-        labelTitle.textContent = labelTitle.textContent.slice(0, -2) + String.fromCharCode(65 + index) + labelTitle.textContent.slice(-1);
+                // Update label title
+                labelTitle.textContent = labelTitle.textContent.slice(0, -2) + String.fromCharCode(65 + index) + labelTitle.textContent.slice(-1);
 
-        // Update check button text
-        if(checkBtn.classList.contains('btn-outline-success')){
-            checkBtn.textContent = checkBtn.textContent.slice(0, -1) + String.fromCharCode(65 + index + 1);
-           }else{
-           checkBtn.textContent = checkBtn.textContent.slice(0, -1) + String.fromCharCode(65 + index);
-           }
-    });
-}
+                // Update check button text
+                if(checkBtn.classList.contains('btn-outline-success')){
+                    checkBtn.textContent = checkBtn.textContent.slice(0, -1) + String.fromCharCode(65 + index + 1);
+                }else{
+                checkBtn.textContent = checkBtn.textContent.slice(0, -1) + String.fromCharCode(65 + index);
+                }
+            });
+        }
 
 
-function createQuestionBlock(){
+    function createQuestionBlock(){
 
-    // creating new option in settings
-    const newSettingsOption = document.createElement('option');
-    newSettingsOption.classList.add(`settings-option-${num_questions}`);
-    newSettingsOption.value = `${num_questions}`
-    newSettingsOption.innerHTML = `Part ${String.fromCharCode(64 + part_num_questions)}`;
-    const pts = initial_num_points/(part_num_questions) | 0;// to convert to integer
-    settingsSelect.appendChild(newSettingsOption);
-    // each time a new part is added, the number of points is redistributed.
-    // this is not very nice because if the instructor changed them earlier
-    // it will be changed again but I don't think that's too much of a big deal.
-    document.querySelector('.init-num-pts').value = pts;
-    const hiddenNumberPts = document.querySelectorAll('.h-num-pts');// this does not include the h-num-pts in the new block
-    // We take care of that in the questionBluePrint below
-    hiddenNumberPts.forEach((hnp)=>{
-        hnp.value = pts
-    })
+        // creating new option in settings
+        const newSettingsOption = document.createElement('option');
+        newSettingsOption.classList.add(`settings-option-${num_questions}`);
+        newSettingsOption.value = `${num_questions}`
+        newSettingsOption.innerHTML = `Part ${String.fromCharCode(64 + part_num_questions)}`;
+        const pts = initial_num_points/(part_num_questions) | 0;// to convert to integer
+        settingsSelect.appendChild(newSettingsOption);
+        // each time a new part is added, the number of points is redistributed.
+        // this is not very nice because if the instructor changed them earlier
+        // it will be changed again but I don't think that's too much of a big deal.
+        document.querySelector('.init-num-pts').value = pts;
+        const hiddenNumberPts = document.querySelectorAll('.h-num-pts');// this does not include the h-num-pts in the new block
+        // We take care of that in the questionBluePrint below
+        hiddenNumberPts.forEach((hnp)=>{
+            hnp.value = pts
+        })
 
-    const questionBluePrint = `
-    <input type="hidden" value=${num_questions} class="question-number-value">
-    <div class="question-content form-group">
-         <label class="q-label-title">Question ${String.fromCharCode(64 + part_num_questions)}:</label><br/>
-         <textarea placeholder="Enter the content of the question" class="question-textarea w-100 question-input-field" name="${num_questions}_question_text"></textarea>
-     </div>
-     <div class="main-question-image-preview" data-counter="0"></div>
-     <div class="uploaded-question-preview"></div>
-     <button type="button" class="main-question-add-image-btn btn btn-light open">Upload Image</button>
-     <div class="question-image-upload-section" style="display: none;">
-       <input type="text" placeholder="Enter image label" class="image-label-input-field field-style"/>
-       <input type="file" accept="image/*" class="main-question-image-input">
-       <button type="button" class="btn btn-outline-success question-image-add">confirm</button>
-     </div>
-     <br/>
-    
-     <div class="answer-options">
-       
-       <label>Select answer type</label><br/>
-       <input type="hidden" value="none" class="hidden-q-type"/>
-       <input type="hidden" placeholder="0" name="${num_questions}_answer" class="q-answer-hidden"/>
-       <input type="hidden" placeholder="units" name="${num_questions}_answer_unit" class="q-answer-units-hidden"/>
-       <input type="hidden" placeholder="latex preface" name="${num_questions}_answer_preface" class="q-answer-preface-hidden"/>
-       <button type="button" id="expression-btn" class="expression-btn btn btn-primary exempt">Expression</button>
-       <button type="button" id="float-btn" class="float-btn btn btn-info exempt">Float</button>
-       <button type="button" id="mcq-btn" class="mcq-btn btn btn-light exempt">MCQ</button>
-       <button type="button" id="mp-btn" class="mp-btn btn btn-dark exempt">Matching Pairs</button>
-       <button type="button" id="fr-btn" class="fr-btn btn btn-secondary exempt" style="display:none;">Free Response</button>
-       <button type="button" id="survey-btn" class="survey-btn btn btn-dark exempt" style="display: none;">Survey</button>
-       <button type="button" id="latex-btn" class="latex-btn btn btn-secondary exempt"  style="display: none;">Latex</button>
-       
-     </div>
-    
-     <div class="mcq-answers">
-       <div class="mcq-options-button" style="display: none;">
-         <label>Select MCQ type</label><br/>
-         <button type="button" data-qid="mcq-expression-btn" class="mcq-expression-btn btn-primary exempt">Expression mode</button>
-         <button type="button" data-qid="mcq-float-btn" class="mcq-float-btn btn-info exempt">Float mode</button>
-         <button type="button" data-qid="mcq-text-btn" class="mcq-text-btn btn-light exempt">Text mode</button>
-         <button type="button" data-qid="mcq-latex-btn" class="mcq-latex-btn btn-secondary exempt">Latex mode</button>
-         <button type="button" data-qid="mcq-image-btn" class="mcq-image-btn btn-dark exempt">Image mode</button>
-       </div>
-       <div class="inputed-mcq-answers" data-counter="0" data-true-counter="0">
-    
-       </div>
-       <br/>
-       <div class="mcq-image-preview"></div>
-       <br/>
-       <div class="mcq-input-div" style="display: none;">
-         <input style="width: 100%; box-sizing: border-box;" type="text" class="mcq-input-field field-style"/>
-         <input type="file" accept="image/*" class="image-upload-input-field" style="display:none;"/>
-         <button type="button" class="btn btn-success mcq-add">add</button>
-       </div>
-    
-     </div>
-
-     <div class="mp-answers">
-        <div class="inputed-mp-answers" data-counter="0" data-qnumber="${num_questions}" data-mere-counter="0">
+        const questionBluePrint = `
+        <input type="hidden" value=${num_questions} class="question-number-value">
+        <div class="question-content form-group">
+            <label class="q-label-title">Question ${String.fromCharCode(64 + part_num_questions)}:</label><br/>
+            <textarea placeholder="Enter the content of the question" class="question-textarea w-100 question-input-field" name="${num_questions}_question_text"></textarea>
+        </div>
+        <div class="main-question-image-preview" data-counter="0"></div>
+        <div class="uploaded-question-preview"></div>
+        <button type="button" class="main-question-add-image-btn btn btn-light open">Upload Image</button>
+        <div class="question-image-upload-section" style="display: none;">
+        <input type="text" placeholder="Enter image label" class="image-label-input-field field-style"/>
+        <input type="file" accept="image/*" class="main-question-image-input">
+        <button type="button" class="btn btn-outline-success question-image-add">confirm</button>
         </div>
         <br/>
-        <div class="mp-input-div" style="display:none;">
-            <div class="mp-inputs">
-                <input type="text" class="field-style mp-input-field-a" placeholder="Enter part A"/>
-                <input type="text" class="field-style mp-input-field-b" placeholder="Enter matching part B"/>
-            </div>
-            <div class="mp-add-div">
-                <button type="button" class="btn btn-success mp-add">add</button>
-            </div>
+        
+        <div class="answer-options">
+        
+        <label>Select answer type</label><br/>
+        <input type="hidden" value="none" class="hidden-q-type"/>
+        <input type="hidden" placeholder="0" name="${num_questions}_answer" class="q-answer-hidden"/>
+        <input type="hidden" placeholder="units" name="${num_questions}_answer_unit" class="q-answer-units-hidden"/>
+        <input type="hidden" placeholder="latex preface" name="${num_questions}_answer_preface" class="q-answer-preface-hidden"/>
+        <button type="button" id="expression-btn" class="expression-btn btn btn-primary exempt">Expression</button>
+        <button type="button" id="float-btn" class="float-btn btn btn-info exempt">Float</button>
+        <button type="button" id="mcq-btn" class="mcq-btn btn btn-light exempt">MCQ</button>
+        <button type="button" id="mp-btn" class="mp-btn btn btn-dark exempt">Matching Pairs</button>
+        <button type="button" id="fr-btn" class="fr-btn btn btn-secondary exempt" style="display:none;">Free Response</button>
+        <button type="button" id="survey-btn" class="survey-btn btn btn-dark exempt" style="display: none;">Survey</button>
+        <button type="button" id="latex-btn" class="latex-btn btn btn-secondary exempt"  style="display: none;">Latex</button>
+        
         </div>
-     </div>
-     
-     <div class="answer-fields">
-         
-     </div>
-     <div class="formatted-answer structural-formatted-answer"></div>
-     <br/>
-     <div class="calculator-area-div"></div><br/>
-     <div class="hints-section"  data-counter="0">
-        <div class="inputed-hints">
+        
+        <div class="mcq-answers">
+        <div class="mcq-options-button" style="display: none;">
+            <label>Select MCQ type</label><br/>
+            <button type="button" data-qid="mcq-expression-btn" class="mcq-expression-btn btn-primary exempt">Expression mode</button>
+            <button type="button" data-qid="mcq-float-btn" class="mcq-float-btn btn-info exempt">Float mode</button>
+            <button type="button" data-qid="mcq-text-btn" class="mcq-text-btn btn-light exempt">Text mode</button>
+            <button type="button" data-qid="mcq-latex-btn" class="mcq-latex-btn btn-secondary exempt">Latex mode</button>
+            <button type="button" data-qid="mcq-image-btn" class="mcq-image-btn btn-dark exempt">Image mode</button>
         </div>
-        <div class="add-hint-section" style="display:none;">
-            <input type="text" placeholder="Enter hint and click add" class="field-style add-hint-input-field"/>
+        <div class="inputed-mcq-answers" data-counter="0" data-true-counter="0">
+        
+        </div>
+        <br/>
+        <div class="mcq-image-preview"></div>
+        <br/>
+        <div class="mcq-input-div" style="display: none;">
+            <input style="width: 100%; box-sizing: border-box;" type="text" class="mcq-input-field field-style"/>
+            <input type="file" accept="image/*" class="image-upload-input-field" style="display:none;"/>
+            <button type="button" class="btn btn-success mcq-add">add</button>
+        </div>
+        
+        </div>
+
+        <div class="mp-answers">
+            <div class="inputed-mp-answers" data-counter="0" data-qnumber="${num_questions}" data-mere-counter="0">
+            </div>
             <br/>
-            <button type="button" class="add-inputed-hint-btn btn btn-info"> add </button>
+            <div class="mp-input-div" style="display:none;">
+                <div class="mp-inputs">
+                    <input type="text" class="field-style mp-input-field-a" placeholder="Enter part A"/>
+                    <input type="text" class="field-style mp-input-field-b" placeholder="Enter matching part B"/>
+                </div>
+                <div class="mp-add-div">
+                    <button type="button" class="btn btn-success mp-add">add</button>
+                </div>
+            </div>
         </div>
-        <button type="button" class="add-hint-btn btn btn-outline-info open"> Add Hint </button>
-     </div>
-     <hr/>
-     <button class="btn btn-outline-success check-question-btn">Add Part ${String.fromCharCode(64 + part_num_questions + 1)}</button>
-     <br/><br/>
-     <div class="hidden-settings">
-            <input class="field-style hidden-settings h-num-pts" type="hidden" name="${num_questions}_num_points" value="${pts}"/>
-            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_max_num_attempts"/>
-            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_deduct_per_attempt"/>
-            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_margin_error"/>
-            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_percentage_pts_units"/>
-            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_max_mcq_num_attempts">
-            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_mcq_deduct_per_attempt"/>
-            <input class="field-style hidden-settings" type="hidden" name="${num_questions}_units_num_attempts"/>
-     </div>
-    `
+        
+        <div class="answer-fields">
+            
+        </div>
+        <div class="formatted-answer structural-formatted-answer"></div>
+        <br/>
+        <div class="calculator-area-div"></div><br/>
+        <div class="hints-section"  data-counter="0">
+            <div class="inputed-hints">
+            </div>
+            <div class="add-hint-section" style="display:none;">
+                <input type="text" placeholder="Enter hint and click add" class="field-style add-hint-input-field"/>
+                <br/>
+                <button type="button" class="add-inputed-hint-btn btn btn-info"> add </button>
+            </div>
+            <button type="button" class="add-hint-btn btn btn-outline-info open"> Add Hint </button>
+        </div>
+        <hr/>
+        <button class="btn btn-outline-success check-question-btn">Add Part ${String.fromCharCode(64 + part_num_questions + 1)}</button>
+        <br/><br/>
+        <div class="hidden-settings">
+                <input class="field-style hidden-settings h-num-pts" type="hidden" name="${num_questions}_num_points" value="${pts}"/>
+                <input class="field-style hidden-settings" type="hidden" name="${num_questions}_max_num_attempts"/>
+                <input class="field-style hidden-settings" type="hidden" name="${num_questions}_deduct_per_attempt"/>
+                <input class="field-style hidden-settings" type="hidden" name="${num_questions}_margin_error"/>
+                <input class="field-style hidden-settings" type="hidden" name="${num_questions}_percentage_pts_units"/>
+                <input class="field-style hidden-settings" type="hidden" name="${num_questions}_max_mcq_num_attempts">
+                <input class="field-style hidden-settings" type="hidden" name="${num_questions}_mcq_deduct_per_attempt"/>
+                <input class="field-style hidden-settings" type="hidden" name="${num_questions}_units_num_attempts"/>
+        </div>
+        `
+
+        const questionBlock = document.createElement('div');
+        questionBlock.classList.add('question-block');
+        questionBlock.innerHTML = questionBluePrint;
+        return questionBlock;
+    }
 
 
 
-    const questionBlock = document.createElement('div');
-    questionBlock.classList.add('question-block');
-    questionBlock.innerHTML = questionBluePrint;
-    return questionBlock;
-}
+    const sideInfosIcons = document.querySelectorAll('.side-info-icon');
+    const sideInfox = document.querySelectorAll('.side-info-x');
 
-
-
-const sideInfosIcons = document.querySelectorAll('.side-info-icon');
-const sideInfox = document.querySelectorAll('.side-info-x');
-
-sideInfox.forEach((Xbtn)=>{
-    Xbtn.addEventListener('click', (event)=>{
-      event.preventDefault();
-      const sideDiv = Xbtn.closest('.side');
-      sideDiv.querySelector('.side-info').classList.add('hide');
-    })
-  })
-  var sideCounters = 0
-  sideInfosIcons.forEach((sideInfoIcon)=>{
-      sideInfoIcon.style.top = `${70 + 8*sideCounters}%`
-      sideCounters += 1;
-      sideInfoIcon.addEventListener('click', (event)=>{
+    sideInfox.forEach((Xbtn)=>{
+        Xbtn.addEventListener('click', (event)=>{
         event.preventDefault();
-        const sideDiv = sideInfoIcon.closest('.side');
-        sideDiv.querySelector('.side-info').classList.remove('hide');
-        window.scrollTo({
-          top: 0,
-          behavior: 'smooth'
-        });
-      })
-  })
+        const sideDiv = Xbtn.closest('.side');
+        sideDiv.querySelector('.side-info').classList.add('hide');
+        })
+    })
+
+    var sideCounters = 0;
+    sideInfosIcons.forEach((sideInfoIcon)=>{
+        sideInfoIcon.style.top = `${70 + 8*sideCounters}%`
+        sideCounters += 1;
+        sideInfoIcon.addEventListener('click', (event)=>{
+            event.preventDefault();
+            const sideDiv = sideInfoIcon.closest('.side');
+            sideDiv.querySelector('.side-info').classList.remove('hide');
+            window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+            });
+        })
+    })
 
 
 
@@ -1775,29 +1801,29 @@ sideInfox.forEach((Xbtn)=>{
 ///------------------------------EDIT QUESTION --------------------------------------/////
 
 
-// For Latex and Expression mcq options, process the options and display
-// properly using MathJax
-const hidden_mcq_answers = document.querySelectorAll('.hidden_answer');
-if(hidden_mcq_answers != null){
-    hidden_mcq_answers.forEach((ha)=>{
-        MathJax.typesetPromise().then(() => {
-            if(ha.classList.contains('latex')){
-                ha.closest('.formatted-answer-option').appendChild(MathJax.tex2chtml(ha.value)); 
-            }else if(ha.classList.contains('expression')){
-                if(ha.value.startsWith('@{')){
-                    var toBeParsed = ha.value.slice(2,-2)
-                }else {
-                    var toBeParsed = ha.value
+    // For Latex and Expression mcq options, process the options and display
+    // properly using MathJax
+    const hidden_mcq_answers = document.querySelectorAll('.hidden_answer');
+    if(hidden_mcq_answers != null){
+        hidden_mcq_answers.forEach((ha)=>{
+            MathJax.typesetPromise().then(() => {
+                if(ha.classList.contains('latex')){
+                    ha.closest('.formatted-answer-option').appendChild(MathJax.tex2chtml(ha.value)); 
+                }else if(ha.classList.contains('expression')){
+                    if(ha.value.startsWith('@{')){
+                        var toBeParsed = ha.value.slice(2,-2)
+                    }else {
+                        var toBeParsed = ha.value
+                    }
+                    const parsedE = math.parse(toBeParsed).toTex()
+                    ha.closest('.formatted-answer-option').appendChild(MathJax.tex2chtml(parsedE));
                 }
-                const parsedE = math.parse(toBeParsed).toTex()
-                ha.closest('.formatted-answer-option').appendChild(MathJax.tex2chtml(parsedE));
-            }
-            MathJax.typesetPromise();
+                MathJax.typesetPromise();
+            })
+
+
         })
-
-
-    })
-}
+    }
 
 
 

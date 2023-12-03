@@ -2,7 +2,6 @@ django
 django-extensions
 sympy
 pillow
-torch
 transformers
 transformers[torch]
 numpy
@@ -11,3 +10,4 @@ PyPDF2
 markdown2
 qrcode
 qrcode[pil]
+torch

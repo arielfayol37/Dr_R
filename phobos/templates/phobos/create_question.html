@@ -22,7 +22,8 @@
     <div class="page-container" id="create-question">
     <br/>
 
-    <form method="post" enctype="multipart/form-data" id="question-form" action="{% url 'phobos:create_question' assignment_id=assignment.id %}">
+    <form class="create-mode" method="post" enctype="multipart/form-data" id="question-form"
+     action="{% url 'phobos:create_question' assignment_id=assignment.id %}">
       {% csrf_token %}
       
       <div class="question">

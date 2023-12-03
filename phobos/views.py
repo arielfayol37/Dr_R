@@ -66,7 +66,7 @@ def assignment_management(request, assignment_id, course_id=None):
     is_question_bank = course.name == 'Question Bank'
     if not course.professors.filter(pk=request.user.pk).exists() and not is_question_bank:
         return HttpResponseForbidden('You are not authorized to manage this Assignment.')
-    questions = Question.objects.filter(assignment = assignment, parent_question=None)
+    questions = Question.objects.filter(assignment = assignment, parent_question=None).order_by('number')
     
     # for question in questions:
     #    question.text = replace_links_with_html(question.text)
@@ -366,7 +366,263 @@ def create_matching_pairs(request, new_question, q_num):
     return answer
 
 
+def get_num_type_pairs(question_nums_types):
+    """
+    Utility function used in create_question() and edit_question()
+    """
+    # Getting the question pairs.
+    num_type_pairs = []
+    for string_pair in question_nums_types.split("$")[1:]: # From the JS, the first item will be empty
+        question_num, question_type = string_pair.split("-")
+        num_type_pairs.append((question_num, question_type))
 
+    return num_type_pairs
+
+def get_question_settings(request, q_num):
+    """
+    Utility function to return settings in create_question() and edit_question()
+    """
+    num_points = request.POST.get(q_num + '_num_points')
+    struct_max_num_attempts = request.POST.get(q_num + '_max_num_attempts')
+    struct_deduct_per_attempt = request.POST.get(q_num + '_deduct_per_attempt')
+    margin_error = request.POST.get(q_num + '_margin_error')
+    mcq_max_num_attempts = request.POST.get(q_num + '_max_mcq_num_attempts')
+    mcq_deduct_per_attempt = request.POST.get(q_num + '_mcq_deduct_per_attempt')
+    percentage_pts_units = request.POST.get(q_num + '_percentage_pts_units')
+    units_num_attempts = request.POST.get(q_num + '_units_num_attempts')
+
+    return {'num_points': num_points, 'struct_max_num_attempts':struct_max_num_attempts, \
+            'struct_deduct_per_attempt':struct_deduct_per_attempt, 'margin_error': margin_error,\
+            'mcq_max_num_attempts':mcq_max_num_attempts, 'mcq_deduct_per_attempt':mcq_deduct_per_attempt,\
+            'percentage_pts_units':percentage_pts_units,'units_num_attempts':units_num_attempts}
+
+def get_general_question_info(request):
+
+    topic = Topic.objects.get(name=request.POST.get('topic'))
+    sub_topic = SubTopic.objects.get(name=request.POST.get('sub_topic'))
+    difficulty = request.POST.get('question_difficulty', 'MEDIUM')
+
+    return {'topic':topic, 'sub_topic':sub_topic, 'difficulty':difficulty}
+
+def update_question_settings(question, q_settings, gen_info):
+    """
+    Updates the settings of a question.
+    Returns True if a setting has been changed
+    """
+    changes = [True, True, True, True, True, True]
+    if question.answer_type.startswith(('MCQ', 'MATCHING')): # if MCQ or Matching Pair
+        question_settings = question.mcq_settings
+        changes[0] = question_settings.mcq_max_num_attempts == int(q_settings['mcq_max_num_attempts'])
+        question_settings.mcq_max_num_attempts = int(q_settings['mcq_max_num_attempts'])
+
+        changes[1] = question_settings.mcq_deduct_per_attempt == float(q_settings['mcq_deduct_per_attempt']) 
+        question_settings.mcq_deduct_per_attempt = float(q_settings['mcq_deduct_per_attempt'])
+    else:
+        question_settings = question.struct_settings
+        changes[0] = question_settings.units_num_attempts == int(q_settings['units_num_attempts']) 
+        question_settings.units_num_attempts = int(q_settings['units_num_attempts'])
+        
+        changes[1] = question_settings.max_num_attempts == int(q_settings['struct_max_num_attempts'])
+        question_settings.max_num_attempts = int(q_settings['struct_max_num_attempts'])
+
+        changes[2] = question_settings.percentage_pts_units == float(q_settings['percentage_pts_units'])
+        question_settings.percentage_pts_units = float(q_settings['percentage_pts_units'])
+
+        changes[3] = question_settings.deduct_per_attempt == float(q_settings['struct_deduct_per_attempt'])
+        question_settings.deduct_per_attempt = float(q_settings['struct_deduct_per_attempt'])
+
+        changes[4] = question_settings.margin_error == float(q_settings['margin_error'])
+        question_settings.margin_error = float(q_settings['margin_error'])
+
+    changes[5] = question_settings.num_points == int(q_settings['num_points'])
+    question_settings.num_points = int(q_settings['num_points'])
+    question_settings.difficulty_level = gen_info['difficulty']
+    question_settings.save()
+    
+    return sum(changes) != len(changes)
+
+
+def process_variables(question, request, vars_dict):
+    # Refactored variable processing code
+    for var_symbol, bounds in vars_dict.items():
+        step_size = request.POST.get(f'step#size#{var_symbol}')
+        is_integer = request.POST.get(f'var#type#{var_symbol}') == '0' # Front End will return 0 for integer.
+        new_variable = Variable(question=question, symbol=var_symbol, step_size=step_size, is_integer=is_integer)
+        new_variable.save()
+
+        assert len(bounds.get('lb', [])) == len(bounds.get('ub', [])), 'Length of lower and upper bounds should be equal'
+
+        for lower_bound, upper_bound in zip(bounds.get('lb', []), bounds.get('ub', [])):
+            VariableInterval.objects.create(variable=new_variable, lower_bound=lower_bound, upper_bound=upper_bound)    
+
+def process_mcq_answer(request, key, value, q_num, question, vars_dict):
+    option_index_start = len(q_num + '_answer_value_')
+    info_key = q_num + '_answer_info_' + key[option_index_start:]
+    answer_info_encoding = request.POST.get(info_key)
+    answer_content = value
+    # Really, all those QuestionChoices don't matter for two reasons:
+        # 1) If there are different types of mcq answers which is often the case
+        #     the answer_type will end up being just the type of the last answer
+        # 2) All what the other parts of the programs care about is whether the question
+        #     is an MCQ or not.    
+    # Map encoding values to functions and QuestionChoiceses
+    answer_creation_map = {
+        "0": (create_mcq_expression_answer, QuestionChoices.MCQ_EXPRESSION),
+        "1": (create_appropriate_mcq_float_answer, None),  # Placeholder for QuestionChoices, determined in function
+        "2": (create_mcq_latex_answer, QuestionChoices.MCQ_LATEX),
+        "3": (create_mcq_text_answer, QuestionChoices.MCQ_TEXT)
+    }
+
+    # Get the answer type encoding
+    answer_type_encoding = answer_info_encoding[1]
+
+    # Create the answer based on the encoding
+    if answer_type_encoding in answer_creation_map:
+        creation_func, question_choice = answer_creation_map[answer_type_encoding]
+        # Special handling for float answers to determine the correct QuestionChoices
+        if answer_type_encoding == "1":
+            answer = creation_func(question, answer_content, vars_dict)
+            if answer_content.startswith('@{') and answer_content.endswith('}@'):
+                if vars_dict:
+                    question.answer_type = QuestionChoices.MCQ_VARIABLE_FLOAT
+                else:
+                    raise ValueError('Expected variable expression but got no variable.')
+            else:
+                question.answer_type = QuestionChoices.MCQ_FLOAT
+        else:
+            question.answer_type = question_choice
+            answer = creation_func(question, answer_content)
+    else:
+        return HttpResponseForbidden('Something went wrong: unexpected mcq encoding')
+
+    # Set if the answer is correct based on the encoding
+    answer.is_answer = answer_info_encoding[0] == '1'
+    answer.save()  # Save the answer
+
+def process_structural_answer(request, question, question_answer, answer_unit, answer_preface, vars_dict, q_num, type_int):
+    """
+    Returns True if forbidden request.
+    """
+    # Map type_int values to functions and QuestionChoices
+    answer_creation_map = {
+        0: (create_expression_answer, QuestionChoices.STRUCTURAL_EXPRESSION),
+        1: (create_appropriate_float_answer, None),  # Placeholder for QuestionChoices, determined in function,
+        2: (create_latex_answer, QuestionChoices.STRUCTURAL_LATEX),
+        4: (create_text_answer, QuestionChoices.STRUCTURAL_TEXT),
+        8: (create_matching_pairs, QuestionChoices.MATCHING_PAIRS)
+    }
+    # Create the answer based on type_int
+    if type_int in answer_creation_map:
+        creation_func, question_choice = answer_creation_map[type_int]
+        if type_int != 1: # will handle this particular case below
+            question.answer_type = question_choice
+        if type_int == 8:
+            answer = creation_func(request, question, q_num)
+        elif type_int == 4:
+            answer = creation_func(question)
+        elif type_int == 2:
+            answer = creation_func(question, question_answer)
+        else:
+            if type_int == 1:
+                answer = creation_func(question, question_answer,\
+                                    answer_unit, answer_preface, vars_dict)
+                if question_answer.startswith('@{') and question_answer.endswith('}@'):
+                    if vars_dict:
+                        question.answer_type = QuestionChoices.STRUCTURAL_VARIABLE_FLOAT
+                    else:
+                        raise ValueError('Expected variable expression but got no variable.')
+                else:
+                    question.answer_type = QuestionChoices.STRUCTURAL_FLOAT
+            else:
+                answer = creation_func(question, question_answer,\
+                                    answer_unit, answer_preface)
+        answer.save()
+        return False
+
+    else:
+        return True
+
+def process_mcq_image(request, question, q_num):
+    # Getting the MCQ images
+    for key, value in request.FILES.items():
+        if key.startswith(q_num + '_answer_value_'):
+            option_index_start = len(q_num + '_answer_value_')
+            info_key = q_num + '_answer_info_' + key[option_index_start:]
+            answer_info_encoding = request.POST.get(info_key)
+            image = value
+            if answer_info_encoding[1] == '7': # Image answer
+                question.answer_type = QuestionChoices.MCQ_IMAGE
+                # image = request.FILES.get(info_key)
+                label = request.POST.get(q_num + '_image_label_' + key[option_index_start:])
+                answer = MCQImageAnswer(question=question, image=image, label=label)
+            else:
+                return HttpResponseForbidden('Something went wrong: unexpected encoding for mcq image answer')
+            answer.is_answer = True if answer_info_encoding[0] == '1' else False
+            answer.save() # Needed here.
+
+def create_hint(question, hint_text):
+    hint = Hint.objects.create(question=question, text=hint_text)
+    hint.save()
+
+def create_question_image(request,question,q_num, image_number):
+    label_name = q_num + '_question_image_label_' + image_number
+    image_name = q_num + '_question_image_file_' + image_number
+    image = request.FILES.get(image_name)
+    label = request.POST.get(label_name)
+    question_image = QuestionImage(question=question, image=image, label=label)
+    question_image.save()
+
+def core_create_question(request, question, parent_question, q_num, q_type, gen_info, vars_dict, assignment, counter):
+    type_int = int(q_type)
+    text = request.POST.get(q_num + '_question_text')
+    answer_unit = request.POST.get(q_num + '_answer_unit')
+    answer_preface = request.POST.get(q_num + '_answer_preface')
+    if answer_unit == '':
+        answer_unit = None
+    if type_int != 3 and type_int != 4:
+        question_answer = request.POST.get(q_num + '_answer')
+
+    question.text = text,
+    question.topic = gen_info["topic"],
+    question.sub_topic = gen_info["sub_topic"],
+    question.assignment = assignment,
+    question.parent_question = parent_question 
+    
+    question.save()  # the settings object is automatically created in the save
+    
+
+    for key, value in request.POST.items():
+        if key.startswith('domain') and counter == 1: # Creating the variables
+            # variables will be associated only to the parent question.
+            _, bound_type, var_symbol, bound_number = key.split('#')
+            bound_value = value
+            vars_dict.setdefault(var_symbol, {}).setdefault(bound_type, []).append(bound_value)
+        
+        elif key.startswith(q_num + '_question_image_label_'):
+            image_number = key[len(q_num + '_question_image_label_'):]
+            create_question_image(request, question, q_num, image_number)
+        # creating the hints
+        elif key.startswith(q_num + '_hint_'):
+            create_hint(question, value)
+
+        if type_int == 3 and key.startswith(q_num + '_answer_value'):
+            process_mcq_answer(request, key, value, q_num, question, vars_dict)
+                
+    if type_int != 3: # NOT AN MCQ. Could be MATCHING PAIR OR STRUCTURAL
+        forbidden = process_structural_answer(request, question, question_answer, \
+                                                answer_unit, answer_preface, vars_dict, q_num, type_int)
+        if forbidden:
+            return True
+    
+
+    process_mcq_image(request, question, q_num)
+        
+    question.save(save_settings=True)
+    
+    if counter == 1:
+        process_variables(question, request, vars_dict)
+
+    return False
 
 @transaction.atomic
 @login_required(login_url='astros:login')
@@ -380,210 +636,32 @@ def create_question(request, assignment_id=None, question_nums_types=None):
     professor = get_object_or_404(Professor, pk=request.user.id)
     
     if request.method == 'POST':
-        # Getting the question pairs.
-        num_type_pairs = []
-        for string_pair in question_nums_types.split("$")[1:]: # From the JS, the first item will be empty
-            question_num, question_type = string_pair.split("-")
-            num_type_pairs.append((question_num, question_type))
+
         assignment = Assignment.objects.get(pk = assignment_id)
         quest_num = assignment.questions.filter(parent_question=None).count() + 1
         parent_question = None
         counter = 0
         vars_dict = {}
-        topic = Topic.objects.get(name=request.POST.get('topic'))
-        sub_topic = SubTopic.objects.get(name=request.POST.get('sub_topic'))
+        gen_info = get_general_question_info(request)
 
-        difficulty = request.POST.get('question_difficulty', 'MEDIUM')
+        num_type_pairs = get_num_type_pairs(question_nums_types)
         for q_num, q_type in num_type_pairs:
-            counter += 1
-            type_int = int(q_type)
-
-            text = request.POST.get(q_num + '_question_text')
-            answer_unit = request.POST.get(q_num + '_answer_unit')
-            answer_preface = request.POST.get(q_num + '_answer_preface')
-            if answer_unit == '':
-                answer_unit = None
-            if type_int != 3 and type_int != 4:
-                question_answer = request.POST.get(q_num + '_answer')
             new_question = Question(
                 number = quest_num if counter == 1 else str(quest_num) + chr(64 + counter),
-                text = text,
-                topic = topic,
-                sub_topic = sub_topic,
-                assignment = assignment,
-                parent_question = parent_question 
             )
-            
-            new_question.save()  # the settings object is automatically created in the save
+        
+            counter += 1
+            forbid = core_create_question(request, new_question, parent_question, q_num, q_type, gen_info, vars_dict, assignment, counter)
+            if forbid:
+                return HttpResponseForbidden('Something went wrong: unexpected question q_type')
 
-            num_points = request.POST.get(q_num + '_num_points')
-            struct_max_num_attempts = request.POST.get(q_num + '_max_num_attempts')
-            struct_deduct_per_attempt = request.POST.get(q_num + '_deduct_per_attempt')
-            margin_error = request.POST.get(q_num + '_margin_error')
-            mcq_max_num_attempts = request.POST.get(q_num + '_max_mcq_num_attempts')
-            mcq_deduct_per_attempt = request.POST.get(q_num + '_mcq_deduct_per_attempt')
-            percentage_pts_units = request.POST.get(q_num + '_percentage_pts_units')
-            units_num_attempts = request.POST.get(q_num + '_units_num_attempts')
-
-            for key, value in request.POST.items():
-                if key.startswith('domain') and counter==1: # Creating the variables
-                    # variables will be associated only to the parent question.
-                    _, bound_type, var_symbol, bound_number = key.split('#')
-                    bound_value = value
-                    if var_symbol not in vars_dict:
-                        vars_dict[var_symbol] = {}
-                    if bound_type not in vars_dict[var_symbol]:
-                        vars_dict[var_symbol][bound_type] = []
-                    vars_dict[var_symbol][bound_type].append(bound_value)
-                
-                elif key.startswith(q_num + '_question_image_label_'):
-                    image_number = key[len(q_num + '_question_image_label_'):]
-                    label_name = q_num + '_question_image_label_' + image_number
-                    image_name = q_num + '_question_image_file_' + image_number
-                    image = request.FILES.get(image_name)
-                    label = request.POST.get(label_name)
-                    question_image = QuestionImage(question=new_question, image=image, label=label)
-                    question_image.save()
-                # creating the hints
-                elif key.startswith(q_num + '_hint_'):
-                    hint_text = value
-                    hint = Hint.objects.create(question=new_question, text=hint_text)
-                    hint.save()
-            if counter == 1:
-                for var_symbol in vars_dict:
-                    step_size = request.POST[f'step#size#{var_symbol}']
-                    is_integer = not bool(int(request.POST[f'var#type#{var_symbol}'])) # Front End will return 0 for integer. 
-                    new_variable = Variable(question=new_question, symbol=var_symbol, step_size=step_size, is_integer=is_integer)
-                    new_variable.save()
-                    assert len(vars_dict[var_symbol]['lb']) == len(vars_dict[var_symbol]['ub'])
-                    for bound_index in range(len(vars_dict[var_symbol]['lb'])):
-                        var_interval = VariableInterval(variable=new_variable, \
-                                                        lower_bound = vars_dict[var_symbol]['lb'][bound_index],\
-                                                        upper_bound = vars_dict[var_symbol]['ub'][bound_index])
-                        var_interval.save()
-            if type_int == 3:
-                for key, value in request.POST.items():
-                    if key.startswith(q_num + '_answer_value_'):
-                        option_index_start = len(q_num + '_answer_value_')
-                        info_key = q_num + '_answer_info_' + key[option_index_start:]
-                        answer_info_encoding = request.POST.get(info_key)
-                        answer_content = value
-                        # Really, all thsoe QuestionChoices don't matter for two reasons:
-                            # 1) If there are different types of mcq answers which is often the case
-                            #     the answer_type will end up being just the type of the last answer
-                            # 2) All what the other parts of the programs care about is whether the question
-                            #     is an MCQ or not.    
-                        # Map encoding values to functions and QuestionChoices
-                        # Map encoding values to functions and QuestionChoices
-                        answer_creation_map = {
-                            "0": (create_mcq_expression_answer, QuestionChoices.MCQ_EXPRESSION),
-                            "1": (create_appropriate_mcq_float_answer, None),  # Placeholder for QuestionChoices, determined in function
-                            "2": (create_mcq_latex_answer, QuestionChoices.MCQ_LATEX),
-                            "3": (create_mcq_text_answer, QuestionChoices.MCQ_TEXT)
-                        }
-
-                        # Get the answer type encoding
-                        answer_type_encoding = answer_info_encoding[1]
-
-                        # Create the answer based on the encoding
-                        if answer_type_encoding in answer_creation_map:
-                            creation_func, question_choice = answer_creation_map[answer_type_encoding]
-                            # Special handling for float answers to determine the correct QuestionChoices
-                            if answer_type_encoding == "1":
-                                answer = creation_func(new_question, answer_content, vars_dict)
-                                if answer_content.startswith('@{') and answer_content.endswith('}@'):
-                                    if vars_dict:
-                                        new_question.answer_type = QuestionChoices.MCQ_VARIABLE_FLOAT
-                                    else:
-                                        raise ValueError('Expected variable expression but got no variable.')
-                                else:
-                                    new_question.answer_type = QuestionChoices.MCQ_FLOAT
-                            else:
-                                new_question.answer_type = question_choice
-                                answer = creation_func(new_question, answer_content)
-                        else:
-                            return HttpResponseForbidden('Something went wrong: unexpected mcq encoding')
-
-                        # Set if the answer is correct based on the encoding
-                        answer.is_answer = answer_info_encoding[0] == '1'
-                        answer.save()  # Save the answer
-                
-                # Getting the MCQ images
-                for key, value in request.FILES.items():
-                    if key.startswith(q_num + '_answer_value_'):
-                        option_index_start = len(q_num + '_answer_value_')
-                        info_key = q_num + '_answer_info_' + key[option_index_start:]
-                        answer_info_encoding = request.POST.get(info_key)
-                        image = value
-                        if answer_info_encoding[1] == '7': # Image answer
-                            new_question.answer_type = QuestionChoices.MCQ_IMAGE
-                            # image = request.FILES.get(info_key)
-                            label = request.POST.get(q_num + '_image_label_' + key[option_index_start:])
-                            answer = MCQImageAnswer(question=new_question, image=image, label=label)
-                        else:
-                            return HttpResponseForbidden('Something went wrong: unexpected encoding for mcq image answer')
-                        answer.is_answer = True if answer_info_encoding[0] == '1' else False
-                        answer.save() # Needed here.                
-                        
-            else:
-                # Map type_int values to functions and QuestionChoices
-                answer_creation_map = {
-                    0: (create_expression_answer, QuestionChoices.STRUCTURAL_EXPRESSION),
-                    1: (create_appropriate_float_answer, None),  # Placeholder for QuestionChoices, determined in function,
-                    2: (create_latex_answer, QuestionChoices.STRUCTURAL_LATEX),
-                    4: (create_text_answer, QuestionChoices.STRUCTURAL_TEXT),
-                    8: (create_matching_pairs, QuestionChoices.MATCHING_PAIRS)
-                }
-                # Create the answer based on type_int
-                if type_int in answer_creation_map:
-                    creation_func, question_choice = answer_creation_map[type_int]
-                    if type_int != 1: # will handle this particular case below
-                        new_question.answer_type = question_choice
-                    if type_int == 8:
-                        answer = creation_func(request, new_question, q_num)
-                    elif type_int == 4:
-                        answer = creation_func(new_question)
-                    elif type_int == 2:
-                        answer = creation_func(new_question, question_answer)
-                    else:
-                        if type_int == 1:
-                            answer = creation_func(new_question, question_answer,\
-                                                answer_unit, answer_preface, vars_dict)
-                            if question_answer.startswith('@{') and question_answer.endswith('}@'):
-                                if vars_dict:
-                                    new_question.answer_type = QuestionChoices.STRUCTURAL_VARIABLE_FLOAT
-                                else:
-                                    raise ValueError('Expected variable expression but got no variable.')
-                            else:
-                                new_question.answer_type = QuestionChoices.STRUCTURAL_FLOAT
-                        else:
-                            answer = creation_func(new_question, question_answer,\
-                                                answer_unit, answer_preface)
-
-                else:
-                    return HttpResponseForbidden('Something went wrong: unexpected question type_int')
-                
-            new_question.save(save_settings=True)
-            
             if counter == 1:
                 parent_question = new_question
-            answer.save() # Needed here too.
-           
+
+            q_settings = get_question_settings(request, q_num)
             # Saving the settings.
-            if new_question.answer_type.startswith(('MCQ', 'MATCHING')): # if MCQ or Matching Pair
-                question_settings = new_question.mcq_settings
-                question_settings.mcq_max_num_attempts = int(mcq_max_num_attempts)
-                question_settings.mcq_deduct_per_attempt = float(mcq_deduct_per_attempt)
-            else:
-                question_settings = new_question.struct_settings
-                question_settings.units_num_attempts = int(units_num_attempts)
-                question_settings.max_num_attempts = int(struct_max_num_attempts)
-                question_settings.percentage_pts_units = float(percentage_pts_units)
-                question_settings.deduct_per_attempt = float(struct_deduct_per_attempt)
-                question_settings.margin_error = float(margin_error)
-            question_settings.num_points = int(num_points)
-            question_settings.difficulty_level = difficulty
-            question_settings.save()
+            change = update_question_settings(new_question, q_settings, gen_info)
+
         return HttpResponseRedirect(reverse("phobos:assignment_management",\
                                             kwargs={'course_id':assignment.course.id,\
                                                     'assignment_id':assignment_id}))
@@ -623,7 +701,7 @@ def renumber_assignment_questions(assignment):
         for parent_quest in assignment.questions.filter(parent_question=None):
             # Increment number by 1
             number += 1
-            sub_questions = list(parent_quest.sub_questions.all())
+            sub_questions = list(parent_quest.sub_questions.all().order_by('number'))
             sub_questions.insert(0, parent_quest)
             
             for sub_question in sub_questions:
@@ -679,11 +757,7 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
     for course_ in courses: # Watch out variable names here
         assignments.append((course_.id, Assignment.objects.filter(course = course_)))                  #for front-end Export question implementation
         
-    question_0 = Question.objects.get(pk=question_id)
-    if question_0.parent_question: 
-        question_0 = question_0.parent_question
-    questions = list(Question.objects.filter(parent_question=question_0))
-    questions.insert(0, question_0)
+    questions = get_questions_list(question_id)
 
     questions_dictionary = {}
     for index, question in enumerate(questions):
@@ -730,14 +804,33 @@ def question_view(request, question_id, assignment_id=None, course_id=None):
                                                          'is_questionbank': True if course.name=='Question Bank' else False })
 
 
-@login_required(login_url='astros:login') 
-def edit_question(request, question_id):
-    question = Question.objects.get(pk = question_id)
-    question_0 = Question.objects.get(pk=question_id)
+
+def get_parent_question(question_id):
+    """
+    Given a question primary key, returns the parent question.
+    """
+    question_0 = get_object_or_404(Question, pk=question_id)
     if question_0.parent_question: 
         question_0 = question_0.parent_question
+    return question_0
+
+def get_questions_list(question_id):
+    """
+    Returns a list of questions that fall under a question. The parent question itself will be the first element in the list.
+    """
+    question_0 = get_parent_question(question_id=question_id)
     questions = list(Question.objects.filter(parent_question=question_0))
     questions.insert(0, question_0)
+    return questions
+
+def variable_bounds_to_string(variable):
+    result = []
+    for interval in variable.intervals.all():
+        result.append(f"[{interval.lower_bound}, {interval.upper_bound}]")
+    return ", ".join(result)
+
+def load_question_info(question_id):
+    questions = get_questions_list(question_id)
     question_difficulties = ['EASY', 'MEDIUM', 'DIFFICULT']
     questions_dictionary = {}
     js_qtype = ''
@@ -774,13 +867,117 @@ def edit_question(request, question_id):
                      'qtype':qtype,'answers': answers, 'js_qtype':js_qtype,     
                      'answer':answers[0], # for structural
                      }
+    # Getting the string representation of the variable bounds
+    # in order for it to be well displayed on the front end
+    # This could have been done on the front end as well and
+    #  may even be better since it will reduce the loading time.    
+    vars_bounds = []
+    for var in questions[0].variables.all():
+        vars_bounds.append(variable_bounds_to_string(var))
 
-    return render(request, 'phobos/edit_question.html', {
-    'question': questions[0],
-    'questions':questions,
-    'question_difficulties': question_difficulties,
-    'questions_dict':questions_dictionary
-    })  
+    info = {
+        'question': questions[0],
+        'questions':questions,
+        'question_difficulties': question_difficulties,
+        'questions_dict':questions_dictionary,
+        'variables_bounds':zip(questions[0].variables.all(), vars_bounds)
+    }
+
+    return info
+
+def delete_associated_objects(parent_question):
+    """
+    Deletes all the objects associated with the question
+    1) `Variable`, `VariableInstance`, and `VariableInterval` objects
+    associated with the question
+    """
+    Variable.objects.filter(question=parent_question).delete()
+
+def delete_missing_pks(request, question_id):
+    """
+    1) 'QuestionImage', `Hint`, `MatchingAnswer. These are easy to delete
+        because we don't even care about the number of the question. All we
+        need are the primary keys of the objects to be deleted. 
+
+    2) MCQs need some special treatment because they have different types
+        so 2 different objects can have the same pk.
+    
+    """
+    question = get_object_or_404(Question, pk=question_id)
+    related_names = {'images':'QuestionImage', 'matching_pairs':'MatchingAnswer', 'hints':'Hint'}
+    delete_pks = {'QuestionImage':[], 'MatchingAnswer':[], 'Hint':[]}
+    class_names = {'QuestionImage':QuestionImage, 'MatchingAnswer':MatchingAnswer, 'Hint':Hint}
+
+    for relate_name in related_names:
+        class_name = related_names[relate_name]
+        # Getting all the pks of objects 
+        pks = list(getattr(question, relate_name).all().value_list('pk', flat=True))
+        # Checking the pks that have been deleted (when found is None)
+        for pk in pks:
+            found = request.POST.get(f'{pk}_{relate_name}', None)
+            if found is None: delete_pks[class_name].append(pk)
+
+        # Delete missing pks
+        class_names[class_name].objects.filter(pk__in=delete_pks[class_name]).delete()
+
+    # Handling mcqs
+    mcq_answers = question.get_mcq_answers()
+    for ma in mcq_answers:
+        found = request.POST.get(f'{ma.get_pk_ac()}_mcq', None)
+        if found is None: ma.delete()
+
+
+
+@login_required(login_url='astros:login') 
+def edit_question(request, question_id, question_nums_types=None):
+    """
+    Edits a question object and all the associated objects.
+    If the assignemnt for that question has not yet been assigned, 
+    Otherwise, it is basically like a question.
+    """
+    if request.method == "POST":
+        parent_question = get_parent_question(question_id)
+        redeploy = bool(request.POST['redeploy'])
+        delete_pks = list(parent_question.sub_questions.all().value_list('pk', flat=True))
+        delete_pks.insert(0, question_id)
+
+        vars_dict = {}
+        num_type_pairs = get_num_type_pairs(question_nums_types)
+        counter = 0
+        
+        for q_num, q_type in num_type_pairs:
+            counter += 1
+            question_pk = int(request.POST[f"{q_num}_question_pk"])
+            question = get_object_or_404(Question, pk=question_pk)
+            delete_missing_pks(question_pk)
+
+            delete_pks.remove(question_pk)
+            
+            if not parent_question.assignment.is_assigned:
+                forbid = core_create_question(request, question, parent_question, q_num, q_type, gen_info, vars_dict, question.assignment, counter)           
+            if forbid:
+                return HttpResponseForbidden('Something went wrong: unexpected question q_type')
+
+            if counter == 1:
+                parent_question = question
+
+            elif redeploy:
+                return HttpResponseForbidden('Redeployment for question edit has not yet been implemented')
+
+            gen_info = get_general_question_info(request) # gets difficulty, topic, and sub_topic.
+            q_settings = get_question_settings(request, q_num) # gets the settings for this question
+
+            ## Update the question settings
+            
+            change = update_question_settings(question, q_settings, gen_info)
+
+            ## Update students' submissions
+            if change:
+                pass
+        
+        Question.objects.filter(pk__in=delete_pks).delete()
+    
+    return render(request, 'phobos/edit_question.html', load_question_info(question_id))  
 
 
 
@@ -1120,11 +1317,7 @@ def copy_answers(old_question, new_question):
 @login_required(login_url='astros:login')
 def export_question_to(request, question_id, exp_assignment_id, course_id=None, assignment_id=None):
     assignment = get_object_or_404(Assignment, pk=exp_assignment_id)
-    question_0 = Question.objects.get(pk=question_id)
-    if question_0.parent_question: # if question has no parent question(the question itself 
-        question_0 = question_0.parent_question
-    questions = list(Question.objects.filter(parent_question=question_0))
-    questions.insert(0, question_0)
+    questions = get_questions_list(question_id)
     q_count = assignment.questions.filter(parent_question=None).count() + 1
     p_question = None
     for index, question in enumerate(questions):    
