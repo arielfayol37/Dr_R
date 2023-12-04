@@ -21,7 +21,7 @@
     <div class="page-container" id="create-question">
 
     <form class="edit-mode" method="post" enctype="multipart/form-data" id="question-form"
-     action="{% url 'phobos:create_question' assignment_id=question.assignment.id %}">
+     action="{% url 'phobos:edit_question' question_id=question.pk %}">
       {% csrf_token %}
       
       <div class="question">
@@ -460,8 +460,8 @@
               {% endif %}
               
               {% for interval in var.intervals.all %}
-                <input type="hidden" name="domain#lb#{{var.symbol}}{{forloop.counter0}}" value="{{interval.lower_bound}}" class="var-hidden-i"/>
-                <input type="hidden" name="domain#ub#{{var.symbol}}{{forloop.counter0}}" value="{{interval.upper_bound}}" class="var-hidden-i"/>
+                <input type="hidden" name="domain#lb#{{var.symbol}}#{{forloop.counter0}}" value="{{interval.lower_bound}}" class="var-hidden-i"/>
+                <input type="hidden" name="domain#ub#{{var.symbol}}#{{forloop.counter0}}" value="{{interval.upper_bound}}" class="var-hidden-i"/>
               {% endfor %}
             </div>
           {% endfor %}

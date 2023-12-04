@@ -327,32 +327,47 @@ def create_appropriate_mcq_float_answer(new_question, answer_content, vars_dict)
     else:
         return create_mcq_float_answer(new_question, answer_content)
 
-def create_expression_answer(new_question, question_answer, answer_unit, answer_preface):
-    return ExpressionAnswer(question=new_question, content=question_answer,
-                            answer_unit=answer_unit, preface=answer_preface)
+def create_expression_answer(new_question, question_answer, answer_unit, answer_preface, edit=False):
+    if not edit:
+        return ExpressionAnswer(question=new_question, content=question_answer,
+                                answer_unit=answer_unit, preface=answer_preface)
+    else:
+        pass
 
 def create_float_answer(new_question, question_answer, answer_unit, answer_preface):
+    # No edit here. Taken care of in create_appropriate_float_answer
     return FloatAnswer(question=new_question, content=question_answer,
                        answer_unit=answer_unit, preface=answer_preface)
 
 def create_variable_float_answer(new_question, question_answer, answer_unit, answer_preface):
+    # No edit here. Taken care of in create_appropriate_float_answer
     return VariableFloatAnswer(question=new_question, content=question_answer,
                                answer_unit=answer_unit, preface=answer_preface)
 
-def create_latex_answer(new_question, question_answer):
-    return LatexAnswer(question=new_question, content=question_answer)
-
-def create_text_answer(new_question):
-    return TextAnswer(question=new_question, content='')
-
-def create_appropriate_float_answer(new_question, question_answer, answer_unit, answer_preface,vars_dict):
-    if question_answer.startswith('@{') and question_answer.endswith('}@'):
-        if vars_dict:
-            return create_variable_float_answer(new_question, question_answer, answer_unit, answer_preface)
-        else:
-            raise ValueError('Expected variable expression but got no variable.')
+def create_latex_answer(new_question, question_answer, edit=False):
+    if not edit:
+        return LatexAnswer(question=new_question, content=question_answer)
     else:
-        return create_float_answer(new_question, question_answer, answer_unit, answer_preface)
+        pass
+
+def create_text_answer(new_question, edit=False):
+    if not edit:
+        return TextAnswer(question=new_question, content='')
+    else:
+        pass
+
+def create_appropriate_float_answer(new_question, question_answer, answer_unit, answer_preface,vars_dict, edit=False):
+    if not edit:
+        if question_answer.startswith('@{') and question_answer.endswith('}@'):
+            if vars_dict:
+                return create_variable_float_answer(new_question, question_answer, answer_unit, answer_preface)
+            else:
+                raise ValueError('Expected variable expression but got no variable.')
+                
+        else:
+            return create_float_answer(new_question, question_answer, answer_unit, answer_preface)
+    else: # Editing mode
+        pass
 
 def create_matching_pairs(request, new_question, q_num):
     num_of_mps_approx = int(request.POST[q_num + '_num_of_mps'])
@@ -398,10 +413,9 @@ def get_question_settings(request, q_num):
 
 def get_general_question_info(request):
 
-    topic = Topic.objects.get(name=request.POST.get('topic'))
-    sub_topic = SubTopic.objects.get(name=request.POST.get('sub_topic'))
+    topic = get_object_or_404(Topic, name=request.POST.get('topic'))
+    sub_topic = get_object_or_404(SubTopic, name=request.POST.get('sub_topic'))
     difficulty = request.POST.get('question_difficulty', 'MEDIUM')
-
     return {'topic':topic, 'sub_topic':sub_topic, 'difficulty':difficulty}
 
 def update_question_settings(question, q_settings, gen_info):
@@ -499,7 +513,7 @@ def process_mcq_answer(request, key, value, q_num, question, vars_dict):
     answer.is_answer = answer_info_encoding[0] == '1'
     answer.save()  # Save the answer
 
-def process_structural_answer(request, question, question_answer, answer_unit, answer_preface, vars_dict, q_num, type_int):
+def process_structural_answer(request, question, question_answer, answer_unit, answer_preface, vars_dict, q_num, type_int, edit=False):
     """
     Returns True if forbidden request.
     """
@@ -519,13 +533,13 @@ def process_structural_answer(request, question, question_answer, answer_unit, a
         if type_int == 8:
             answer = creation_func(request, question, q_num)
         elif type_int == 4:
-            answer = creation_func(question)
+            answer = creation_func(question, edit=edit)
         elif type_int == 2:
-            answer = creation_func(question, question_answer)
+            answer = creation_func(question, question_answer, edit=edit)
         else:
             if type_int == 1:
                 answer = creation_func(question, question_answer,\
-                                    answer_unit, answer_preface, vars_dict)
+                                    answer_unit, answer_preface, vars_dict, edit=edit)
                 if question_answer.startswith('@{') and question_answer.endswith('}@'):
                     if vars_dict:
                         question.answer_type = QuestionChoices.STRUCTURAL_VARIABLE_FLOAT
@@ -535,7 +549,7 @@ def process_structural_answer(request, question, question_answer, answer_unit, a
                     question.answer_type = QuestionChoices.STRUCTURAL_FLOAT
             else:
                 answer = creation_func(question, question_answer,\
-                                    answer_unit, answer_preface)
+                                    answer_unit, answer_preface, edit=edit)
         answer.save()
         return False
 
@@ -572,7 +586,7 @@ def create_question_image(request,question,q_num, image_number):
     question_image = QuestionImage(question=question, image=image, label=label)
     question_image.save()
 
-def core_create_question(request, question, parent_question, q_num, q_type, gen_info, vars_dict, assignment, counter):
+def core_create_question(request, question, parent_question, q_num, q_type, gen_info, vars_dict, assignment, counter, edit=False):
     type_int = int(q_type)
     text = request.POST.get(q_num + '_question_text')
     answer_unit = request.POST.get(q_num + '_answer_unit')
@@ -581,11 +595,10 @@ def core_create_question(request, question, parent_question, q_num, q_type, gen_
         answer_unit = None
     if type_int != 3 and type_int != 4:
         question_answer = request.POST.get(q_num + '_answer')
-
-    question.text = text,
-    question.topic = gen_info["topic"],
-    question.sub_topic = gen_info["sub_topic"],
-    question.assignment = assignment,
+    question.text = text
+    question.topic = gen_info["topic"]
+    question.sub_topic = gen_info["sub_topic"]
+    question.assignment = assignment
     question.parent_question = parent_question 
     
     question.save()  # the settings object is automatically created in the save
@@ -594,6 +607,7 @@ def core_create_question(request, question, parent_question, q_num, q_type, gen_
     for key, value in request.POST.items():
         if key.startswith('domain') and counter == 1: # Creating the variables
             # variables will be associated only to the parent question.
+            print(key)
             _, bound_type, var_symbol, bound_number = key.split('#')
             bound_value = value
             vars_dict.setdefault(var_symbol, {}).setdefault(bound_type, []).append(bound_value)
@@ -610,7 +624,7 @@ def core_create_question(request, question, parent_question, q_num, q_type, gen_
                 
     if type_int != 3: # NOT AN MCQ. Could be MATCHING PAIR OR STRUCTURAL
         forbidden = process_structural_answer(request, question, question_answer, \
-                                                answer_unit, answer_preface, vars_dict, q_num, type_int)
+                                                answer_unit, answer_preface, vars_dict, q_num, type_int, edit=edit)
         if forbidden:
             return True
     
@@ -646,11 +660,11 @@ def create_question(request, assignment_id=None, question_nums_types=None):
 
         num_type_pairs = get_num_type_pairs(question_nums_types)
         for q_num, q_type in num_type_pairs:
+            counter += 1
             new_question = Question(
                 number = quest_num if counter == 1 else str(quest_num) + chr(64 + counter),
             )
-        
-            counter += 1
+            
             forbid = core_create_question(request, new_question, parent_question, q_num, q_type, gen_info, vars_dict, assignment, counter)
             if forbid:
                 return HttpResponseForbidden('Something went wrong: unexpected question q_type')
@@ -837,13 +851,14 @@ def load_question_info(question_id):
     for index, question in enumerate(questions):
         answers = []
         qtype = ''
+        print(question.answer_type)
         # Check if the answer type starts with MCQ or STRUCT
         if question.answer_type.startswith('MCQ'):
             qtype, js_qtype = 'mcq', 'm-answer'
             for attr in answer_type_to_attributes['MCQ']:
                 answer_list = getattr(question, attr).all()
+                print(answer_list)
                 answers.extend(answer_list)
-                # Add to is_latex list, 1 if latex answers, else 0
         elif question.answer_type.startswith('STRUCT'):
             qtype = 'struct'
             attr = answer_type_to_attributes['STRUCT'][question.answer_type]
@@ -863,6 +878,8 @@ def load_question_info(question_id):
             answers = question.matching_pairs.all()
         else:
             return HttpResponse('Something went wrong.')
+        assert len(answers) >= 1, "Answer(s) not found for this question. Check the export_question_to()\
+                                    whether it works properly."
         questions_dictionary[index] = {'question':question,\
                      'qtype':qtype,'answers': answers, 'js_qtype':js_qtype,     
                      'answer':answers[0], # for structural
@@ -911,7 +928,7 @@ def delete_missing_pks(request, question_id):
     for relate_name in related_names:
         class_name = related_names[relate_name]
         # Getting all the pks of objects 
-        pks = list(getattr(question, relate_name).all().value_list('pk', flat=True))
+        pks = list(getattr(question, relate_name).all().values_list('pk', flat=True))
         # Checking the pks that have been deleted (when found is None)
         for pk in pks:
             found = request.POST.get(f'{pk}_{relate_name}', None)
@@ -937,24 +954,25 @@ def edit_question(request, question_id, question_nums_types=None):
     """
     if request.method == "POST":
         parent_question = get_parent_question(question_id)
-        redeploy = bool(request.POST['redeploy'])
-        delete_pks = list(parent_question.sub_questions.all().value_list('pk', flat=True))
+        redeploy = bool(request.POST.get('redeploy', None))
+        delete_pks = list(parent_question.sub_questions.all().values_list('pk', flat=True))
         delete_pks.insert(0, question_id)
 
         vars_dict = {}
         num_type_pairs = get_num_type_pairs(question_nums_types)
         counter = 0
-        
+        gen_info = get_general_question_info(request)
         for q_num, q_type in num_type_pairs:
             counter += 1
             question_pk = int(request.POST[f"{q_num}_question_pk"])
             question = get_object_or_404(Question, pk=question_pk)
-            delete_missing_pks(question_pk)
+            delete_associated_objects(parent_question)
+            delete_missing_pks(request, question_pk)
 
             delete_pks.remove(question_pk)
             
             if not parent_question.assignment.is_assigned:
-                forbid = core_create_question(request, question, parent_question, q_num, q_type, gen_info, vars_dict, question.assignment, counter)           
+                forbid = core_create_question(request, question, parent_question, q_num, q_type, gen_info, vars_dict, question.assignment, counter, edit=True)           
             if forbid:
                 return HttpResponseForbidden('Something went wrong: unexpected question q_type')
 
@@ -1271,7 +1289,6 @@ def copy_answers(old_question, new_question):
         QuestionChoices.STRUCTURAL_TEXT: TextAnswer,
         # ... add other mappings for structural questions... if created
     }
-
     answer_type_class = answer_type_mapping.get(old_question.answer_type)
     if answer_type_class:
         answer = answer_type_class.objects.get(question=old_question)
@@ -1303,7 +1320,6 @@ def copy_answers(old_question, new_question):
                 if isinstance(new_answer, MCQImageAnswer):
                     new_answer.image = answer.image
                     new_answer.label = answer.label
-                
                 new_answer.save()
     elif old_question.answer_type.startswith('MATCHING'):
         for answer in old_question.matching_pairs.all():
@@ -1338,6 +1354,7 @@ def export_question_to(request, question_id, exp_assignment_id, course_id=None, 
         copy_question_images(question, new_question)
         copy_variables(question, new_question)
         copy_answers(question, new_question)
+        # TODO: IMPORTANT! Copy other things like hints
         # Saving the settings.
         if new_question.answer_type.startswith(('MCQ', 'MATCHING')): # if MCQ or Matching pair
             question_settings = new_question.mcq_settings

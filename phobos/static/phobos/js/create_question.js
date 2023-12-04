@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const calculatorDiv = document.querySelector('.calculator');
     calculatorDiv.style.display = 'none';
     const createQuestionBtn = document.querySelector('.create-question-btn');
-    var settingsPreviousValue = 0;
+    var settingsPreviousValue = -1;
     const settingsSelect = document.querySelector('.settings-select');
 
             // Dispatching event on settings select so that the last changes are updated
@@ -28,16 +28,40 @@ document.addEventListener('DOMContentLoaded', () => {
     var questionTypeDicts = {
     }
 
+    
+    const qtypeConfigs = {
+        'm-answer':'3',
+        'mp-answer':'8',
+        'fr-answer':'4',
+        'e-answer':'0',
+        'f-answer':'1',
+        'l-answer':'2'
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
     if(form.classList.contains('create-mode')){
         allQuestionBlocks.appendChild(addQuestionBlock());
     }else{
-        var blockCounter = 0;
+
         allQuestionBlocks.querySelectorAll('.question-block').forEach((block)=>{
             addEventListenersToQuestionBlock(block, set_initial_settings=false);
-            blockCounter += 1;
+            const hiddenQuestionType =  block.querySelector('.hidden-q-type');
+            questionTypeDicts[block.querySelector('.question-number-value').value] = qtypeConfigs[hiddenQuestionType.value]; 
+            fillQuestionBlockCounters(block);
         });
-        num_questions = blockCounter;
-        part_num_questions = blockCounter;
+        num_questions = allQuestionBlocks.length + 1;
+        part_num_questions = allQuestionBlocks.length + 1;
         // add the already created variables to the varSymbolsArray
         addedVarsDiv.querySelectorAll('.var-container').forEach((varContainer)=>{
             varSymbolsArray.push(varContainer.querySelector('.var-symbol').value);
@@ -55,6 +79,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
   
+    function fillQuestionBlockCounters(qBlock){
+        const hiddenQuestionType =  qBlock.querySelector('.hidden-q-type');
+        if(hiddenQuestionType.value=='m-answer'){
+            // count the number of mcq options and update dataset.counter
+            const inputedMcqAnswersDiv = qBlock.querySelector('.inputed-mcq-answers');
+            const truemcqs = qBlock.querySelectorAll('.mcq-true').length;
+            const falsemcqs = qBlock.querySelectorAll('.mcq-false').length;
+            inputedMcqAnswersDiv.dataset.counter = truemcqs + falsemcqs;
+            inputedMcqAnswersDiv.dataset.trueCounter = truemcqs;
+
+        }else if(hiddenQuestionType.value=='mp-answer'){
+            // count the number of matching pair answers and make sure they exceed
+            // 2 but are less than or equal to 10
+            const inputedMpAnswersDiv = qBlock.querySelector('.inputed-mp-answers');
+            inputedMpAnswersDiv.dataset.mereCounter = qBlock.querySelectorAll('.inputed-mp-answer').length;
+        }
+    }
 
 
 
@@ -667,7 +708,7 @@ function addEventListenersToQuestionBlock(questionBlock, set_initial_settings=tr
     // setting the initial hidden settings to the same as the default 
     // for the assignment under which this question appears. 
     if(set_initial_settings){
-        var inputsWithSettingsClass = questionBlock.querySelectorAll('input.settings');
+        var inputsWithSettingsClass = document.querySelectorAll('input.settings');
         inputsWithSettingsClass.forEach((input)=>{
             const question_num = parseInt(questionBlock.querySelector('.question-number-value').value)
             const settingsHiddenInput = questionBlock.querySelector(`input[name="${question_num}_${input.name}"]`);
@@ -874,7 +915,7 @@ function addEventListenersToQuestionBlock(questionBlock, set_initial_settings=tr
         formattedAnswerDiv.style.display = 'none';
         calculatorDiv.style.display = 'none';
         mcqOptionBtnsDiv.style.display = 'block';
-        questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '3'; 
+        questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = qtypeConfigs[hiddenQuestionType.value]; 
 
     });
     mpBtn.addEventListener('click', (event)=>{
@@ -891,9 +932,10 @@ function addEventListenersToQuestionBlock(questionBlock, set_initial_settings=tr
             mcqOptionBtnsDiv.style.display = 'none';
             mpInputDiv.style.display = 'block';
             mcqInputDiv.style.display = 'none';
-            questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '8'; 
+            questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = qtypeConfigs[hiddenQuestionType.value]; 
         
         });
+
 
     mcqOptionBtnsDiv.addEventListener('click', (event) => {
         event.preventDefault();
@@ -1096,7 +1138,7 @@ function addEventListenersToQuestionBlock(questionBlock, set_initial_settings=tr
         answerFieldsDiv.innerHTML = '';
         
         formattedAnswerDiv.scrollIntoView({behavior: 'smooth'});
-        questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '4';
+        questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = qtypeConfigs[hiddenQuestionType.value];
         
     })
 
@@ -1116,7 +1158,7 @@ function addEventListenersToQuestionBlock(questionBlock, set_initial_settings=tr
         screen.placeholder = 'Expression';
 
         answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
-        questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '0';
+        questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = qtypeConfigs[hiddenQuestionType.value];
 
     });
 
@@ -1136,7 +1178,7 @@ function addEventListenersToQuestionBlock(questionBlock, set_initial_settings=tr
         screen.placeholder = 'Real number';
 
         answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
-        questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '1';
+        questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = qtypeConfigs[hiddenQuestionType.value];
     });
 
     // Latex button selected. Probably never used.
@@ -1153,7 +1195,7 @@ function addEventListenersToQuestionBlock(questionBlock, set_initial_settings=tr
         answerFieldsDiv.innerHTML = latexAnswerDiv;
         answerFieldsDiv.scrollIntoView({ behavior: 'smooth' });
 
-        questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = '2'
+        questionTypeDicts[questionBlock.querySelector('.question-number-value').value] = qtypeConfigs[hiddenQuestionType.value];
 
 
 
@@ -1568,6 +1610,8 @@ function addEventListenersToQuestionBlock(questionBlock, set_initial_settings=tr
                 alert('That is a little excessive. The number of matching pairs must not exceed 10');
                return false
             }else {
+                // TODO: I don't think the following lines are useful now.
+                // they were probably used just for testing.
                 const nodeP = document.createElement('p');
                 const mpnum = `<input type='hidden' value=${inputedMpAnswersDiv.dataset.mereCounter + 1} name="${inputedMpAnswersDiv.dataset.qnumber}_num_of_mps"/>`
                 nodeP.innerHTML = mpnum

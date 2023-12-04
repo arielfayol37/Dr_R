@@ -267,7 +267,7 @@ class Question(models.Model):
         output = []
         # List of all answer types
         mcq_related_names = ['mcq_expression_answers', 'mcq_text_answers','mcq_float_answers',
-                                'mcq_variable_float_answers','mcq_image_answers''mcq_latex_answers']
+                                'mcq_variable_float_answers','mcq_image_answers','mcq_latex_answers']
         for mrn in mcq_related_names:
             for mcq in getattr(self, mrn).all():
                 output.append(mcq.get_pk_ac())
@@ -276,7 +276,7 @@ class Question(models.Model):
     def get_mcq_answers(self):
         output = []
         mcq_related_names = ['mcq_expression_answers', 'mcq_text_answers','mcq_float_answers',
-                                'mcq_variable_float_answers','mcq_image_answers''mcq_latex_answers']
+                                'mcq_variable_float_answers','mcq_image_answers','mcq_latex_answers']
         for mrn in mcq_related_names:
             output.extend(getattr(self, mrn).all())
         return output        
@@ -491,6 +491,12 @@ class MCQAnswerBase(models.Model):
 
     def __str__(self):
         return f"MCQ Answer for {self.question}: {self.content}"
+    
+    def get_pk_ac(self):
+        """
+        Returns 'pk_answercode', which is used for question editing and answer validation.
+        """
+        return f'{self.pk}_{self.get_answer_code()}'
 
 class MCQFloatAnswer(MCQAnswerBase):
     """
@@ -603,6 +609,12 @@ class MatchingAnswer(models.Model):
     
     def __str__(self):
         return f"Matching pair answer for {self.question}"
+    
+    def get_pk_ac(self):
+        """
+        Returns 'pk_answercode', which is used for question editing and answer validation.
+        """
+        return f'{self.pk}_{self.get_answer_code()}'
     
     def get_answer_code(self):
         return 9

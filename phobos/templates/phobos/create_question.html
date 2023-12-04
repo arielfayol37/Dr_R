@@ -13,10 +13,6 @@
       <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
   </ul>
 </div>
-
-<div class="settings-icon side-info-icon" title="Settings">
-  <ion-icon name="settings"></ion-icon>
-</div>
     <!-- TODO: Include buttons and invent listeners to create subquestions.-->
     
     <div class="page-container" id="create-question">
@@ -75,9 +71,12 @@
     <br/>
     <input type="submit" class="btn btn-success create-question-btn" value="Create Question">
     <br/>
-    <div class="question-settings hide">
-
-      <span id="close-x-settings">X</span><br/>
+    <div class="question-settings side">
+      <div class="settings-icon side-info-icon" title="Settings">
+        <ion-icon name="settings"></ion-icon>
+      </div>
+      <div class="hide side-info">
+      <span class="side-info-x">X</span><br/>
       <h4 class="suggestion original-size">Settings</h4>
       <hr/>
       <select title="Part" name="settings-select" class="settings-select field-style">
@@ -140,6 +139,7 @@
             </div>
           </div>
           
+      </div>
       </div>
     </div>
     <div class="question-variables side">

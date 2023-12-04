@@ -126,7 +126,7 @@ def gradebook(request, course_id):
 
 
 mcq_related_names = ['mcq_expression_answers', 'mcq_text_answers','mcq_float_answers',
-                        'mcq_variable_float_answers','mcq_image_answers''mcq_latex_answers']
+                        'mcq_variable_float_answers','mcq_image_answers','mcq_latex_answers']
 
 # TODO: Add the action link in answer_question.html
 # TODO: Implement question_view as well.
