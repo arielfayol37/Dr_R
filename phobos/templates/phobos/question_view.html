@@ -14,6 +14,7 @@
         {% endif %}
         <li><a href="{% url 'phobos:search_question' %}">Search Question</a></li>
         <li><a href="{% url 'phobos:edit_question' question_id=question.id %}">Edit Question</a></li>
+        <li><a href="{% url 'phobos:delete_question' question_id=question.id %}">Delete</a></li>
     </ul>
   </div>
 
@@ -23,7 +24,7 @@
     <a class="nav-link" href="{% url 'phobos:course_management' course_id=question.assignment.course.id %}">Assignments</a>
     <a class="nav-link" id="btn-export_question" style="color:white">Export</a>
     <a class="nav-link" href="{% url 'phobos:edit_question' question_id=question.id %}">Edit</a>
-    <a class="nav-link" href="{% url 'phobos:delete_question' question_id=question.id %}">Delete</a>
+    
 </nav>
 
 <div class="export_question">

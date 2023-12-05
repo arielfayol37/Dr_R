@@ -29,6 +29,7 @@ urlpatterns = [
          views.create_assignment, name='create_assignment'),
     path('courses/create_assignment',\
     views.create_assignment, name='create_assignment'),
+    path('delete_assignment/<int:assignment_id>', views.delete_assignment , name='delete_assignment'),
     path('courses/<int:course_id>/assignments/<int:assignment_id>', \
          views.assignment_management, name='assignment_management'),
     path('courses/<int:course_id>/assignments/<int:assignment_id>/assign', \

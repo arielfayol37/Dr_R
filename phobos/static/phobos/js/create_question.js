@@ -53,15 +53,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if(form.classList.contains('create-mode')){
         allQuestionBlocks.appendChild(addQuestionBlock());
     }else{
-
+        var bCounter = 0;
         allQuestionBlocks.querySelectorAll('.question-block').forEach((block)=>{
+            bCounter += 1;
             addEventListenersToQuestionBlock(block, set_initial_settings=false);
             const hiddenQuestionType =  block.querySelector('.hidden-q-type');
             questionTypeDicts[block.querySelector('.question-number-value').value] = qtypeConfigs[hiddenQuestionType.value]; 
             fillQuestionBlockCounters(block);
         });
-        num_questions = allQuestionBlocks.length + 1;
-        part_num_questions = allQuestionBlocks.length + 1;
+        num_questions = bCounter + 1;
+        part_num_questions = bCounter + 1;
+        console.log(num_questions, part_num_questions);
         // add the already created variables to the varSymbolsArray
         addedVarsDiv.querySelectorAll('.var-container').forEach((varContainer)=>{
             varSymbolsArray.push(varContainer.querySelector('.var-symbol').value);

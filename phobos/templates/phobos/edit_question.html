@@ -86,7 +86,7 @@
           </div>
           <div id="all-question-blocks">
 
-            {% for index, question_dict in questions_dict.items %}
+            {% for qnum, question_dict in questions_dict.items %}
               <div class="question-block">
                 <input type="hidden" value="{{question_dict.question.pk}}" name="{{forloop.counter}}_question_pk"/>
                 <input type="hidden" value="{{forloop.counter}}" class="question-number-value"/>
@@ -174,7 +174,17 @@
                                     {{answer.content}}</div>
                                 {% endif %}
                                   
-                          <input type="hidden" name="{{answer.pk}}" value="{{answer.get_pk_ac}}_mcq"/>
+                          <input type="hidden" value="{{answer.pk}}" name="{{answer.get_pk_ac}}_mcq"/>
+                          <!--Important not to have an _answer_value input field here because the backend
+                          does not expect that for an mcq edit.
+                          -->
+                          {% if answer.is_answer %}
+                              <input class="answer_info" type="hidden" value="1" name="{{answer.get_pk_ac}}_mcq"/>
+                          {% else %}
+                              <input class="answer_info" type="hidden" value="0" name="{{answer.get_pk_ac}}_mcq"/>
+                          {% endif %}
+                          
+
                           <div class="add-delete-btns">
                               <button  type="button" class="btn btn-danger mcq-delete exempt">delete</button>
                           </div>
@@ -210,7 +220,7 @@
                             <div class="formatted-answer">
                               {{answer.part_b}}
                             </div>
-                            <input type="hidden" name="{{answer.pk}}" value="{{answer.pk}}_matching_pairs"/>
+                            <input type="hidden" value="{{answer.pk}}" name="{{answer.pk}}_matching_pairs"/>
                             <button  type="button" class="btn btn-danger mp-delete exempt">delete</button><br/>
                           </div>
 
@@ -233,17 +243,23 @@
              <div class="answer-fields">
                  
              </div>
+             {% if question_dict.qtype == "struct"%}
+                <div class="formatted-answer-option unexpand structural-formatted-answer">
+                    
+                      {% if question_dict.answer.get_answer_code == 2%}<!--if latex-->
+                          <input type="hidden" class="hidden_answer latex" value="{{question_dict.answer.content}}"/>
+                      {% else %}<!-- if expression or float -->
+                          <input type="hidden" class="hidden_answer expression" value="{{question_dict.answer.content}}"/>
+                      {% endif %}
+                    
+                </div>
+                <br/>
+             {% else %}
+                  <div class="formatted-answer-option unexpand structural-formatted-answer" style="display:none;">
 
-             <div class="formatted-answer-option unexpand structural-formatted-answer">
-                {% if question_dict.qtype == "struct"%}
-                  {% if question_dict.answer.get_answer_code == 2%}<!--if latex-->
-                      <input type="hidden" class="hidden_answer latex" value="{{question_dict.answer.content}}"/>
-                  {% else %}<!-- if expression or float -->
-                      <input type="hidden" class="hidden_answer expression" value="{{question_dict.answer.content}}"/>
-                  {% endif %}
-                {% endif %}
-             </div>
-             <br/>
+                  </div>
+             {% endif %}
+            
 
              <div class="calculator-area-div"></div><br/>
              
@@ -270,7 +286,7 @@
              </div>
 
              <hr/>
-             <button class="btn btn-outline-success check-question-btn">Add Part</button>
+             <button class="btn btn-outline-success check-question-btn" style="display:none;">Add Part</button>
              <br/><br/>
              <div class="hidden-settings">
                   {% if question_dict.qtype == 'struct' %}
@@ -327,7 +343,7 @@
       <h4 class="suggestion original-size">Settings</h4>
       <hr/>
       <select title="Part" name="settings-select" class="settings-select field-style">
-          {% for index, question_dict in questions_dict.items %}
+          {% for qnum, question_dict in questions_dict.items %}
             <option class="settings-option-{{forloop.counter}}" value="{{forloop.counter}}">Part {{question_dict.question.number}}</option>
           {% endfor %}
       </select>

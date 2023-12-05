@@ -257,6 +257,11 @@ class Question(models.Model):
 
             super(Question, self).save(*args, **kwargs)
 
+    def delete(self, *args, **kwargs):
+        if not self.parent_question:
+            self.sub_questions.all().delete()
+        super(Question, self).delete(*args, **kwargs)
+
     def get_num_points(self):
         if self.answer_type.startswith('MCQ') or self.answer_type.startswith('MATCHING'):
             return self.mcq_settings.num_points
