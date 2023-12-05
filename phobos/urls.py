@@ -19,6 +19,9 @@ urlpatterns = [
     path('edit_question/<int:question_id>',views.edit_question,
          name='edit_question'
     ),
+    path('edit_question/<int:question_id>/<str:question_nums_types>',views.edit_question,
+         name='edit_question'
+    ),
     path('delete_question/<int:question_id>', views.delete_question, name='delete_question'),
     path('question_bank', views.question_bank, name='question_bank'),
     path('courses/<int:course_id>', views.course_management, name='course_management'),
@@ -26,6 +29,7 @@ urlpatterns = [
          views.create_assignment, name='create_assignment'),
     path('courses/create_assignment',\
     views.create_assignment, name='create_assignment'),
+    path('delete_assignment/<int:assignment_id>', views.delete_assignment , name='delete_assignment'),
     path('courses/<int:course_id>/assignments/<int:assignment_id>', \
          views.assignment_management, name='assignment_management'),
     path('courses/<int:course_id>/assignments/<int:assignment_id>/assign', \

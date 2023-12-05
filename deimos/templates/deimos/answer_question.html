@@ -206,8 +206,8 @@
                                   {{answer.content|safe}}
                                 {% endif %}
                               {% endif %}
-                              <input type="hidden" value="{{answer.pk}}{{answer.get_answer_code}}" class="answer_id" name="mcq_answer_id_{{ forloop.counter0 }}"/>
-                              <input type="hidden" value="0{{answer.get_answer_code}}" class="answer_info" name="mcq_answer_info_{{ forloop.counter0 }}"/>
+                              <input type="hidden" value="{{answer.get_pk_ac}}" class="answer_id" name="mcq_answer_id_{{ forloop.counter0 }}"/>
+                              <input type="hidden" value="0" class="answer_info" name="mcq_answer_info_{{ forloop.counter0 }}"/>
                             </div> 
                           </div>
                           <br/> 
