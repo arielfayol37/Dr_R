@@ -193,6 +193,7 @@ class Question(models.Model):
     So all the questions in an assignment may have the same weight (uniform distribution),
     or different weights based on the instructor's input or automated (based on difficulty)
     """
+    # parent question must have an integer as number because that's what is used for ordering.
     number = models.CharField(blank=False, null=False, max_length=5)
     text = models.TextField(max_length= 2000, null=False, blank=False)
     assignment = models.ForeignKey(Assignment, null=True, on_delete=models.CASCADE, \
@@ -215,6 +216,21 @@ class Question(models.Model):
 
     def save(self, *args, **kwargs):
         save_settings = kwargs.pop('save_settings', False)
+        """"
+        # TODO: Make the following work. It is supposed to check that the number saved is in the correct format
+        for non-Question-Bank questions.
+        number = kwargs.get('number', None)
+        if kwargs.get('parent_question', None) == None:
+            if not number.isdigit(): # we want number to be a digit because that's what is used for ordering
+                raise ValueError(f'Expected the attribute "number" of a parent_question to be an integer, but got {self.number}')
+        
+        else: # if a sub_question
+            if not number[:-1].isdigit() or not number[-1].isalpha():
+                raise ValueError(f'Expected the format of "number" for a subquestion to be digits followed \
+                                 by a letter, but got {self.number}')
+            
+        """
+
         super(Question, self).save(*args, **kwargs)
         if save_settings:
             if self.answer_type.startswith('MCQ') or self.answer_type.startswith('MATCHING'):
@@ -241,12 +257,34 @@ class Question(models.Model):
 
             super(Question, self).save(*args, **kwargs)
 
+    def delete(self, *args, **kwargs):
+        if not self.parent_question:
+            self.sub_questions.all().delete()
+        super(Question, self).delete(*args, **kwargs)
+
     def get_num_points(self):
         if self.answer_type.startswith('MCQ') or self.answer_type.startswith('MATCHING'):
             return self.mcq_settings.num_points
         else:
             return self.struct_settings.num_points
-
+        
+    def get_mcq_pk_ac_list(self): # ac == answer_code
+        output = []
+        # List of all answer types
+        mcq_related_names = ['mcq_expression_answers', 'mcq_text_answers','mcq_float_answers',
+                                'mcq_variable_float_answers','mcq_image_answers','mcq_latex_answers']
+        for mrn in mcq_related_names:
+            for mcq in getattr(self, mrn).all():
+                output.append(mcq.get_pk_ac())
+        return output
+    
+    def get_mcq_answers(self):
+        output = []
+        mcq_related_names = ['mcq_expression_answers', 'mcq_text_answers','mcq_float_answers',
+                                'mcq_variable_float_answers','mcq_image_answers','mcq_latex_answers']
+        for mrn in mcq_related_names:
+            output.extend(getattr(self, mrn).all())
+        return output        
 
     def __str__(self):
         return f"Question {self.number} for {self.assignment}"
@@ -285,7 +323,7 @@ class StructuralQuestionSettings(BaseQuestionSettings):
     question = models.OneToOneField(Question, on_delete=models.CASCADE, related_name='struct_settings')
     max_num_attempts = models.IntegerField(default=5, validators=[MinValueValidator(1)])
     deduct_per_attempt = models.FloatField(default=0.05, blank=True, null=True)
-    margin_error = models.FloatField(default=0.03, blank=True, null=True, validators=[MinValueValidator(0), MaxValueValidator(1)])
+    margin_error = models.FloatField(default=0.03, blank=False, null=False, validators=[MinValueValidator(0), MaxValueValidator(1)])
     percentage_pts_units = models.FloatField(default=0.03, blank=True, null=True, validators=[MinValueValidator(0), MaxValueValidator(1)])
     units_num_attempts = models.IntegerField(default=2, validators=[MinValueValidator(1)])
 
@@ -359,7 +397,7 @@ class AnswerBase(models.Model):
     """
     Class for structural answers.
     """
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    question = models.OneToOneField(Question, on_delete=models.CASCADE)
     content = models.TextField(blank=False, null=False)
     answer_unit = models.CharField(max_length=50, blank=True, null=True) # Optional field for the units of the answer
     preface = models.CharField(max_length=20, blank=True, null=True)
@@ -369,6 +407,12 @@ class AnswerBase(models.Model):
 
     def __str__(self):
         return f"Answer for {self.question}: {self.content}" 
+    
+    def get_pk_ac(self):
+        """
+        Returns 'pk_answercode', which is used for question editing and answer validation.
+        """
+        return f'{self.pk}_{self.get_answer_code()}'
     
 class FloatAnswer(AnswerBase):
     """
@@ -452,6 +496,12 @@ class MCQAnswerBase(models.Model):
 
     def __str__(self):
         return f"MCQ Answer for {self.question}: {self.content}"
+    
+    def get_pk_ac(self):
+        """
+        Returns 'pk_answercode', which is used for question editing and answer validation.
+        """
+        return f'{self.pk}_{self.get_answer_code()}'
 
 class MCQFloatAnswer(MCQAnswerBase):
     """
@@ -553,6 +603,7 @@ class MCQImageAnswer(MCQAnswerBase):
     
     def get_answer_code(self):
         return 7
+    
 class MatchingAnswer(models.Model):
     """
     A question may be a matching pairs question
@@ -563,6 +614,12 @@ class MatchingAnswer(models.Model):
     
     def __str__(self):
         return f"Matching pair answer for {self.question}"
+    
+    def get_pk_ac(self):
+        """
+        Returns 'pk_answercode', which is used for question editing and answer validation.
+        """
+        return f'{self.pk}_{self.get_answer_code()}'
     
     def get_answer_code(self):
         return 9

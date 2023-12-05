@@ -14,6 +14,7 @@
         {% endif %}
         <li><a href="{% url 'phobos:question_bank' %}">Question Bank</a></li>
         <li><a href="{% url 'astros:all_courses' %}">All Courses</a></li>
+        <li><a href="{% url 'phobos:delete_assignment' assignment_id=assignment.id %}">Delete</a></li>
     </ul>
 </div>
 

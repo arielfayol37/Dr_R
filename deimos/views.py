@@ -72,7 +72,7 @@ def assignment_management(request, assignment_id, course_id=None):
     student = get_object_or_404(Student, pk = request.user.pk)
     assignment = get_object_or_404(Assignment, pk = assignment_id)
     assignment_student = AssignmentStudent.objects.get(student=student, assignment=assignment)
-    questions = Question.objects.filter(assignment = assignment, parent_question=None)
+    questions = Question.objects.filter(assignment = assignment, parent_question=None).order_by('number')
     qs_statuses = []
     if assignment.course.name != 'Question Bank':
         for question in questions:
@@ -125,15 +125,9 @@ def gradebook(request, course_id):
     })
 
 
-# List of all answer types
-all_mcq_answer_types = {
-    'ea': ('mcq_expression_answers', 0),
-    'ta': ('mcq_text_answers',3),
-    'fa':('mcq_float_answers',1),
-    'fva': ('mcq_variable_float_answers',8),
-    'ia': ('mcq_image_answers',7),
-    'la': ('mcq_latex_answers',2),
-}
+mcq_related_names = ['mcq_expression_answers', 'mcq_text_answers','mcq_float_answers',
+                        'mcq_variable_float_answers','mcq_image_answers','mcq_latex_answers']
+
 # TODO: Add the action link in answer_question.html
 # TODO: Implement question_view as well.
 @login_required(login_url='astros:login')
@@ -187,11 +181,11 @@ def answer_question(request, question_id, assignment_id, course_id, student_id=N
             # List of answer types that require content evaluation
             answer_types_to_evaluate = ['mcq_expression_answers', 'mcq_variable_float_answers']
             # Loop through each answer type
-            for key, answer_type in all_mcq_answer_types.items():
+            for mrn in mcq_related_names:
                 # Get the related manager for the answer type
-                answer_queryset = getattr(question, answer_type[0]).all()
+                answer_queryset = getattr(question, mrn).all()
                 # If the answer type requires content evaluation, process each answer
-                if answer_type[0] in answer_types_to_evaluate:
+                if mrn in answer_types_to_evaluate:
                     for answer in answer_queryset:
                         answer.content = question_student.evaluate_var_expressions_in_text(answer.content, add_html_style=True)
                 
@@ -414,16 +408,7 @@ def validate_answer(request, question_id, landed_question_id=None,assignment_id=
                             return JsonResponse({'previously_submitted': previously_submitted})
                     attempt = QuestionAttempt.objects.create(question_student=question_student, \
                                                              content=str(simplified_answer))
-                    answers = []
-
-                    # Loop through each answer type and process accordingly
-                    for answer_type_code, answer_field in all_mcq_answer_types.items():
-                        # Use getattr to dynamically get the related manager for the answer type
-                        answer_queryset = getattr(question, answer_field[0])
-                        # Filter for is_answer=True and get a list of primary keys
-                        answer_pks = list(answer_queryset.filter(is_answer=True).values_list('pk', flat=True))
-                        # Convert primary keys to the desired string format and extend the answers list
-                        answers.extend([str(pk) + str(answer_field[1]) for pk in answer_pks])
+                    answers = question.get_mcq_pk_ac_list()
 
                     # Validating mcq submission
                     if len(simplified_answer) == len(answers):
