@@ -238,11 +238,9 @@ def create_assignment(request, course_id):
             return redirect('phobos:course_management', course_id=assignment.course.id)
     else:
         form = AssignmentForm(course=course)
-        gs_exists = GradingScheme.objects.filter(course=course).exists()
-        if not gs_exists:
-            default_gs, created = GradingScheme.objects.get_or_create(course=course, name="Default")
+        default_gs, created = GradingScheme.objects.get_or_create(course=course, name="Default")
+        if created:
             default_gs.save()
-        default_gs = GradingScheme.objects.get(course=course, name="Default")
         grading_schemes = list(course.grading_schemes.all())
         grading_schemes.reverse()
     return render(request, 'phobos/create_assignment.html', {'form': form,
@@ -1001,19 +999,41 @@ def edit_question(request, question_id, question_nums_types=None):
                 quest_num = original_parent_question.number[:-1]
                 question = Question(
                 number = quest_num if counter == 1 else str(quest_num) + chr(64 + counter),
-            )
-            
-            if not original_parent_question.assignment.is_assigned:
-                forbid = core_create_question(request, question, parent_question, q_num, q_type, gen_info, vars_dict, question.assignment, counter)           
-                if forbid:
-                    return HttpResponseForbidden('Something went wrong: unexpected question q_type')
+            ) 
+             
+            forbid = core_create_question(request, question, parent_question, q_num, q_type, gen_info, vars_dict, question.assignment, counter)           
+            if forbid:
+                return HttpResponseForbidden('Something went wrong: unexpected question q_type') 
 
-            # elif redeploy:
-                # return HttpResponseForbidden('Redeployment for question edit has not yet been implemented')
-            else:
-                return HttpResponseForbidden('Redeployment for question edit has not yet been implemented')     
+            question_students = QuestionStudent.objects.filter(question=question)
+            # If the assignment containing this question has not yet been assigned
+            if not original_parent_question.assignment.is_assigned:
+                question.var_instances.all().delete()
+
+            elif redeploy:
+                question_students.delete()
+            else: # The most complicated possibility: editing the question without modifying deleting previous attempts.
+                # TODO: 1) update grades if number of points allocated for question have changed
+                #       2) create new variable instances, delete unused ones. Check attempts and if question not yet attempted
+                #          then delete corresponding question student.
+
+                # For now we will make the current var_instances unavailable and create new ones.
+                # We will later improve this by checking if the current var_instances are still within good range.
+                return HttpResponseForbidden('Redeployment for question edit has not yet been implemented') 
+             
             if counter == 1:
                 parent_question = question
+                if not original_parent_question.assignment.is_assigned:
+                    question.var_instances.all().delete()
+                elif redeploy:
+                    question.var_instances.all().delete()
+                    question_students.delete()
+                else:
+                    # Set 'available' to False for all VariableInstance objects related to the parent_question
+                    parent_question.var_instances.update(available=False)
+                    for qs in question_students:
+                        qs.add_instances()
+
 
             gen_info = get_general_question_info(request) # gets difficulty, topic, and sub_topic.
             q_settings = get_question_settings(request, q_num) # gets the settings for this question
@@ -1022,9 +1042,11 @@ def edit_question(request, question_id, question_nums_types=None):
             
             change = update_question_settings(question, q_settings, gen_info)
 
-            ## Update students' submissions
+            ## Update students' grades
             if change:
-                pass
+                for qs in question_students:
+                    qs.update_pts_based_on_grade()
+
         Question.objects.filter(pk__in=delete_pks).delete()
         return HttpResponseRedirect(reverse("phobos:assignment_management",\
                                             kwargs={'course_id':parent_question.assignment.course.id,\

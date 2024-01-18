@@ -644,6 +644,7 @@ class Variable(models.Model):
 
     def __str__(self):
         return f"Variable `{self.symbol}` for question {self.question}"
+    
     def create_instances(self, num = 5, is_int=False):
         """
         Creates num number of random variable instances.
@@ -661,17 +662,19 @@ class Variable(models.Model):
                     random_float = lower_bound + step_count * self.step_size
                 if self.is_integer:
                     random_float = float(int(random_float))
-                vi = VariableInstance.objects.create(variable=self, value=random_float)
+                vi = VariableInstance.objects.create(question=self.question, symbol=self.symbol, value=random_float)
                 vi.save()
 
             self.instances_created = True
         # TODO: Handle case when intervals are not created.
         else:
             raise Exception("Intervals were not created before create_instances() was called.")
+        
     def get_instance(self):
         if not self.instances_created:
             self.create_instances()
-        return random.choice(self.instances.all())
+        return random.choice(list(self.question.var_instances.filter(available=True)))
+    
     def get_num_possible_values(self):
         if self.step_size != 0 and self.step_size is not None:
             intervals_counts = []
@@ -681,14 +684,16 @@ class Variable(models.Model):
             return sum(intervals_counts)
         else:
             return 1000 # Just a replacement for "infinity"
-        
-    
+
 class VariableInstance(models.Model):
     """
     Instance of `Variable`
     """
-    variable = models.ForeignKey(Variable, on_delete=models.CASCADE, related_name='instances')
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='var_instances')
+    symbol = models.CharField(max_length=10, blank=False, null=False)
     value = models.FloatField(null=False, blank=False)
+    available = models.BooleanField(default=True)
+
 class VariableInterval(models.Model):
     """
     A `Variable` may have multiple intervals in its domain.
@@ -700,7 +705,7 @@ class VariableInterval(models.Model):
 
     def __str__(self):
         return f"Interval {self.lower_bound} - {self.upper_bound} for {self.variable}"
-    
+
 class EnrollmentCode(models.Model):
 
     course= models.ForeignKey(Course, on_delete=models.CASCADE, related_name="enrollment_code")

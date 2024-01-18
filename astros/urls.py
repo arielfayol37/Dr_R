@@ -12,4 +12,5 @@ urlpatterns = [
     path('all_courses', views.all_courses, name="all_courses"),
     path('course_info/<int:course_id>', views.course_info, name="course_info"),
     path('course_info/course_enroll/<int:course_id>/<int:code>', views.course_enroll, name='course_enroll'),
+    path('ece', views.state_to_truth_input, name='ece')
 ]

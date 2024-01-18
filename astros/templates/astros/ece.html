@@ -1,0 +1,350 @@
+{% extends 'astros/layout.html' %}
+
+{% load static %}
+
+{% block title %} State Converter {% endblock %}
+
+{% block body%}
+
+    <style>
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+
+        }
+        .parameters {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 95vw;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 13px 13px 20px #cbced1;
+        }
+
+        .param-item {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            width:50%;
+        }
+        .state-table {
+            margin: 1%;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 13px 13px 20px #cbced1;
+        }
+        .field-style {
+            width: 50%;
+        }
+
+    </style>
+    <div class="container">
+        <div class="parameters">
+            <div class="param-item">
+                <label title="number of states"> Number of states: </label>
+                <input placeholder="# states e.g 4" min="1" type="number" class="field-style n-states"/>
+            </div>
+            <div class="param-item">
+                <label title="number of input bits"> Number of input bits: </label>
+                <input placeholder="# input bits e.g 2" min="1" type="number" class="field-style n-ib"/>
+            </div>
+            <div class="param-item">
+                <label title="number of output bits"> Number of output bits: </label>
+                <input placeholder="# output bits e.g 1" min="1" type="number" class="field-style n-ob"/>
+            </div>
+            <div class="param-item">
+                <label title="machine type">Machine type: </label>
+                <select class="machine-type">
+                    <option value="Mealy" selected>Mealy</option>
+                    <option value="Moore">Moore</option>
+                </select>
+            </div>
+            <div class="param-item">
+                <label title="flip flop type">flip flop type:</label>
+                <select class="flip-flop-type">
+                    <option value="JK" selected>JK</option>
+                    <option value="D">D</option>
+                    <option value="T">T</option>
+                    <option value="SR">SR</option>
+                </select>
+            </div>
+            <div>
+                <button class="btn btn-outline-info process-btn"> process </button>
+            </div>
+        </div>
+    
+        <div class="state-table">
+    
+        </div>
+
+        <div class="truth-table">
+
+        </div>
+
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        const processBtn = document.querySelector('.process-btn');
+        const nStatesField = document.querySelector('.n-states');
+        const nIbField = document.querySelector('.n-ib');
+        const nObField = document.querySelector('.n-ob');
+        const machineTypeField = document.querySelector('.machine-type');
+        const flipFlopTypeField = document.querySelector('.flip-flop-type');
+       
+    
+        processBtn.addEventListener('click', () => {
+            const numValue = Math.pow(2, parseInt(nIbField.value));
+            const numBits = parseInt(nIbField.value)
+            let isMealy = machineTypeField.value === 'Mealy';
+            const numStates = nStatesField.value;
+            // Check if the inputs are valid
+            
+
+            const tableSection = document.createElement('div');
+            tableSection.classList.add('table-section');
+            
+            const createBtn = document.createElement('button');
+            createBtn.innerHTML = 'Create Truth Table'
+            createBtn.classList.add('create-btn', 'btn', 'btn-outline-success');
+            tableSection.appendChild(createBtn);
+
+            // Create table
+            const table = document.createElement('table');
+            let tableContent = '';
+    
+            let first_row = '<th>   </th>';
+    
+            for(let k = 0; k < numValue; k++){
+                first_row += `<th>S(${decimalToBinary(k, numBits)})</th>`;
+            }
+    
+            if(isMealy){
+                for(let k = 0; k < numValue; k++){
+                    first_row += `<th>Z(${decimalToBinary(k, numBits)})</th>`;
+                }
+            } else {
+                first_row += `<th>Z</th>`;
+            }
+    
+            tableContent += '<tr>' + first_row + '</tr>'; 
+    
+            for(let i = 0; i < numStates; i++){
+                let row = '';
+                for(let j = 0; j < numValue; j++){
+                    row += `<td><input type="text" class="field-style x-value-${i}" data-xtitle="${decimalToBinary(j, numBits)}"/></td>`; 
+                } 
+                   
+                if(isMealy){
+                    for(let j = 0; j < numValue; j++){
+                        row += `<td><input type="text" class="field-style z-value-${i}" data-xtitle="${decimalToBinary(j, numBits)}"/></td>`; 
+                    } 
+                } else {
+                    row += `<td><input type="text" class="field-style z-value-${i} moore"/></td>`; 
+                }  
+    
+                tableContent += '<tr>' + `<td><b>S${i}</b></td>` + row + '</tr>';
+            }
+    
+            table.innerHTML = tableContent;
+            tableSection.prepend(table)
+            document.querySelector('.state-table').innerHTML = '';
+            document.querySelector('.state-table').prepend(tableSection);
+            tableSection.scrollIntoView({behavior:'smooth'});
+
+
+
+            createBtn.addEventListener('click', ()=>{
+                
+                var data = {};
+                for(let i=0; i < numStates; i++){
+                    data[i] = {};
+                    const queryX =  `.x-value-${i}`;
+                    const queryZ = `.z-value-${i}`;
+                    var xValues = table.querySelectorAll(queryX);
+                    var zValues = table.querySelectorAll(queryZ);
+                    xValues.forEach((xv)=>{
+                        data[i][xv.dataset.xtitle] = [xv.value.charAt(0)];
+                    })
+
+                    zValues.forEach((zv)=>{
+                        if(!zv.classList.contains('moore')){
+                            data[i][zv.dataset.xtitle].push(zv.value.padStart(nObField.value, '0'));
+                        }else {
+                            for(var [xKey, xArray] of Object.entries(data[i])){
+                                data[i][xKey].push(zv.value.padStart(nObField.value, '0'));
+                            }
+                        }
+                        
+                    })
+                }
+
+                // console.log(data)
+                try {
+                    const rows = stateToTruthOutput(data, flipFlopTypeField.value);
+                    const numFF = numFlipFlops(data);
+
+                    const truthTable = document.createElement('table');
+                    truthTable.classList.add('truth-table', 'table');
+
+                    let truthTableContent = '';
+
+                    // Function to create table headers
+                    function createTableHeaders(label, count,  appendix='', startCharCode = 65) {
+                        var headers = '';
+                        for (let i = 0; i < parseInt(count); i++) {
+                            if(parseInt(count) == 1 && (label=='Z' || label=='X')){
+                                headers += `<th scope='col'>${label}${appendix}</th>`;
+                            }else{
+                                headers += `<th scope='col'>${label}${String.fromCharCode(startCharCode + i)}${appendix}</th>`;
+                            }
+                            
+                        }
+                        return headers;
+                    }
+
+                    let firstRow = createTableHeaders('Q', numFF) +
+                                createTableHeaders('X', nIbField.value) +
+                                createTableHeaders('Q', numFF, '*') +
+                                createTableHeaders('Z', nObField.value);
+                    for(let i = 0; i < numFF; i++){
+
+                        for(let l=0; l<flipFlopTypeField.value.length; l++){
+                                firstRow += `<th>${flipFlopTypeField.value[l]}${String.fromCharCode(65 + i)}</th>`
+                            }
+                        }
+
+                    truthTableContent = `<thead><tr>${firstRow}</tr></thead>`;
+                    var tBody = ''
+                    for(let i=0; i<rows.length; i++){
+                        var rr = ''
+                        for(let j=0; j<rows[i].length; j++){
+                            rr += '<td>' + rows[i][j] + '</td>'
+                        }
+                        tBody += '<tr>' + rr + '</tr>'
+                    }
+
+                    truthTableContent += '<tbody>' + tBody + '</tbody>'
+                    truthTable.innerHTML = truthTableContent;
+                    const tableDiv = document.querySelector('.truth-table');
+                    tableDiv.innerHTML = '';
+                    tableDiv.appendChild(truthTable);
+
+                    truthTable.scrollIntoView({behavior:'smooth'});
+
+                    const downButton = document.createElement('button');
+                    downButton.classList.add('btn', 'btn-outline-danger');
+                    downButton.innerHTML = 'Download truth table'
+                    downButton.addEventListener('click', ()=>{
+                        const tableData = XLSX.utils.table_to_sheet(truthTable);
+                        const workbook = XLSX.utils.book_new();
+                        XLSX.utils.book_append_sheet(workbook, tableData, "TruthTable");
+                        XLSX.writeFile(workbook, 'truth_table.xlsx');
+                    })
+                    tableDiv.appendChild(downButton);
+
+                } catch (error) {
+                    console.error('Error generating truth table:', error);
+                    alert('Something went wrong. Check your state table.');
+                }
+
+                
+
+            })
+    });
+
+
+    // Function to convert decimal to binary with padding
+    function decimalToBinary(decimal, numDigits) {
+            let binary = parseInt(decimal, 10).toString(2);
+            return binary.padStart(numDigits, '0');
+    }
+
+    // Function to calculate the number of flip flops
+    function numFlipFlops(stateDict) {
+        return Math.ceil(Math.log2(Object.keys(stateDict).length));
+    }
+
+    
+    function stateToTruthOutput(stateDict, flipFlopType) {
+    // Reference dictionary
+    const refDict = {
+        'JK': { '01': '1-', '00': '0-', '11': '-0', '10': '-1', '0-':'--', '1-':'--'},
+        'D': { '01': '1', '00': '0', '11': '1', '10': '0','0-':'-', '1-':'-'},
+        'T':{'01':'1', '00':'0', '11':'1', '10':'1','0-':'-', '1-':'-'},
+        'SR':{'01':'10', '00':'0-', '11':'-0', '10':'01','0-':'-', '1-':'--'},
+    };
+
+
+    // Function to generate flip flop input
+    function flipFlopInput(presentS, futureS) {
+
+        if (presentS.length !== futureS.length) {
+            throw new Error('Present and future states must have the same length');
+        }
+        let toReturn = '';
+        for (let i = 0; i < presentS.length; i++) {
+            toReturn += refDict[flipFlopType][presentS[i] + futureS[i]];
+        }
+        return toReturn;
+    }
+
+
+    // Generate binary states
+    let numFlipFlopsVal = numFlipFlops(stateDict);
+    let statesBinary = {};
+    for (let state in stateDict) {
+        statesBinary[state] = decimalToBinary(state, numFlipFlopsVal);
+    }
+
+    // Generate rows
+    let rows = [];
+    for (let state in stateDict) {
+
+        const sortedKeys = Object.keys(stateDict[state]).sort((a, b) => parseInt(a,  2) - parseInt(b, 2));
+
+        sortedKeys.forEach(xInput => {
+            let array = stateDict[state][xInput];
+            let presentState = statesBinary[state];
+
+            if(!isNaN(array[0]) && !isNaN(parseFloat(array[0]))){
+
+                 futureState = statesBinary[array[0]];
+            }else {
+                 futureState = ''.padStart(numFlipFlopsVal,'-');
+            }
+            
+            let appendElement = presentState + xInput +
+                                futureState + array[1] + flipFlopInput(presentState, futureState);
+            rows.push(appendElement);
+        });
+        /*
+        
+                for (let xInput in stateDict[state]) {
+            let array = stateDict[state][xInput];
+            let presentState = statesBinary[state];
+            if(typeof(parseInt(array[0])) == 'number'){
+                var futureState = statesBinary[array[0]];
+            }else {
+                var futureState = ''.padStart(numFlipFlopsVal,'-');
+            }
+            
+            let appendElement = presentState + xInput +
+                                futureState + array[1] + flipFlopInput(presentState, futureState);
+            rows.push(appendElement);
+        }
+        */
+
+
+    }
+    return rows;
+}
+
+    </script>
+    
+{% endblock %}

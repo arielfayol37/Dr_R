@@ -97,16 +97,20 @@ class AssignmentStudent(models.Model):
         num_points = 0
         total = 0
         for question in self.assignment.questions.all():
-            total += question.get_num_points()
+            question_num_points = question.get_num_points()
+            total += question_num_points
             try:
                 question_student = QuestionStudent.objects.get(question=question, student=self.student)
                 # Taking modified score in to account to compute grade
                 question_score_modified, is_created= QuestionModifiedScore.objects.get_or_create(question_student = question_student)
                 if not question_score_modified.is_modified:
-                    num_points += question_student.get_num_points()
+                    qs_num_pts = question_student.get_num_points()
+                    num_points += qs_num_pts
                 else:
-                    num_points +=  question_score_modified.score
-                # End 
+                    qs_num_pts = question_score_modified.score
+                    num_points +=  qs_num_pts
+                question_student.grade = round(qs_num_pts * 100 / question_num_points, 3)
+                question_student.save(update_fields=['grade'])
             except QuestionStudent.DoesNotExist:
                 pass
                 # num_points += 0
@@ -127,6 +131,7 @@ class AssignmentStudent(models.Model):
         if not self.due_date:
             self.due_date = self.assignment.due_date
         super().save(*args, **kwargs)
+
         
 class QuestionStudent(models.Model):
     """
@@ -135,6 +140,7 @@ class QuestionStudent(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     num_points = models.FloatField(default=0)
+    grade = models.FloatField(default=0, null=True, blank=True, validators=[MinValueValidator(0)])
     success = models.BooleanField(default=False)
     var_instances = models.ManyToManyField(VariableInstance, related_name='question_students')
     instances_created = models.BooleanField(default=False)
@@ -163,6 +169,25 @@ class QuestionStudent(models.Model):
             if not parent_question_student.instances_created:
                 parent_question_student.create_instances()
         self.instances_created = True
+        self.save()
+    
+    def add_instances(self):
+        """
+        Add variable instances from the variables associated to the question
+        This is used in question editing scenarios
+        """
+        if not self.question.parent_question: # if parent question.
+            current_var_symbols = self.var_instances.values_list('symbol', flat=True)
+            for var in self.question.variables.all():
+                if var.symbol in current_var_symbols:
+                    pass
+                else:
+                    self.var_instances.add(var.get_instance())
+        else: # if not the parent question
+            parent_question_student = QuestionStudent.objects.get(question=self.question.parent_question,\
+                                                                   student=self.student)
+            parent_question_student.add_instances()                
+        
         self.save()
 
     def compute_structural_answer(self):
@@ -196,7 +221,7 @@ class QuestionStudent(models.Model):
         if not self.question.parent_question:# if parent question
             var_value_dict = {}
             for var_instance in self.var_instances.all():
-                var_value_dict[var_instance.variable.symbol] = var_instance.value
+                var_value_dict[var_instance.symbol] = var_instance.value
             return var_value_dict
         else:
             parent_question_student = QuestionStudent.objects.get(student=self.student, question=self.question.parent_question)
@@ -321,6 +346,10 @@ class QuestionStudent(models.Model):
             d = self.question.mcq_settings.mcq_deduct_per_attempt
             potential = t * (1 - (d * n_a))
         return potential * overall_percentage
+    
+    def update_pts_based_on_grade(self):
+        self.num_points = self.grade * self.question.get_num_points()
+        self.save(update_fields=['num_points'])
 
     def __str__(self):
         return f"{self.question} {self.student.username}"

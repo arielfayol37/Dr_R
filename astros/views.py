@@ -14,6 +14,8 @@ from markdown2 import markdown
 from django.core.mail import send_mail
 from django.http import JsonResponse
 import random
+from astros.utils import decimal_to_binary
+import math
 
 code_base = {}
 
@@ -173,4 +175,44 @@ def validate_auth_code(request):
     return JsonResponse({'success':False,
                          'message':'Something went wrong'})
 
+
+def state_to_truth_output(state_dict, flip_flop_type):
+    """
+    Sample state dict:
+    state_dict = {
+    '0':{'0':['3', '000'], '1':['0', '001']},
+    '1':{'0':['1', '111'], '1':['2', '010']},
+    '2':{'0':['-', '-'], '1':['-','-']}
+    ...
+    }
+    """
+
+    ref_dict = {
+        'JK': { '01': '1-', '00': '0-', '11': '-0', '10': '-1' },
+        'D': { '01': '1', '00': '0', '11': '1', '10': '0' },
+        'T':{'01':'1', '00':'0', '11':'1', '10':'1'},
+        'SR':{'01':'10', '00':'0-', '11':'-0', '10':'01'},
+    }
+    num_flip_flops = math.ceil(math.log(len(state_dict), 2))
+
+    def flip_flop_input(present_s, future_s):
+        assert len(present_s) == len(future_s)
+        to_return = ''
+        for i in range(len(present_s)):
+            to_return += ref_dict[flip_flop_type][present_s[i] + future_s[i]]
+        return to_return
+    
+    states_binary = {state_:decimal_to_binary(state_, num_flip_flops) for state_ in state_dict}
+    
+    rows = []
+    for state, inner_dict in state_dict.items():
+        for x_input, array in inner_dict.items():
+            present_state, future_state = states_binary[state], states_binary[array[0]]
+            append_element = present_state + x_input + \
+                  future_state + array[1] + flip_flop_input(present_state, future_state)
+            rows.append(append_element)
+    return rows
+
+def state_to_truth_input(request):
+    return render(request, 'astros/ece.html', {})
 
