@@ -65,9 +65,6 @@ of the site is running at https://mars-valpo.com. You can use the following cred
 - Instructor test account: email - arielfayol1@gmail.com, password - ernestodelaCruz23789
 - Student test account: email - fayol.ateufackzeudom@valpo.edu, password - ernestodelaCruz23789
 
-# CS50W, CS50AI, THANK YOU! Please Launch a real AI (computer vision preferably) and/or SOFTWARE DEV Course.
-
-
 ## Impressive Features
 - Algebraic expressions symbolic comparisons
 - Semantic search engine
