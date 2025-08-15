@@ -53,15 +53,9 @@ python manage.py runserver
 ```
 Then copy and paste the url from the terminal to your browser.
 
-### NOTE
-- MAC users: I have not tested those instructions on MAC, so I recommend that you skip setting up a
-virtual environment if the command does not work (skip step 3 and 4). 
-- Window users: if the command at step 3 does not work for you, just skip it. Or use "python" instead of
-  "python3."
-
 ### Testing
-In case you want to test without having to create accounts, courses, etc, don't worry. A copy 
-of the site is running at https://mars-valpo.com. You can use the following credentials:
+In case you want to test without having to create accounts, courses, etc, don't worry. The sqlite3 database has some date.
+You can use the following credentials:
 - Instructor test account: email - arielfayol1@gmail.com, password - ernestodelaCruz23789
 - Student test account: email - fayol.ateufackzeudom@valpo.edu, password - ernestodelaCruz23789
 
