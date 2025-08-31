@@ -3,6 +3,8 @@ Web platform for Physics Assigments System.
 
 This is the README file for the Dr_R web application built using Django. The application is designed to provide different functionalities for students (Deimos), instructors (Phobos), and general users (Astros).
 
+[Demo](https://youtu.be/F2QWWcPGnBU)
+
 ## PreRequisites
 You must have installed python3 on your machine.
 As of now, the system only supports 3.11 versions. Beyond that,
